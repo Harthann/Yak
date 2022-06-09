@@ -1,4 +1,4 @@
-%include "kfs.inc"
+%include "kfs.h"
 
 section .text:
 	global _start

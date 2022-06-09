@@ -3,7 +3,7 @@ VERSION			=	1
 LINKER			=	ld
 
 NASM			=	nasm
-ASMFLAGS		=	-felf64
+ASMFLAGS		=	-felf64 -MP -MD ${basename $@}.d
 
 DIR_HEADERS		=	./includes/
 DIR_SRCS		=	./srcs/
@@ -23,7 +23,8 @@ $(NAME):		$(ASMOBJS)
 $(ASMOBJS):		| $(DIR_OBJS)
 
 $(DIR_OBJS)%.o: %.s
-				$(NASM) $(ASMFLAGS) -I $(DIR_HEADERS) -o $@ $<
+	$(NASM) $(ASMFLAGS) -I $(DIR_HEADERS) -o $@ $<
+-include $(ASMOBJS:.o=.d)
 
 $(DIR_OBJS):
 				mkdir -p $(DIR_OBJS)
