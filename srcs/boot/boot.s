@@ -4,11 +4,7 @@ section .text:
 	global _start
 
 _start:
-	mov rdi, 1
-	lea rsi, [rel helloworld]
-	mov rdx, 14
-	mov rax, 1
-	syscall
+	jmp _start
 
-
-helloworld db `Hello World !\n`, 0x0
+	times 510-($-$$) db 0
+	db `\x55\xAA` ; boot signature - legacy BIOS or QEMU

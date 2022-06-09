@@ -1,6 +1,9 @@
 VERSION			=	1
 
+QEMU			=	qemu-system-x86_64
+
 LINKER			=	ld
+LINKERFLAGS		=	--oformat binary
 
 NASM			=	nasm
 ASMFLAGS		=	-felf64 -MP -MD ${basename $@}.d
@@ -17,8 +20,11 @@ NAME			=	kfs_$(VERSION)
 
 all:			$(NAME)
 
+boot:			$(NAME)
+				$(QEMU) -drive format=raw,file=$(NAME)
+
 $(NAME):		$(ASMOBJS)
-				$(LINKER) -o $@ $^
+				$(LINKER) $(LINKERFLAGS) -o $@ $^
 
 $(ASMOBJS):		| $(DIR_OBJS)
 
