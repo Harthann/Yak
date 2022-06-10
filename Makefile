@@ -14,6 +14,8 @@ DIR_HEADERS		=	./includes/
 DIR_SRCS		=	./srcs/
 DIR_OBJS		=	./compiled_srcs/
 
+MAKEFILE_PATH	=	$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
 DIR_ISO			=	./iso/
 
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
@@ -33,7 +35,7 @@ $(NAME):		$(BOOTBIN)
 ifeq ($(shell docker images -q ${DOCKER_NAME} 2> /dev/null),)
 				docker build . -t $(DOCKER_NAME)
 endif
-				docker run -it --rm -v $(PWD):/root $(DOCKER_NAME) grub-mkrescue -o $(NAME) $(DIR_ISO)
+				docker run -it --rm -v $(MAKEFILE_PATH):/root $(DOCKER_NAME) -o $(NAME) $(DIR_ISO)
 
 $(BOOTBIN):		| $(DIR_OBJS)
 $(DIR_OBJS)%.bin: %.s
