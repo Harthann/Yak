@@ -9,3 +9,5 @@ iso/
 # Added by cargo
 
 /target
+.xargo
+.bash_history
