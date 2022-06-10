@@ -23,6 +23,7 @@ DIR_OBJS		=	./compiled_srcs
 MAKEFILE_PATH	=	$(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
 DIR_ISO			=	./iso
+DIR_GRUB		=	$(DIR_ISO)/boot/grub
 
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
 
@@ -36,15 +37,19 @@ all:			$(NAME)
 boot:			$(NAME)
 				$(QEMU) -drive format=raw,file=$(NAME)
 
-$(NAME):		$(BOOTOBJS)
-				mkdir -p $(DIR_ISO)/boot/grub/
-				$(LINKER) $(LINKERFLAGS) $^ -o $(DIR_ISO)/boot/$@
-				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_ISO)/boot/grub/
-				sed -i "s/__kfs__/$(NAME)/" $(DIR_ISO)/boot/grub/$(GRUB_CFG)
+$(NAME):		$(DIR_ISO) $(DIR_GRUB)/$(GRUB_CFG)
 ifeq ($(shell docker images -q ${DOCKER_NAME} 2> /dev/null),)
 				docker build . -t $(DOCKER_NAME)
 endif
 				docker run -it --rm -v $(MAKEFILE_PATH):/root $(DOCKER_NAME) -o $(NAME) $(DIR_ISO)
+
+$(DIR_ISO):		$(BOOTOBJS)
+				mkdir -p $(DIR_GRUB)
+				$(LINKER) $(LINKERFLAGS) $^ -o $(DIR_ISO)/boot/$(NAME)
+
+$(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
+				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)
+				sed -i "s/__kfs__/$(NAME)/" $(DIR_GRUB)/$(GRUB_CFG)
 
 $(BOOTOBJS):	| $(DIR_OBJS)
 $(DIR_OBJS)/%.o: %.s
