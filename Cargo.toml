@@ -1,0 +1,15 @@
+#	General information
+[package]
+name = "kfs"
+version = "0.1.0"
+edition = "2021"
+authors = ["lmartin <lmartin@student.42.fr>", "nieyraud <nieyraud@student.42.fr>"]
+
+[lib]
+name='kernel'
+path='srcs/main.rs'
+crate-type = ["staticlib"]
+
+#	Properties
+
+
