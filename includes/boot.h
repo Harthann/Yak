@@ -1,6 +1,7 @@
 %ifndef BOOT_H
 %define BOOT_H
 
+; BIOS interrupt call
 ; https://en.wikipedia.org/wiki/INT_10H
 
 %define BINT_SET_VIDEO		0x00
@@ -21,5 +22,8 @@
 %define BINT_GET_VIDEO		0x0f
 %define BINT_CHANGE_TXT		0x11
 %define BINT_WRITE_STR		0x13
+
+; multiboot
+%define MAGIC				0xe85250d6
 
 %endif
