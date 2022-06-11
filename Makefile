@@ -36,6 +36,8 @@ BOOTSRCS		=	header.s \
 					boot.s
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
 
+KERNELSRCS		=	srcs/main.rs
+
 RUST_KERNEL 	=	target/x86_64-kfs/debug/libkernel.a
 NAME			=	kfs_$(VERSION)
 
@@ -44,20 +46,22 @@ all:			$(NAME)
 boot:			$(NAME)
 				$(QEMU) -drive format=raw,file=$(NAME)
 
-$(NAME):		$(DIR_ISO) $(DIR_GRUB)/$(GRUB_CFG) $(RUST_KERNEL)
+$(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
 ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_GRUB).dockerfile -t $(DOCKER_GRUB)
 endif
 				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
 
-$(DIR_ISO):		$(BOOTOBJS) $(RUST_KERNEL)
-				mkdir -p $(DIR_GRUB)
+$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) | $(DIR_GRUB)
 ifeq ($(shell docker images -q ${DOCKER_LINKER} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_LINKER).dockerfile -t $(DOCKER_LINKER)
 endif
 				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) $(LINKERFLAGS) $^ -o $(DIR_ISO)/boot/$(NAME)
 
-$(RUST_KERNEL): 
+$(DIR_GRUB):
+				mkdir -p $(DIR_GRUB)
+
+$(RUST_KERNEL):	$(KERNELSRCS)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
