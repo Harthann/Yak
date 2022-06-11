@@ -36,7 +36,9 @@ BOOTSRCS		=	header.s \
 					boot.s
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
 
-KERNELSRCS		=	srcs/main.rs
+RUST_SRCS		=	main.rs
+KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
+
 
 RUST_KERNEL 	=	target/x86_64-kfs/debug/libkernel.a
 NAME			=	kfs_$(VERSION)
