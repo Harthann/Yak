@@ -19,7 +19,7 @@ extern "C" {
 pub extern fn rust_main() {
     let x = ["hello", "World", "!"];
     let y =x;
-//    unsafe {_print();}
+    unsafe {_print();}
 }
 
 
