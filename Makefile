@@ -47,7 +47,7 @@ $(NAME):		$(DIR_ISO) $(DIR_GRUB)/$(GRUB_CFG) $(RUST_KERNEL)
 ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_GRUB).dockerfile -t $(DOCKER_GRUB)
 endif
-				docker run -it --rm -v $(MAKEFILE_PATH):/root $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
+				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
 
 $(DIR_ISO):		$(BOOTOBJS) $(RUST_KERNEL)
 				mkdir -p $(DIR_GRUB)
@@ -57,7 +57,7 @@ $(RUST_KERNEL):
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run -it --rm -v $(MAKEFILE_PATH):/root $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
+				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)
