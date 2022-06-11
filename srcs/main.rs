@@ -11,10 +11,15 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
+extern "C" {
+    fn _print();
+}
+
 #[no_mangle]
 pub extern fn rust_main() {
     let x = ["hello", "World", "!"];
     let y =x;
+//    unsafe {_print();}
 }
 
 
