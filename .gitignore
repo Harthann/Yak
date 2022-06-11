@@ -5,9 +5,9 @@ kfs_*
 *.bin
 iso/
 
-
 # Added by cargo
 
 /target
 .xargo
 .bash_history
+Cargo.lock
