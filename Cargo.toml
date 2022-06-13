@@ -12,4 +12,5 @@ crate-type = ["staticlib"]
 
 #	Properties
 
-
+[dependencies]
+rlibc = "1.0"
