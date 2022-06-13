@@ -1,7 +1,12 @@
 %include "boot.h"
 
-global long_mode_start
 global cursor
+
+%macro print_string 2
+	lea edi, [rel %1]
+	mov esi, %2
+	call print_32bit_msg
+%endmacro
 
 section .text
 [BITS 64]
@@ -35,18 +40,12 @@ _start:
 	mov esp, stack_top		; Stack pointer initialisation
 
 	push eax
-	lea edi, [rel msg_multiboot]
-	mov esi, 0x0f
-	call print_32bit_msg
+	print_string msg_multiboot, 0x0f
 	pop eax
 	call check_multiboot
-	lea edi, [rel msg_cpuid]
-	mov esi, 0x0f
-	call print_32bit_msg
+	print_string msg_cpuid, 0x0f
 	call check_cpuid
-	lea edi, [rel msg_longmode]
-	mov esi, 0x0f
-	call print_32bit_msg
+	print_string msg_longmode, 0x0f
 	call check_long_mode
 
 	call set_up_page_tables ; new
@@ -197,6 +196,9 @@ print_32bit_msg:; (uint32_t *msg {edi}, uint8_t color {esi})
 	jz .end_loop
 	cmp byte[edi + ecx], `\n`
 	je .newline
+	cmp dword[rel cursor], 0x000b8000 + (80 * 2) * 25; 25 lines - 80 char width
+	je .scroll
+	.after_scroll:
 	mov eax, [rel cursor]
 	mov dl, byte[edi + ecx]
 	mov byte[eax], dl
@@ -212,10 +214,27 @@ print_32bit_msg:; (uint32_t *msg {edi}, uint8_t color {esi})
 	.newline:
 	call print_newline
 	jmp .continue
+	.scroll:
+	push edi
+	push esi
+	mov edi, 0x000b8000
+	mov esi, 0x000b8000 + (80 * 2)
+	mov edx, (80 * 2) * 24
+	call _memcpy
+	mov dword[rel cursor], 0x000b8000 + (80 * 2) * 24
+	mov edi, dword[rel cursor]
+	mov esi, 0x0
+	mov edx, 80 * 2
+	call _memset
+	pop esi
+	pop edi
+	jmp .after_scroll
 
+; print a newline on screen
 print_newline:
 	push edx
 	push ecx
+
 	mov eax, [rel cursor]
 	sub eax, 0x000b8000
 	xor edx, edx
@@ -224,9 +243,39 @@ print_newline:
 	mov eax, 80 * 2
 	sub eax, edx
 	add dword[rel cursor], eax
+
 	pop ecx
 	pop edx
-	ret
+ret
+
+_memset: ; (uint8_t *dst {edi}, uint8_t c {esi}, uint32_t size {edx})
+	push ecx
+
+	mov ecx, edx
+	mov eax, esi
+	rep stosb
+	mov eax, edi
+
+	pop ecx
+ret
+
+_memcpy: ; (uint8_t *dst {edi}, uint8_t *src {esi}, uint32_t size {edx})
+	push ecx
+
+	mov eax, edi
+	mov ecx, edx
+	push edx
+	mov edx, esi
+	rep movsb
+	push eax
+	pop edi
+	push edx
+	pop esi
+	pop edx
+	mov eax, edi
+
+	pop ecx
+ret
 
 cursor dd 0x000b8000
 
