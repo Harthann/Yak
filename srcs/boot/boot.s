@@ -1,6 +1,7 @@
 %include "boot.h"
 
 global long_mode_start
+global cursor
 
 section .text
 [BITS 64]
@@ -33,8 +34,19 @@ gdt64:
 _start:
 	mov esp, stack_top		; Stack pointer initialisation
 
+	push eax
+	lea edi, [rel msg_multiboot]
+	mov esi, 0x0f
+	call print_32bit_msg
+	pop eax
 	call check_multiboot
+	lea edi, [rel msg_cpuid]
+	mov esi, 0x0f
+	call print_32bit_msg
 	call check_cpuid
+	lea edi, [rel msg_longmode]
+	mov esi, 0x0f
+	call print_32bit_msg
 	call check_long_mode
 
 	call set_up_page_tables ; new
@@ -44,6 +56,10 @@ _start:
 	lgdt [gdt64.pointer]
 
 	jmp gdt64.code:long_mode_start
+
+msg_multiboot db `Check multiboot...\n`, 0x0
+msg_cpuid db `Check cpuid...\n`, 0x0
+msg_longmode db `Check longmode...\n`, 0x0
 
 enable_paging:
 	; load P4 to cr3 register (cpu uses this to access the P4 table)
@@ -109,7 +125,7 @@ check_long_mode:
 	jz .no_long_mode       ; If it's not set, there is no long mode
 	ret
 .no_long_mode:
-	mov al, "2"
+	mov edi, 2
 	jmp error
 
 check_cpuid:
@@ -145,7 +161,7 @@ check_cpuid:
 	je .no_cpuid
 	ret
 .no_cpuid:
-    mov al, "1"
+    mov edi, 2
     jmp error
 
 check_multiboot:
@@ -153,17 +169,66 @@ check_multiboot:
 	jne .no_multiboot
 	ret
 .no_multiboot:
-	mov al, "0"
+	mov edi, 2
 	jmp error
 
-; Prints `ERR: ` and the given error code to screen and hangs.
-; parameter: error code (in ascii) in al
-error:
-	mov dword [0xb8000], 0x4f524f45
-	mov dword [0xb8004], 0x4f3a4f52
-	mov dword [0xb8008], 0x4f204f20
-	mov byte  [0xb800a], al
+error: ; (uint8_t error_code {edi})
+	xor eax, eax
+	push eax
+	add edi, 0x30; print error code as ascii (must be < 10)
+	push edi
+	lea edi, [rel error_msg]
+	mov esi, 0x4f
+	call print_32bit_msg
+	mov edi, esp
+	mov esi, 0x4f
+	call print_32bit_msg
+	pop eax
+	pop eax
 	hlt
+
+error_msg db `Error: `, 0x0
+
+; print a msg {edi} of color {esi}
+print_32bit_msg:; (uint32_t *msg {edi}, uint8_t color {esi})
+	xor ecx, ecx
+	.loop:
+	cmp byte[edi + ecx], 0x0
+	jz .end_loop
+	cmp byte[edi + ecx], `\n`
+	je .newline
+	mov eax, [rel cursor]
+	mov dl, byte[edi + ecx]
+	mov byte[eax], dl
+	mov edx, esi
+	mov byte[eax + 1], dl
+	add dword[rel cursor], 2
+	.continue:
+	inc ecx
+	jmp .loop
+	.end_loop:
+	add ecx, ecx
+	ret
+	.newline:
+	call print_newline
+	jmp .continue
+
+print_newline:
+	push edx
+	push ecx
+	mov eax, [rel cursor]
+	sub eax, 0x000b8000
+	xor edx, edx
+	mov ecx, 80 * 2
+	div ecx
+	mov eax, 80 * 2
+	sub eax, edx
+	add dword[rel cursor], eax
+	pop ecx
+	pop edx
+	ret
+
+cursor dd 0x000b8000
 
 ; Stack creation
 section .bss
