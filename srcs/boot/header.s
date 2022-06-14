@@ -2,7 +2,7 @@
 
 section .multiboot_header
 header_start:
-	dd MAGIC ; magic
+	dd MULTIBOOT_MAGIC ; magic
 	dd 0 ; architecture - 0: protected mode
 	dd header_end - header_start ; header length
 	dd 0x100000000 - (MAGIC + 0 + (header_end - header_start)) ; checksum

@@ -2,12 +2,6 @@
 
 global cursor
 
-%macro print_string 2
-	lea edi, [rel %1]
-	mov esi, %2
-	call print_32bit_msg
-%endmacro
-
 section .text
 [BITS 64]
 long_mode_start:
@@ -23,9 +17,6 @@ long_mode_start:
 	call	rust_main
 	hlt
 
-section .text:
-	global _start
-
 section .rodata
 gdt64:
 	dq 0 ; zero entry
@@ -36,7 +27,15 @@ gdt64:
 	dq gdt64
 
 [BITS 32]
+section .text:
+	global _start
+
 _start:
+	push eax
+	print_string msg_protected_mode, 0x0f
+	pop eax
+	call disable_cursor
+	; https://wiki.osdev.org/Setting_Up_Long_Mode
 	mov esp, stack_top		; Stack pointer initialisation
 
 	push eax
@@ -48,17 +47,16 @@ _start:
 	print_string msg_longmode, 0x0f
 	call check_long_mode
 
-	call set_up_page_tables ; new
-	call enable_paging     ; new
+	print_string msg_setup_page_tables, 0x0f
+	call set_up_page_tables
+	print_string msg_enable_paging, 0x0f
+	call enable_paging
 
 	; load the 64-bit GDT
 	lgdt [gdt64.pointer]
 
+	print_string msg_start_long_mode, 0x0f
 	jmp gdt64.code:long_mode_start
-
-msg_multiboot db `Check multiboot...\n`, 0x0
-msg_cpuid db `Check cpuid...\n`, 0x0
-msg_longmode db `Check longmode...\n`, 0x0
 
 enable_paging:
 	; load P4 to cr3 register (cpu uses this to access the P4 table)
@@ -164,19 +162,36 @@ check_cpuid:
     jmp error
 
 check_multiboot:
-	cmp eax, 0x36d76289
+	cmp eax, BOOTLOADER_MAGIC
 	jne .no_multiboot
 	ret
 .no_multiboot:
 	mov edi, 2
 	jmp error
 
+disable_cursor:
+	pushf
+	push eax
+	push edx
+	mov dx, 0x3D4
+	mov al, 0xA ; low cursor shape register
+	out dx, al
+
+	inc dx
+	mov al, 0x20 ; bits 6-7 unused, bit 5 disables the cursor, bits 0-4 control the cursor shape
+	out dx, al
+
+	pop edx
+	pop eax
+	popf
+	ret
+
 error: ; (uint8_t error_code {edi})
 	xor eax, eax
 	push eax
 	add edi, 0x30; print error code as ascii (must be < 10)
 	push edi
-	lea edi, [rel error_msg]
+	lea edi, [rel msg_error]
 	mov esi, 0x4f
 	call print_32bit_msg
 	mov edi, esp
@@ -186,8 +201,6 @@ error: ; (uint8_t error_code {edi})
 	pop eax
 	hlt
 
-error_msg db `Error: `, 0x0
-
 ; print a msg {edi} of color {esi}
 print_32bit_msg:; (uint32_t *msg {edi}, uint8_t color {esi})
 	xor ecx, ecx
@@ -196,7 +209,7 @@ print_32bit_msg:; (uint32_t *msg {edi}, uint8_t color {esi})
 	jz .end_loop
 	cmp byte[edi + ecx], `\n`
 	je .newline
-	cmp dword[rel cursor], 0x000b8000 + (80 * 2) * 25; 25 lines - 80 char width
+	cmp dword[rel cursor], WINDOW_OFFSET + (VGA_WIDTH * 2) * VGA_HEIGHT; 25 lines - 80 char width
 	je .scroll
 	.after_scroll:
 	mov eax, [rel cursor]
@@ -217,14 +230,14 @@ print_32bit_msg:; (uint32_t *msg {edi}, uint8_t color {esi})
 	.scroll:
 	push edi
 	push esi
-	mov edi, 0x000b8000
-	mov esi, 0x000b8000 + (80 * 2)
-	mov edx, (80 * 2) * 24
+	mov edi, WINDOW_OFFSET
+	mov esi, WINDOW_OFFSET + (VGA_WIDTH * 2)
+	mov edx, (VGA_WIDTH * 2) * 24
 	call _memcpy
-	mov dword[rel cursor], 0x000b8000 + (80 * 2) * 24
+	mov dword[rel cursor], WINDOW_OFFSET + (VGA_WIDTH * 2) * (VGA_HEIGHT - 1)
 	mov edi, dword[rel cursor]
 	mov esi, 0x0
-	mov edx, 80 * 2
+	mov edx, VGA_WIDTH * 2
 	call _memset
 	pop esi
 	pop edi
@@ -236,11 +249,11 @@ print_newline:
 	push ecx
 
 	mov eax, [rel cursor]
-	sub eax, 0x000b8000
+	sub eax, WINDOW_OFFSET
 	xor edx, edx
-	mov ecx, 80 * 2
+	mov ecx, VGA_WIDTH * 2
 	div ecx
-	mov eax, 80 * 2
+	mov eax, VGA_WIDTH * 2
 	sub eax, edx
 	add dword[rel cursor], eax
 
@@ -277,7 +290,17 @@ _memcpy: ; (uint8_t *dst {edi}, uint8_t *src {esi}, uint32_t size {edx})
 	pop ecx
 ret
 
-cursor dd 0x000b8000
+section .data
+msg_protected_mode		db `---------------------------[ PROTECTED MODE (32BITS) ]--------------------------`, 0x0
+msg_multiboot			db `Check multiboot...\n`, 0x0
+msg_cpuid				db `Check cpuid...\n`, 0x0
+msg_longmode			db `Check longmode...\n`, 0x0
+msg_setup_page_tables	db `Setup up page tables...\n`, 0x0
+msg_enable_paging		db `Enable paging...\n`, 0x0
+msg_start_long_mode		db `Starting up longmode...\n`, 0x0
+msg_error				db `ERROR: `, 0x0
+
+cursor				dd WINDOW_OFFSET
 
 ; Stack creation
 section .bss
