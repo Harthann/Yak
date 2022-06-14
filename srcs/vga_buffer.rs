@@ -10,7 +10,6 @@ use core::panic::PanicInfo;
  */
 extern "C" {
 	static cursor: u32;
-	_SetVGACursor(posx: usize, posy: usize);
 }
 
 #[allow(dead_code)]
@@ -123,8 +122,6 @@ impl Writer {
 		}
 		// move cursor
 	}
-	unsafe{_SetVGACursor(self.posx, self.posy);}
-	/*	Implementation end */
 }
 
 /*	Tells rust how to use our writer as a format writer */
