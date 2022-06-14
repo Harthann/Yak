@@ -1,25 +1,25 @@
 VERSION			=	1
 
-QEMU			=	qemu-system-x86_64
+QEMU			=	qemu-system-i386
 
 HOST			=	$(shell uname)
 
-TARGER_ARCH 	=	x86_64
+TARGER_ARCH 	=	i386
 
 LINKERFILE		=	linker.ld
-LINKERFLAGS		=	-n -T $(DIR_ARCH)/$(LINKERFILE)
+LINKERFLAGS		=	-m elf_i386 -n -T $(DIR_ARCH)/$(LINKERFILE)
 
 GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
-ASMFLAGS		=	-felf64 -MP -MD ${basename $@}.d
+ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
 DOCKER_RUST		=	rust-compiler
 DOCKER_LINKER	=	linker
 
-DIR_ARCH		=	arch/x86_64
+DIR_ARCH		=	arch/i386
 DIR_CONFIG		=	config
 DIR_HEADERS		=	includes
 DIR_SRCS		=	srcs
@@ -43,7 +43,7 @@ RUST_SRCS		=	main.rs \
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
 
-RUST_KERNEL 	=	target/x86_64-kfs/debug/libkernel.a
+RUST_KERNEL 	=	target/i386-kfs/debug/libkernel.a
 NAME			=	kfs_$(VERSION)
 
 all:			$(NAME)

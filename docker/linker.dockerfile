@@ -1,7 +1,8 @@
 FROM alpine:3.16
 
-RUN apk update; \
-apk add build-base
+RUN echo "x86" > /etc/apk/arch; \
+apk update; \
+apk add  build-base
 
 WORKDIR /root
 

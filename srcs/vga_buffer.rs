@@ -4,13 +4,7 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use core::panic::PanicInfo;
 
-
-/*
- *	Importing extern variable from assembly code to get cursor position
- */
-extern "C" {
-	static cursor: u32;
-}
+static cursor: u32 = 0xb8000;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
