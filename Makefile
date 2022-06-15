@@ -38,7 +38,8 @@ BOOTSRCS		=	header.s \
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
 
 RUST_SRCS		=	main.rs \
-					vga_buffer.rs
+					vga_buffer.rs \
+					io.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 

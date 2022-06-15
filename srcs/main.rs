@@ -3,6 +3,7 @@
 
 use core::arch::asm;
 mod vga_buffer;
+mod io;
 
 #[lang = "eh_personality"] #[no_mangle] pub extern fn eh_personality() {}
 

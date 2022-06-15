@@ -3,8 +3,7 @@ use core::fmt;
 use lazy_static::lazy_static;
 use spin::Mutex;
 use core::panic::PanicInfo;
-
-static CURSOR: u32 = 0;
+use crate::io;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +36,46 @@ impl ColorCode {
 	}
 }
 
+struct Cursor {
+	x:	usize,
+	y:	usize
+}
+
+impl Cursor {
+	pub fn update(&self) {
+		let pos: u16 = (self.y * BUFFER_WIDTH + self.x) as u16;
+
+		io::outb(0x3d4, 0x0f);
+		io::outb(0x3d5, (pos & 0xff) as u8);
+		io::outb(0x3d4, 0x0e);
+		io::outb(0x3d5, ((pos >> 8) & 0xff) as u8);
+	}
+
+	pub fn enable(&self) {
+		const CURSOR_START: u8 = 14;
+		const CURSOR_END: u8 = 15;
+
+		io::outb(0x3d4, 0x0a);
+		io::outb(0x3d5, (io::inb(0x3d5) & 0xc0) | CURSOR_START);
+		io::outb(0x3d4, 0x0b);
+		io::outb(0x3d5, (io::inb(0x3d5) & 0xe0) | CURSOR_END);
+	}
+
+	pub fn disable(&self) {
+		io::outb(0x3d4, 0x0a);
+		io::outb(0x3d5, 0x20);
+	}
+
+	pub fn get_pos(&self) -> (usize, usize) {
+		(self.x, self.y)
+	}
+
+	pub fn set_pos(&mut self, x: usize, y: usize) {
+		self.x = x;
+		self.y = y;
+	}
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 struct ScreenChar {
@@ -44,6 +83,7 @@ struct ScreenChar {
 	color_code: ColorCode
 }
 
+const VGABUFF_OFFSET: usize = 0xb8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
@@ -53,8 +93,7 @@ chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT]
 }
 
 pub struct Writer {
-	posx:       usize,
-	posy:       usize,
+	cursor:		Cursor,
 	color_code: ColorCode,
 	buffer:     &'static mut Buffer
 }
@@ -68,30 +107,33 @@ impl Writer {
 		match byte {
 			b'\n' => self.new_line(),
 			byte => {
-				if self.posx >= BUFFER_WIDTH {
+				let pos: (usize, usize) = self.cursor.get_pos();
+				if pos.0 >= BUFFER_WIDTH {
 					self.new_line();
 				}
 
-				self.buffer.chars[self.posy][self.posx] = ScreenChar {
+				self.buffer.chars[pos.1][pos.0] = ScreenChar {
 					ascii_code: byte,
 					color_code: self.color_code,
 				};
-				self.posx += 1;
+				self.cursor.set_pos(pos.0 + 1, pos.1);
 			}
 		}
 	}
 
 	/*	Move CURSOR one line lower and move all lines if needed */
 	fn new_line(&mut self) {
-		if self.posy != 24 {
-			self.posy += 1;
+		let pos: (usize, usize) = self.cursor.get_pos();
+		let mut y = pos.1;
+		if pos.1 != BUFFER_HEIGHT - 1 {
+			y += 1;
 		}
 		else {
 			for row in 1..BUFFER_HEIGHT
 			{self.buffer.chars[row -1] = self.buffer.chars[row];}
 			self.clear_row(BUFFER_HEIGHT -1);
 		}
-		self.posx = 0;
+		self.cursor.set_pos(0, y);
 	}
 
 	/*		Simply replace all row by spaces to visualy clear it */
@@ -106,6 +148,7 @@ impl Writer {
 
 	/*	Write string to vga using write_byte functions if printable, else print a square */
 	pub fn write_string(&mut self, s: &str) {
+		self.cursor.disable();
 		for byte in s.bytes() {
 			match byte {
 			// printable ASCII byte or newline
@@ -114,7 +157,8 @@ impl Writer {
 				_ => self.write_byte(0xfe),
 			}
 		}
-		// move CURSOR
+		self.cursor.update();
+		self.cursor.enable();
 	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
@@ -137,10 +181,9 @@ impl fmt::Write for Writer {
  */
 lazy_static! {
 	pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
-		posx: CURSOR as usize % 160,
-		posy: CURSOR as usize / 160,
+		cursor: Cursor{x: 0, y: 0},
 		color_code: ColorCode::new(Color::White, Color::Black),
-		buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
+		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
 	});
 }
 
