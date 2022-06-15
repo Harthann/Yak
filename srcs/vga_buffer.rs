@@ -30,7 +30,7 @@ pub enum Color {
 #[repr(transparent)]
 pub struct ColorCode(u8);
 impl ColorCode {
-	fn new(foreground: Color, background: Color) -> ColorCode {
+	const fn new(foreground: Color, background: Color) -> ColorCode {
 		ColorCode((background as u8) << 4 | (foreground as u8))
 	}
 }
@@ -38,7 +38,8 @@ impl ColorCode {
 #[derive(Debug, Clone, Copy)]
 pub struct Cursor {
 	x:	usize,
-	y:	usize
+	y:	usize,
+	color_code: ColorCode
 }
 
 impl Cursor {
@@ -176,7 +177,8 @@ impl fmt::Write for Writer {
 
 pub static mut CURSOR:Cursor = Cursor{
 	x: 0,
-	y: 0
+	y: 0,
+	color_code: ColorCode::new(Color::White, Color::Black)
 };
 
 /* Reimplementation of rust print and println macros */
@@ -194,7 +196,9 @@ macro_rules! println {
 /* Setting our panic handler to our brand new println */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+	unsafe{CURSOR.color_code = ColorCode::new(Color::Red, Color::Black);}
 	println!("{}", info);
+	unsafe{CURSOR.color_code = ColorCode::new(Color::White, Color::Black);}
 	loop {}
 }
 
@@ -203,7 +207,7 @@ pub fn _print(args: fmt::Arguments) {
 
 	let mut writer: Writer = Writer {
 		cursor: unsafe{&mut CURSOR}, //Cursor{x: 0, y: 0},
-		color_code: ColorCode::new(Color::White, Color::Black),
+		color_code: unsafe{CURSOR.color_code},
 		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
 	};
 
