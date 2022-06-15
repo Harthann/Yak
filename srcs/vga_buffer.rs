@@ -4,7 +4,7 @@ use lazy_static::lazy_static;
 use spin::Mutex;
 use core::panic::PanicInfo;
 
-static cursor: u32 = 0xb8000;
+static CURSOR: u32 = 0;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -63,7 +63,7 @@ pub struct Writer {
  *	Implementation of writer functions
  */
 impl Writer {
-	/*	Write one byte to vga buffer, update cursor position	*/
+	/*	Write one byte to vga buffer, update CURSOR position	*/
 	pub fn write_byte(&mut self, byte: u8) {
 		match byte {
 			b'\n' => self.new_line(),
@@ -81,7 +81,7 @@ impl Writer {
 		}
 	}
 
-	/*	Move cursor one line lower and move all lines if needed */
+	/*	Move CURSOR one line lower and move all lines if needed */
 	fn new_line(&mut self) {
 		if self.posy != 24 {
 			self.posy += 1;
@@ -114,7 +114,11 @@ impl Writer {
 				_ => self.write_byte(0xfe),
 			}
 		}
-		// move cursor
+		// move CURSOR
+	}
+
+	pub fn chcolor(&mut self, new_color: ColorCode) {
+		self.color_code = new_color;
 	}
 }
 
@@ -133,8 +137,8 @@ impl fmt::Write for Writer {
  */
 lazy_static! {
 	pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
-		posx: unsafe{(cursor - 0xb8000) as usize % 160},
-		posy: unsafe{(cursor - 0xb8000) as usize / 160},
+		posx: CURSOR as usize % 160,
+		posy: CURSOR as usize / 160,
 		color_code: ColorCode::new(Color::White, Color::Black),
 		buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
 	});
@@ -155,7 +159,9 @@ macro_rules! println {
 /* Setting our panic handler to our brand new println */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+	WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black));
 	println!("{}", info);
+	WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black));
 	loop {}
 }
 
