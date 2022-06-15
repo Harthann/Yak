@@ -108,16 +108,30 @@ impl Writer {
 		match byte {
 			b'\n' => self.new_line(),
 			byte => {
-				let pos: (usize, usize) = self.cursor.get_pos();
-				if pos.0 >= BUFFER_WIDTH {
-					self.new_line();
+				let mut pos: (usize, usize) = self.cursor.get_pos();
+				if byte == 0x08
+				{
+					if pos.0 == 0
+						{return ;}
+					pos.0 -= 1;
+					self.buffer.chars[pos.1][pos.0] = ScreenChar {
+						ascii_code: 0x0,
+						color_code: self.color_code,
+					};
+					self.cursor.set_pos(pos.0, pos.1);
 				}
-
-				self.buffer.chars[pos.1][pos.0] = ScreenChar {
-					ascii_code: byte,
-					color_code: self.color_code,
-				};
-				self.cursor.set_pos(pos.0 + 1, pos.1);
+				else
+				{
+					if pos.0 >= BUFFER_WIDTH {
+						self.new_line();
+						pos = self.cursor.get_pos();
+					}
+					self.buffer.chars[pos.1][pos.0] = ScreenChar {
+						ascii_code: byte,
+						color_code: self.color_code,
+					};
+					self.cursor.set_pos(pos.0 + 1, pos.1);
+				}
 			}
 		}
 	}
@@ -153,7 +167,7 @@ impl Writer {
 		for byte in s.bytes() {
 			match byte {
 			// printable ASCII byte or newline
-				0x20..=0x7e | b'\n' => self.write_byte(byte),
+				0x20..=0x7e | b'\n' | 0x08 => self.write_byte(byte),
 			// not part of printable ASCII range
 				_ => self.write_byte(0xfe),
 			}
