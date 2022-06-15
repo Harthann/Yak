@@ -11,3 +11,4 @@ iso/
 .xargo
 .bash_history
 Cargo.lock
+kernel.log

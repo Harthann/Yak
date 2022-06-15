@@ -105,6 +105,8 @@ pub struct Writer {
 impl Writer {
 	/*	Write one byte to vga buffer, update CURSOR position	*/
 	pub fn write_byte(&mut self, byte: u8) {
+	/*	Writing each byte to qemu serial port for external log	*/
+		io::outb(0x3f8, byte);
 		match byte {
 			b'\n' => self.new_line(),
 			byte => {
