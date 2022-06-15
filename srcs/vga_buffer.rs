@@ -1,9 +1,8 @@
 /*  Crate import */
 use core::fmt;
-use lazy_static::lazy_static;
-use spin::Mutex;
 use core::panic::PanicInfo;
 use crate::io;
+
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,14 +28,15 @@ pub enum Color {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(transparent)]
-struct ColorCode(u8);
+pub struct ColorCode(u8);
 impl ColorCode {
 	fn new(foreground: Color, background: Color) -> ColorCode {
 		ColorCode((background as u8) << 4 | (foreground as u8))
 	}
 }
 
-struct Cursor {
+#[derive(Debug, Clone, Copy)]
+pub struct Cursor {
 	x:	usize,
 	y:	usize
 }
@@ -93,7 +93,7 @@ chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT]
 }
 
 pub struct Writer {
-	cursor:		Cursor,
+	cursor:		&'static mut Cursor,
 	color_code: ColorCode,
 	buffer:     &'static mut Buffer
 }
@@ -174,18 +174,10 @@ impl fmt::Write for Writer {
 	}
 }
 
-/* Static writer to print on vga buffer werether we are in code
- * Using lazy static in order to tell rust that size will be known
- * at runtime. We use spin mutexes as well to protect race condition
- * and since no thread and "mutex" are developped we need spinlock
- */
-lazy_static! {
-	pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
-		cursor: Cursor{x: 0, y: 0},
-		color_code: ColorCode::new(Color::White, Color::Black),
-		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
-	});
-}
+pub static mut CURSOR:Cursor = Cursor{
+	x: 0,
+	y: 0
+};
 
 /* Reimplementation of rust print and println macros */
 #[macro_export]
@@ -202,14 +194,19 @@ macro_rules! println {
 /* Setting our panic handler to our brand new println */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black));
 	println!("{}", info);
-	WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black));
 	loop {}
 }
 
 pub fn _print(args: fmt::Arguments) {
 	use core::fmt::Write;
-	WRITER.lock().write_fmt(args).unwrap();
+
+	let mut writer: Writer = Writer {
+		cursor: unsafe{&mut CURSOR}, //Cursor{x: 0, y: 0},
+		color_code: ColorCode::new(Color::White, Color::Black),
+		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
+	};
+
+	writer.write_fmt(args).unwrap();
 }
 
