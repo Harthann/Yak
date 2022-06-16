@@ -110,30 +110,26 @@ impl Writer {
 		match byte {
 			b'\n' => self.new_line(),
 			byte => {
+				let mut code = byte;
 				let mut pos: (usize, usize) = self.cursor.get_pos();
 				if byte == 0x08
 				{
 					if pos.0 == 0
 						{return ;}
 					pos.0 -= 1;
-					self.buffer.chars[pos.1][pos.0] = ScreenChar {
-						ascii_code: 0x0,
-						color_code: self.color_code,
-					};
-					self.cursor.set_pos(pos.0, pos.1);
+					code = 0x0
 				}
-				else
-				{
-					if pos.0 >= BUFFER_WIDTH {
+				else if pos.0 >= BUFFER_WIDTH {
 						self.new_line();
 						pos = self.cursor.get_pos();
-					}
-					self.buffer.chars[pos.1][pos.0] = ScreenChar {
-						ascii_code: byte,
-						color_code: self.color_code,
-					};
-					self.cursor.set_pos(pos.0 + 1, pos.1);
 				}
+				self.buffer.chars[pos.1][pos.0] = ScreenChar {
+					ascii_code: code,
+					color_code: self.color_code,
+				};
+				if byte != 0x08
+					{pos.0 += 1;}
+				self.cursor.set_pos(pos.0, pos.1);
 			}
 		}
 	}
