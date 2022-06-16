@@ -6,14 +6,16 @@ mod vga_buffer;
 mod io;
 mod keyboard;
 
+use vga_buffer::Color;
+
 #[lang = "eh_personality"] #[no_mangle] pub extern fn eh_personality() {}
 
 #[no_mangle]
 pub extern fn rust_main() -> ! {
 	println!("Hello World of {}!", 42);
-	vga_buffer::change_color(vga_buffer::Color::Red, vga_buffer::Color::White);
+	change_color!(Color::Red, Color::White);
 	println!("Hello World of {}!", 42);
-	vga_buffer::change_color(vga_buffer::Color::White, vga_buffer::Color::Black);
+	change_color!(Color::White, Color::Black);
 /*
 	let mut x: u32 = 4;
 	unsafe {

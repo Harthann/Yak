@@ -225,6 +225,10 @@ pub fn _print(args: fmt::Arguments) {
 	writer.write_fmt(args).unwrap();
 }
 
+#[macro_export]
+macro_rules! change_color {
+	($fg:expr, $bg:expr) => ($crate::vga_buffer::change_color($fg, $bg));
+}
 pub fn change_color(fg: Color, bg: Color) {
 	unsafe{CURSOR.color_code = ColorCode::new(fg, bg);}
 }
