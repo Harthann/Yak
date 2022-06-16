@@ -14,7 +14,7 @@ use vga_buffer::Color;
 pub extern fn rust_main() -> ! {
 	println!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
-	println!("Hello World of {}!", 42);
+	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 /*
 	let mut x: u32 = 4;

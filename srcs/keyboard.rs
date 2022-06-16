@@ -1,5 +1,6 @@
 use crate::print;
 use crate::io;
+use crate::vga_buffer;
 
 static KEYBOARD: [char; 58] = ['\0', '\0', '1', '2', '3', '4', '5', '6', '7',
 '8', '9', '0', '-', '=', '\x08', ' ', 'q', 'w', 'e', 'r', 't', 'y',
@@ -82,7 +83,10 @@ pub fn handle_event() {
 	let mut keycode: u8 = io::inb(0x60);
 	
 	let charcode = keyboard_to_ascii(keycode);
-	if charcode != '\0' {
+	if (charcode == '1' || charcode == '2') && getflag!(SpecialKeyFlag::Ctrl) {
+		vga_buffer::change_screen((charcode as usize - '0' as usize - 1) as usize)
+	}
+	else if charcode != '\0' {
 		print!("{}", charcode);
 	}
 	else {

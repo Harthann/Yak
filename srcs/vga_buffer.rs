@@ -3,6 +3,40 @@ use core::fmt;
 use core::panic::PanicInfo;
 use crate::io;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Screen {
+	cursor: Cursor,
+	buffer: Buffer
+}
+
+pub static mut SCREENS: [Screen; 2] = [
+	Screen {
+		cursor: Cursor {
+				x: 0,
+				y: 0,
+				color_code: ColorCode::new(Color::White, Color::Black)
+		},
+		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]}
+	}
+; 2];
+
+pub static mut ACTUAL_SCREEN: usize = 0;
+
+pub fn change_screen(nb: usize) {
+	unsafe {
+	SCREENS[ACTUAL_SCREEN].cursor.disable();
+	ACTUAL_SCREEN = nb;
+	let mut writer: Writer = Writer {
+		cursor: &mut SCREENS[ACTUAL_SCREEN].cursor,
+		color_code: SCREENS[ACTUAL_SCREEN].cursor.color_code,
+		buffer: &mut *(VGABUFF_OFFSET as *mut Buffer),
+	};
+	writer.copy_buffer(SCREENS[ACTUAL_SCREEN].buffer);
+	SCREENS[ACTUAL_SCREEN].cursor.update();
+	SCREENS[ACTUAL_SCREEN].cursor.enable();
+	}
+}
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -87,8 +121,9 @@ const VGABUFF_OFFSET: usize = 0xb8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
+#[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-struct Buffer {
+pub struct Buffer {
 chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT]
 }
 
@@ -122,10 +157,12 @@ impl Writer {
 						self.new_line();
 						pos = self.cursor.get_pos();
 				}
-				self.buffer.chars[pos.1][pos.0] = ScreenChar {
+				let screenchar = ScreenChar {
 					ascii_code: code,
 					color_code: self.color_code,
 				};
+				self.buffer.chars[pos.1][pos.0] = screenchar;
+				unsafe{SCREENS[ACTUAL_SCREEN].buffer.chars[pos.1][pos.0] = screenchar;}
 				if byte != 0x08
 					{pos.0 += 1;}
 				self.cursor.set_pos(pos.0, pos.1);
@@ -141,8 +178,10 @@ impl Writer {
 			y += 1;
 		}
 		else {
-			for row in 1..BUFFER_HEIGHT
-			{self.buffer.chars[row -1] = self.buffer.chars[row];}
+			for row in 1..BUFFER_HEIGHT {
+				self.buffer.chars[row - 1] = self.buffer.chars[row];
+				unsafe{SCREENS[ACTUAL_SCREEN].buffer.chars[row - 1] = SCREENS[ACTUAL_SCREEN].buffer.chars[row];}
+			}
 			self.clear_row(BUFFER_HEIGHT -1);
 		}
 		self.cursor.set_pos(0, y);
@@ -173,6 +212,14 @@ impl Writer {
 		self.cursor.enable();
 	}
 
+	pub fn copy_buffer(&mut self, buffer: Buffer) {
+		for y in 0..BUFFER_HEIGHT {
+			for x in 0..BUFFER_WIDTH {
+				self.buffer.chars[y][x] = buffer.chars[y][x];
+			}
+		}
+	}
+
 	pub fn chcolor(&mut self, new_color: ColorCode) {
 		self.color_code = new_color;
 	}
@@ -185,12 +232,6 @@ impl fmt::Write for Writer {
 		Ok(())
 	}
 }
-
-pub static mut CURSOR:Cursor = Cursor{
-	x: 0,
-	y: 0,
-	color_code: ColorCode::new(Color::White, Color::Black)
-};
 
 /* Reimplementation of rust print and println macros */
 #[macro_export]
@@ -207,9 +248,9 @@ macro_rules! println {
 /* Setting our panic handler to our brand new println */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe{CURSOR.color_code = ColorCode::new(Color::Red, Color::Black);}
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code = ColorCode::new(Color::Red, Color::Black);}
 	println!("{}", info);
-	unsafe{CURSOR.color_code = ColorCode::new(Color::White, Color::Black);}
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code = ColorCode::new(Color::White, Color::Black);}
 	loop {}
 }
 
@@ -217,8 +258,8 @@ pub fn _print(args: fmt::Arguments) {
 	use core::fmt::Write;
 
 	let mut writer: Writer = Writer {
-		cursor: unsafe{&mut CURSOR}, //Cursor{x: 0, y: 0},
-		color_code: unsafe{CURSOR.color_code},
+		cursor: unsafe{&mut SCREENS[ACTUAL_SCREEN].cursor}, //Cursor{x: 0, y: 0},
+		color_code: unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code},
 		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
 	};
 
@@ -227,8 +268,8 @@ pub fn _print(args: fmt::Arguments) {
 
 #[macro_export]
 macro_rules! change_color {
-	($fg:expr, $bg:expr) => ($crate::vga_buffer::change_color($fg, $bg));
+	($fg:expr, $bg:expr) => ($crate::vga_buffer::_change_color($fg, $bg));
 }
-pub fn change_color(fg: Color, bg: Color) {
-	unsafe{CURSOR.color_code = ColorCode::new(fg, bg);}
+pub fn _change_color(fg: Color, bg: Color) {
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code = ColorCode::new(fg, bg);}
 }

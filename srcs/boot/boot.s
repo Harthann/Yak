@@ -16,5 +16,5 @@ _start:
 ; Stack creation
 section .bss
 stack_bottom:
-	resb 4096
+	resb 8192
 stack_top:
