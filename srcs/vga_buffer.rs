@@ -3,7 +3,6 @@ use core::fmt;
 use core::panic::PanicInfo;
 use crate::io;
 
-
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -196,13 +195,13 @@ pub static mut CURSOR:Cursor = Cursor{
 /* Reimplementation of rust print and println macros */
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+	($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
 }
 
 #[macro_export]
 macro_rules! println {
-    () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+	() => ($crate::print!("\n"));
+	($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
 
 /* Setting our panic handler to our brand new println */
@@ -226,3 +225,6 @@ pub fn _print(args: fmt::Arguments) {
 	writer.write_fmt(args).unwrap();
 }
 
+pub fn change_color(fg: Color, bg: Color) {
+	unsafe{CURSOR.color_code = ColorCode::new(fg, bg);}
+}
