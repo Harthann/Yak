@@ -6,7 +6,7 @@ mod vga_buffer;
 mod io;
 mod keyboard;
 
-use vga_buffer::Color;
+use vga_buffer::color::Color;
 
 #[lang = "eh_personality"] #[no_mangle] pub extern fn eh_personality() {}
 

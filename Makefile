@@ -41,7 +41,8 @@ RUST_SRCS		=	main.rs \
 					vga_buffer.rs \
 					io.rs \
 					keyboard.rs \
-					cursor.rs
+					cursor.rs \
+					color.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
