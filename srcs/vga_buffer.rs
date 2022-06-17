@@ -26,7 +26,7 @@ const VGABUFF_OFFSET: usize = 0xb8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
-const NB_SCREEN: usize = 2;
+pub const NB_SCREEN: usize = 3;
 
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
