@@ -190,10 +190,12 @@ impl Writer {
 	/*		Simply replace all row by spaces to visualy clear it */
 	pub fn clear_row(&mut self, row: usize) {
 		for i in 0..BUFFER_WIDTH {
-			self.buffer.chars[row][i] = ScreenChar {
+			let screenchar = ScreenChar {
 				ascii_code: 0x20,
 				color_code: self.color_code,
 			};
+			self.buffer.chars[row][i] = screenchar;
+			unsafe{SCREENS[ACTUAL_SCREEN].buffer.chars[row][i] = screenchar}
 		}
 	}
 
