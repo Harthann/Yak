@@ -2,7 +2,6 @@
 use core::fmt;
 use core::panic::PanicInfo;
 use crate::io;
-use core::cell::UnsafeCell;
 
 pub mod color;
 use color::Color;
@@ -41,13 +40,13 @@ pub static mut WRITER: Writer = Writer {
 		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]}
 	}; NB_SCREEN],
 	screen_index:	0,
-	buffer:			UnsafeCell::new(VGABUFF_OFFSET as *mut Buffer)
+	buffer:			VGABUFF_OFFSET as _
 };
 
 pub struct Writer {
 	screens:		[Screen; NB_SCREEN],
 	screen_index:	usize,
-	buffer:			UnsafeCell <*mut Buffer>
+	buffer:			*mut Buffer
 }
 
 /*
@@ -78,7 +77,7 @@ impl Writer {
 					ascii_code: code,
 					color_code: self.screens[self.screen_index].cursor.get_color_code(),
 				};
-				unsafe{(*(*self.buffer.get())).chars[pos.1][pos.0] = screenchar};
+				unsafe{(*self.buffer).chars[pos.1][pos.0] = screenchar};
 				self.screens[self.screen_index].buffer.chars[pos.1][pos.0] = screenchar;
 				if byte != 0x08
 					{pos.0 += 1;}
@@ -96,7 +95,7 @@ impl Writer {
 		}
 		else {
 			for row in 1..BUFFER_HEIGHT {
-				unsafe{(*(*self.buffer.get())).chars[row - 1] = (*(*self.buffer.get())).chars[row]};
+				unsafe{(*self.buffer).chars[row - 1] = (*self.buffer).chars[row]};
 				self.screens[self.screen_index].buffer.chars[row - 1] = self.screens[self.screen_index].buffer.chars[row];
 			}
 			self.clear_row(BUFFER_HEIGHT -1);
@@ -111,7 +110,7 @@ impl Writer {
 				ascii_code: 0x20,
 				color_code: self.screens[self.screen_index].cursor.get_color_code()
 			};
-			unsafe{(*(*self.buffer.get())).chars[row][i] = screenchar};
+			unsafe{(*self.buffer).chars[row][i] = screenchar};
 			self.screens[self.screen_index].buffer.chars[row][i] = screenchar;
 		}
 	}
@@ -134,7 +133,7 @@ impl Writer {
 	pub fn copy_buffer(&mut self, buffer: Buffer) {
 		for y in 0..BUFFER_HEIGHT {
 			for x in 0..BUFFER_WIDTH {
-				unsafe{(*(*self.buffer.get())).chars[y][x] = buffer.chars[y][x]};
+				unsafe{(*self.buffer).chars[y][x] = buffer.chars[y][x]};
 			}
 		}
 	}
