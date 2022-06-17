@@ -84,7 +84,7 @@ pub fn handle_event() {
 	
 	let charcode = keyboard_to_ascii(keycode);
 	if (charcode == '1' || charcode == '2') && getflag!(SpecialKeyFlag::Ctrl) {
-		vga_buffer::change_screen((charcode as usize - '0' as usize - 1) as usize)
+		unsafe{vga_buffer::WRITER.change_screen((charcode as usize - '0' as usize - 1) as usize);}
 	}
 	else if charcode != '\0' {
 		print!("{}", charcode);

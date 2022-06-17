@@ -1,3 +1,4 @@
+#![feature(const_mut_refs)]
 #![feature(lang_items)]
 #![no_std]
 
