@@ -14,8 +14,4 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make Kernel
-      run: make
-
-    - uses: actions/checkout@v2
-    - name: clean Kernel
-      run: sudo make fclean
+      run: sudo make fclean && make
