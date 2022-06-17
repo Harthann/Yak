@@ -3,6 +3,9 @@ use core::fmt;
 use core::panic::PanicInfo;
 use crate::io;
 
+mod cursor;
+use cursor::Cursor;
+
 #[derive(Debug, Clone, Copy)]
 pub struct Screen {
 	cursor: Cursor,
@@ -11,11 +14,7 @@ pub struct Screen {
 
 pub static mut SCREENS: [Screen; 2] = [
 	Screen {
-		cursor: Cursor {
-				x: 0,
-				y: 0,
-				color_code: ColorCode::new(Color::White, Color::Black)
-		},
+		cursor: Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
 		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]}
 	}
 ; 2];
@@ -28,7 +27,7 @@ pub fn change_screen(nb: usize) {
 	ACTUAL_SCREEN = nb;
 	let mut writer: Writer = Writer {
 		cursor: &mut SCREENS[ACTUAL_SCREEN].cursor,
-		color_code: SCREENS[ACTUAL_SCREEN].cursor.color_code,
+		color_code: SCREENS[ACTUAL_SCREEN].cursor.get_color_code(),
 		buffer: &mut *(VGABUFF_OFFSET as *mut Buffer),
 	};
 	writer.copy_buffer(SCREENS[ACTUAL_SCREEN].buffer);
@@ -68,48 +67,6 @@ impl ColorCode {
 	}
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Cursor {
-	x:	usize,
-	y:	usize,
-	color_code: ColorCode
-}
-
-impl Cursor {
-	pub fn update(&self) {
-		let pos: u16 = (self.y * BUFFER_WIDTH + self.x) as u16;
-
-		io::outb(0x3d4, 0x0f);
-		io::outb(0x3d5, (pos & 0xff) as u8);
-		io::outb(0x3d4, 0x0e);
-		io::outb(0x3d5, ((pos >> 8) & 0xff) as u8);
-	}
-
-	pub fn enable(&self) {
-		const CURSOR_START: u8 = 14;
-		const CURSOR_END: u8 = 15;
-
-		io::outb(0x3d4, 0x0a);
-		io::outb(0x3d5, (io::inb(0x3d5) & 0xc0) | CURSOR_START);
-		io::outb(0x3d4, 0x0b);
-		io::outb(0x3d5, (io::inb(0x3d5) & 0xe0) | CURSOR_END);
-	}
-
-	pub fn disable(&self) {
-		io::outb(0x3d4, 0x0a);
-		io::outb(0x3d5, 0x20);
-	}
-
-	pub fn get_pos(&self) -> (usize, usize) {
-		(self.x, self.y)
-	}
-
-	pub fn set_pos(&mut self, x: usize, y: usize) {
-		self.x = x;
-		self.y = y;
-	}
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(C)]
 struct ScreenChar {
@@ -130,7 +87,7 @@ chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT]
 pub struct Writer {
 	cursor:		&'static mut Cursor,
 	color_code: ColorCode,
-	buffer:     &'static mut Buffer
+	buffer:		&'static mut Buffer
 }
 
 /*
@@ -250,9 +207,9 @@ macro_rules! println {
 /* Setting our panic handler to our brand new println */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code = ColorCode::new(Color::Red, Color::Black);}
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.set_color_code(ColorCode::new(Color::Red, Color::Black));}
 	println!("{}", info);
-	unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code = ColorCode::new(Color::White, Color::Black);}
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.set_color_code(ColorCode::new(Color::White, Color::Black));}
 	loop {}
 }
 
@@ -261,7 +218,7 @@ pub fn _print(args: fmt::Arguments) {
 
 	let mut writer: Writer = Writer {
 		cursor: unsafe{&mut SCREENS[ACTUAL_SCREEN].cursor}, //Cursor{x: 0, y: 0},
-		color_code: unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code},
+		color_code: unsafe{SCREENS[ACTUAL_SCREEN].cursor.get_color_code()},
 		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
 	};
 
@@ -273,5 +230,5 @@ macro_rules! change_color {
 	($fg:expr, $bg:expr) => ($crate::vga_buffer::_change_color($fg, $bg));
 }
 pub fn _change_color(fg: Color, bg: Color) {
-	unsafe{SCREENS[ACTUAL_SCREEN].cursor.color_code = ColorCode::new(fg, bg);}
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.set_color_code(ColorCode::new(fg, bg));}
 }
