@@ -17,7 +17,6 @@ pub extern fn rust_main() -> ! {
 	change_color!(Color::Red, Color::White);
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
-qoweifjqwoefijoij
 /*
 	let mut x: u32 = 4;
 	unsafe {
