@@ -38,7 +38,11 @@ BOOTSRCS		=	header.s \
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
 
 RUST_SRCS		=	main.rs \
-					vga_buffer.rs
+					vga_buffer.rs \
+					io.rs \
+					keyboard.rs \
+					cursor.rs \
+					color.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
@@ -49,7 +53,7 @@ NAME			=	kfs_$(VERSION)
 all:			$(NAME)
 
 boot:			$(NAME)
-				$(QEMU) -drive format=raw,file=$(NAME)
+				$(QEMU) -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
 
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
 ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)

@@ -1,39 +1,41 @@
 /*  Crate import */
 use core::fmt;
-use lazy_static::lazy_static;
-use spin::Mutex;
 use core::panic::PanicInfo;
+use crate::io;
 
-static CURSOR: u32 = 0;
+pub mod color;
+use color::Color;
+use color::ColorCode;
+mod cursor;
+use cursor::Cursor;
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-pub enum Color {
-	Black		= 0,
-	Blue		= 1,
-	Green		= 2,
-	Cyan		= 3,
-	Red			= 4,
-	Magenta		= 5,
-	Brown		= 6,
-	LightGray	= 7,
-	DarkGray	= 8,
-	LightBlue	= 9,
-	LightGreen	= 10,
-	LightCyan	= 11,
-	LightRed	= 12,
-	Pink		= 13,
-	Yellow		= 14,
-	White		= 15,
+#[derive(Debug, Clone, Copy)]
+pub struct Screen {
+	cursor: Cursor,
+	buffer: Buffer
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(transparent)]
-struct ColorCode(u8);
-impl ColorCode {
-	fn new(foreground: Color, background: Color) -> ColorCode {
-		ColorCode((background as u8) << 4 | (foreground as u8))
+pub static mut SCREENS: [Screen; 2] = [
+	Screen {
+		cursor: Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
+		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]}
+	}
+; 2];
+
+pub static mut ACTUAL_SCREEN: usize = 0;
+
+pub fn change_screen(nb: usize) {
+	unsafe {
+	SCREENS[ACTUAL_SCREEN].cursor.disable();
+	ACTUAL_SCREEN = nb;
+	let mut writer: Writer = Writer {
+		cursor: &mut SCREENS[ACTUAL_SCREEN].cursor,
+		color_code: SCREENS[ACTUAL_SCREEN].cursor.get_color_code(),
+		buffer: &mut *(VGABUFF_OFFSET as *mut Buffer),
+	};
+	writer.copy_buffer(SCREENS[ACTUAL_SCREEN].buffer);
+	SCREENS[ACTUAL_SCREEN].cursor.update();
+	SCREENS[ACTUAL_SCREEN].cursor.enable();
 	}
 }
 
@@ -44,19 +46,20 @@ struct ScreenChar {
 	color_code: ColorCode
 }
 
+const VGABUFF_OFFSET: usize = 0xb8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
+#[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
-struct Buffer {
+pub struct Buffer {
 chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT]
 }
 
 pub struct Writer {
-	posx:       usize,
-	posy:       usize,
+	cursor:		&'static mut Cursor,
 	color_code: ColorCode,
-	buffer:     &'static mut Buffer
+	buffer:		&'static mut Buffer
 }
 
 /*
@@ -65,56 +68,87 @@ pub struct Writer {
 impl Writer {
 	/*	Write one byte to vga buffer, update CURSOR position	*/
 	pub fn write_byte(&mut self, byte: u8) {
+	/*	Writing each byte to qemu serial port for external log	*/
+		io::outb(0x3f8, byte);
 		match byte {
 			b'\n' => self.new_line(),
 			byte => {
-				if self.posx >= BUFFER_WIDTH {
-					self.new_line();
+				let mut code = byte;
+				let mut pos: (usize, usize) = self.cursor.get_pos();
+				if byte == 0x08
+				{
+					if pos.0 == 0
+						{return ;}
+					pos.0 -= 1;
+					code = 0x0
 				}
-
-				self.buffer.chars[self.posy][self.posx] = ScreenChar {
-					ascii_code: byte,
+				else if pos.0 >= BUFFER_WIDTH {
+						self.new_line();
+						pos = self.cursor.get_pos();
+				}
+				let screenchar = ScreenChar {
+					ascii_code: code,
 					color_code: self.color_code,
 				};
-				self.posx += 1;
+				self.buffer.chars[pos.1][pos.0] = screenchar;
+				unsafe{SCREENS[ACTUAL_SCREEN].buffer.chars[pos.1][pos.0] = screenchar;}
+				if byte != 0x08
+					{pos.0 += 1;}
+				self.cursor.set_pos(pos.0, pos.1);
 			}
 		}
 	}
 
 	/*	Move CURSOR one line lower and move all lines if needed */
 	fn new_line(&mut self) {
-		if self.posy != 24 {
-			self.posy += 1;
+		let pos: (usize, usize) = self.cursor.get_pos();
+		let mut y = pos.1;
+		if pos.1 != BUFFER_HEIGHT - 1 {
+			y += 1;
 		}
 		else {
-			for row in 1..BUFFER_HEIGHT
-			{self.buffer.chars[row -1] = self.buffer.chars[row];}
+			for row in 1..BUFFER_HEIGHT {
+				self.buffer.chars[row - 1] = self.buffer.chars[row];
+				unsafe{SCREENS[ACTUAL_SCREEN].buffer.chars[row - 1] = SCREENS[ACTUAL_SCREEN].buffer.chars[row];}
+			}
 			self.clear_row(BUFFER_HEIGHT -1);
 		}
-		self.posx = 0;
+		self.cursor.set_pos(0, y);
 	}
 
 	/*		Simply replace all row by spaces to visualy clear it */
 	pub fn clear_row(&mut self, row: usize) {
 		for i in 0..BUFFER_WIDTH {
-			self.buffer.chars[row][i] = ScreenChar {
+			let screenchar = ScreenChar {
 				ascii_code: 0x20,
 				color_code: self.color_code,
 			};
+			self.buffer.chars[row][i] = screenchar;
+			unsafe{SCREENS[ACTUAL_SCREEN].buffer.chars[row][i] = screenchar}
 		}
 	}
 
 	/*	Write string to vga using write_byte functions if printable, else print a square */
 	pub fn write_string(&mut self, s: &str) {
+		self.cursor.disable();
 		for byte in s.bytes() {
 			match byte {
 			// printable ASCII byte or newline
-				0x20..=0x7e | b'\n' => self.write_byte(byte),
+				0x20..=0x7e | b'\n' | 0x08 => self.write_byte(byte),
 			// not part of printable ASCII range
 				_ => self.write_byte(0xfe),
 			}
 		}
-		// move CURSOR
+		self.cursor.update();
+		self.cursor.enable();
+	}
+
+	pub fn copy_buffer(&mut self, buffer: Buffer) {
+		for y in 0..BUFFER_HEIGHT {
+			for x in 0..BUFFER_WIDTH {
+				self.buffer.chars[y][x] = buffer.chars[y][x];
+			}
+		}
 	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
@@ -130,43 +164,43 @@ impl fmt::Write for Writer {
 	}
 }
 
-/* Static writer to print on vga buffer werether we are in code
- * Using lazy static in order to tell rust that size will be known
- * at runtime. We use spin mutexes as well to protect race condition
- * and since no thread and "mutex" are developped we need spinlock
- */
-lazy_static! {
-	pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
-		posx: CURSOR as usize % 160,
-		posy: CURSOR as usize / 160,
-		color_code: ColorCode::new(Color::White, Color::Black),
-		buffer: unsafe { &mut *(0xb8000 as *mut Buffer) },
-	});
-}
-
 /* Reimplementation of rust print and println macros */
 #[macro_export]
 macro_rules! print {
-    ($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+	($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
 }
 
 #[macro_export]
 macro_rules! println {
-    () => ($crate::print!("\n"));
-    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+	() => ($crate::print!("\n"));
+	($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
 
 /* Setting our panic handler to our brand new println */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black));
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.set_color_code(ColorCode::new(Color::Red, Color::Black));}
 	println!("{}", info);
-	WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black));
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.set_color_code(ColorCode::new(Color::White, Color::Black));}
 	loop {}
 }
 
 pub fn _print(args: fmt::Arguments) {
 	use core::fmt::Write;
-	WRITER.lock().write_fmt(args).unwrap();
+
+	let mut writer: Writer = Writer {
+		cursor: unsafe{&mut SCREENS[ACTUAL_SCREEN].cursor}, //Cursor{x: 0, y: 0},
+		color_code: unsafe{SCREENS[ACTUAL_SCREEN].cursor.get_color_code()},
+		buffer: unsafe { &mut *(VGABUFF_OFFSET as *mut Buffer) },
+	};
+
+	writer.write_fmt(args).unwrap();
 }
 
+#[macro_export]
+macro_rules! change_color {
+	($fg:expr, $bg:expr) => ($crate::vga_buffer::_change_color($fg, $bg));
+}
+pub fn _change_color(fg: Color, bg: Color) {
+	unsafe{SCREENS[ACTUAL_SCREEN].cursor.set_color_code(ColorCode::new(fg, bg));}
+}
