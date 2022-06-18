@@ -195,7 +195,7 @@ pub fn hexdump(ptr: *const u8, size: usize)
 	let mut i: usize = 0;
 
 	while i < size {
-		print!("{:08x} ", unsafe{ptr.offset(i as isize) as usize});
+		print!("{:08x}: ", unsafe{ptr.offset(i as isize) as usize});
 		let nb = if size - i > 16 {16} else {size - i};
 		for j in 0..nb {
 			let byte: u8 = unsafe{*(ptr.offset(((i + j)) as isize)) as u8};
