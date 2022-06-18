@@ -1,6 +1,7 @@
 %include "boot.h"
 
-global cursor
+global stack_bottom
+global stack_top
 
 [BITS 32]
 section .text:

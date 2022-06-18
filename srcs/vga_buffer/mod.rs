@@ -186,6 +186,44 @@ pub fn _print(args: fmt::Arguments) {
 }
 
 #[macro_export]
+macro_rules! hexdump {
+	($ptr:expr, $size:expr) => ($crate::vga_buffer::hexdump($ptr, $size));
+}
+
+pub fn hexdump(ptr: *const u8, size: usize)
+{
+	let mut i: usize = 0;
+
+	while i < size {
+		print!("{:08x} ", unsafe{ptr.offset(i as isize) as usize});
+		let nb = if size - i > 16 {16} else {size - i};
+		for j in 0..nb {
+			let byte: u8 = unsafe{*(ptr.offset(((i + j)) as isize)) as u8};
+			print!("{:02x}", byte);
+			if j % 2 == 1 {
+				print!(" ");
+			}
+		}
+		for j in 0..16 - nb {
+			if j % 2 == 0 {
+				print!(" ");
+			}
+			print!("  ");
+		}
+		for j in 0..nb {
+			let byte: u8 = unsafe{*(ptr.offset(((i + j)) as isize)) as u8};
+			if byte >= 0x20 && byte < 0x7f { // printable
+				print!("{}", byte as char);
+			} else {
+				print!(".");
+			}
+		}
+		print!("\n");
+		i += 16;
+	}
+}
+
+#[macro_export]
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => (unsafe{crate::vga_buffer::WRITER.chcolor(crate::vga_buffer::color::ColorCode::new($fg, $bg))});
 }
