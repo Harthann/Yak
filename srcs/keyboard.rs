@@ -80,7 +80,7 @@ pub fn keyboard_event() -> bool {
 	io::inb(0x64) & 1 != 0
 }
 
-pub fn handle_event() {
+pub fn handle_event() -> char {
 	let mut keycode: u8 = io::inb(0x60);
 	
 	let charcode = keyboard_to_ascii(keycode);
@@ -110,7 +110,8 @@ pub fn handle_event() {
 			OPTRELEASED			=> unsetflag!(SpecialKeyFlag::Opt),
 			CMDLRELEASED		=> unsetflag!(SpecialKeyFlag::CmdLeft),
 			CMDRRELEASED		=> unsetflag!(SpecialKeyFlag::CmdRight),
-			_					=> return ,
+			_					=> return '\0',
 		};
 	}
+	return charcode;
 }

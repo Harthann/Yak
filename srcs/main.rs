@@ -40,9 +40,38 @@ pub extern fn rust_main() -> ! {
 	assert!(x == 6);
 */
 
+	let mut cmd: [char; 256] = ['\0'; 256];
+	let mut i = 0;
+	print!("$> ");
 	loop {
 		if keyboard::keyboard_event() {
-			keyboard::handle_event();
+			let charcode = keyboard::handle_event();
+			if charcode >= ' ' && charcode <= '~' {
+				if i < 256 {
+					cmd[i] = charcode;
+				}
+				i += 1;
+//				cmd = concat!(cmd, charcode);
+			}
+			else if charcode == '\n' {
+				let known_cmd = ["reboot", "halt", "hexdump"];
+				let mut j = 0;
+				while j < known_cmd.len() {
+					let len = known_cmd[j].chars().count();
+					if (cmd[len] == '\0' || cmd[len] == ' ') && known_cmd[j].chars().zip(cmd.iter()).position(|(a, b)| a != *b) == None {
+						println!("[!!!]");
+						todo!();
+						break ;
+					}
+					j += 1;
+				}
+				if j == known_cmd.len() {
+					println!("Unknown command");
+				}
+				print!("$> ");
+				i = 0;
+				cmd = ['\0'; 256];
+			}
 		}
 	}
 }
