@@ -25,21 +25,7 @@ pub extern fn rust_main() -> ! {
 	let stack_size = stack_top as usize - stack_bottom as usize;
 	let offset = unsafe{(stack_bottom as *const u8).offset((stack_size - 256) as isize)};
 	hexdump!(offset, 256);
-/*
-	let mut x: u32 = 4;
-	unsafe {
-		asm!(
-				"mov {tmp}, {x}",
-				"shl {tmp}, 1",
-				"shl {x}, 2",
-				"add {x}, {tmp}",
-				x = inout(reg) x,
-				tmp = out(reg) _,
-			);
-	}
-	assert!(x == 6);
-*/
-
+	
 	let mut cmd: [char; 256] = ['\0'; 256];
 	let mut i = 0;
 	print!("$> ");
@@ -53,6 +39,10 @@ pub extern fn rust_main() -> ! {
 				i += 1;
 //				cmd = concat!(cmd, charcode);
 			}
+			else if charcode == '\x08' {
+				cmd[i] = '\0';
+				i -= 1;
+			}
 			else if charcode == '\n' {
 				let known_cmd = ["reboot", "halt", "hexdump"];
 				let mut j = 0;
@@ -61,12 +51,11 @@ pub extern fn rust_main() -> ! {
 					if (cmd[len] == '\0' || cmd[len] == ' ') && known_cmd[j].chars().zip(cmd.iter()).position(|(a, b)| a != *b) == None {
 						println!("[!!!]");
 						todo!();
-						break ;
 					}
 					j += 1;
 				}
 				if j == known_cmd.len() {
-					println!("Unknown command");
+					println!("Unknown command {:?}", cmd);
 				}
 				print!("$> ");
 				i = 0;
