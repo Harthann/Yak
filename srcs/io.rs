@@ -1,5 +1,6 @@
 use core::arch::asm;
 
+#[allow(dead_code)]
 pub fn outb(port: u16, cmd: u8) {
 	unsafe {
 		asm!("out dx, al",
@@ -8,6 +9,7 @@ pub fn outb(port: u16, cmd: u8) {
 	}
 }
 
+#[allow(dead_code)]
 pub fn outw(port: u16, cmd: u16) {
 	unsafe {
 		asm!("out dx, ax",
@@ -16,6 +18,7 @@ pub fn outw(port: u16, cmd: u16) {
 	}
 }
 
+#[allow(dead_code)]
 pub fn outl(port: u16, cmd: u32) {
 	unsafe {
 		asm!("out dx, eax",
@@ -24,6 +27,7 @@ pub fn outl(port: u16, cmd: u32) {
 	}
 }
 
+#[allow(dead_code)]
 pub fn inb(port: u16) -> u8 {
 	let mut input_byte: u8;
 	unsafe {
@@ -34,6 +38,7 @@ pub fn inb(port: u16) -> u8 {
 	input_byte
 }
 
+#[allow(dead_code)]
 pub fn inw(port: u16) -> u16 {
 	let mut input_byte: u16;
 	unsafe {
@@ -44,6 +49,7 @@ pub fn inw(port: u16) -> u16 {
 	input_byte
 }
 
+#[allow(dead_code)]
 pub fn inl(port: u16) -> u32 {
 	let mut input_byte: u32;
 	unsafe {

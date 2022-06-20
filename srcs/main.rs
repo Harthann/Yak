@@ -7,9 +7,48 @@ mod vga_buffer;
 mod io;
 mod keyboard;
 
+use core::arch::asm;
+use core::slice;
+
 extern "C" {
 	fn stack_bottom();
 	fn stack_top();
+}
+
+static COMMANDS: [fn (&[char; 256]); 3] = [reboot, halt, hexdump_parser];
+
+fn reboot(_: &[char; 256]) {
+	io::outb(0x64, 0xfe);
+}
+
+fn halt(_: &[char; 256]) {
+	unsafe{ asm!("hlt");}
+}
+
+fn isdigit(x: &[char]) -> bool {
+	if x.len() == 0 {
+		return false
+	}
+	for i in x {
+		if *i < '0' || *i > '9' {
+			return false;
+		}
+	}
+	true
+}
+
+fn hexdump_parser(cmd: &[char; 256]) {
+	let mut iter = cmd.split(|a| *a == ' ' || *a == '\t' || *a == '\0');
+
+	if iter.size_hint().1.unwrap() != 257 {
+		println!("Invalid number of argument {}", iter.size_hint().1.unwrap());
+	}
+	for i in iter {
+		if !isdigit(i) {
+			// println!("Invalid argument");
+		}
+		print!("{:?}", isdigit(i));
+	}
 }
 
 use vga_buffer::color::Color;
@@ -39,7 +78,7 @@ pub extern fn rust_main() -> ! {
 				i += 1;
 //				cmd = concat!(cmd, charcode);
 			}
-			else if charcode == '\x08' {
+			else if charcode == '\x08' && i != 0 {
 				cmd[i] = '\0';
 				i -= 1;
 			}
@@ -49,8 +88,8 @@ pub extern fn rust_main() -> ! {
 				while j < known_cmd.len() {
 					let len = known_cmd[j].chars().count();
 					if (cmd[len] == '\0' || cmd[len] == ' ') && known_cmd[j].chars().zip(cmd.iter()).position(|(a, b)| a != *b) == None {
-						println!("[!!!]");
-						todo!();
+						COMMANDS[j](&cmd);
+						break ;
 					}
 					j += 1;
 				}
