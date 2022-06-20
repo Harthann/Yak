@@ -10,6 +10,8 @@ mod keyboard;
 extern "C" {
 	fn stack_bottom();
 	fn stack_top();
+	fn GDT_start();
+	static GDT_ptr: u16;
 }
 
 use vga_buffer::color::Color;
@@ -22,9 +24,13 @@ pub extern fn rust_main() -> ! {
 	change_color!(Color::Red, Color::White);
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
+/*
 	let stack_size = stack_top as usize - stack_bottom as usize;
 	let offset = unsafe{(stack_bottom as *const u8).offset((stack_size - 256) as isize)};
 	hexdump!(offset, 256);
+*/
+	/* print GDT */
+	hexdump!(unsafe{&*(0x800 as *mut _)}, unsafe{GDT_ptr as usize});
 /*
 	let mut x: u32 = 4;
 	unsafe {
