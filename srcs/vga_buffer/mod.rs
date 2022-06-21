@@ -18,6 +18,24 @@ pub struct Screen {
 }
 
 impl Screen {
+	pub const fn new() -> Screen {
+		Screen {
+			cursor: Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
+			buffer: Buffer::new(),
+			command: Command::new()
+		}
+	}
+
+	pub fn reset(&mut self) {
+		for i in 0..BUFFER_HEIGHT {
+			for j in 0..BUFFER_WIDTH {
+				self.buffer.chars[i][j] = ScreenChar{ascii_code: b' ', color_code: ColorCode::new(Color::White, Color::Black)};
+			}
+		}
+		self.cursor.set_pos(0, 0);
+		self.command.clear();
+	}
+
 	pub fn get_command(&mut self) -> &mut Command {
 		&mut self.command
 	}
@@ -42,12 +60,19 @@ pub struct Buffer {
 	chars: [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT]
 }
 
+impl Buffer {
+	pub const fn new() -> Buffer {
+		Buffer {
+			chars: [[ScreenChar {
+						ascii_code: 0,
+						color_code: ColorCode::new(Color::White, Color::Black)
+					}; BUFFER_WIDTH]; BUFFER_HEIGHT]
+		}
+	}
+}
+
 pub static mut WRITER: Writer = Writer {
-	screens:		[Screen {
-		cursor: Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
-		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]},
-		command: Command::new()
-	}; NB_SCREEN],
+	screens:		[Screen::new(); NB_SCREEN],
 	screen_index:	0,
 	vga_buffer:		VGABUFF_OFFSET as _
 };
@@ -122,6 +147,11 @@ impl Writer {
 			unsafe{(*self.vga_buffer).chars[row][i] = screenchar};
 			self.screens[self.screen_index].buffer.chars[row][i] = screenchar;
 		}
+	}
+
+	pub fn clear(&mut self) {
+		self.screens[self.screen_index].reset();
+		self.copy_buffer(self.screens[self.screen_index].buffer);
 	}
 
 	/*	Write string to vga using write_byte functions if printable, else print a square */
@@ -247,4 +277,9 @@ macro_rules! change_color {
 #[macro_export]
 macro_rules! clihandle {
 	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)} );
+}
+
+#[macro_export]
+macro_rules! screenclear {
+	() => (unsafe {crate::vga_buffer::WRITER.clear()} );
 }

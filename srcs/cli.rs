@@ -1,8 +1,9 @@
 use core::arch::asm;
-use crate::{print, println, hexdump};
+use crate::{print, println, hexdump, screenclear};
 use crate::io;
 
-pub static COMMANDS: [fn(&Command); 3] = [reboot, halt, hexdump_parser];
+pub static COMMANDS: [fn(&Command); 4] = [reboot, halt, hexdump_parser, clear];
+const KNOWN_CMD: [&str; 4]= ["reboot", "halt", "hexdump", "clear"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -12,6 +13,10 @@ fn halt(_: &Command) {
 	unsafe {
 		asm!("hlt");
 	}
+}
+
+fn clear(_: &Command) {
+	screenclear!();
 }
 
 fn hextou(slice: &[char]) -> Option<usize> {
@@ -126,12 +131,11 @@ impl Command {
 	}
 
 	pub fn is_known(&self) -> Option<usize> {
-		let known_cmd = ["reboot", "halt", "hexdump"];
 		let mut j = 0;
-		while j < known_cmd.len() {
-			let len = known_cmd[j].chars().count();
+		while j < KNOWN_CMD.len() {
+			let len = KNOWN_CMD[j].chars().count();
 			if (self.command[len] == '\0' || self.command[len] == ' ')
-				&& known_cmd[j].chars().zip(self.command.iter()).position(|(a, b)| a != *b) == None
+				&& KNOWN_CMD[j].chars().zip(self.command.iter()).position(|(a, b)| a != *b) == None
 			{
 				return Some(j);
 			}
