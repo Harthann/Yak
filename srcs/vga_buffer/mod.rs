@@ -73,7 +73,7 @@ impl Writer {
 				let mut pos: (usize, usize) = self.screens[self.screen_index].cursor.get_pos();
 				if byte == 0x08
 				{
-					if pos.0 == 0
+					if pos.0 == 0 || self.get_screen().get_command().length == 0
 						{return ;}
 					pos.0 -= 1;
 					code = 0x0
@@ -152,6 +152,9 @@ impl Writer {
 			self.copy_buffer(self.screens[self.screen_index].buffer);
 			self.screens[self.screen_index].cursor.update();
 			self.screens[self.screen_index].cursor.enable();
+			if self.get_screen().cursor.get_pos() == (0, 0) {
+				self.write_string("$> ");
+			}
 	}
 	
 	pub fn get_screen(&mut self) -> &mut Screen {

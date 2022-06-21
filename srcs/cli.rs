@@ -87,20 +87,20 @@ fn hexdump_parser(command: &Command) {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Command {
-	command: [char; 256],
-	length: usize,
+	pub command: [char; 76],
+	pub length: usize,
 }
 
 impl Command {
 	pub const fn new() -> Command {
 		Command {
-			command: ['\0'; 256],
+			command: ['\0'; 76],
 			length: 0
 		}
 	}
 
 	fn append(&mut self, x: char) -> Result<(), ()> {
-		if self.length < 256 {
+		if self.length < 76 {
 			self.command[self.length] = x;
 			self.length += 1;
 			return Ok(());
