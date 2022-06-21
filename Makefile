@@ -1,4 +1,4 @@
-VERSION			=	1
+VERSION			=	2
 
 QEMU			=	qemu-system-i386
 
