@@ -1,9 +1,10 @@
 use core::arch::asm;
 use crate::{print, println, hexdump, screenclear};
 use crate::io;
+use core::mem::size_of;
 
-pub static COMMANDS: [fn(&Command); 4] = [reboot, halt, hexdump_parser, clear];
-const KNOWN_CMD: [&str; 4]= ["reboot", "halt", "hexdump", "clear"];
+pub static COMMANDS: [fn(&Command); 5] = [reboot, halt, hexdump_parser, clear, help];
+const KNOWN_CMD: [&str; 5]= ["reboot", "halt", "hexdump", "clear", "help"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -19,12 +20,18 @@ fn clear(_: &Command) {
 	screenclear!();
 }
 
+fn help(_: &Command) {
+	println!("Available commands:");
+	for i in KNOWN_CMD {
+		println!("    {}", i);
+	}
+}
+
 fn hextou(slice: &[char]) -> Option<usize> {
 	let mut addr: usize = 0;
 	let mut byte;
 
-	if slice.len() < 2 || (slice[0] != '0' || slice[1] != 'x') {
-		println!("Not an hex value");
+	if slice.len() < 2 || slice.len() > (2 + size_of::<usize>() * 2 ) || (slice[0] != '0' || slice[1] != 'x') {
 		return None;
 	}
 	for i in slice.iter().skip(2) {
@@ -156,7 +163,7 @@ impl Command {
 		} else if charcode == '\n' {
 			match self.is_known() {
 				Some(x) => COMMANDS[x](&self),
-				_		=> println!("Unknown command "),
+				_		=> {if self.length != 0 {println!("Unknown command. Type `help` to list available commands")}},
 			}
 			self.clear();
 			print!("$> ");
