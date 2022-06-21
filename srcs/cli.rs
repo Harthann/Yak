@@ -1,6 +1,5 @@
 use core::arch::asm;
 use crate::{print, println, hexdump};
-use crate::vga_buffer;
 use crate::io;
 
 pub static COMMANDS: [fn(&Command); 3] = [reboot, halt, hexdump_parser];
@@ -15,23 +14,11 @@ fn halt(_: &Command) {
 	}
 }
 
-fn isdigit(x: &[char; 256]) -> bool {
-	if x.len() == 0 {
-		return false;
-	}
-	for i in x {
-		if *i < '0' || *i > '9' {
-			return false;
-		}
-	}
-	true
-}
-
 fn hextoi(slice: &[char]) -> Option<usize> {
 	let mut addr: usize = 0;
-	let mut byte = 0;
+	let mut byte;
 
-	if slice.len() < 2 && (slice[0] != '0' || slice[1] != 'x') {
+	if slice.len() < 2 || (slice[0] != '0' || slice[1] != 'x') {
 		println!("Not an hex value");
 		return None;
 	}
@@ -52,6 +39,9 @@ fn hextoi(slice: &[char]) -> Option<usize> {
 fn atoi(slice: &[char]) -> Option<usize> {
 	let mut num: usize = 0;
 
+	if slice[0] == '-' {
+		return None;
+	}
 	for i in slice {
 		if !i.is_ascii_digit() {
 			return None;
@@ -64,7 +54,7 @@ fn atoi(slice: &[char]) -> Option<usize> {
 
 fn hexdump_parser(command: &Command) {
 	let cmd = command.command;
-	let mut iter = cmd.split(|a| *a == ' ' || *a == '\t' || *a == '\0');
+	let iter = cmd.split(|a| *a == ' ' || *a == '\t' || *a == '\0');
 
 	let mut count: i32 = 0;
 	let mut addr: usize = 0;
@@ -83,12 +73,12 @@ fn hexdump_parser(command: &Command) {
 		if index == 1  {
 			match hextoi(item) {
 			Some(x) => addr = x,
-			_		=> println!("Invalid arg"),
+			_		=> {println!("Invalid arg"); return;},
 			}
 		} else if index == 2 {
 			match atoi(item) {
 			Some(x) => size = x,
-			_		=> println!("Invalid arg"),
+			_		=> {println!("Invalid arg"); return;},
 			}
 		}
 	}

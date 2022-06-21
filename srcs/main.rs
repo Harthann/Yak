@@ -8,13 +8,8 @@ mod keyboard;
 mod vga_buffer;
 mod cli;
 
-use core::arch::asm;
-use core::slice;
 
 extern "C" {
-	fn stack_bottom();
-	fn stack_top();
-	fn gdt_start();
 	static gdt_desc: u16;
 }
 
@@ -33,8 +28,7 @@ pub extern "C" fn rust_main() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	/* print GDT */
-	hexdump!(unsafe{(0x800 as *mut _)}, unsafe{gdt_desc as usize});
-	let mut command: Command = Command::new();
+	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});
 	print!("$> ");
 	loop {
 		if keyboard::keyboard_event() {
