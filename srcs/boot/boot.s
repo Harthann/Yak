@@ -3,7 +3,7 @@
 global stack_bottom
 global stack_top
 
-extern GDT_ptr
+extern gdt_desc
 
 [BITS 32]
 section .text:
@@ -11,7 +11,7 @@ section .text:
 
 _start:
 	mov esp, stack_top ; Stack pointer initialisation
-	lgdt [GDT_ptr]
+	lgdt [gdt_desc]
 
 	extern	rust_main
 	call	rust_main

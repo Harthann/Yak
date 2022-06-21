@@ -1,5 +1,5 @@
-global GDT_start
-global GDT_ptr
+global gdt_start
+global gdt_desc
 
 ; [https://wiki.osdev.org/Global_Descriptor_Table]
 ;
@@ -80,7 +80,7 @@ struc segment_descriptor
 endstruc
 
 section .gdt
-GDT_start:
+gdt_start:
 	null:; null descriptor must be set to 0
 		istruc segment_descriptor
 			at limit,		dw 0x0
@@ -137,6 +137,7 @@ GDT_start:
 			at limit_flags,	db 0b11000000
 			at base_end,	db 0x0
 		iend
-GDT_ptr:
-	dw $ - GDT_start - 1
-	dd GDT_start
+gdt_end:
+gdt_desc:
+	dw gdt_end - gdt_start
+	dd gdt_start

@@ -10,8 +10,8 @@ mod keyboard;
 extern "C" {
 	fn stack_bottom();
 	fn stack_top();
-	fn GDT_start();
-	static GDT_ptr: u16;
+	fn gdt_start();
+	static gdt_desc: u16;
 }
 
 use vga_buffer::color::Color;
@@ -30,7 +30,7 @@ pub extern fn rust_main() -> ! {
 	hexdump!(offset, 256);
 */
 	/* print GDT */
-	hexdump!(unsafe{(0x800 as *mut _)}, unsafe{GDT_ptr as usize});
+	hexdump!(unsafe{(0x800 as *mut _)}, unsafe{gdt_desc as usize});
 /*
 	let mut x: u32 = 4;
 	unsafe {
