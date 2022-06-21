@@ -70,7 +70,6 @@ global gdt_desc
 ;[XXX]:	Reserved
 ; Here flags are all set to 1100 -> 
 
-
 struc segment_descriptor
 	limit			resw	1 ; 16 bits
 	base			resb	3 ; 24 bits
@@ -138,6 +137,14 @@ gdt_start:
 			at base_end,	db 0x0
 		iend
 gdt_end:
+;[bits 32]
+;gdt descriptor ; (48 bits)
+;|------------|------|
+;|48        16|15   0|
+;|------------|------|
+;|offset      |size  |
+;|31         0|15   0|
+;|------------|------|
 gdt_desc:
-	dw gdt_end - gdt_start
-	dd gdt_start
+	offset	dw gdt_end - gdt_start
+	size	dd gdt_start
