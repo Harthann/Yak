@@ -2,6 +2,7 @@
 use core::fmt;
 use core::panic::PanicInfo;
 use crate::io;
+use crate::Command;
 
 pub mod color;
 use color::Color;
@@ -12,7 +13,14 @@ use cursor::Cursor;
 #[derive(Debug, Clone, Copy)]
 pub struct Screen {
 	cursor: Cursor,
-	buffer: Buffer
+	buffer: Buffer,
+	command: Command
+}
+
+impl Screen {
+	pub fn get_command(&mut self) -> &mut Command {
+		&mut self.command
+	}
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,7 +45,8 @@ pub struct Buffer {
 pub static mut WRITER: Writer = Writer {
 	screens:		[Screen {
 		cursor: Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
-		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]}
+		buffer: Buffer {chars: [[ScreenChar {ascii_code: 0, color_code: ColorCode::new(Color::White, Color::Black)}; BUFFER_WIDTH]; BUFFER_HEIGHT]},
+		command: Command::new()
 	}; NB_SCREEN],
 	screen_index:	0,
 	vga_buffer:		VGABUFF_OFFSET as _
@@ -144,6 +153,10 @@ impl Writer {
 			self.screens[self.screen_index].cursor.update();
 			self.screens[self.screen_index].cursor.enable();
 	}
+	
+	pub fn get_screen(&mut self) -> &mut Screen {
+		&mut self.screens[self.screen_index]
+	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
 		self.screens[self.screen_index].cursor.set_color_code(new_color);
@@ -226,4 +239,9 @@ pub fn hexdump(ptr: *const u8, size: usize)
 #[macro_export]
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => (unsafe{crate::vga_buffer::WRITER.chcolor(crate::vga_buffer::color::ColorCode::new($fg, $bg))});
+}
+
+#[macro_export]
+macro_rules! clihandle {
+	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)} );
 }

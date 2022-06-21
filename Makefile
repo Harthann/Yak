@@ -1,4 +1,4 @@
-VERSION			=	1
+VERSION			=	2
 
 QEMU			=	qemu-system-i386
 
@@ -33,7 +33,8 @@ DIR_GRUB		=	$(DIR_ISO)/boot/grub
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
 
 BOOTSRCS		=	header.s \
-					boot.s
+					boot.s \
+					gdt.s
 
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
 

@@ -97,7 +97,7 @@ fn hexdump_parser(command: &Command) {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Command {
-	pub command: [char; 256],
+	command: [char; 256],
 	length: usize,
 }
 
@@ -108,7 +108,8 @@ impl Command {
 			length: 0
 		}
 	}
-	pub fn append(&mut self, x: char) -> Result<(), ()> {
+
+	fn append(&mut self, x: char) -> Result<(), ()> {
 		if self.length < 256 {
 			self.command[self.length] = x;
 			self.length += 1;
@@ -116,22 +117,24 @@ impl Command {
 		}
 		return Err(());
 	}
-	
+
 	pub fn pop_back(&mut self) {
 		if self.length != 0 {
-		self.command[self.length] = '\0';
-		self.length -= 1;
+			self.length -= 1;
+			self.command[self.length] = '\0';
 		}
 	}
 
 	pub fn clear(&mut self) {
 		while  {
-			self.length -= 1;
+			if self.length != 0 {
+				self.length -= 1;
+			}
 			self.command[self.length] = '\0';
 			self.length != 0
 		} {}
 	}
-	
+
 	pub fn is_known(&self) -> Option<usize> {
 		let known_cmd = ["reboot", "halt", "hexdump"];
 		let mut j = 0;
@@ -147,7 +150,22 @@ impl Command {
 		return None;
 	}
 
-	pub fn exec(&mut self) -> Result<(), ()> {
-		Ok(())
+	pub fn handle(&mut self, charcode: char) {
+		if charcode >= ' ' && charcode <= '~' {
+			if self.append(charcode).is_err() {
+				println!("Can't handle longer command, clearing buffer");
+				print!("$> ");
+				self.clear();
+			}
+		} else if charcode == '\x08' {
+			self.pop_back();
+		} else if charcode == '\n' {
+			match self.is_known() {
+				Some(x) => COMMANDS[x](&self),
+				_		=> println!("Unknown command "),
+			}
+			self.clear();
+			print!("$> ");
+		}
 	}
 }

@@ -1,15 +1,14 @@
 ENTRY(_start)
 
 SECTIONS {
-	. = 1M;
-
+	. = 0x0;
 	.boot :
-	{
-		*(.multiboot_header)
-	}
+	{ *(.multiboot_header) }
+
+	. = 0x800;
+	.gdt :
+	{ *(.gdt) }
 
 	.text :
-	{
-		*(.text)
-	}
+	{ *(.text) }
 }
