@@ -14,7 +14,7 @@ fn halt(_: &Command) {
 	}
 }
 
-fn hextoi(slice: &[char]) -> Option<usize> {
+fn hextou(slice: &[char]) -> Option<usize> {
 	let mut addr: usize = 0;
 	let mut byte;
 
@@ -36,7 +36,7 @@ fn hextoi(slice: &[char]) -> Option<usize> {
 	return Some(addr);
 }
 
-fn atoi(slice: &[char]) -> Option<usize> {
+fn atou(slice: &[char]) -> Option<usize> {
 	let mut num: usize = 0;
 
 	if slice[0] == '-' {
@@ -71,12 +71,12 @@ fn hexdump_parser(command: &Command) {
 	}
 	for (index, item) in iter.enumerate() {
 		if index == 1  {
-			match hextoi(item) {
+			match hextou(item) {
 			Some(x) => addr = x,
 			_		=> {println!("Invalid arg"); return;},
 			}
 		} else if index == 2 {
-			match atoi(item) {
+			match atou(item) {
 			Some(x) => size = x,
 			_		=> {println!("Invalid arg"); return;},
 			}
