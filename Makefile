@@ -42,7 +42,8 @@ RUST_SRCS		=	main.rs \
 					io.rs \
 					keyboard.rs \
 					cursor.rs \
-					color.rs
+					color.rs \
+					cli.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
@@ -75,6 +76,14 @@ ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
+
+check: $(KERNELSRCS)
+ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
+				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
+endif
+				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
+
+
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)
