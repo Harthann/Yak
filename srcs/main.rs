@@ -29,8 +29,13 @@ pub extern "C" fn rust_main() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	gdt::print_gdt();
+/*
 	let segment = gdt::get_segment(1);
-//	segment.limit = 0;
+	segment.set_limit(0x00ffff3f);
+	segment.set_base(0x01abcdef);
+	segment.set_access(0x77);
+	segment.set_flag(0x0a);
+*/
 	println!("{}", gdt::get_segment(1));
 
 	/* print GDT */

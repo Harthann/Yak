@@ -50,8 +50,6 @@ global gdt_desc
 ;[A]: Accessed bit
 ;	left to 0, reserved for CPU.
 
-; 0b10011110
-
 ;Flags (4 bits)
 ;|---|---|---|---|
 ;| 3 | 2 | 1 | 0 |
