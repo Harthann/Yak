@@ -11,23 +11,14 @@ section .text:
 
 _start:
 	mov esp, stack_top ; Stack pointer initialisation
-	lgdt [gdt_desc] ; load gdt
+	extern load_gdt
+	call load_gdt
+	extern reload_segments
 	call reload_segments
 
 	extern	rust_main
 	call	rust_main
 	hlt
-
-reload_segments:
-	jmp 0x08:.reload_cs
-	.reload_cs:
-	mov ax, 0x10
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-	mov ss, ax
-	ret
 
 ; Stack creation
 section .bss

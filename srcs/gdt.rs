@@ -1,6 +1,6 @@
+use core::arch::asm;
 use core::mem::size_of;
 use core::fmt;
-
 use crate::println;
 
 pub struct SegmentDescriptor {
@@ -65,4 +65,22 @@ pub fn print_gdt() {
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor{
 	let segments: *mut SegmentDescriptor = 0x800 as *mut _;
 	unsafe{&mut *(segments.add(index))}
+}
+
+#[no_mangle]
+pub extern "C" fn load_gdt() {
+	let addr = (gdt_desc as *const ()) as usize;
+	unsafe{asm!("lgdt [{0}]", in(reg) addr);}
+}
+
+#[no_mangle]
+pub extern "C" fn reload_segments() {
+	unsafe{asm!("ljmp $0x08, $2f",
+				"2:",
+				"movw $0x10, %ax",
+				"movw %ax, %ds",
+				"movw %ax, %es",
+				"movw %ax, %fs",
+				"movw %ax, %gs",
+				"movw %ax, %ss", options(att_syntax))};
 }
