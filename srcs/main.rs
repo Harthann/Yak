@@ -8,6 +8,7 @@ mod keyboard;
 mod vga_buffer;
 mod cli;
 
+mod gdt;
 
 extern "C" {
 	static gdt_desc: u16;
@@ -26,6 +27,11 @@ pub extern "C" fn rust_main() -> ! {
 	change_color!(Color::Red, Color::White);
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
+
+	gdt::print_gdt();
+	let segment = gdt::get_segment(1);
+//	segment.limit = 0;
+	println!("{}", gdt::get_segment(1));
 
 	/* print GDT */
 	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});

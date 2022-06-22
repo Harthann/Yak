@@ -104,8 +104,7 @@ gdt_start:
 			at limit_flags,	db 0b11001111
 			at base_end,	db 0x0
 		iend
-	kstack:
-		istruc segment_descriptor
+	kstack: istruc segment_descriptor
 			at limit,		dw 0x0000
 			at base,		db 0x0, 0x0, 0x0
 			at access,		db 0b10010111;0x97 (PRESENT_BYTE | KERNEL_LVL | CODE_OR_DATA | DATA_SEGMENT | GROWS_DOWN | WRITABLE_SEGMENT | NOT_FOR_CPU)
