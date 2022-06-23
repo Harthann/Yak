@@ -12,6 +12,9 @@ mod gdt;
 
 extern "C" {
 	static gdt_desc: u16;
+	fn _start();
+	fn stack_bottom();
+	fn stack_top();
 }
 
 use vga_buffer::color::Color;
@@ -28,15 +31,10 @@ pub extern "C" fn rust_main() -> ! {
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
+	unsafe { println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_main as u32)};
+	unsafe { gdt::set_segment(gdt::KERNEL_CODE, _start as u32, 0x00ffff3f, 0x4e, 0x77)};
+	unsafe { gdt::set_segment(gdt::KERNEL_STACK, stack_bottom as u32, stack_top as u32 - stack_bottom as u32, 0x0c, 0x96) };
 	gdt::print_gdt();
-/*
-	let segment = gdt::get_segment(1);
-	segment.set_limit(0x00ffff3f);
-	segment.set_base(0x01abcdef);
-	segment.set_access(0x77);
-	segment.set_flag(0x0a);
-*/
-	println!("{}", gdt::get_segment(1));
 
 	/* print GDT */
 	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});

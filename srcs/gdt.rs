@@ -3,6 +3,14 @@ use core::mem::size_of;
 use core::fmt;
 use crate::println;
 
+pub const KERNEL_CODE:	usize	= 0x01;
+pub const KERNEL_DATA:	usize	= 0x02;
+pub const KERNEL_STACK:	usize	= 0x03;
+
+pub const USER_CODE:	usize	= 0x04;
+pub const USER_DATA:	usize	= 0x05;
+pub const USER_STACK:	usize	= 0x06;
+
 pub struct SegmentDescriptor {
 	limit:			u16,
 	base:			[u8; 3],
@@ -33,15 +41,24 @@ impl SegmentDescriptor {
 	pub fn set_access(&mut self, access: u8) {
 		self.access = access;
 	}
+
+	pub fn get_base(&self) -> u32 {
+		let mut base:u32 = self.base_end.into();
+		base = base << 8 | (self.base[2] as u32);
+		base = base << 8 | (self.base[1] as u32);
+		base = base << 8 | (self.base[0] as u32);
+		base
+	}
+
 }
 
 impl fmt::Display for SegmentDescriptor {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "limit: {:#06x}
-base: {:#04x?}
+		write!(f, "base: {:#010x}
+limit: {:#06x}
 access: {:#b}
-limit_flags: {:#b}
-base_end: {:#04x}", self.limit, self.base, self.access, self.limit_flags, self.base_end)
+limit_flags: {:#04b}",
+	self.get_base(), self.limit, self.access, self.limit_flags)
 	}
 }
 
@@ -51,14 +68,14 @@ extern "C" {
 }
 
 pub fn print_gdt() {
-	let mut segments: *mut SegmentDescriptor = 0x800 as *mut _;
-	let mut tmp = (gdt_start as *const ()) as usize;
-	let end = (gdt_desc as *const ()) as usize;
-	while tmp < end {
+	let mut segments: *mut SegmentDescriptor = gdt_start as *mut _;
+	let mut id = 0;
+	let end = gdt_desc as *mut SegmentDescriptor;
+	while segments < end {
 		let segment = unsafe{&*segments};
-		println!("\nSegment:\n{}", segment);
+		println!("\nSegment {}:\n{}", id, segment);
 		segments = unsafe{segments.add(1)};
-		tmp += size_of::<SegmentDescriptor>();
+		id += 1;
 	}
 }
 
@@ -66,6 +83,16 @@ pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor{
 	let segments: *mut SegmentDescriptor = 0x800 as *mut _;
 	unsafe{&mut *(segments.add(index))}
 }
+
+pub fn set_segment(index:usize, base: u32, limit:u32, flag:u8, access:u8) {
+	let segment = get_segment(index);
+
+	segment.set_base(base);
+	segment.set_limit(limit);
+	segment.set_access(access);
+	segment.set_flag(flag);
+}
+
 
 #[no_mangle]
 pub extern "C" fn load_gdt() {
