@@ -11,7 +11,6 @@ mod cli;
 
 extern "C" {
 	static gdt_desc: u16;
-	fn gdt_desc_addr();
 	fn _start();
 	fn stack_bottom();
 	fn stack_top();
@@ -34,7 +33,6 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
-	gdt::gdt_init();
 	println!("Hello World of {}!", 42);
 //	test!(Color::Yellow, Color::Red, "This is a test {}", 42);
 
@@ -44,6 +42,7 @@ pub extern "C" fn rust_main() -> ! {
 
 	println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_main as u32);
 
+	gdt::print_gdt();
 	/* print GDT */
 	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});
 	print!("$> ");
