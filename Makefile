@@ -56,7 +56,7 @@ NAME			=	kfs_$(VERSION)
 all:			$(NAME)
 
 boot:			$(NAME)
-				$(QEMU) -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				$(QEMU) -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log 2> qemu.log
 
 debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
