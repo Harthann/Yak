@@ -12,3 +12,4 @@ iso/
 .bash_history
 Cargo.lock
 kernel.log
+qemu.log
