@@ -11,6 +11,9 @@ pub const USER_CODE:	usize	= 0x04;
 pub const USER_DATA:	usize	= 0x05;
 pub const USER_STACK:	usize	= 0x06;
 
+const GDT_LENGTH: usize = 7 * size_of::<SegmentDescriptor>();
+
+
 pub struct SegmentDescriptor {
 	limit:			u16,
 	base:			[u8; 3],
@@ -49,15 +52,14 @@ impl SegmentDescriptor {
 		base = base << 8 | (self.base[0] as u32);
 		base
 	}
-
 }
 
 impl fmt::Display for SegmentDescriptor {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(f, "base: {:#010x}
 limit: {:#06x}
-access: {:#b}
-limit_flags: {:#04b}",
+access: {:#010b}
+limit_flags: {:#06b}",
 	self.get_base(), self.limit, self.access, self.limit_flags)
 	}
 }
@@ -68,9 +70,9 @@ extern "C" {
 }
 
 pub fn print_gdt() {
-	let mut segments: *mut SegmentDescriptor = gdt_start as *mut _;
+	let mut segments: *mut SegmentDescriptor = 0x800 as *mut _;
 	let mut id = 0;
-	let end = gdt_desc as *mut SegmentDescriptor;
+	let end = (0x800 + GDT_LENGTH) as *mut SegmentDescriptor;
 	while segments < end {
 		let segment = unsafe{&*segments};
 		println!("\nSegment {}:\n{}", id, segment);
@@ -99,6 +101,8 @@ pub extern "C" fn load_gdt() {
 	let addr = (gdt_desc as *const ()) as usize;
 	unsafe{asm!("lgdt [{0}]", in(reg) addr);}
 }
+
+
 
 #[no_mangle]
 pub extern "C" fn reload_segments() {
