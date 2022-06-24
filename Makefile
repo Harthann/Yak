@@ -58,6 +58,10 @@ all:			$(NAME)
 boot:			$(NAME)
 				$(QEMU) -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
 
+debug:			$(NAME)
+				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				terminator -x "cd Documents/kfs; gdb $(DIR_ISO)/boot/$(NAME)"
+
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
 ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_GRUB).dockerfile -t $(DOCKER_GRUB)
