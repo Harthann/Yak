@@ -1,26 +1,6 @@
 use core::arch::asm;
-use core::mem::size_of;
 use core::fmt;
 use crate::println;
-
-#[allow(dead_code)]
-pub const KERNEL_CODE:	usize	= 0x01;
-#[allow(dead_code)]
-pub const KERNEL_DATA:	usize	= 0x02;
-#[allow(dead_code)]
-pub const KERNEL_STACK:	usize	= 0x03;
-
-
-#[allow(dead_code)]
-pub const USER_CODE:	usize	= 0x04;
-#[allow(dead_code)]
-pub const USER_DATA:	usize	= 0x05;
-#[allow(dead_code)]
-pub const USER_STACK:	usize	= 0x06;
-
-#[allow(dead_code)]
-const GDT_LENGTH: usize = 7 * size_of::<SegmentDescriptor>();
-
 
 pub struct SegmentDescriptor {
 	limit:			u16,
@@ -84,7 +64,7 @@ extern "C" {
 pub fn print_gdt() {
 	let mut segments: *mut SegmentDescriptor = 0x800 as *mut _;
 	let mut id = 0;
-	let end = (0x800 + GDT_LENGTH) as *mut SegmentDescriptor;
+	let end = gdt_desc as *mut SegmentDescriptor;
 	while segments < end {
 		let segment = unsafe{&*segments};
 		println!("\nSegment {}:\n{}", id, segment);
