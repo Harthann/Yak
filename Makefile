@@ -69,11 +69,11 @@ endif
 				docker run --rm -u $(shell id -u ${USER}):$(shell id -g ${USER}) -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
 
 # Link asm file with rust according to the linker script in arch directory
-$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) | $(DIR_GRUB)
+$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
 ifeq ($(shell docker images -q ${DOCKER_LINKER} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_LINKER).dockerfile -t $(DOCKER_LINKER)
 endif
-				docker run --rm -u $(shell id -u ${USER}):$(shell id -g ${USER}) -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) $(LINKERFLAGS) $^ -o $(DIR_ISO)/boot/$(NAME)
+				docker run --rm -u $(shell id -u ${USER}):$(shell id -g ${USER}) -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)

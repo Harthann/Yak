@@ -8,26 +8,33 @@ SECTIONS {
 		*(.gdt)
 	}
 
-	.text BLOCK(4k) : ALIGN(4k)
-	{ 
+	. = 1M;
+	.boot BLOCK(4k) : ALIGN(4k)
+	{
 		*(.multiboot_header)
-		*(.text)
+		*(.boot)
 	}
 
-	.rodata BLOCK(4k) : ALIGN(4k)
+	. = 0xc0200000;
+	.text ALIGN(0x1000) : AT(ADDR(.text) - 0xc0000000)
 	{
-		*(.rodata);
+		*(.text*)
 	}
 
-	.data BLOCK(4k) : ALIGN(4k)
+	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xc0000000)
 	{
-		*(.data);
+		*(.rodata*);
+	}
+
+	.data ALIGN(0x1000) : AT(ADDR(.data) - 0xc0000000)
+	{
+		*(.data*);
 	}
 
 
-	.bss BLOCK(4k) : ALIGN(4k)
+	.bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xc0000000)
 	{
-		*(.bss)
+		*(.bss*)
 	}
 
 }
