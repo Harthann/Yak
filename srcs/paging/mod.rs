@@ -1,6 +1,6 @@
 #[repr(align(4096))]
-struct PageDirectory {
-	entries: [*mut PageTable; 1024]
+pub struct PageDirectory {
+	pub entries: [*mut PageTable; 1024]
 }
 
 impl PageDirectory {
@@ -12,8 +12,8 @@ impl PageDirectory {
 }
 
 #[repr(align(4096))]
-struct PageTable {
-	entries: [u32; 1024]
+pub struct PageTable {
+	pub entries: [u32; 1024]
 }
 
 impl PageTable {
@@ -30,5 +30,5 @@ impl PageTable {
 	}
 }
 
-static mut page_directory: PageDirectory = PageDirectory::new();
-static mut page_table: PageTable = PageTable::new();
+pub static mut PAGE_DIRECTORY: PageDirectory = PageDirectory::new();
+pub static mut PAGE_TABLE: PageTable = PageTable::new();

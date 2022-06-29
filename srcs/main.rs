@@ -10,6 +10,9 @@ mod gdt;
 mod cli;
 mod paging;
 
+use paging::PAGE_DIRECTORY;
+use paging::PAGE_TABLE;
+
 extern "C" {
 	static gdt_desc: u16;
 	fn _start();
@@ -34,6 +37,8 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
+	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
+
 	println!("Hello World of {}!", 42);
 //	test!(Color::Yellow, Color::Red, "This is a test {}", 42);
 
@@ -41,10 +46,12 @@ pub extern "C" fn rust_main() -> ! {
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
+/*
 	println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_main as u32);
 
 	gdt::print_gdt();
 	/* print GDT */
+*/
 	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});
 	print!("$> ");
 	loop {
