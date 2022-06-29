@@ -8,6 +8,7 @@ mod keyboard;
 mod vga_buffer;
 mod gdt;
 mod cli;
+mod paging;
 
 extern "C" {
 	static gdt_desc: u16;
