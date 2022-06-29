@@ -1,3 +1,5 @@
+use core::arch::asm;
+
 #[repr(align(4096))]
 pub struct PageDirectory {
 	pub entries: [*mut PageTable; 1024]
@@ -32,3 +34,12 @@ impl PageTable {
 
 pub static mut PAGE_DIRECTORY: PageDirectory = PageDirectory::new();
 pub static mut PAGE_TABLE: PageTable = PageTable::new();
+
+pub fn enable_paging() {
+	unsafe{asm!("mov eax, {p}",
+		"mov cr3, eax",
+		"mov eax, cr0",
+		"or eax, 0x80000001",
+		"mov cr0, eax",
+		p = in(reg) &PAGE_DIRECTORY as *const _)};
+}

@@ -12,6 +12,7 @@ mod paging;
 
 use paging::PAGE_DIRECTORY;
 use paging::PAGE_TABLE;
+use paging::enable_paging;
 
 extern "C" {
 	static gdt_desc: u16;
@@ -38,6 +39,12 @@ pub extern "C" fn eh_personality() {}
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
 	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
+	enable_paging();
+
+/*
+	let ptr = 0xdeadbeaf as *mut u32;
+	unsafe { *ptr = 42; }
+*/
 
 	println!("Hello World of {}!", 42);
 //	test!(Color::Yellow, Color::Red, "This is a test {}", 42);
