@@ -32,11 +32,15 @@ impl PageTable {
 	}
 }
 
+#[link_section = ".data"]
 pub static mut PAGE_DIRECTORY: PageDirectory = PageDirectory::new();
+#[link_section = ".data"]
 pub static mut PAGE_TABLE: PageTable = PageTable::new();
 
-pub fn enable_paging() {
-	unsafe{asm!("mov eax, {p}",
+#[no_mangle]
+#[link_section = ".boot"]
+pub extern "C" fn enable_paging() {
+	unsafe{asm!("mov ecx, {p}",
 		"mov cr3, eax",
 		"mov eax, cr0",
 		"or eax, 0x80000001",

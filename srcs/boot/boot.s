@@ -2,22 +2,15 @@
 
 global stack_bottom
 global stack_top
-
-extern gdt_desc
+global _start
 
 [BITS 32]
-section .text:
-	global _start
-
+section .boot
 _start:
-	mov esp, stack_top ; Stack pointer initialisation
-	extern load_gdt
-	call load_gdt
-	extern reload_segments
-	call reload_segments
+	mov esp, stack_top - 0xc0200000 ; Stack pointer initialisation
 
-	extern	rust_main
-	call	rust_main
+	extern	rust_start
+	call	rust_start
 	hlt
 
 ; Stack creation

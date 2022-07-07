@@ -31,7 +31,6 @@ SECTIONS {
 		*(.data*);
 	}
 
-
 	.bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xc0000000)
 	{
 		*(.bss*)

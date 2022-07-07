@@ -13,7 +13,9 @@ mod paging;
 use paging::PAGE_DIRECTORY;
 use paging::PAGE_TABLE;
 use paging::enable_paging;
+use gdt::reload_gdt;
 
+#[allow(dead_code)]
 extern "C" {
 	static gdt_desc: u16;
 	fn _start();
@@ -35,12 +37,7 @@ pub extern "C" fn eh_personality() {}
 //	change_color!(Color::White, Color::Black);
 //	);
 //}
-
-#[no_mangle]
-pub extern "C" fn rust_main() -> ! {
-	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
-	enable_paging();
-
+pub fn kernel_main() -> ! {
 /*
 	let ptr = 0xdeadbeaf as *mut u32;
 	unsafe { *ptr = 42; }
@@ -54,7 +51,7 @@ pub extern "C" fn rust_main() -> ! {
 	change_color!(Color::White, Color::Black);
 
 /*
-	println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_main as u32);
+	println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_start as u32);
 
 	gdt::print_gdt();
 	/* print GDT */
@@ -67,4 +64,13 @@ pub extern "C" fn rust_main() -> ! {
 			clihandle!(charcode);
 		}
 	}
+}
+
+#[no_mangle]
+#[link_section = ".boot"]
+pub extern "C" fn rust_start() {
+	reload_gdt();
+	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
+	enable_paging();
+	kernel_main();
 }

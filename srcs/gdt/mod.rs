@@ -57,10 +57,12 @@ limit_flags: {:#06b}",
 	}
 }
 
+#[allow(dead_code)]
 extern "C" {
 	fn gdt_desc();
 }
 
+#[allow(dead_code)]
 pub fn print_gdt() {
 	let mut segments: *mut SegmentDescriptor = 0x800 as *mut _;
 	let mut id = 0;
@@ -89,15 +91,10 @@ pub fn set_segment(index:usize, base: u32, limit:u32, flag:u8, access:u8) {
 	segment.set_flag(flag);
 }
 
-
 #[no_mangle]
-pub extern "C" fn load_gdt() {
-	let addr = (gdt_desc as *const ()) as usize;
-	unsafe{asm!("lgdt [{0}]", in(reg) addr);}
-}
-
-#[no_mangle]
-pub extern "C" fn reload_segments() {
+#[link_section = ".boot"]
+pub extern "C" fn reload_gdt() {
+	unsafe{asm!("lgdt [gdt_desc]")};
 	unsafe{asm!("ljmp $0x08, $2f",
 				"2:",
 				"movw $0x10, %ax",
