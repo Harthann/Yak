@@ -28,12 +28,29 @@ impl PageTable {
 		}
 		new
 	}
+
+	pub const fn new_kernel_page() -> PageTable {
+		let mut new = PageTable {
+			entries: [0x0 as u32; 1024]
+		};
+		let mut i = 0;
+		while i < 1024 {
+			new.entries[i] = ((0x200000 + 4096 * i) | 3) as u32;
+			i += 1;
+		}
+		new
+	}
 }
 
 #[link_section = ".pages"]
+#[no_mangle]
 pub static mut PAGE_DIRECTORY: PageDirectory = PageDirectory::new();
 #[link_section = ".pages"]
+#[no_mangle]
 pub static mut PAGE_TABLE: PageTable = PageTable::new();
+#[link_section = ".pages"]
+#[no_mangle]
+pub static mut KERNEL_PAGE_TABLE: PageTable = PageTable::new_kernel_page();
 
 #[macro_export]
 macro_rules! enable_paging {

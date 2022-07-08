@@ -1,6 +1,11 @@
 ENTRY(_start)
 
 SECTIONS {
+	.boot BLOCK(4k) : ALIGN(4k)
+	{
+		*(.multiboot_header)
+		*(.boot)
+	}
 
 	. = 0x800;
 	.gdt :
@@ -8,15 +13,8 @@ SECTIONS {
 		*(.gdt)
 	}
 
-	. = 1M;
-	.boot BLOCK(4k) : ALIGN(4k)
-	{
-		*(.multiboot_header)
-		*(.boot)
-	}
-
 	. = 0x9C000;
-	.pages ALIGN(4k) :
+	.pages BLOCK(4k): ALIGN(4k)
 	{
 		*(.pages)
 	}

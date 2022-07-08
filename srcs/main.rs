@@ -12,6 +12,7 @@ mod paging;
 
 use paging::PAGE_DIRECTORY;
 use paging::PAGE_TABLE;
+use paging::KERNEL_PAGE_TABLE;
 
 #[allow(dead_code)]
 extern "C" {
@@ -56,9 +57,11 @@ pub fn kernel_main() -> ! {
 #[link_section = ".boot"]
 pub extern "C" fn rust_start() {
 	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
+	unsafe{PAGE_DIRECTORY.entries[767] = (((&KERNEL_PAGE_TABLE as *const _) as usize) | 3) as *mut _};
 	enable_paging!();
 	reload_gdt!();
 	unsafe{asm!("hlt")};
+//	unsafe { asm!("hlt");}
 	unsafe{asm!("mov esp, stack_top")};
 	kernel_main();
 }
