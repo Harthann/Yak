@@ -30,9 +30,9 @@ impl PageTable {
 	}
 }
 
-#[link_section = ".data"]
+#[link_section = ".pages"]
 pub static mut PAGE_DIRECTORY: PageDirectory = PageDirectory::new();
-#[link_section = ".data"]
+#[link_section = ".pages"]
 pub static mut PAGE_TABLE: PageTable = PageTable::new();
 
 #[macro_export]

@@ -15,6 +15,12 @@ SECTIONS {
 		*(.boot)
 	}
 
+	. = 0x9C000;
+	.pages ALIGN(4k) :
+	{
+		*(.pages)
+	}
+
 	. = 0xc0200000;
 	.text ALIGN(0x1000) : AT(ADDR(.text) - 0xc0000000)
 	{
@@ -23,12 +29,12 @@ SECTIONS {
 
 	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xc0000000)
 	{
-		*(.rodata*);
+		*(.rodata*)
 	}
 
 	.data ALIGN(0x1000) : AT(ADDR(.data) - 0xc0000000)
 	{
-		*(.data*);
+		*(.data*)
 	}
 
 	.bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xc0000000)

@@ -55,9 +55,10 @@ pub fn kernel_main() -> ! {
 #[no_mangle]
 #[link_section = ".boot"]
 pub extern "C" fn rust_start() {
-	reload_gdt!();
 	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
 	enable_paging!();
+	reload_gdt!();
+	unsafe{asm!("hlt")};
 	unsafe{asm!("mov esp, stack_top")};
 	kernel_main();
 }
