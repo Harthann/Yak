@@ -35,6 +35,7 @@ pub fn kernel_main() -> ! {
 	unsafe { *ptr = 42; }
 */
 	println!("Hello World of {}!", 42);
+	unsafe{asm!("hlt")};
 
 	change_color!(Color::Red, Color::White);
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
@@ -57,6 +58,6 @@ pub extern "C" fn rust_start() {
 	reload_gdt!();
 	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
 	enable_paging!();
-	unsafe{asm!("lea ebx, [kernel_main]",
-		"jmp ebx")};
+	unsafe{asm!("mov esp, stack_top")};
+	kernel_main();
 }

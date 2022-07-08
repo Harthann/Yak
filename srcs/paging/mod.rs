@@ -37,7 +37,7 @@ pub static mut PAGE_TABLE: PageTable = PageTable::new();
 
 #[macro_export]
 macro_rules! enable_paging {
-	() => (unsafe{core::arch::asm!("mov ecx, {p}",
+	() => (unsafe{core::arch::asm!("mov eax, {p}",
 		"mov cr3, eax",
 		"mov eax, cr0",
 		"or eax, 0x80000001",
