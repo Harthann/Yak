@@ -2,7 +2,7 @@
 #![feature(lang_items)]
 #![no_std]
 
-//use core::arch::asm;
+use core::arch::asm;
 mod io;
 mod keyboard;
 mod vga_buffer;
@@ -12,8 +12,6 @@ mod paging;
 
 use paging::PAGE_DIRECTORY;
 use paging::PAGE_TABLE;
-use paging::enable_paging;
-use gdt::reload_gdt;
 
 #[allow(dead_code)]
 extern "C" {
@@ -30,12 +28,12 @@ use cli::Command;
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
+#[no_mangle]
 pub fn kernel_main() -> ! {
 /*
 	let ptr = 0xdeadbeaf as *mut u32;
 	unsafe { *ptr = 42; }
 */
-
 	println!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);
@@ -56,8 +54,9 @@ pub fn kernel_main() -> ! {
 #[no_mangle]
 #[link_section = ".boot"]
 pub extern "C" fn rust_start() {
-	reload_gdt();
+	reload_gdt!();
 	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
-	enable_paging();
-	kernel_main();
+	enable_paging!();
+	unsafe{asm!("lea ebx, [kernel_main]",
+		"jmp ebx")};
 }

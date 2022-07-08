@@ -1,4 +1,3 @@
-use core::arch::asm;
 use core::fmt;
 use crate::println;
 
@@ -91,16 +90,15 @@ pub fn set_segment(index:usize, base: u32, limit:u32, flag:u8, access:u8) {
 	segment.set_flag(flag);
 }
 
-#[no_mangle]
-#[link_section = ".boot"]
-pub extern "C" fn reload_gdt() {
-	unsafe{asm!("lgdt [gdt_desc]")};
-	unsafe{asm!("ljmp $0x08, $2f",
+#[macro_export]
+macro_rules! reload_gdt {
+	() => (unsafe{core::arch::asm!("lgdt [gdt_desc]")};
+	unsafe{core::arch::asm!("ljmp $0x08, $2f",
 				"2:",
 				"movw $0x10, %ax",
 				"movw %ax, %ds",
 				"movw %ax, %es",
 				"movw %ax, %fs",
 				"movw %ax, %gs",
-				"movw %ax, %ss", options(att_syntax))};
+				"movw %ax, %ss", options(att_syntax))};);
 }

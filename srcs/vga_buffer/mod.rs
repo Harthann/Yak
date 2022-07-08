@@ -276,10 +276,10 @@ macro_rules! change_color {
 
 #[macro_export]
 macro_rules! clihandle {
-	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)} );
+	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)});
 }
 
 #[macro_export]
 macro_rules! screenclear {
-	() => (unsafe {crate::vga_buffer::WRITER.clear()} );
+	() => (unsafe {crate::vga_buffer::WRITER.clear()});
 }

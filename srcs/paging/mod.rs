@@ -1,5 +1,3 @@
-use core::arch::asm;
-
 #[repr(align(4096))]
 pub struct PageDirectory {
 	pub entries: [*mut PageTable; 1024]
@@ -37,13 +35,12 @@ pub static mut PAGE_DIRECTORY: PageDirectory = PageDirectory::new();
 #[link_section = ".data"]
 pub static mut PAGE_TABLE: PageTable = PageTable::new();
 
-#[no_mangle]
-#[link_section = ".boot"]
-pub extern "C" fn enable_paging() {
-	unsafe{asm!("mov ecx, {p}",
+#[macro_export]
+macro_rules! enable_paging {
+	() => (unsafe{core::arch::asm!("mov ecx, {p}",
 		"mov cr3, eax",
 		"mov eax, cr0",
 		"or eax, 0x80000001",
 		"mov cr0, eax",
-		p = in(reg) &PAGE_DIRECTORY as *const _)};
+		p = in(reg) &PAGE_DIRECTORY as *const _)};);
 }
