@@ -30,13 +30,6 @@ use cli::Command;
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
-//macro_rules! test {
-//	($fg:expr, $bg:expr, $string:expr, ($arg:tt)*) =>	(
-//	change_color!($fg, $bg);
-//	println!($string, format_args!($($arg)*));
-//	change_color!(Color::White, Color::Black);
-//	);
-//}
 pub fn kernel_main() -> ! {
 /*
 	let ptr = 0xdeadbeaf as *mut u32;
@@ -44,18 +37,12 @@ pub fn kernel_main() -> ! {
 */
 
 	println!("Hello World of {}!", 42);
-//	test!(Color::Yellow, Color::Red, "This is a test {}", 42);
 
 	change_color!(Color::Red, Color::White);
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
-/*
-	println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_start as u32);
-
-	gdt::print_gdt();
-	/* print GDT */
-*/
+	//println!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_start as u32);
 	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});
 	print!("$> ");
 	loop {
