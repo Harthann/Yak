@@ -1,41 +1,39 @@
 ENTRY(_start)
 
-SECTIONS {
-	.boot BLOCK(4k) : ALIGN(4k)
-	{
-		*(.multiboot_header)
-		*(.boot)
-	}
+KERNEL_BASE = 0xc0000000;
 
+SECTIONS {
 	. = 0x800;
 	.gdt :
 	{
 		*(.gdt)
 	}
 
-	. = 0x9C000;
-	.pages BLOCK(4k): ALIGN(4k)
+	. = 0x100000;
+	.boot BLOCK(4k) : ALIGN(4k)
 	{
-		*(.pages)
+		*(.multiboot_header)
+		*(.boot)
 	}
 
-	. = 0xc0200000;
-	.text ALIGN(0x1000) : AT(ADDR(.text) - 0xc0000000)
+	. += KERNEL_BASE;
+	.text ALIGN(0x1000) : AT(ADDR(.text) - KERNEL_BASE)
 	{
 		*(.text*)
 	}
 
-	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - 0xc0000000)
+	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - KERNEL_BASE)
 	{
 		*(.rodata*)
 	}
 
-	.data ALIGN(0x1000) : AT(ADDR(.data) - 0xc0000000)
+	.data ALIGN(0x1000) : AT(ADDR(.data) - KERNEL_BASE)
 	{
+		*(.padata)
 		*(.data*)
 	}
 
-	.bss ALIGN(0x1000) : AT(ADDR(.bss) - 0xc0000000)
+	.bss ALIGN(0x1000) : AT(ADDR(.bss) - KERNEL_BASE)
 	{
 		*(.bss*)
 	}
