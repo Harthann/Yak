@@ -1,5 +1,5 @@
 use core::arch::asm;
-use crate::{print, println, hexdump, screenclear};
+use crate::{kprint, kprintln, hexdump, screenclear};
 use crate::io;
 use core::mem::size_of;
 
@@ -21,9 +21,9 @@ fn clear(_: &Command) {
 }
 
 fn help(_: &Command) {
-	println!("Available commands:");
+	kprintln!("Available commands:");
 	for i in KNOWN_CMD {
-		println!("    {}", i);
+		kprintln!("    {}", i);
 	}
 }
 
@@ -78,19 +78,19 @@ fn hexdump_parser(command: &Command) {
 		}
 	}
 	if count != 3 {
-		println!("Invalid number of argument");
+		kprintln!("Invalid number of argument");
 		return ;
 	}
 	for (index, item) in iter.enumerate() {
 		if index == 1  {
 			match hextou(item) {
 			Some(x) => addr = x,
-			_		=> {println!("Invalid arg"); return;},
+			_		=> {kprintln!("Invalid arg"); return;},
 			}
 		} else if index == 2 {
 			match atou(item) {
 			Some(x) => size = x,
-			_		=> {println!("Invalid arg"); return;},
+			_		=> {kprintln!("Invalid arg"); return;},
 			}
 		}
 	}
@@ -154,8 +154,8 @@ impl Command {
 	pub fn handle(&mut self, charcode: char) {
 		if charcode >= ' ' && charcode <= '~' {
 			if self.append(charcode).is_err() {
-				println!("Can't handle longer command, clearing buffer");
-				print!("$> ");
+				kprintln!("Can't handle longer command, clearing buffer");
+				kprint!("$> ");
 				self.clear();
 			}
 		} else if charcode == '\x08' {
@@ -163,10 +163,10 @@ impl Command {
 		} else if charcode == '\n' {
 			match self.is_known() {
 				Some(x) => COMMANDS[x](&self),
-				_		=> {if self.length != 0 {println!("Unknown command. Type `help` to list available commands")}},
+				_		=> {if self.length != 0 {kprintln!("Unknown command. Type `help` to list available commands")}},
 			}
 			self.clear();
-			print!("$> ");
+			kprint!("$> ");
 		}
 	}
 }

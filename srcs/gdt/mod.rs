@@ -1,5 +1,5 @@
 use core::fmt;
-use crate::println;
+use crate::kprintln;
 
 pub struct SegmentDescriptor {
 	limit:			u16,
@@ -68,7 +68,7 @@ pub fn print_gdt() {
 	let end = gdt_desc as *mut SegmentDescriptor;
 	while segments < end {
 		let segment = unsafe{&*segments};
-		println!("\nSegment {}:\n{}", id, segment);
+		kprintln!("\nSegment {}:\n{}", id, segment);
 		segments = unsafe{segments.add(1)};
 		id += 1;
 	}

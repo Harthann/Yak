@@ -206,21 +206,21 @@ impl fmt::Write for Writer {
 
 /* Reimplementation of rust print and println macros */
 #[macro_export]
-macro_rules! print {
+macro_rules! kprint {
 	($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
 }
 
 #[macro_export]
-macro_rules! println {
+macro_rules! kprintln {
 	() => ($crate::print!("\n"));
-	($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
+	($($arg:tt)*) => ($crate::kprint!("{}\n", format_args!($($arg)*)));
 }
 
-/* Setting our panic handler to our brand new println */
+/* Setting our panic handler to our brand new kprintln */
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
 	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
-	println!("{}", info);
+	kprintln!("{}", info);
 	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
 	loop {}
 }
@@ -241,30 +241,30 @@ pub fn hexdump(ptr: *const u8, size: usize)
 	let mut i: usize = 0;
 
 	while i < size {
-		print!("{:08x}: ", unsafe{ptr.offset(i as isize) as usize});
+		kprint!("{:08x}: ", unsafe{ptr.offset(i as isize) as usize});
 		let nb = if size - i > 16 {16} else {size - i};
 		for j in 0..nb {
 			let byte: u8 = unsafe{*(ptr.offset(((i + j)) as isize)) as u8};
-			print!("{:02x}", byte);
+			kprint!("{:02x}", byte);
 			if j % 2 == 1 {
-				print!(" ");
+				kprint!(" ");
 			}
 		}
 		for j in 0..16 - nb {
 			if j % 2 == 0 {
-				print!(" ");
+				kprint!(" ");
 			}
-			print!("  ");
+			kprint!("  ");
 		}
 		for j in 0..nb {
 			let byte: u8 = unsafe{*(ptr.offset(((i + j)) as isize)) as u8};
 			if byte >= 0x20 && byte < 0x7f { // printable
-				print!("{}", byte as char);
+				kprint!("{}", byte as char);
 			} else {
-				print!(".");
+				kprint!(".");
 			}
 		}
-		print!("\n");
+		kprint!("\n");
 		i += 16;
 	}
 }

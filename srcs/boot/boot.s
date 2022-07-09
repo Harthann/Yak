@@ -9,7 +9,7 @@ global page_table
 [BITS 32]
 section .boot
 _start:
-	mov esp, stack_top - 0xc0000000 ; Stack pointer initialisation
+	mov esp, stack_top - KERNEL_BASE ; Stack pointer initialisation
 	setup_page_table page_table, 0x0
 	enable_paging page_directory
 
@@ -23,8 +23,8 @@ high_kernel:
 	reload_segments
 
 	mov esp, stack_top
-	extern	kernel_main
-	call	kernel_main
+	extern	kmain
+	call	kmain
 	hlt
 
 section .bss

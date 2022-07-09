@@ -1,4 +1,4 @@
-use crate::print;
+use crate::kprint;
 use crate::io;
 use crate::vga_buffer;
 use crate::vga_buffer::NB_SCREEN;
@@ -89,7 +89,7 @@ pub fn handle_event() -> char {
 		return '\0';
 	}
 	else if charcode != '\0' {
-		print!("{}", charcode);
+		kprint!("{}", charcode);
 	}
 	else {
 		if keycode == 224
