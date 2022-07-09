@@ -1,15 +1,16 @@
 %include "boot.h"
 
+global _start
 global stack_bottom
 global stack_top
-global _start
+global page_directory
+global page_table
 
 [BITS 32]
 section .boot
 _start:
 	mov esp, stack_top - 0xc0000000 ; Stack pointer initialisation
 	setup_page_table page_table, 0x0
-;	setup_page_table kernel_page_table, 0x100000
 	enable_paging page_directory
 
 	extern gdt_desc

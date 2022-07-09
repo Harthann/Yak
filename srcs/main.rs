@@ -10,10 +10,6 @@ mod gdt;
 mod cli;
 mod paging;
 
-//use paging::PAGE_DIRECTORY;
-//use paging::PAGE_TABLE;
-//use paging::KERNEL_PAGE_TABLE;
-
 #[allow(dead_code)]
 extern "C" {
 	static gdt_desc: u16;
@@ -36,7 +32,6 @@ pub extern "C" fn kernel_main() -> ! {
 	unsafe { *ptr = 42; }
 */
 	println!("Hello World of {}!", 42);
-//	unsafe{asm!("hlt")};
 
 	change_color!(Color::Red, Color::White);
 	println!("Press Ctrl-{} to navigate to the second workspace", '2');
@@ -51,16 +46,4 @@ pub extern "C" fn kernel_main() -> ! {
 			clihandle!(charcode);
 		}
 	}
-}
-
-#[no_mangle]
-pub extern "C" fn rust_start() {
-//	unsafe{PAGE_DIRECTORY.entries[0] = (((&PAGE_TABLE as *const _) as usize) | 3) as *mut _};
-//	unsafe{PAGE_DIRECTORY.entries[767] = (((&KERNEL_PAGE_TABLE as *const _) as usize) | 3) as *mut _};
-//	enable_paging!();
-//	reload_gdt!();
-//	unsafe{asm!("hlt")};
-//	unsafe{asm!("hlt");}
-//	unsafe{asm!("mov esp, stack_top")};
-	kernel_main();
 }
