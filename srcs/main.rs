@@ -7,6 +7,7 @@ mod keyboard;
 mod vga_buffer;
 mod gdt;
 mod cli;
+mod interrupts;
 
 #[allow(dead_code)]
 extern "C" {
