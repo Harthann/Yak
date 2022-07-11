@@ -22,7 +22,6 @@ impl PageTable {
 		}
 		Err(())
 	}
-
 }
 
 #[derive(Copy, Clone)]

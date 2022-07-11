@@ -13,8 +13,8 @@ impl PageDirectory {
 		Self {entries: [PageDirectoryEntry::new(0x00000002); 1024]}
 	}
 
-	pub fn new_entry(&self, page_frame: phys_addr) -> Result<virt_addr, ()> {
-		let mut i:usize = 0;
+	pub fn new_page_frame(&self, page_frame: phys_addr) -> Result<virt_addr, ()> {
+		let mut i: usize = 0;
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
@@ -25,6 +25,7 @@ impl PageDirectory {
 			}
 			i += 1;
 		}
+		todo!();
 		Err(())
 	}
 }
@@ -32,6 +33,12 @@ impl PageDirectory {
 #[derive(Copy, Clone)]
 pub struct PageDirectoryEntry {
 	value: u32
+}
+
+impl From<u32> for PageDirectoryEntry {
+	fn from(item: u32) -> Self {
+		PageDirectoryEntry { value: item }
+	}
 }
 
 impl PageDirectoryEntry {

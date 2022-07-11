@@ -44,7 +44,7 @@ pub extern "C" fn kmain() -> ! {
 		kprintln!("PageTable entry[1]: {}", (*page_tab).entries[1]);
 		kprintln!("PageTable entry[2]: {}", (*page_tab).entries[2]);
 		(*page_tab).entries[769].free_entry();
-		kprintln!("New page frame: {:#x}", page_dir.new_entry(0x5000000).unwrap());
+		kprintln!("New page frame: {:#x}", page_dir.new_page_frame(0x5000000).unwrap());
 	}
 /*
 	let ptr = 0xdeadbeaf as *mut u32;
