@@ -12,8 +12,8 @@ mod memory;
 mod interrupts;
 
 use core::arch::asm;
-use paging::PageDirectory;
-use paging::PageTable;
+use paging::page_directory::PageDirectory;
+use paging::page_table::PageTable;
 
 #[allow(dead_code)]
 extern "C" {
