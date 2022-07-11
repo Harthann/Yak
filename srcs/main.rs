@@ -11,6 +11,7 @@ mod paging;
 mod memory;
 mod interrupts;
 
+use core::arch::asm;
 use paging::PageDirectory;
 use paging::PageTable;
 
@@ -33,14 +34,15 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	let page_dir: *mut PageDirectory = page_directory as *mut _;
 	unsafe{
-		kprintln!("PageDir entry: {}", (*page_dir).entries[0]);
+		let page_dir: *mut PageDirectory = page_directory as *mut _;
+		kprintln!("PageDir entry[0]: {}", (*page_dir).entries[0]);
+		kprintln!("PageDir entry[768]: {}", (*page_dir).entries[768]);
+		kprintln!("PageDir entry[1]: {}", (*page_dir).entries[1]);
 		let page_tab: *mut PageTable = (*page_dir).entries[0].get_address() as *mut _;
-		kprintln!("PageTable[0] entry: {}", (*page_tab).entries[0]);
-		kprintln!("PageTable[767] entry: {}", (*page_tab).entries[767]);
-		kprintln!("PageTable[768] entry: {}", (*page_tab).entries[768]);
-		kprintln!("PageTable[234] entry: {}", (*page_tab).entries[234]);
+		kprintln!("PageTable entry[0]: {}", (*page_tab).entries[0]);
+		kprintln!("PageTable entry[1]: {}", (*page_tab).entries[1]);
+		kprintln!("PageTable entry[2]: {}", (*page_tab).entries[2]);
 	}
 /*
 	let ptr = 0xdeadbeaf as *mut u32;

@@ -194,7 +194,7 @@ impl PageTableEntry {
 	}
 
 	pub fn get_address (&self) -> u32 {
-		(self.value & 0xfffff000)
+		self.value & 0xfffff000
 	}
 }
 
