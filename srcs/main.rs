@@ -7,7 +7,12 @@ mod keyboard;
 mod vga_buffer;
 mod gdt;
 mod cli;
+mod paging;
+mod memory;
 mod interrupts;
+
+use paging::PageDirectory;
+use paging::PageTable;
 
 #[allow(dead_code)]
 extern "C" {
@@ -15,6 +20,8 @@ extern "C" {
 	fn _start();
 	fn stack_bottom();
 	fn stack_top();
+	fn page_directory();
+	fn page_table();
 }
 
 use vga_buffer::color::Color;
@@ -26,6 +33,15 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
+	let page_dir: *mut PageDirectory = page_directory as *mut _;
+	unsafe{
+		kprintln!("PageDir entry: {}", (*page_dir).entries[0]);
+		let page_tab: *mut PageTable = (*page_dir).entries[0].get_address() as *mut _;
+		kprintln!("PageTable[0] entry: {}", (*page_tab).entries[0]);
+		kprintln!("PageTable[767] entry: {}", (*page_tab).entries[767]);
+		kprintln!("PageTable[768] entry: {}", (*page_tab).entries[768]);
+		kprintln!("PageTable[234] entry: {}", (*page_tab).entries[234]);
+	}
 /*
 	let ptr = 0xdeadbeaf as *mut u32;
 	unsafe { *ptr = 42; }
