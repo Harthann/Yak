@@ -9,6 +9,9 @@ SECTIONS {
 		*(.gdt)
 	}
 
+	kernel_physical_start	= . - KERNEL_BASE;
+	kernel_virtual_start	= .;
+
 	. = 0x100000;
 	.boot BLOCK(4k) : ALIGN(4k)
 	{
@@ -37,5 +40,8 @@ SECTIONS {
 	{
 		*(.bss*)
 	}
+
+	kernel_physical_end	= . - KERNEL_BASE;
+	kernel_virtual_end	= .;
 
 }
