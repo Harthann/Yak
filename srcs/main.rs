@@ -10,6 +10,7 @@ mod cli;
 mod paging;
 mod memory;
 mod interrupts;
+mod multiboot;
 
 use core::arch::asm;
 use paging::page_directory::PageDirectory;
@@ -35,23 +36,7 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	unsafe {
-		let mut page_dir: &mut PageDirectory = &mut *(page_directory as *mut _);
-		let mut page_tab: &mut PageTable = &mut *(page_dir.entries[0].get_address() as *mut _);
-		page_tab.init();
-		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		kprintln!("PageDir entry[768]: {}", page_dir.entries[768]);
-		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
-		kprintln!("PageTable entry[0]: {}", page_tab.entries[0]);
-		kprintln!("PageTable entry[1]: {}", page_tab.entries[1]);
-		kprintln!("PageTable entry[2]: {}", page_tab.entries[2]);
-		page_tab.entries[769].free_entry();
-		kprintln!("New page frame: {:#x}", page_dir.new_page_frame(0x5000000).unwrap());
-	}
-/*
-	let ptr = 0xdeadbeaf as *mut u32;
-	unsafe { *ptr = 42; }
-*/
+    multiboot::read_tags();
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);

@@ -5,10 +5,12 @@ global stack_bottom
 global stack_top
 global page_directory
 global page_table
+global multiboot_ptr
 
 [BITS 32]
 section .boot
 _start:
+	mov [multiboot_ptr - KERNEL_BASE], ebx
 	mov esp, stack_top - KERNEL_BASE ; Stack pointer initialisation
 	setup_page_table page_table, 0x0
 	enable_paging page_directory
@@ -31,6 +33,8 @@ section .bss
 stack_bottom:
 	resb 8192
 stack_top:
+multiboot_ptr:
+	dd 0
 
 section .padata
 page_directory:
