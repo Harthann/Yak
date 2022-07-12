@@ -20,7 +20,7 @@ impl PageDirectory {
 			if self.entries[i].get_present() == 1 {
 				let res = self.entries[i].to_page_table().new_frame(page_frame);
 				if  res.is_ok() {
-					return Ok(((i as virt_addr)<< 22) | ((res.unwrap() as virt_addr) << 12));
+					return Ok(((i as virt_addr) << 22) | ((res.unwrap() as virt_addr) << 12));
 				}
 			}
 			i += 1;

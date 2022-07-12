@@ -23,6 +23,7 @@ extern "C" {
 	fn stack_top();
 	fn page_directory();
 	fn page_table();
+	fn heap();
 }
 
 use vga_buffer::color::Color;

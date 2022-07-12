@@ -25,7 +25,6 @@ impl PageTable {
 }
 
 #[derive(Copy, Clone)]
-#[repr(transparent)]
 pub struct PageTableEntry {
 	value: u32
 }

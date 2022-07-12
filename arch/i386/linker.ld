@@ -9,9 +9,6 @@ SECTIONS {
 		*(.gdt)
 	}
 
-	kernel_physical_start	= . - KERNEL_BASE;
-	kernel_virtual_start	= .;
-
 	. = 0x100000;
 	.boot BLOCK(4k) : ALIGN(4k)
 	{
@@ -32,7 +29,6 @@ SECTIONS {
 
 	.data ALIGN(0x1000) : AT(ADDR(.data) - KERNEL_BASE)
 	{
-		*(.padata)
 		*(.data*)
 	}
 
@@ -41,7 +37,10 @@ SECTIONS {
 		*(.bss*)
 	}
 
-	kernel_physical_end	= . - KERNEL_BASE;
-	kernel_virtual_end	= .;
+	.padata ALIGN(0x1000) : AT(ADDR(.padata) - KERNEL_BASE)
+	{
+		*(.padata)
+	}
 
+	heap = ADDR(.padata) + 0x401000;
 }
