@@ -3,9 +3,20 @@ use crate::paging::phys_addr;
 use crate::paging::virt_addr;
 use crate::paging::page_table::PageTable;
 
+use crate::paging::KERNEL_BASE;
+
+use crate::page_directory;
+
 #[repr(align(4096))]
 pub struct PageDirectory {
 	pub entries: [PageDirectoryEntry; 1024]
+}
+
+//pub fn get_paddr() -> u32 {
+//}
+
+pub fn get_vaddr(pd_index: usize, pt_index: usize) -> u32 {
+	(pd_index << 22 | pt_index << 12) as u32
 }
 
 impl PageDirectory {
@@ -28,6 +39,27 @@ impl PageDirectory {
 		todo!();
 		Err(())
 	}
+
+	pub fn new_page_table(&mut self) -> &mut PageTable {
+		let mut i: usize = 0;
+
+		while i < 1024 {
+			if self.entries[i].get_present() == 0 {
+				break ;
+			}
+			i += 1;
+		}
+		let paddr: u32 = ((((page_directory as *mut usize) as usize) - KERNEL_BASE + (i + 1) * 0x1000) | 3) as u32;
+		unsafe{
+			let mut page_tab: &mut PageTable = &mut *(0x003ff000 as *mut _);
+			page_tab.entries[1022] = paddr.into();
+			let mut new: &mut PageTable = &mut *(get_vaddr(0, 1022) as *mut _);
+			new.reset(paddr);
+			page_tab.entries[1022] = (0x0 as u32).into();
+			self.entries[i] = (paddr | 3).into();
+			new
+		}
+	}
 }
 
 #[derive(Copy, Clone)]
@@ -47,7 +79,7 @@ impl PageDirectoryEntry {
 	}
 
 	pub fn to_page_table(&self) -> &mut PageTable {
-		unsafe{ &mut *(self.get_address() as *mut _)}
+		unsafe{ &mut *(self.get_paddr() as *mut _)}
 	}
 }
 
@@ -64,7 +96,7 @@ PS: {}
 AVL: 0x{:x}
 Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_ps(), self.get_avl(),
-self.get_address())
+self.get_paddr())
 		} else {
 			write!(f, "Present: {}
 Writable: {}
@@ -80,7 +112,7 @@ PAT: {}
 RSVD: {}
 Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_ps(),
-self.get_global(), self.get_avl(), self.get_pat(), self.get_rsvd(), self.get_address())
+self.get_global(), self.get_avl(), self.get_pat(), self.get_rsvd(), self.get_paddr())
 		}
 	}
 }
@@ -138,7 +170,7 @@ impl PageDirectoryEntry {
 		}
 	}
 
-	pub fn get_address(&self) -> u32 {
+	pub fn get_paddr(&self) -> u32 {
 		if self.get_ps() == 0 {
 			self.value & 0xfffff000
 		} else {

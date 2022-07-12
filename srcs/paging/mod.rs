@@ -1,6 +1,8 @@
 pub mod page_directory;
 pub mod page_table;
 
+const KERNEL_BASE: usize = 0xc0000000;
+
 type phys_addr = u32;
 type virt_addr = u32;
 

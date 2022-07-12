@@ -37,16 +37,26 @@ pub extern "C" fn eh_personality() {}
 pub extern "C" fn kmain() -> ! {
 	unsafe {
 		let mut page_dir: &mut PageDirectory = &mut *(page_directory as *mut _);
-		let mut page_tab: &mut PageTable = &mut *(page_dir.entries[0].get_address() as *mut _);
+		let mut page_tab: &mut PageTable = &mut *(page_table as *mut _);
+		kprintln!("entry[0]: {:#x}", page_tab.entries[0].get_paddr());
+		kprintln!("entry[1023]: {:#x}", page_tab.entries[1023].get_paddr());
 		page_tab.init();
-		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		kprintln!("PageDir entry[768]: {}", page_dir.entries[768]);
+		kprintln!("page_tab -> :{:#x}", page_dir.entries[0].get_paddr() as usize);
+		kprintln!("entry[1023]: {:#x}", page_tab.entries[1023].get_paddr());
+
+		page_tab = &mut *(0xc03ff000 as *mut _);
+
+		let mut i: usize = 0;
+
+		while i < 1024 {
+			kprintln!("entry[{}]: {:#x}", i, page_tab.entries[i].get_paddr());
+			i += 1;
+		}
+//		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
-		kprintln!("PageTable entry[0]: {}", page_tab.entries[0]);
-		kprintln!("PageTable entry[1]: {}", page_tab.entries[1]);
-		kprintln!("PageTable entry[2]: {}", page_tab.entries[2]);
-		page_tab.entries[769].free_entry();
-		kprintln!("New page frame: {:#x}", page_dir.new_page_frame(0x5000000).unwrap());
+		page_tab = page_dir.new_page_table();
+		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
+		asm!("hlt");
 	}
 /*
 	let ptr = 0xdeadbeaf as *mut u32;

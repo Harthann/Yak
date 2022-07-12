@@ -1,12 +1,7 @@
 use core::fmt;
 
-#[allow(dead_code)]
-extern "C" {
-	fn page_directory();
-	fn page_table();
-}
-
-const KERNEL_BASE: usize = 0xc0000000;
+use crate::page_directory;
+use crate::paging::KERNEL_BASE;
 
 #[repr(align(4096))]
 pub struct PageTable {
@@ -22,16 +17,25 @@ impl PageTable {
 		let mut i: usize = 1;
 
 		let page_directory_entry: usize = (page_directory as *mut usize) as usize;
-		self.entries[0] = ((page_directory_entry | 3) as u32).into();
 		while i < 1023 {
-			if i * 0x1000 < page_directory_entry as usize - KERNEL_BASE {
+			if i * 0x1000 <= page_directory_entry as usize - KERNEL_BASE {
 				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
 			} else {
 				self.entries[i] = 0x0.into();
 			}
 			i += 1;
 		}
-		self.entries[1023] = ((((&self as *const _) as usize) | 3) as u32).into();
+		self.entries[1023] = ((((self as *const _) as usize) - KERNEL_BASE | 3) as u32).into();
+	}
+
+	pub fn reset(&mut self, paddr: u32) {
+		let mut i: usize = 0;
+
+		while i < 1023 {
+			self.entries[i] = 0x0.into();
+			i += 1;
+		}
+		self.entries[1023] = paddr.into();
 	}
 
 	pub fn new_frame(&mut self, page_frame: u32) -> Result<u16, ()> {
@@ -79,7 +83,7 @@ Global: {}
 AVL: 0x{:x}
 Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_pat(),
-self.get_global(), self.get_avl(), self.get_address())
+self.get_global(), self.get_avl(), self.get_paddr())
 	}
 }
 
@@ -124,7 +128,7 @@ impl PageTableEntry {
 		((self.value & 0b111000000000) >> 9) as u8
 	}
 
-	pub fn get_address (&self) -> u32 {
+	pub fn get_paddr(&self) -> u32 {
 		self.value & 0xfffff000
 	}
 
