@@ -1,5 +1,13 @@
 use core::fmt;
 
+#[allow(dead_code)]
+extern "C" {
+	fn page_directory();
+	fn page_table();
+}
+
+const KERNEL_BASE: usize = 0xc0000000;
+
 #[repr(align(4096))]
 pub struct PageTable {
 	pub entries: [PageTableEntry; 1024]
@@ -8,6 +16,22 @@ pub struct PageTable {
 impl PageTable {
 	pub const fn new() -> Self {
 		Self {entries: [PageTableEntry::new(0x0); 1024]}
+	}
+
+	pub fn init(&mut self) {
+		let mut i: usize = 1;
+
+		let page_directory_entry: usize = (page_directory as *mut usize) as usize;
+		self.entries[0] = ((page_directory_entry | 3) as u32).into();
+		while i < 1023 {
+			if i * 0x1000 < page_directory_entry as usize - KERNEL_BASE {
+				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
+			} else {
+				self.entries[i] = 0x0.into();
+			}
+			i += 1;
+		}
+		self.entries[1023] = ((((&self as *const _) as usize) | 3) as u32).into();
 	}
 
 	pub fn new_frame(&mut self, page_frame: u32) -> Result<u16, ()> {
