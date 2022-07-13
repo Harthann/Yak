@@ -46,7 +46,6 @@ pub extern "C" fn kmain() -> ! {
 		page_tab.init(paddr + (768 + 1) * 0x1000);
 		page_dir.entries[768] = (((paddr + (768 + 1) * 0x1000) | 3) as u32).into();
 		page_dir.remove_page_table(0);
-		page_tab = &mut *(get_vaddr(768, 1023) as *mut _);
 
 		/* TESTS */
 		page_dir = &mut *(page_directory as *mut _);
