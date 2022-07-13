@@ -3,7 +3,6 @@
 #![no_std]
 #![allow(dead_code)]
 
-
 mod io;
 mod keyboard;
 mod vga_buffer;
@@ -38,27 +37,30 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kinit() {
-    kmemory::get_map_mut().claim_range(0x0, 1024);
-    kmain();
+	kmemory::get_map_mut().claim_range(0x0, 1024);
+	kmain();
+}
+
+/*  Function to put all tests and keep main clean */
+fn test() {
+//	unsafe {
+//		let ptr: kmemory::PhysAddr = kmemory::get_map_mut().get_page();
+//		kprintln!("Get this {:#x}", ptr);
+//		kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
+//		kmemory::get_map_mut().free_page(ptr);
+//		kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
+//	}
 }
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	kprintln!("Hello World of {}!", 42);
-    unsafe {
-        let ptr: kmemory::PhysAddr = kmemory::get_map_mut().get_page();
-        kprintln!("Get this {:#x}", ptr);
-        kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
-        kmemory::get_map_mut().free_page(ptr);
-        kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
-    }
-
 	change_color!(Color::Red, Color::White);
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
-	//kprintln!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_start as u32);
-//	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});
+	test();
+
 	kprint!("$> ");
 	loop {
 		if keyboard::keyboard_event() {
