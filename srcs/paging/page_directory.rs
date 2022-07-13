@@ -49,10 +49,14 @@ impl PageDirectory {
 			}
 			i += 1;
 		}
-		let paddr: u32 = ((((page_directory as *mut usize) as usize) - KERNEL_BASE + (i + 1) * 0x1000) | 3) as u32;
-		let mut page_tab: &mut PageTable = &mut *(0x003ff000 as *mut _);
-		page_tab.entries[1022] = paddr.into();
-		let mut new: &mut PageTable = &mut *(get_vaddr(0, 1022) as *mut _);
+		let mut index = i;
+		if i == 0 {
+			index = 768;
+		}
+		let paddr: u32 = (((page_directory as *mut usize) as usize) - KERNEL_BASE + (index + 1) * 0x1000) as u32;
+		let mut page_tab: &mut PageTable = &mut *(get_vaddr(768, 1023) as *mut _);
+		page_tab.entries[1022] = (paddr | 3).into();
+		let mut new: &mut PageTable = &mut *(get_vaddr(768, 1022) as *mut _);
 		new.reset(paddr);
 		page_tab.entries[1022] = (0x0 as u32).into();
 		self.entries[i] = (paddr | 3).into();

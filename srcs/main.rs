@@ -44,20 +44,16 @@ pub extern "C" fn kmain() -> ! {
 		kprintln!("page_tab -> :{:#x}", page_dir.entries[0].get_paddr() as usize);
 		kprintln!("entry[1023]: {:#x}", page_tab.entries[1023].get_paddr());
 
-		page_tab = &mut *(0xc03ff000 as *mut _);
-
-		let mut i: usize = 0;
-
-		while i < 1024 {
-			kprintln!("entry[{}]: {:#x}", i, page_tab.entries[i].get_paddr());
-			i += 1;
-		}
-//		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
+		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
+		page_dir.entries[0] = (0x00000002 as u32).into();
+		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 		page_tab = page_dir.new_page_table();
+		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
+		kprintln!("page_dir: {:#p}", page_dir);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
-		page_dir.remove_page_table(1);
+		page_dir.remove_page_table(0);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
+		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 	}
 /*
 	let ptr = 0xdeadbeaf as *mut u32;

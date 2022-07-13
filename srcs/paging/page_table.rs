@@ -44,7 +44,7 @@ impl PageTable {
 			self.entries[i] = 0x0.into();
 			i += 1;
 		}
-		self.entries[1023] = paddr.into();
+		self.entries[1023] = (paddr | 3).into();
 	}
 
 	pub fn new_frame(&mut self, page_frame: u32) -> Result<u16, ()> {
