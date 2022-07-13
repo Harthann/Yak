@@ -16,7 +16,7 @@ mod kmemory;
 use core::arch::asm;
 use paging::page_directory::PageDirectory;
 use paging::page_table::PageTable;
-use kmemory::phys_maps;
+use kmemory::get_map_mut;
 
 #[allow(dead_code)]
 extern "C" {
@@ -38,7 +38,7 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kinit() {
-    unsafe { kmemory::phys_maps.claim_range(0x0, 1024)};
+    kmemory::get_map_mut().claim_range(0x0, 1024);
     kmain();
 }
 
@@ -46,8 +46,11 @@ pub extern "C" fn kinit() {
 pub extern "C" fn kmain() -> ! {
 	kprintln!("Hello World of {}!", 42);
     unsafe {
-        kprintln!("Get this {:#x}", kmemory::phys_maps.get_page());
-        kprintln!("Get this {:#x}", kmemory::phys_maps.get_page());
+        let ptr: kmemory::PhysAddr = kmemory::get_map_mut().get_page();
+        kprintln!("Get this {:#x}", ptr);
+        kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
+        kmemory::get_map_mut().free_page(ptr);
+        kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
     }
 
 	change_color!(Color::Red, Color::White);
