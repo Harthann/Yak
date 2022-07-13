@@ -13,19 +13,19 @@ impl PageTable {
 		Self {entries: [PageTableEntry::new(0x0); 1024]}
 	}
 
-	pub fn init(&mut self) {
-		let mut i: usize = 1;
+	pub fn init(&mut self, paddr: usize) {
+		let mut i: usize = 0;
 
 		let page_directory_entry: usize = (page_directory as *mut usize) as usize;
 		while i < 1023 {
-			if i * 0x1000 <= page_directory_entry as usize - KERNEL_BASE {
+			if i * 0x1000 <= page_directory_entry - KERNEL_BASE {
 				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
 			} else {
 				self.entries[i] = 0x0.into();
 			}
 			i += 1;
 		}
-		self.entries[1023] = ((((self as *const _) as usize) - KERNEL_BASE | 3) as u32).into();
+		self.entries[1023] = ((paddr | 3) as u32).into();
 	}
 
 	pub fn clear(&mut self) {

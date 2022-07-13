@@ -4,19 +4,13 @@ use crate::paging::virt_addr;
 use crate::paging::page_table::PageTable;
 
 use crate::paging::KERNEL_BASE;
+use crate::paging::get_vaddr;
 
 use crate::page_directory;
 
 #[repr(align(4096))]
 pub struct PageDirectory {
 	pub entries: [PageDirectoryEntry; 1024]
-}
-
-//pub fn get_paddr() -> u32 {
-//}
-
-pub fn get_vaddr(pd_index: usize, pt_index: usize) -> u32 {
-	(pd_index << 22 | pt_index << 12) as u32
 }
 
 impl PageDirectory {
@@ -49,11 +43,7 @@ impl PageDirectory {
 			}
 			i += 1;
 		}
-		let mut index = i;
-		if i == 0 {
-			index = 768;
-		}
-		let paddr: u32 = (((page_directory as *mut usize) as usize) - KERNEL_BASE + (index + 1) * 0x1000) as u32;
+		let paddr: u32 = (((page_directory as *mut usize) as usize) - KERNEL_BASE + (i + 1) * 0x1000) as u32;
 		let mut page_tab: &mut PageTable = &mut *(get_vaddr(768, 1023) as *mut _);
 		page_tab.entries[1022] = (paddr | 3).into();
 		let mut new: &mut PageTable = &mut *(get_vaddr(768, 1022) as *mut _);

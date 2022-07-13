@@ -15,6 +15,8 @@ use core::arch::asm;
 use paging::page_directory::PageDirectory;
 use paging::page_table::PageTable;
 
+use paging::get_vaddr;
+
 #[allow(dead_code)]
 extern "C" {
 	static gdt_desc: u16;
@@ -36,12 +38,18 @@ pub extern "C" fn eh_personality() {}
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	unsafe {
-		let mut page_dir: &mut PageDirectory = &mut *(page_directory as *mut _);
-		let mut page_tab: &mut PageTable = &mut *(page_table as *mut _);
-		page_dir.entries[0] = (0x00000002 as u32).into();
-		page_tab.init();
+		let mut paddr: usize = (page_directory as *mut usize) as usize - 0xc0000000;
+		let mut page_dir: &mut PageDirectory = &mut *(paddr as *mut _);
+		let mut init_page_tab: &mut PageTable = &mut *((paddr + 0x1000) as *mut _);
+		init_page_tab.entries[1022] = (((paddr + (768 + 1) * 0x1000) | 3) as u32).into();
+		let mut page_tab: &mut PageTable = &mut *(get_vaddr(0, 1022) as *mut _);
+		page_tab.init(paddr + (768 + 1) * 0x1000);
+		page_dir.entries[768] = (((paddr + (768 + 1) * 0x1000) | 3) as u32).into();
+		page_dir.remove_page_table(0);
+		page_tab = &mut *(get_vaddr(768, 1023) as *mut _);
 
 		/* TESTS */
+		page_dir = &mut *(page_directory as *mut _);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 		page_tab = page_dir.new_page_table();
