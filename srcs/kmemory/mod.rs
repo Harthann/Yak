@@ -8,17 +8,17 @@ const PAGE_SIZE:		usize = 4096;
 const SECTOR_SIZE:	  usize = PAGE_SIZE * 8;
 const SECTOR_NUMBER:	usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
 
-pub static mut PHYSMAP: bitmaps = bitmaps {
+pub static mut PHYSMAP: Bitmaps = Bitmaps {
 		maps: [0; 131072]
 };
 
-pub struct bitmaps {
+pub struct Bitmaps {
 	maps: [Sector; 131072]
 }
 
-impl bitmaps {
-	pub const fn new() -> bitmaps {
-		bitmaps {
+impl Bitmaps {
+	pub const fn new() -> Bitmaps {
+		Bitmaps {
 			maps: [0;131072],
 		}
 	}
@@ -71,7 +71,7 @@ impl bitmaps {
 	}
 }
 
-pub fn get_map_mut() -> &'static mut bitmaps {
+pub fn physmap_as_mut() -> &'static mut Bitmaps {
     unsafe {
         return &mut PHYSMAP;
     }

@@ -15,7 +15,6 @@ mod kmemory;
 use core::arch::asm;
 use paging::page_directory::PageDirectory;
 use paging::page_table::PageTable;
-use kmemory::get_map_mut;
 
 #[allow(dead_code)]
 extern "C" {
@@ -37,18 +36,18 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kinit() {
-	kmemory::get_map_mut().claim_range(0x0, 1024);
+	kmemory::physmap_as_mut().claim_range(0x0, 1024);
 	kmain();
 }
 
 /*  Function to put all tests and keep main clean */
 fn test() {
 //	unsafe {
-//		let ptr: kmemory::PhysAddr = kmemory::get_map_mut().get_page();
+//		let ptr: kmemory::PhysAddr = kmemory::physmap_as_mut().get_page();
 //		kprintln!("Get this {:#x}", ptr);
-//		kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
-//		kmemory::get_map_mut().free_page(ptr);
-//		kprintln!("Get this {:#x}", kmemory::get_map_mut().get_page());
+//		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
+//		kmemory::physmap_as_mut().free_page(ptr);
+//		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
 //	}
 }
 
