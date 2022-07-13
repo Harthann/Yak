@@ -56,7 +56,8 @@ pub extern "C" fn kmain() -> ! {
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
 		page_tab = page_dir.new_page_table();
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
-		asm!("hlt");
+		page_dir.remove_page_table(1);
+		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
 	}
 /*
 	let ptr = 0xdeadbeaf as *mut u32;

@@ -28,6 +28,15 @@ impl PageTable {
 		self.entries[1023] = ((((self as *const _) as usize) - KERNEL_BASE | 3) as u32).into();
 	}
 
+	pub fn clear(&mut self) {
+		let mut i: usize = 0;
+
+		while i < 1024 {
+			self.entries[i] = 0x0.into();
+			i += 1;
+		}
+	}
+
 	pub fn reset(&mut self, paddr: u32) {
 		let mut i: usize = 0;
 

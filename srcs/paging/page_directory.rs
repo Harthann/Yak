@@ -40,7 +40,7 @@ impl PageDirectory {
 		Err(())
 	}
 
-	pub fn new_page_table(&mut self) -> &mut PageTable {
+	pub unsafe fn new_page_table(&mut self) -> &mut PageTable {
 		let mut i: usize = 0;
 
 		while i < 1024 {
@@ -50,14 +50,22 @@ impl PageDirectory {
 			i += 1;
 		}
 		let paddr: u32 = ((((page_directory as *mut usize) as usize) - KERNEL_BASE + (i + 1) * 0x1000) | 3) as u32;
-		unsafe{
-			let mut page_tab: &mut PageTable = &mut *(0x003ff000 as *mut _);
-			page_tab.entries[1022] = paddr.into();
-			let mut new: &mut PageTable = &mut *(get_vaddr(0, 1022) as *mut _);
-			new.reset(paddr);
-			page_tab.entries[1022] = (0x0 as u32).into();
-			self.entries[i] = (paddr | 3).into();
-			new
+		let mut page_tab: &mut PageTable = &mut *(0x003ff000 as *mut _);
+		page_tab.entries[1022] = paddr.into();
+		let mut new: &mut PageTable = &mut *(get_vaddr(0, 1022) as *mut _);
+		new.reset(paddr);
+		page_tab.entries[1022] = (0x0 as u32).into();
+		self.entries[i] = (paddr | 3).into();
+		new
+	}
+
+	pub unsafe fn remove_page_table(&mut self, index: usize) {
+		if self.entries[index].get_present() == 1 {
+			let mut page_table: &mut PageTable = &mut *(get_vaddr(index, 1023) as *mut _);
+			page_table.clear();
+			self.entries[index] = (0x00000002 as u32).into();
+		} else {
+			todo!();
 		}
 	}
 }
