@@ -1,6 +1,8 @@
 #![feature(const_mut_refs)]
 #![feature(lang_items)]
 #![no_std]
+#![allow(dead_code)]
+
 
 mod io;
 mod keyboard;
