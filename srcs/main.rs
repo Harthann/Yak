@@ -1,6 +1,7 @@
 #![feature(const_mut_refs)]
 #![feature(lang_items)]
 #![no_std]
+#![allow(dead_code)]
 
 mod io;
 mod keyboard;
@@ -8,14 +9,16 @@ mod vga_buffer;
 mod gdt;
 mod cli;
 mod paging;
-mod memory;
 mod interrupts;
+mod kmemory;
 
 use core::arch::asm;
 use paging::page_directory::PageDirectory;
 use paging::page_table::PageTable;
 
 use paging::get_vaddr;
+use paging::init_paging;
+use paging::page_directory;
 
 #[allow(dead_code)]
 extern "C" {
@@ -23,8 +26,6 @@ extern "C" {
 	fn _start();
 	fn stack_bottom();
 	fn stack_top();
-	fn page_directory();
-	fn page_table();
 	fn heap();
 }
 
@@ -36,22 +37,26 @@ use cli::Command;
 pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
-pub extern "C" fn kmain() -> ! {
-	unsafe {
-		let mut paddr: usize = (page_directory as *mut usize) as usize - 0xc0000000;
-		let mut page_dir: &mut PageDirectory = &mut *(paddr as *mut _);
-		let mut init_page_tab: &mut PageTable = &mut *((paddr + 0x1000) as *mut _);
-		init_page_tab.entries[1022] = (((paddr + (768 + 1) * 0x1000) | 3) as u32).into();
-		let mut page_tab: &mut PageTable = &mut *(get_vaddr(0, 1022) as *mut _);
-		page_tab.init(paddr + (768 + 1) * 0x1000);
-		page_dir.entries[768] = (((paddr + (768 + 1) * 0x1000) | 3) as u32).into();
-		page_dir.remove_page_table(0);
+pub extern "C" fn kinit() {
+	init_paging();
+	kmemory::physmap_as_mut().claim_range(0x0, 1024);
+	kmain();
+}
 
-		/* TESTS */
-		page_dir = &mut *(page_directory as *mut _);
+/*  Function to put all tests and keep main clean */
+fn test() {
+	unsafe {
+//		let ptr: kmemory::PhysAddr = kmemory::physmap_as_mut().get_page();
+//		kprintln!("Get this {:#x}", ptr);
+//		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
+//		kmemory::physmap_as_mut().free_page(ptr);
+//		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
+
+		/* TESTS PAGES */
+		let page_dir: &mut PageDirectory = &mut *(page_directory as *mut _);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		page_tab = page_dir.new_page_table();
+		let page_tab: &mut PageTable = page_dir.new_page_table();
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 		kprintln!("page_dir: {:#p}", page_dir);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
@@ -59,18 +64,17 @@ pub extern "C" fn kmain() -> ! {
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 	}
-/*
-	let ptr = 0xdeadbeaf as *mut u32;
-	unsafe { *ptr = 42; }
-*/
-	kprintln!("Hello World of {}!", 42);
+}
 
+#[no_mangle]
+pub extern "C" fn kmain() -> ! {
+	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
-	//kprintln!("Stack bottom: {:x}\nStack top:{:x}\nStart: {:x}\nRust main {:x}", stack_bottom as u32, stack_top as u32, _start as u32, rust_start as u32);
-//	hexdump!(0x800 as *mut _, unsafe{gdt_desc as usize});
+	test();
+
 	kprint!("$> ");
 	loop {
 		if keyboard::keyboard_event() {

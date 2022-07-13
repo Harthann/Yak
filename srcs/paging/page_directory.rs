@@ -1,12 +1,13 @@
 use core::fmt;
+
 use crate::paging::phys_addr;
 use crate::paging::virt_addr;
-use crate::paging::page_table::PageTable;
+use crate::paging::PageTable;
 
 use crate::paging::KERNEL_BASE;
 use crate::paging::get_vaddr;
 
-use crate::page_directory;
+use crate::paging::page_directory;
 
 #[repr(align(4096))]
 pub struct PageDirectory {
@@ -55,7 +56,7 @@ impl PageDirectory {
 
 	pub unsafe fn remove_page_table(&mut self, index: usize) {
 		if self.entries[index].get_present() == 1 {
-			let mut page_table: &mut PageTable = &mut *(get_vaddr(index, 1023) as *mut _);
+			let page_table: &mut PageTable = &mut *(get_vaddr(index, 1023) as *mut _);
 			page_table.clear();
 			self.entries[index] = (0x00000002 as u32).into();
 		} else {
@@ -80,6 +81,7 @@ impl PageDirectoryEntry {
 		Self {value: value}
 	}
 
+	/* TODO: remove/change */
 	pub fn to_page_table(&self) -> &mut PageTable {
 		unsafe{ &mut *(self.get_paddr() as *mut _)}
 	}

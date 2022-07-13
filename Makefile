@@ -94,7 +94,12 @@ check: $(KERNELSRCS)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
+ifeq ($(shell which xargo),)
 				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
+else
+				xargo build --target $(TARGER_ARCH)-kfs
+endif
+
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)

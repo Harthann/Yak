@@ -142,7 +142,8 @@ impl Writer {
 		for i in 0..BUFFER_WIDTH {
 			let screenchar = ScreenChar {
 				ascii_code: 0x20,
-				color_code: self.screens[self.screen_index].cursor.get_color_code()
+				color_code: ColorCode::new(Color::White, Color::Black)
+//self.screens[self.screen_index].cursor.get_color_code()
 			};
 			unsafe{(*self.vga_buffer).chars[row][i] = screenchar};
 			self.screens[self.screen_index].buffer.chars[row][i] = screenchar;
