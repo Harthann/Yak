@@ -38,14 +38,11 @@ pub extern "C" fn kmain() -> ! {
 	unsafe {
 		let mut page_dir: &mut PageDirectory = &mut *(page_directory as *mut _);
 		let mut page_tab: &mut PageTable = &mut *(page_table as *mut _);
-		kprintln!("entry[0]: {:#x}", page_tab.entries[0].get_paddr());
-		kprintln!("entry[1023]: {:#x}", page_tab.entries[1023].get_paddr());
-		page_tab.init();
-		kprintln!("page_tab -> :{:#x}", page_dir.entries[0].get_paddr() as usize);
-		kprintln!("entry[1023]: {:#x}", page_tab.entries[1023].get_paddr());
-
-		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
 		page_dir.entries[0] = (0x00000002 as u32).into();
+		page_tab.init();
+
+		/* TESTS */
+		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 		page_tab = page_dir.new_page_table();
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
