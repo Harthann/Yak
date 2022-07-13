@@ -10,13 +10,13 @@ mod vga_buffer;
 mod gdt;
 mod cli;
 mod paging;
-mod memory;
 mod interrupts;
-mod multiboot;
+mod kmemory;
 
 use core::arch::asm;
 use paging::page_directory::PageDirectory;
 use paging::page_table::PageTable;
+use kmemory::phys_maps;
 
 #[allow(dead_code)]
 extern "C" {
@@ -37,9 +37,18 @@ use cli::Command;
 pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
+pub extern "C" fn kinit() {
+    unsafe { kmemory::phys_maps.claim_range(0x0, 1024)};
+    kmain();
+}
+
+#[no_mangle]
 pub extern "C" fn kmain() -> ! {
-    multiboot::read_tags();
 	kprintln!("Hello World of {}!", 42);
+    unsafe {
+        kprintln!("Get this {:#x}", kmemory::phys_maps.get_page());
+        kprintln!("Get this {:#x}", kmemory::phys_maps.get_page());
+    }
 
 	change_color!(Color::Red, Color::White);
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
