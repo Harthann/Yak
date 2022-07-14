@@ -12,8 +12,6 @@ mod paging;
 mod interrupts;
 mod kmemory;
 
-use paging::page_directory::PageDirectory;
-
 use paging::init_paging;
 use paging::page_directory;
 
@@ -50,16 +48,14 @@ fn test() {
 //		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
 
 		/* TESTS PAGES */
-		let page_dir: &mut PageDirectory = &mut page_directory;
-		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
-		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		page_dir.new_page_table();
-		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		kprintln!("page_dir: {:#p}", page_dir);
-		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
-		page_dir.remove_page_table(0);
-		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);
-		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
+//		page_directory.new_page_table();
+//		page_directory.remove_page_table(0);
+		kprintln!("page_dir: {:#p}", &mut page_directory);
+		let vaddr: usize = (&mut page_directory as *mut _) as usize;
+		kprintln!("page_dir get_paddr {:#x}", get_paddr!((&mut page_directory as *mut _) as usize));
+		kprintln!("pd_index: {}", (vaddr & 0xffc00000) >> 22);
+		kprintln!("pt_index: {}", (vaddr & 0x3ff000) >> 12);
+		kprintln!("tessst: {}", page_directory.entries[(vaddr & 0xffc00000) >> 22]);
 	}
 }
 

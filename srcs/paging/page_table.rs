@@ -1,6 +1,7 @@
 use core::fmt;
 
 use crate::page_directory;
+use crate::paging::PhysAddr;
 use crate::paging::KERNEL_BASE;
 
 #[repr(align(4096))]
@@ -37,7 +38,7 @@ impl PageTable {
 		}
 	}
 
-	pub fn reset(&mut self, paddr: u32) {
+	pub fn reset(&mut self, paddr: PhysAddr) {
 		let mut i: usize = 0;
 
 		while i < 1023 {
@@ -47,7 +48,7 @@ impl PageTable {
 		self.entries[1023] = (paddr | 3).into();
 	}
 
-	pub fn new_frame(&mut self, page_frame: u32) -> Result<u16, ()> {
+	pub fn new_frame(&mut self, page_frame: PhysAddr) -> Result<u16, ()> {
 		let mut i: usize = 0;
 
 		while i < 1024 {
@@ -137,7 +138,7 @@ impl PageTableEntry {
 		((self.value & 0b111000000000) >> 9) as u8
 	}
 
-	pub fn get_paddr(&self) -> u32 {
+	pub fn get_paddr(&self) -> PhysAddr {
 		self.value & 0xfffff000
 	}
 

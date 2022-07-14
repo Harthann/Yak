@@ -24,7 +24,7 @@ impl PageDirectory {
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
-				let res = self.entries[i].to_page_table().new_frame(page_frame);
+				let res = self.get_page_table(i).new_frame(page_frame);
 				if  res.is_ok() {
 					return Ok(((i as VirtAddr) << 22) | ((res.unwrap() as VirtAddr) << 12));
 				}
@@ -40,7 +40,7 @@ impl PageDirectory {
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 0 {
-				let paddr: u32 = ((page_directory.get_vaddr() as usize) - KERNEL_BASE + (i + 1) * 0x1000) as u32;
+				let paddr: PhysAddr = ((page_directory.get_vaddr() as usize) - KERNEL_BASE + (i + 1) * 0x1000) as PhysAddr;
 				let mut page_tab: &mut PageTable = &mut *(get_vaddr!(768, 1023) as *mut _);
 				page_tab.entries[1022] = (paddr | 3).into();
 				let new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
@@ -64,6 +64,10 @@ impl PageDirectory {
 		}
 	}
 
+	pub fn get_page_table(&self, index: usize) -> &mut PageTable {
+		unsafe{&mut *(get_vaddr!(index, 1023) as *mut _)}
+	}
+
 	pub fn get_vaddr(&self) -> VirtAddr {
 		(&*self as *const _) as VirtAddr
 	}
@@ -84,11 +88,6 @@ impl From<u32> for PageDirectoryEntry {
 impl PageDirectoryEntry {
 	pub const fn new(value: u32) -> Self {
 		Self {value: value}
-	}
-
-	/* TODO: remove/change */
-	pub fn to_page_table(&self) -> &mut PageTable {
-		unsafe{ &mut *(self.get_paddr() as *mut _)}
 	}
 }
 
@@ -179,7 +178,7 @@ impl PageDirectoryEntry {
 		}
 	}
 
-	pub fn get_paddr(&self) -> u32 {
+	pub fn get_paddr(&self) -> PhysAddr {
 		if self.get_ps() == 0 {
 			self.value & 0xfffff000
 		} else {
