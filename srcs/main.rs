@@ -12,11 +12,8 @@ mod paging;
 mod interrupts;
 mod kmemory;
 
-use core::arch::asm;
 use paging::page_directory::PageDirectory;
-use paging::page_table::PageTable;
 
-use paging::get_vaddr;
 use paging::init_paging;
 use paging::page_directory;
 
@@ -53,10 +50,10 @@ fn test() {
 //		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
 
 		/* TESTS PAGES */
-		let page_dir: &mut PageDirectory = &mut *(page_directory as *mut _);
+		let page_dir: &mut PageDirectory = &mut page_directory;
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[0]);
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
-		let page_tab: &mut PageTable = page_dir.new_page_table();
+		page_dir.new_page_table();
 		kprintln!("PageDir entry[0]: {}", page_dir.entries[0]);
 		kprintln!("page_dir: {:#p}", page_dir);
 		kprintln!("PageDir entry[1]: {}", page_dir.entries[1]);

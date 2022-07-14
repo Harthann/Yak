@@ -16,7 +16,7 @@ impl PageTable {
 	pub fn init(&mut self, paddr: usize) {
 		let mut i: usize = 0;
 
-		let page_directory_entry: usize = (page_directory as *mut usize) as usize;
+		let page_directory_entry: usize = unsafe{page_directory.get_vaddr() as usize};
 		while i < 1023 {
 			if i * 0x1000 <= page_directory_entry - KERNEL_BASE {
 				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
