@@ -33,6 +33,7 @@ section .bss
 stack_bottom:
 	resb 8192
 stack_top:
+section .data
 multiboot_ptr:
 	dd 0
 

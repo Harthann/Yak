@@ -49,14 +49,15 @@ impl PageDirectory {
 
 			while i < 1024 {
 				if self.entries[i].get_present() == 0 {
-					let paddr: PhysAddr = ((page_directory.get_vaddr() as usize) - KERNEL_BASE + (i + 1) * 0x1000) as PhysAddr;
-					let mut page_tab: &mut PageTable = &mut *(get_vaddr!(768, 1023) as *mut _);
-					page_tab.entries[1022] = (paddr | 3).into();
-					let mut new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
+					let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
+					let pt_paddr: PhysAddr = pd_paddr + (i as u32 + 1) * 0x1000;
+					let page_tab: &mut PageTable = page_directory.get_page_table(768);
+					page_tab.entries[1022] = (pt_paddr | 3).into();
+					let new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
 					new.clear();
-					new.entries[1023] = (paddr | 3).into();
-					self.entries[i] = (paddr | 3).into();
-					page_tab.entries[1022] = (0x0 as u32).into();
+					self.entries[i] = (pt_paddr | 3).into();
+					new.entries[1023] = (pt_paddr | 3).into();
+					page_tab.entries[1022] = 0.into();
 					return i;
 				}
 				i += 1;

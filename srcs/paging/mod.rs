@@ -16,15 +16,14 @@ pub type PhysAddr = u32;
 
 pub fn init_paging() {
 	unsafe {
-		let pd_paddr: PhysAddr = (page_directory.get_vaddr() as usize - KERNEL_BASE) as PhysAddr;
+		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 		let pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
-		let page_dir: &mut PageDirectory = &mut *(pd_paddr as *mut _);
 		let init_page_tab: &mut PageTable = &mut *((pd_paddr + 0x1000) as *mut _);
-		init_page_tab.entries[1022] = ((pt_paddr | 3) as u32).into();
-		let page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1022) as *mut _);
+		init_page_tab.entries[1022] = (pt_paddr | 3).into();
+		let page_tab: &mut PageTable = &mut *(crate::get_vaddr!(768, 1022) as *mut _);
 		page_tab.init(pt_paddr as usize);
-		page_dir.entries[768] = ((pt_paddr | 3) as u32).into();
-		page_dir.remove_page_table(0);
+		page_directory.entries[768] = (pt_paddr | 3).into();
+		page_directory.remove_page_table(0);
 	}
 }
 
@@ -39,7 +38,7 @@ macro_rules! get_paddr {
 #[macro_export]
 macro_rules! get_vaddr {
 	($pd_index:expr, $pt_index:expr) =>
-		((($pd_index << 22) | ($pt_index << 12)) as VirtAddr);
+		((($pd_index << 22) | ($pt_index << 12)) as crate::paging::VirtAddr);
 }
 
 #[macro_export]

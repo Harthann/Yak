@@ -33,7 +33,7 @@ impl PageTable {
 		let mut i: usize = 0;
 
 		while i < 1024 {
-			self.entries[i] = 0x0.into();
+			self.entries[i] = (0x0 as u32).into();
 			i += 1;
 		}
 	}
