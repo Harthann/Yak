@@ -38,20 +38,10 @@ impl PageTable {
 		}
 	}
 
-	pub fn reset(&mut self, paddr: PhysAddr) {
-		let mut i: usize = 0;
-
-		while i < 1023 {
-			self.entries[i] = 0x0.into();
-			i += 1;
-		}
-		self.entries[1023] = (paddr | 3).into();
-	}
-
 	pub fn new_frame(&mut self, page_frame: PhysAddr) -> Result<u16, ()> {
 		let mut i: usize = 0;
 
-		while i < 1024 {
+		while i < 1023 {
 			if self.entries[i].get_present() != 1 {
 				self.entries[i] = (page_frame | 3).into();
 				return Ok(i as u16);

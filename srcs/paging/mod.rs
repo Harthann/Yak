@@ -39,7 +39,7 @@ macro_rules! get_paddr {
 #[macro_export]
 macro_rules! get_vaddr {
 	($pd_index:expr, $pt_index:expr) =>
-		(($pd_index << 22 | $pt_index << 12) as VirtAddr);
+		((($pd_index << 22) | ($pt_index << 12)) as VirtAddr);
 }
 
 #[macro_export]

@@ -53,7 +53,14 @@ fn test() {
 		kprintln!("page_dir: {:#p}", &mut page_directory);
 		let vaddr: usize = (&mut page_directory as *mut _) as usize;
 		kprintln!("page_dir get_paddr {:#x}", get_paddr!((&mut page_directory as *mut _) as usize));
-		page_directory.new_page_frame(0xfffff000);
+		let mut i: usize = 0;
+
+		// TODO: fix weird bug with > 1024 (stack explode ?)
+		while i < 1024 {
+			let res = page_directory.new_page_frame(0xfffff000);
+			kprintln!("address: {:#x}", res.unwrap());
+			i += 1;
+		}
 	}
 }
 

@@ -34,7 +34,7 @@ impl PageDirectory {
 		}
 		// Create a new_page_table for the new frame
 		// TODO: if new_page_table not set
-		i = unsafe{self.new_page_table()};
+		i = self.new_page_table();
 		let res = self.get_page_table(i).new_frame(page_frame);
 		if res.is_ok() && !(i == 768 && res.unwrap() == 1022) {
 			return Ok(get_vaddr!(i, res.unwrap() as usize));
@@ -43,32 +43,37 @@ impl PageDirectory {
 		Err(())
 	}
 
-	pub unsafe fn new_page_table(&mut self) -> usize {
-		let mut i: usize = 0;
+	pub fn new_page_table(&mut self) -> usize {
+		unsafe {
+			let mut i: usize = 0;
 
-		while i < 1024 {
-			if self.entries[i].get_present() == 0 {
-				let paddr: PhysAddr = ((page_directory.get_vaddr() as usize) - KERNEL_BASE + (i + 1) * 0x1000) as PhysAddr;
-				let mut page_tab: &mut PageTable = &mut *(get_vaddr!(768, 1023) as *mut _);
-				page_tab.entries[1022] = (paddr | 3).into();
-				let new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
-				new.reset(paddr);
-				page_tab.entries[1022] = (0x0 as u32).into();
-				self.entries[i] = (paddr | 3).into();
-				return i;
+			while i < 1024 {
+				if self.entries[i].get_present() == 0 {
+					let paddr: PhysAddr = ((page_directory.get_vaddr() as usize) - KERNEL_BASE + (i + 1) * 0x1000) as PhysAddr;
+					let mut page_tab: &mut PageTable = &mut *(get_vaddr!(768, 1023) as *mut _);
+					page_tab.entries[1022] = (paddr | 3).into();
+					let mut new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
+					new.clear();
+					new.entries[1023] = (paddr | 3).into();
+					self.entries[i] = (paddr | 3).into();
+					page_tab.entries[1022] = (0x0 as u32).into();
+					return i;
+				}
+				i += 1;
 			}
-			i += 1;
+			todo!();
 		}
-		todo!();
 	}
 
-	pub unsafe fn remove_page_table(&mut self, index: usize) {
-		if self.entries[index].get_present() == 1 {
-			let page_table: &mut PageTable = &mut *(get_vaddr!(index, 1023) as *mut _);
-			page_table.clear();
-			self.entries[index] = (0x00000002 as u32).into();
-		} else {
-			todo!();
+	pub fn remove_page_table(&mut self, index: usize) {
+		unsafe {
+			if self.entries[index].get_present() == 1 {
+				let page_table: &mut PageTable = &mut *(get_vaddr!(index, 1023) as *mut _);
+				page_table.clear();
+				self.entries[index] = (0x00000002 as u32).into();
+			} else {
+				todo!();
+			}
 		}
 	}
 
