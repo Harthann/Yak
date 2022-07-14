@@ -48,14 +48,12 @@ fn test() {
 //		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
 
 		/* TESTS PAGES */
-//		page_directory.new_page_table();
-//		page_directory.remove_page_table(0);
+		page_directory.new_page_table();
+		page_directory.remove_page_table(0);
 		kprintln!("page_dir: {:#p}", &mut page_directory);
 		let vaddr: usize = (&mut page_directory as *mut _) as usize;
 		kprintln!("page_dir get_paddr {:#x}", get_paddr!((&mut page_directory as *mut _) as usize));
-		kprintln!("pd_index: {}", (vaddr & 0xffc00000) >> 22);
-		kprintln!("pt_index: {}", (vaddr & 0x3ff000) >> 12);
-		kprintln!("tessst: {}", page_directory.entries[(vaddr & 0xffc00000) >> 22]);
+		page_directory.new_page_frame(0xfffff000);
 	}
 }
 

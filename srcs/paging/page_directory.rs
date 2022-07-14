@@ -19,23 +19,31 @@ impl PageDirectory {
 		Self {entries: [PageDirectoryEntry::new(0x00000002); 1024]}
 	}
 
-	pub fn new_page_frame(&self, page_frame: PhysAddr) -> Result<VirtAddr, ()> {
+	pub fn new_page_frame(&mut self, page_frame: PhysAddr) -> Result<VirtAddr, ()> {
 		let mut i: usize = 0;
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(page_frame);
-				if  res.is_ok() {
-					return Ok(((i as VirtAddr) << 22) | ((res.unwrap() as VirtAddr) << 12));
+				// reserved 768 - 1022 frame for swap
+				if res.is_ok() && !(i == 768 && res.unwrap() == 1022) {
+					return Ok(get_vaddr!(i, res.unwrap() as usize));
 				}
 			}
 			i += 1;
+		}
+		// Create a new_page_table for the new frame
+		// TODO: if new_page_table not set
+		i = unsafe{self.new_page_table()};
+		let res = self.get_page_table(i).new_frame(page_frame);
+		if res.is_ok() && !(i == 768 && res.unwrap() == 1022) {
+			return Ok(get_vaddr!(i, res.unwrap() as usize));
 		}
 		todo!();
 		Err(())
 	}
 
-	pub unsafe fn new_page_table(&mut self) -> &mut PageTable {
+	pub unsafe fn new_page_table(&mut self) -> usize {
 		let mut i: usize = 0;
 
 		while i < 1024 {
@@ -47,7 +55,7 @@ impl PageDirectory {
 				new.reset(paddr);
 				page_tab.entries[1022] = (0x0 as u32).into();
 				self.entries[i] = (paddr | 3).into();
-				return new;
+				return i;
 			}
 			i += 1;
 		}
