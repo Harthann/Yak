@@ -54,11 +54,14 @@ fn test() {
 		let virt_addr: u32 = res.unwrap();
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
-		let page_table: &mut PageTable = &mut *(virt_addr as *mut _);
-		kprintln!("init value of nb: {:#x}", page_table.entries[0].get_paddr());
-		page_table.entries[0] = 0x10.into();
-		kprintln!("next value of nb: {:#x}", page_table.entries[0].get_paddr());
+		let mut nb: *mut usize = virt_addr as *mut usize;
+		kprintln!("init value of nb: {:#x}", *nb);
+		*nb = 8;
+		kprintln!("next value of nb: {:#x}", *nb);
 		page_directory.remove_page_frame(virt_addr);
+		*nb = 0x1000;
+		kprintln!("next value of nb: {:#x}", *nb);
+		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
 	}
 }
 

@@ -28,6 +28,7 @@ impl PageDirectory {
 				let res = self.get_page_table(i).new_frame(page_frame);
 				// reserved page 0 for swap
 				if res.is_ok() && i != 0 {
+					crate::kprintln!("vaddr index: {}, {}", i, res.unwrap());
 					return Ok(get_vaddr!(i, res.unwrap() as usize));
 				}
 			}
@@ -47,8 +48,8 @@ impl PageDirectory {
 	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) {
 		unsafe {
 			/* TODO: Check for alignment */
-			let pd_index: usize = (page_frame & 0xffc00000 >> 22) as usize;
-			let i: usize = (page_frame & 0x3ff000 >> 12) as usize;
+			let pd_index: usize = ((page_frame & 0xffc00000) >> 22) as usize;
+			let i: usize = ((page_frame & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
 			page_table.entries[i] = 0.into();
 		}
