@@ -22,8 +22,10 @@ pub fn init_paging() {
 		init_page_tab.entries[1022] = (pt_paddr | 3).into();
 		let page_tab: &mut PageTable = &mut *(crate::get_vaddr!(768, 1022) as *mut _);
 		page_tab.init(pt_paddr as usize);
+		page_tab.entries[1023] = (pt_paddr | 3).into();
 		page_directory.entries[768] = (pt_paddr | 3).into();
-		page_directory.remove_page_table(0);
+		init_page_tab.entries[1023] = ((pd_paddr + 0x1000) | 3).into();
+		init_page_tab.clear();
 	}
 }
 

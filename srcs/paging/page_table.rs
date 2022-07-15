@@ -2,9 +2,10 @@ use core::fmt;
 
 use crate::page_directory;
 use crate::paging::PhysAddr;
+use crate::paging::VirtAddr;
 use crate::paging::KERNEL_BASE;
 
-#[repr(align(4096))]
+#[repr(transparent)]
 pub struct PageTable {
 	pub entries: [PageTableEntry; 1024]
 }
@@ -32,7 +33,7 @@ impl PageTable {
 	pub fn clear(&mut self) {
 		let mut i: usize = 0;
 
-		while i < 1024 {
+		while i < 1023 {
 			self.entries[i] = (0x0 as u32).into();
 			i += 1;
 		}
@@ -50,8 +51,13 @@ impl PageTable {
 		}
 		Err(())
 	}
+
+	pub fn get_vaddr(&self) -> VirtAddr {
+		(&*self as *const _) as VirtAddr
+	}
 }
 
+#[repr(transparent)]
 #[derive(Copy, Clone)]
 pub struct PageTableEntry {
 	value: u32
@@ -134,5 +140,9 @@ impl PageTableEntry {
 
 	pub fn free_entry(&mut self) {
 		self.value =0 ;
+	}
+
+	pub fn get_vaddr(&self) -> VirtAddr {
+		(&*self as *const _) as VirtAddr
 	}
 }

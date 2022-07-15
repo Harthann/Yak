@@ -54,31 +54,21 @@ fn test() {
 //		kprintln!("page_dir: {:#p}", &mut page_directory);
 //		let vaddr: usize = (&mut page_directory as *mut _) as usize;
 //		kprintln!("page_dir get_paddr {:#x}", get_paddr!((&mut page_directory as *mut _) as usize));
-		kprintln!("page_directory: {:#x}", page_directory.get_vaddr() - 0xc0000000);
-		page_directory.new_page_table();
-		kprintln!("one");
-		page_directory.new_page_table();
-		kprintln!("two");
-		page_directory.new_page_table();
-		kprintln!("three");
-		page_directory.new_page_table();
-		kprintln!("four");
-		let page_table: &mut PageTable = page_directory.get_page_table(0);
-		kprintln!("beep boop {:#x}", page_directory.entries[0].get_paddr());
-		kprintln!("beep boop {:#x}", page_directory.entries[1].get_paddr());
-		kprintln!("beep boop {:#x}", page_directory.entries[2].get_paddr());
-		kprintln!("beep boop {:#x}", page_directory.entries[3].get_paddr());
-		kprintln!("{}", page_table.entries[1023].get_paddr());
-		/*
-		let mut i: usize = 0;
-
-		// TODO: fix weird bug with > 1024 (stack explode ?)
-		while i < 1024 {
-			let res = page_directory.new_page_frame(0xfffff000);
-			kprintln!("address: {:#x}", res.unwrap());
-			i += 1;
-		}
-		*/
+		let page_tab: &mut PageTable = page_directory.get_page_table(768);
+		crate::kprintln!("page_tab.entries[1023] => {:#x}", page_tab.entries[1023].get_paddr());
+//		kprintln!("page_directory: {:#x}", page_directory.get_vaddr() - 0xc0000000);
+		let mut i: usize = page_directory.new_page_table();
+		let mut new: &mut PageTable = page_directory.get_page_table(1);
+		crate::kprintln!("{}", i);
+		crate::kprintln!("new: {:#x}", new.entries[1023].get_paddr());
+		i = page_directory.new_page_table();
+		new = page_directory.get_page_table(i);
+		crate::kprintln!("{}", i);
+		crate::kprintln!("new: {:#x}", new.entries[1023].get_paddr());
+		i = page_directory.new_page_table();
+		new = page_directory.get_page_table(i);
+		crate::kprintln!("{}", i);
+		crate::kprintln!("new: {:#x}", new.entries[1023].get_paddr());
 	}
 }
 

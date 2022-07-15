@@ -25,8 +25,8 @@ impl PageDirectory {
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(page_frame);
-				// reserved 768 - 1022 frame for swap
-				if res.is_ok() && !(i == 768 && res.unwrap() == 1022) {
+				// reserved page 0 for swap
+				if res.is_ok() && i != 0 {
 					return Ok(get_vaddr!(i, res.unwrap() as usize));
 				}
 			}
@@ -36,7 +36,7 @@ impl PageDirectory {
 		// TODO: if new_page_table not set
 		i = self.new_page_table();
 		let res = self.get_page_table(i).new_frame(page_frame);
-		if res.is_ok() && !(i == 768 && res.unwrap() == 1022) {
+		if res.is_ok() && i != 0 {
 			return Ok(get_vaddr!(i, res.unwrap() as usize));
 		}
 		todo!();
@@ -51,13 +51,13 @@ impl PageDirectory {
 				if self.entries[i].get_present() == 0 {
 					let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 					let pt_paddr: PhysAddr = pd_paddr + (i as u32 + 1) * 0x1000;
-					let page_tab: &mut PageTable = page_directory.get_page_table(768);
-					page_tab.entries[1022] = (pt_paddr | 3).into();
-					let new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
+					let mut page_tab: &mut PageTable = page_directory.get_page_table(0);
+					page_tab.entries[i % 1023] = (pt_paddr | 3).into();
+					let mut new: &mut PageTable = &mut *(get_vaddr!(0, i % 1023) as *mut _);
 					new.clear();
-					self.entries[i] = (pt_paddr | 3).into();
 					new.entries[1023] = (pt_paddr | 3).into();
-					page_tab.entries[1022] = 0.into();
+					self.entries[i] = (pt_paddr | 3).into();
+					page_tab.entries[i % 1023] = 0.into();
 					return i;
 				}
 				i += 1;
@@ -214,5 +214,9 @@ impl PageDirectoryEntry {
 		} else {
 			((self.value & 0b100000000000000000000) >> 20) as u8
 		}
+	}
+
+	pub fn get_vaddr(&self) -> VirtAddr {
+		(&*self as *const _) as VirtAddr
 	}
 }
