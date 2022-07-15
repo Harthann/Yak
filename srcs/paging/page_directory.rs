@@ -20,6 +20,7 @@ impl PageDirectory {
 	}
 
 	pub fn new_page_frame(&mut self, page_frame: PhysAddr) -> Result<VirtAddr, ()> {
+		/* TODO: Check for alignment */
 		let mut i: usize = 0;
 
 		while i < 1024 {
@@ -43,6 +44,17 @@ impl PageDirectory {
 		Err(())
 	}
 
+	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) {
+		unsafe {
+			/* TODO: Check for alignment */
+			let pd_index: usize = (page_frame & 0xffc00000 >> 22) as usize;
+			let i: usize = (page_frame & 0x3ff000 >> 12) as usize;
+			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
+			page_table.entries[i] = 0.into();
+		}
+	}
+
+	/* Return index of the new page */
 	pub fn new_page_table(&mut self) -> usize {
 		unsafe {
 			let mut i: usize = 0;
@@ -51,9 +63,9 @@ impl PageDirectory {
 				if self.entries[i].get_present() == 0 {
 					let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 					let pt_paddr: PhysAddr = pd_paddr + (i as u32 + 1) * 0x1000;
-					let mut page_tab: &mut PageTable = page_directory.get_page_table(0);
+					let page_tab: &mut PageTable = page_directory.get_page_table(0);
 					page_tab.entries[i % 1023] = (pt_paddr | 3).into();
-					let mut new: &mut PageTable = &mut *(get_vaddr!(0, i % 1023) as *mut _);
+					let new: &mut PageTable = &mut *(get_vaddr!(0, i % 1023) as *mut _);
 					new.clear();
 					new.entries[1023] = (pt_paddr | 3).into();
 					self.entries[i] = (pt_paddr | 3).into();
