@@ -11,10 +11,6 @@ pub struct PageTable {
 }
 
 impl PageTable {
-	pub const fn new() -> Self {
-		Self {entries: [PageTableEntry::new(0x0); 1024]}
-	}
-
 	pub fn init(&mut self, paddr: usize) {
 		let mut i: usize = 0;
 
@@ -69,25 +65,9 @@ impl From<u32> for PageTableEntry {
 	}
 }
 
-impl PageTableEntry {
-	pub const fn new(value: u32) -> Self {
-		Self {value: value}
-	}
-}
-
 impl fmt::Display for PageTableEntry {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "Present: {}
-Writable: {}
-User/Supervisor: {}
-PWT: {}
-PCD: {}
-Accessed: {}
-Dirty: {}
-PAT: {}
-Global: {}
-AVL: 0x{:x}
-Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
+		write!(f, "P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PAT: {} | G: {} | AVL: {:#010x} | Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_pat(),
 self.get_global(), self.get_avl(), self.get_paddr())
 	}
@@ -136,10 +116,6 @@ impl PageTableEntry {
 
 	pub fn get_paddr(&self) -> PhysAddr {
 		self.value & 0xfffff000
-	}
-
-	pub fn free_entry(&mut self) {
-		self.value =0 ;
 	}
 
 	pub fn get_vaddr(&self) -> VirtAddr {

@@ -15,48 +15,37 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
-	pub const fn new() -> Self {
-		Self {entries: [PageDirectoryEntry::new(0x00000002); 1024]}
-	}
-
 	pub fn new_page_frame(&mut self, page_frame: PhysAddr) -> Result<VirtAddr, ()> {
 		/* TODO: Check for alignment */
-		let mut i: usize = 0;
+		let mut i: usize = 1; /* Reserve 0 for swap */
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
-				let res = self.get_page_table(i).new_frame(page_frame);
-				// reserved page 0 for swap
-				if res.is_ok() && i != 0 {
-					crate::kprintln!("vaddr index: {}, {}", i, res.unwrap());
-					return Ok(get_vaddr!(i, res.unwrap() as usize));
-				}
+				let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
+				crate::kprintln!("vaddr index: {}, {}", i, pt_index);
+				return Ok(get_vaddr!(i, pt_index));
 			}
 			i += 1;
 		}
 		// Create a new_page_table for the new frame
-		// TODO: if new_page_table not set
-		i = self.new_page_table();
-		let res = self.get_page_table(i).new_frame(page_frame);
-		if res.is_ok() && i != 0 {
-			return Ok(get_vaddr!(i, res.unwrap() as usize));
-		}
-		todo!();
-		Err(())
+		i = self.new_page_table()?;
+		let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
+		Ok(get_vaddr!(i, pt_index))
 	}
 
-	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) {
+	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<(), ()> {
 		unsafe {
 			/* TODO: Check for alignment */
 			let pd_index: usize = ((page_frame & 0xffc00000) >> 22) as usize;
 			let i: usize = ((page_frame & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
 			page_table.entries[i] = 0.into();
+			Ok(())
 		}
 	}
 
 	/* Return index of the new page */
-	pub fn new_page_table(&mut self) -> usize {
+	pub fn new_page_table(&mut self) -> Result<usize, ()> {
 		unsafe {
 			let mut i: usize = 0;
 
@@ -71,22 +60,24 @@ impl PageDirectory {
 					new.entries[1023] = (pt_paddr | 3).into();
 					self.entries[i] = (pt_paddr | 3).into();
 					page_tab.entries[i % 1023] = 0.into();
-					return i;
+					return Ok(i);
 				}
 				i += 1;
 			}
 			todo!();
+			Err(())
 		}
 	}
 
-	pub fn remove_page_table(&mut self, index: usize) {
+	pub fn remove_page_table(&mut self, index: usize) -> Result<(), ()> {
 		unsafe {
 			if self.entries[index].get_present() == 1 {
 				let page_table: &mut PageTable = &mut *(get_vaddr!(index, 1023) as *mut _);
 				page_table.clear();
 				self.entries[index] = (0x00000002 as u32).into();
+				return Ok(());
 			} else {
-				todo!();
+				return Err(());
 			}
 		}
 	}
@@ -112,40 +103,14 @@ impl From<u32> for PageDirectoryEntry {
 	}
 }
 
-impl PageDirectoryEntry {
-	pub const fn new(value: u32) -> Self {
-		Self {value: value}
-	}
-}
-
 impl fmt::Display for PageDirectoryEntry {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		if self.get_ps() == 0 {
-			write!(f, "Present: {}
-Writable: {}
-User/Supervisor: {}
-PWT: {}
-PCD: {}
-Accessed: {}
-PS: {}
-AVL: 0x{:x}
-Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
+			write!(f, "P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | PS: {} | AVL: {:#010x} | Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_ps(), self.get_avl(),
 self.get_paddr())
 		} else {
-			write!(f, "Present: {}
-Writable: {}
-User/Supervisor: {}
-PWT: {}
-PCD: {}
-Accessed: {}
-Dirty: {}
-PS: {}
-Global: {}
-AVL: 0x{:x}
-PAT: {}
-RSVD: {}
-Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
+			write!(f, "P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PS: {} | G: {} | AVL: {:#010x} | PAT: {} | RSVD: {} | Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_ps(),
 self.get_global(), self.get_avl(), self.get_pat(), self.get_rsvd(), self.get_paddr())
 		}
@@ -183,7 +148,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_dirty(&self) -> u8 {
 		if self.get_ps() == 0 {
-			todo!();
+			return 0;
 		} else {
 			((self.value & 0b01000000) >> 6) as u8
 		}
@@ -191,7 +156,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_global(&self) -> u8 {
 		if self.get_ps() == 0 {
-			todo!();
+			return 0;
 		} else {
 			((self.value & 0b100000000) >> 8) as u8
 		}
@@ -205,17 +170,9 @@ impl PageDirectoryEntry {
 		}
 	}
 
-	pub fn get_paddr(&self) -> PhysAddr {
-		if self.get_ps() == 0 {
-			self.value & 0xfffff000
-		} else {
-			((self.value & 0xfff00000) >> 10) | ((self.value & 0b111111110000000000000) << 19)
-		}
-	}
-
 	pub fn get_pat(&self) -> u8 {
 		if self.get_ps() == 0 {
-			todo!();
+			return 0;
 		} else {
 			((self.value & 0b1000000000000) >> 12) as u8
 		}
@@ -223,9 +180,17 @@ impl PageDirectoryEntry {
 
 	pub fn get_rsvd(&self) -> u8 {
 		if self.get_ps() == 0 {
-			todo!();
+			return 0;
 		} else {
 			((self.value & 0b100000000000000000000) >> 20) as u8
+		}
+	}
+
+	pub fn get_paddr(&self) -> PhysAddr {
+		if self.get_ps() == 0 {
+			self.value & 0xfffff000
+		} else {
+			((self.value & 0xfff00000) >> 10) | ((self.value & 0b111111110000000000000) << 19)
 		}
 	}
 

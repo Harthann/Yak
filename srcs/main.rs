@@ -50,6 +50,7 @@ fn test() {
 
 		/* TESTS PAGES */
 		page_directory.new_page_table();
+		kprintln!("page[1]: {}", page_directory.entries[1]);
 		let res = page_directory.new_page_frame(0xfffff000 as u32);
 		let virt_addr: u32 = res.unwrap();
 		kprintln!("virt_addr: {:#x}", virt_addr);
