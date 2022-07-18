@@ -19,19 +19,25 @@ impl PageDirectory {
 		if page_frame & 0xfff != 0 {
 			return Err(()); /* Not aligned */
 		}
-		let mut i: usize = 1; /* Reserve 0 for swap */
+		let mut i: usize = 0;
 
-		while i < 1024 {
+		while i < 1023 {
 			if self.entries[i].get_present() == 1 {
 				let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
-				return Ok(get_vaddr!(i, pt_index));
+				if i != 768 && pt_index != 1022 { /* reserved for swap */
+					return Ok(get_vaddr!(i, pt_index));
+				}
 			}
 			i += 1;
 		}
 		// Create a new_page_table for the new frame
 		i = self.new_page_table()?;
 		let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
-		Ok(get_vaddr!(i, pt_index))
+		if i != 768 && pt_index != 1022 { /* reserved for swap */
+			return Ok(get_vaddr!(i, pt_index));
+		}
+		todo!();
+		Err(())
 	}
 
 	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<(), ()> {
@@ -56,14 +62,14 @@ impl PageDirectory {
 				if self.entries[i].get_present() == 0 {
 					let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 					let pt_paddr: PhysAddr = pd_paddr + (i as u32 + 1) * 0x1000;
-					let page_tab: &mut PageTable = page_directory.get_page_table(0);
-					page_tab.entries[0] = (pt_paddr | 3).into();
+					let page_tab: &mut PageTable = page_directory.get_page_table(768);
+					page_tab.entries[1022] = (pt_paddr | 3).into();
 					crate::refresh_tlb!();
-					let new: &mut PageTable = &mut *(get_vaddr!(0, 0) as *mut _);
+					let new: &mut PageTable = &mut *(get_vaddr!(768, 1022) as *mut _);
 					new.clear();
 					new.entries[1023] = (pt_paddr | 3).into();
 					self.entries[i] = (pt_paddr | 3).into();
-					page_tab.entries[0] = 0.into();
+					page_tab.entries[1022] = 0.into();
 					crate::refresh_tlb!();
 					return Ok(i);
 				}
