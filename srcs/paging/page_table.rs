@@ -11,11 +11,11 @@ pub struct PageTable {
 }
 
 impl PageTable {
-	pub fn init(&mut self, paddr: usize) {
+	pub fn init(&mut self) {
 		let mut i: usize = 0;
 
 		let page_directory_entry: usize = unsafe{page_directory.get_vaddr() as usize};
-		while i < 1023 {
+		while i < 1024 {
 			if i * 0x1000 <= page_directory_entry - KERNEL_BASE {
 				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
 			} else {
@@ -23,13 +23,12 @@ impl PageTable {
 			}
 			i += 1;
 		}
-		self.entries[1023] = ((paddr | 3) as u32).into();
 	}
 
 	pub fn clear(&mut self) {
 		let mut i: usize = 0;
 
-		while i < 1023 {
+		while i < 1024 {
 			self.entries[i] = (0x0 as u32).into();
 			i += 1;
 		}
@@ -38,7 +37,7 @@ impl PageTable {
 	pub fn new_frame(&mut self, page_frame: PhysAddr) -> Result<u16, ()> {
 		let mut i: usize = 0;
 
-		while i < 1023 {
+		while i < 1024 {
 			if self.entries[i].get_present() != 1 {
 				self.entries[i] = (page_frame | 3).into();
 				return Ok(i as u16);

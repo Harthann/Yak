@@ -76,10 +76,11 @@ fn test() {
 		while i < (8 * 0x1000) - 4 {
 			virt_addr += 4;
 			nb = &mut *(virt_addr as *mut usize);
+			kprintln!("{:#x}", virt_addr);
 			*nb = 8;
 			i += 4;
 		}
-/*
+		/*
 		let mut i = 0;
 		while i < 0x100000 {
 			res = alloc_page();
@@ -94,7 +95,7 @@ fn test() {
 			}
 			i += 1;
 		}
-*/
+		*/
 //		page_directory.remove_page_frame(virt_addr);
 //		*nb = 0x1000;
 //		kprintln!("next value of nb: {:#x}", *nb);
