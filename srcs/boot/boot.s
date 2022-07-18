@@ -25,14 +25,15 @@ high_kernel:
 	reload_segments
 
 	mov esp, stack_top
-	extern	kmain
-	call	kmain
+	extern	kinit
+	call	kinit
 	hlt
 
 section .bss
 stack_bottom:
 	resb 8192
 stack_top:
+section .data
 multiboot_ptr:
 	dd 0
 

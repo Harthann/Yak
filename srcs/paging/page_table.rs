@@ -1,43 +1,44 @@
 use core::fmt;
 
-#[allow(dead_code)]
-extern "C" {
-	fn page_directory();
-	fn page_table();
-}
+use crate::page_directory;
+use crate::paging::PhysAddr;
+use crate::paging::VirtAddr;
+use crate::paging::KERNEL_BASE;
 
-const KERNEL_BASE: usize = 0xc0000000;
-
-#[repr(align(4096))]
+#[repr(transparent)]
 pub struct PageTable {
 	pub entries: [PageTableEntry; 1024]
 }
 
 impl PageTable {
-	pub const fn new() -> Self {
-		Self {entries: [PageTableEntry::new(0x0); 1024]}
-	}
+	pub fn init(&mut self, paddr: usize) {
+		let mut i: usize = 0;
 
-	pub fn init(&mut self) {
-		let mut i: usize = 1;
-
-		let page_directory_entry: usize = (page_directory as *mut usize) as usize;
-		self.entries[0] = ((page_directory_entry | 3) as u32).into();
+		let page_directory_entry: usize = unsafe{page_directory.get_vaddr() as usize};
 		while i < 1023 {
-			if i * 0x1000 < page_directory_entry as usize - KERNEL_BASE {
+			if i * 0x1000 <= page_directory_entry - KERNEL_BASE {
 				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
 			} else {
 				self.entries[i] = 0x0.into();
 			}
 			i += 1;
 		}
-		self.entries[1023] = ((((&self as *const _) as usize) | 3) as u32).into();
+		self.entries[1023] = ((paddr | 3) as u32).into();
 	}
 
-	pub fn new_frame(&mut self, page_frame: u32) -> Result<u16, ()> {
+	pub fn clear(&mut self) {
 		let mut i: usize = 0;
 
-		while i < 1024 {
+		while i < 1023 {
+			self.entries[i] = (0x0 as u32).into();
+			i += 1;
+		}
+	}
+
+	pub fn new_frame(&mut self, page_frame: PhysAddr) -> Result<u16, ()> {
+		let mut i: usize = 0;
+
+		while i < 1023 {
 			if self.entries[i].get_present() != 1 {
 				self.entries[i] = (page_frame | 3).into();
 				return Ok(i as u16);
@@ -46,8 +47,13 @@ impl PageTable {
 		}
 		Err(())
 	}
+
+	pub fn get_vaddr(&self) -> VirtAddr {
+		(&*self as *const _) as VirtAddr
+	}
 }
 
+#[repr(transparent)]
 #[derive(Copy, Clone)]
 pub struct PageTableEntry {
 	value: u32
@@ -59,27 +65,11 @@ impl From<u32> for PageTableEntry {
 	}
 }
 
-impl PageTableEntry {
-	pub const fn new(value: u32) -> Self {
-		Self {value: value}
-	}
-}
-
 impl fmt::Display for PageTableEntry {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "Present: {}
-Writable: {}
-User/Supervisor: {}
-PWT: {}
-PCD: {}
-Accessed: {}
-Dirty: {}
-PAT: {}
-Global: {}
-AVL: 0x{:x}
-Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
+		write!(f, "P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PAT: {} | G: {} | AVL: {:#010x} | Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_pat(),
-self.get_global(), self.get_avl(), self.get_address())
+self.get_global(), self.get_avl(), self.get_paddr())
 	}
 }
 
@@ -124,11 +114,11 @@ impl PageTableEntry {
 		((self.value & 0b111000000000) >> 9) as u8
 	}
 
-	pub fn get_address (&self) -> u32 {
+	pub fn get_paddr(&self) -> PhysAddr {
 		self.value & 0xfffff000
 	}
 
-	pub fn free_entry(&mut self) {
-		self.value =0 ;
+	pub fn get_vaddr(&self) -> VirtAddr {
+		(&*self as *const _) as VirtAddr
 	}
 }
