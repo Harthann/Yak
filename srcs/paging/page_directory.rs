@@ -24,7 +24,7 @@ impl PageDirectory {
 		while i < 1023 {
 			if self.entries[i].get_present() == 1 {
 				let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
-				if i != 768 && pt_index != 1022 { /* reserved for swap */
+				if !(i == 768 && pt_index == 1022) { /* reserved for swap */
 					return Ok(get_vaddr!(i, pt_index));
 				}
 			}
@@ -33,7 +33,7 @@ impl PageDirectory {
 		// Create a new_page_table for the new frame
 		i = self.new_page_table()?;
 		let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
-		if i != 768 && pt_index != 1022 { /* reserved for swap */
+		if !(i == 768 && pt_index == 1022) { /* reserved for swap */
 			return Ok(get_vaddr!(i, pt_index));
 		}
 		todo!();

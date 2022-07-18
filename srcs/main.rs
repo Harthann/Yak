@@ -49,9 +49,9 @@ fn test() {
 //		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
 
 		/* TESTS PAGES */
-		page_directory.new_page_table();
-		kprintln!("page[1]: {}", page_directory.entries[0]);
-		let res = page_directory.new_page_frame(0xfffff000 as u32);
+//		page_directory.new_page_table();
+//		kprintln!("page[1]: {}", page_directory.entries[0]);
+		let res = page_directory.new_page_frame(0x0 as u32);
 		let virt_addr: u32 = res.unwrap();
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
@@ -62,9 +62,9 @@ fn test() {
 		page_directory.new_page_table();
 		page_directory.new_page_table();
 		page_directory.new_page_table();
+		kprintln!("{:#x}", page_directory.get_page_table(0).entries[1023].get_paddr());
 		kprintln!("{:#x}", page_directory.get_page_table(1).entries[1023].get_paddr());
 		kprintln!("{:#x}", page_directory.get_page_table(2).entries[1023].get_paddr());
-		kprintln!("{:#x}", page_directory.get_page_table(3).entries[1023].get_paddr());
 //		page_directory.remove_page_frame(virt_addr);
 //		*nb = 0x1000;
 //		kprintln!("next value of nb: {:#x}", *nb);
