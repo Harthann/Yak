@@ -37,7 +37,7 @@ impl PageDirectory {
 			return Ok(get_vaddr!(i, pt_index));
 		}
 		todo!();
-		Err(())
+		//Err(())
 	}
 
 	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<PhysAddr, ()> {
@@ -78,7 +78,7 @@ impl PageDirectory {
 				i += 1;
 			}
 			todo!();
-			Err(())
+			//Err(())
 		}
 	}
 

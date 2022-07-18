@@ -11,12 +11,12 @@ mod cli;
 mod paging;
 mod interrupts;
 mod kmemory;
+mod multiboot;
 
 use paging::init_paging;
 use paging::alloc_page;
 use paging::free_page;
 use paging::page_directory;
-use paging::page_table::PageTable;
 
 #[allow(dead_code)]
 extern "C" {
@@ -36,6 +36,7 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kinit() {
+//    multiboot::read_tags();
 	init_paging();
 	kmain();
 }
@@ -60,7 +61,7 @@ fn test() {
 		let mut virt_addr: u32 = res.unwrap();
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
-		let mut nb: *mut usize = &mut *(virt_addr as *mut usize);
+		let nb: *mut usize = &mut *(virt_addr as *mut usize);
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);

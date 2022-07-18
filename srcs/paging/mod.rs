@@ -27,7 +27,7 @@ pub fn init_paging() {
 		page_tab.init(pt_paddr as usize);
 		page_tab.entries[1023] = (pt_paddr | 3).into();
 		page_directory.entries[768] = (pt_paddr | 3).into();
-		page_directory.remove_page_table(0);
+		page_directory.remove_page_table(0).unwrap();
 		crate::refresh_tlb!();
 		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 	}

@@ -1,6 +1,6 @@
 //  This module aim to parse mutliboot specification
 
-use crate::{kprintln, hexdump};
+use crate::{kprintln};
 
 #[allow(dead_code)]
 extern "C" {
