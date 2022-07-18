@@ -63,10 +63,10 @@ test:
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
+ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat) ),) 
 ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_GRUB).dockerfile -t $(DOCKER_GRUB)
 endif
-ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat) ),) 
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
 else
 				grub-mkrescue -o $(NAME) $(DIR_ISO)
@@ -84,24 +84,24 @@ $(DIR_GRUB):
 
 # Build libkernel using xargo
 $(RUST_KERNEL):	$(KERNELSRCS)
+ifneq ($(shell which xargo),)
+				xargo build --target $(TARGER_ARCH)-kfs
+else
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-ifeq ($(shell which xargo),)
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
-else
-				xargo build --target $(TARGER_ARCH)-kfs
 endif
 
 # Check if the rust can compile without actually compiling it
 check: $(KERNELSRCS)
+ifneq ($(shell which xargo),)
+				xargo build --target $(TARGER_ARCH)-kfs
+else
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-ifeq ($(shell which xargo),)
 				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
-else
-				xargo build --target $(TARGER_ARCH)-kfs
 endif
 
 
