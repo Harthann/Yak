@@ -16,13 +16,14 @@ pub struct PageDirectory {
 
 impl PageDirectory {
 	pub fn new_page_frame(&mut self, page_frame: PhysAddr) -> Result<VirtAddr, ()> {
-		/* TODO: Check for alignment */
+		if page_frame & 0xfff != 0 {
+			return Err(()); /* Not aligned */
+		}
 		let mut i: usize = 1; /* Reserve 0 for swap */
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
 				let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
-				crate::kprintln!("vaddr index: {}, {}", i, pt_index);
 				return Ok(get_vaddr!(i, pt_index));
 			}
 			i += 1;
@@ -35,7 +36,9 @@ impl PageDirectory {
 
 	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<(), ()> {
 		unsafe {
-			/* TODO: Check for alignment */
+			if page_frame & 0xfff != 0 {
+				return Err(()); /* Not aligned */
+			}
 			let pd_index: usize = ((page_frame & 0xffc00000) >> 22) as usize;
 			let i: usize = ((page_frame & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
@@ -54,12 +57,14 @@ impl PageDirectory {
 					let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 					let pt_paddr: PhysAddr = pd_paddr + (i as u32 + 1) * 0x1000;
 					let page_tab: &mut PageTable = page_directory.get_page_table(0);
-					page_tab.entries[i % 1023] = (pt_paddr | 3).into();
-					let new: &mut PageTable = &mut *(get_vaddr!(0, i % 1023) as *mut _);
+					page_tab.entries[0] = (pt_paddr | 3).into();
+					crate::refresh_tlb!();
+					let new: &mut PageTable = &mut *(get_vaddr!(0, 0) as *mut _);
 					new.clear();
 					new.entries[1023] = (pt_paddr | 3).into();
 					self.entries[i] = (pt_paddr | 3).into();
-					page_tab.entries[i % 1023] = 0.into();
+					page_tab.entries[0] = 0.into();
+					crate::refresh_tlb!();
 					return Ok(i);
 				}
 				i += 1;
@@ -75,6 +80,7 @@ impl PageDirectory {
 				let page_table: &mut PageTable = &mut *(get_vaddr!(index, 1023) as *mut _);
 				page_table.clear();
 				self.entries[index] = (0x00000002 as u32).into();
+				crate::refresh_tlb!();
 				return Ok(());
 			} else {
 				return Err(());
