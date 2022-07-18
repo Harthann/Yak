@@ -1,5 +1,7 @@
 use core::fmt;
 
+use crate::kmemory;
+
 use crate::paging::PhysAddr;
 use crate::paging::VirtAddr;
 use crate::paging::PageTable;
@@ -15,10 +17,47 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
-	pub fn new_page_frame(&mut self, page_frame: PhysAddr) -> Result<VirtAddr, ()> {
-		if page_frame & 0xfff != 0 {
-			return Err(()); /* Not aligned */
+	pub fn new_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
+		if nb == 0 {
+			return Err(());
 		}
+		let mut available: usize = 0;
+		let mut i: usize = 0;
+		let mut j: usize = 0;
+		while i < 1023 {
+			if self.entries[i].get_present() == 1 {
+				j = 0;
+				while j < 1023 {
+					/* Reserved for swap */
+					if !(i == 768 && j == 1022) && self.get_page_table(i).entries[j].get_present() == 0 {
+						available += 1;
+					} else {
+						available = 0;
+					}
+					j += 1;
+				}
+			}
+			if available == nb {
+				break ;
+			}
+			i += 1;
+		}
+		if available != nb {
+			i = self.new_page_table()?;
+			j = nb;
+		}
+		j -= nb;
+		let mut k: usize = 0;
+		while k < nb {
+			self.get_page_table(i).entries[j] = (kmemory::physmap_as_mut().get_page() | 3).into();
+			j += 1;
+			k += 1;
+		}
+		Ok(get_vaddr!(i, j - nb))
+	}
+
+	pub fn new_page_frame(&mut self) -> Result<VirtAddr, ()> {
+		let page_frame = kmemory::physmap_as_mut().get_page();
 		let mut i: usize = 0;
 
 		while i < 1023 {
@@ -40,10 +79,10 @@ impl PageDirectory {
 		//Err(())
 	}
 
-	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<PhysAddr, ()> {
+	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) {
 		unsafe {
 			if page_frame & 0xfff != 0 {
-				return Err(()); /* Not aligned */
+				return ; /* Not aligned */
 			}
 			let paddr: PhysAddr = crate::get_paddr!(page_frame);
 			let pd_index: usize = ((page_frame & 0xffc00000) >> 22) as usize;
@@ -51,7 +90,7 @@ impl PageDirectory {
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
 			page_table.entries[i] = 0.into();
 			// TODO: if last of page_table
-			Ok(paddr)
+			kmemory::physmap_as_mut().free_page(paddr);
 		}
 	}
 

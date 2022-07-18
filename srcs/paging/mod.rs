@@ -33,17 +33,16 @@ pub fn init_paging() {
 	}
 }
 
+pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
+	unsafe{Ok(page_directory.new_page_frames(nb)?)}
+}
+
 pub fn alloc_page() -> Result<VirtAddr, ()> {
-	unsafe{Ok(page_directory.new_page_frame(kmemory::physmap_as_mut().get_page() as u32)?)}
+	unsafe{Ok(page_directory.new_page_frame()?)}
 }
 
 pub fn free_page(vaddr: VirtAddr) {
-	unsafe {
-		let res = page_directory.remove_page_frame(vaddr);
-		if res.is_ok() {
-			kmemory::physmap_as_mut().free_page(res.unwrap());
-		}
-	}
+	unsafe{page_directory.remove_page_frame(vaddr)};
 }
 
 #[macro_export]

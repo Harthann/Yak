@@ -15,6 +15,7 @@ mod multiboot;
 
 use paging::init_paging;
 use paging::alloc_page;
+use paging::alloc_pages;
 use paging::free_page;
 use paging::page_directory;
 
@@ -61,10 +62,24 @@ fn test() {
 		let mut virt_addr: u32 = res.unwrap();
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
-		let nb: *mut usize = &mut *(virt_addr as *mut usize);
+		let mut nb: *mut usize = &mut *(virt_addr as *mut usize);
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);
+		res = alloc_pages(8);
+		if !res.is_ok() {
+			kprintln!("ko");
+			core::arch::asm!("hlt");
+		}
+		virt_addr = res.unwrap();
+		let mut i: usize = 0; 
+		while i < (8 * 0x1000) - 4 {
+			virt_addr += 4;
+			nb = &mut *(virt_addr as *mut usize);
+			*nb = 8;
+			i += 4;
+		}
+/*
 		let mut i = 0;
 		while i < 0x100000 {
 			res = alloc_page();
@@ -79,6 +94,7 @@ fn test() {
 			}
 			i += 1;
 		}
+*/
 //		page_directory.remove_page_frame(virt_addr);
 //		*nb = 0x1000;
 //		kprintln!("next value of nb: {:#x}", *nb);
