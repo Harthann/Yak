@@ -19,7 +19,7 @@ endif
 TARGER_ARCH 	=	i386
 
 LINKERFILE		=	linker.ld
-LINKERFLAGS		=	-m elf_i386 -n -T $(DIR_ARCH)/$(LINKERFILE)
+LINKERFLAGS		=	-n -T $(DIR_ARCH)/$(LINKERFILE)
 
 GRUB_CFG		=	grub.cfg
 
@@ -74,34 +74,38 @@ endif
 
 # Link asm file with rust according to the linker script in arch directory
 $(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
+ifeq ($(shell which i386-elf-ld),)
 ifeq ($(shell docker images -q ${DOCKER_LINKER} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_LINKER).dockerfile -t $(DOCKER_LINKER)
 endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) -m elf_i386 $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
+else
+				i386-elf-ld $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
+endif
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using xargo
 $(RUST_KERNEL):	$(KERNELSRCS)
-ifneq ($(shell which xargo),)
-				xargo build --target $(TARGER_ARCH)-kfs
-else
+ifeq ($(shell which xargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
+else
+				xargo build --target $(TARGER_ARCH)-kfs
 endif
 
 # Check if the rust can compile without actually compiling it
 check: $(KERNELSRCS)
-ifneq ($(shell which xargo),)
-				xargo build --target $(TARGER_ARCH)-kfs
-else
+ifeq ($(shell which xargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
 				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
+else
+				xargo build --target $(TARGER_ARCH)-kfs
 endif
 
 
