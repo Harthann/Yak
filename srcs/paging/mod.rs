@@ -1,6 +1,8 @@
 pub mod page_directory;
 pub mod page_table;
 
+use crate::kmemory;
+
 #[allow(dead_code)]
 extern "C" {
 	pub static mut page_directory: PageDirectory;
@@ -27,42 +29,47 @@ pub fn init_paging() {
 		page_directory.entries[768] = (pt_paddr | 3).into();
 		page_directory.remove_page_table(0);
 		crate::refresh_tlb!();
+		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 	}
+}
+
+pub fn alloc_page() -> Result<VirtAddr, ()> {
+	unsafe{Ok(page_directory.new_page_frame(kmemory::physmap_as_mut().get_page() as u32)?)}
 }
 
 #[macro_export]
 macro_rules! get_paddr {
 	($vaddr:expr) =>
 		(
-			page_directory.get_page_table(($vaddr & 0xffc00000) >> 22).entries[($vaddr & 0x3ff000) >> 12].get_paddr() + (($vaddr & 0xfff) as crate::paging::PhysAddr)
+			page_directory.get_page_table((($vaddr as usize) & 0xffc00000) >> 22).entries[(($vaddr as usize) & 0x3ff000) >> 12].get_paddr() + ((($vaddr as usize) & 0xfff) as crate::paging::PhysAddr)
 		);
 }
 
 #[macro_export]
 macro_rules! get_vaddr {
 	($pd_index:expr, $pt_index:expr) =>
-		((($pd_index << 22) | ($pt_index << 12)) as crate::paging::VirtAddr);
+		(((($pd_index as usize) << 22) | (($pt_index as usize) << 12)) as crate::paging::VirtAddr);
 }
 
 #[macro_export]
 macro_rules! refresh_tlb {
-	() => (unsafe{core::arch::asm!("mov eax, cr3",
-		"mov cr3, eax")});
+	() => (core::arch::asm!("mov eax, cr3",
+		"mov cr3, eax"));
 }
 
 #[macro_export]
 macro_rules! enable_paging {
-	($page_directory:expr) => (unsafe{core::arch::asm!("mov eax, {p}",
+	($page_directory:expr) => (core::arch::asm!("mov eax, {p}",
 		"mov cr3, eax",
 		"mov eax, cr0",
 		"or eax, 0x80000001",
 		"mov cr0, eax",
-		p = in(reg) (&$page_directory as *const _) as usize)};);
+		p = in(reg) (&$page_directory as *const _) as usize););
 }
 
 #[macro_export]
 macro_rules! disable_paging {
-	() => (unsafe{core::arch::asm!("mov ebx, cr0",
+	() => (core::arch::asm!("mov ebx, cr0",
 		"and ebx, ~(1 << 31)",
-		"mov cr0, ebx")});
+		"mov cr0, ebx"));
 }

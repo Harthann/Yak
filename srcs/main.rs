@@ -13,6 +13,7 @@ mod interrupts;
 mod kmemory;
 
 use paging::init_paging;
+use paging::alloc_page;
 use paging::page_directory;
 use paging::page_table::PageTable;
 
@@ -35,7 +36,6 @@ pub extern "C" fn eh_personality() {}
 #[no_mangle]
 pub extern "C" fn kinit() {
 	init_paging();
-	kmemory::physmap_as_mut().claim_range(0x0, 1024);
 	kmain();
 }
 
@@ -51,20 +51,31 @@ fn test() {
 		/* TESTS PAGES */
 //		page_directory.new_page_table();
 //		kprintln!("page[1]: {}", page_directory.entries[0]);
-		let res = page_directory.new_page_frame(0x0 as u32);
-		let virt_addr: u32 = res.unwrap();
+		let mut res = alloc_page();
+		if !res.is_ok() {
+			kprintln!("ko");
+			core::arch::asm!("hlt");
+		}
+		let mut virt_addr: u32 = res.unwrap();
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
 		let mut nb: *mut usize = &mut *(virt_addr as *mut usize);
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);
-		page_directory.new_page_table();
-		page_directory.new_page_table();
-		page_directory.new_page_table();
-		kprintln!("{:#x}", page_directory.get_page_table(0).entries[1023].get_paddr());
-		kprintln!("{:#x}", page_directory.get_page_table(1).entries[1023].get_paddr());
-		kprintln!("{:#x}", page_directory.get_page_table(2).entries[1023].get_paddr());
+		/*
+		let mut i = 0;
+		while i < 0x100000 {
+			res = alloc_page();
+			if !res.is_ok() {
+				kprintln!("ko");
+				core::arch::asm!("hlt");
+			}
+			virt_addr = res.unwrap();
+			kprintln!("{}: {:#010x}", i, virt_addr);
+			i += 1;
+		}
+		*/
 //		page_directory.remove_page_frame(virt_addr);
 //		*nb = 0x1000;
 //		kprintln!("next value of nb: {:#x}", *nb);

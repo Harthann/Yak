@@ -23,9 +23,9 @@ impl PageDirectory {
 
 		while i < 1023 {
 			if self.entries[i].get_present() == 1 {
-				let pt_index: usize = self.get_page_table(i).new_frame(page_frame)? as usize;
-				if !(i == 768 && pt_index == 1022) { /* reserved for swap */
-					return Ok(get_vaddr!(i, pt_index));
+				let res = self.get_page_table(i).new_frame(page_frame);
+				if res.is_ok() && !(i == 768 && res.unwrap() == 1022) { /* reserved for swap */
+					return Ok(get_vaddr!(i, res.unwrap()));
 				}
 			}
 			i += 1;
@@ -36,6 +36,7 @@ impl PageDirectory {
 		if !(i == 768 && pt_index == 1022) { /* reserved for swap */
 			return Ok(get_vaddr!(i, pt_index));
 		}
+		crate::kprintln!("wtf");
 		todo!();
 		Err(())
 	}
