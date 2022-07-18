@@ -37,6 +37,15 @@ pub fn alloc_page() -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.new_page_frame(kmemory::physmap_as_mut().get_page() as u32)?)}
 }
 
+pub fn free_page(vaddr: VirtAddr) {
+	unsafe {
+		let res = page_directory.remove_page_frame(vaddr);
+		if res.is_ok() {
+			kmemory::physmap_as_mut().free_page(res.unwrap());
+		}
+	}
+}
+
 #[macro_export]
 macro_rules! get_paddr {
 	($vaddr:expr) =>

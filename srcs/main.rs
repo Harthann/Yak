@@ -14,6 +14,7 @@ mod kmemory;
 
 use paging::init_paging;
 use paging::alloc_page;
+use paging::free_page;
 use paging::page_directory;
 use paging::page_table::PageTable;
 
@@ -63,7 +64,6 @@ fn test() {
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);
-		/*
 		let mut i = 0;
 		while i < 0x100000 {
 			res = alloc_page();
@@ -73,9 +73,11 @@ fn test() {
 			}
 			virt_addr = res.unwrap();
 			kprintln!("{}: {:#010x}", i, virt_addr);
+			if i % 2 == 0 {
+				free_page(virt_addr);
+			}
 			i += 1;
 		}
-		*/
 //		page_directory.remove_page_frame(virt_addr);
 //		*nb = 0x1000;
 //		kprintln!("next value of nb: {:#x}", *nb);

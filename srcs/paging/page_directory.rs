@@ -36,21 +36,22 @@ impl PageDirectory {
 		if !(i == 768 && pt_index == 1022) { /* reserved for swap */
 			return Ok(get_vaddr!(i, pt_index));
 		}
-		crate::kprintln!("wtf");
 		todo!();
 		Err(())
 	}
 
-	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<(), ()> {
+	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) -> Result<PhysAddr, ()> {
 		unsafe {
 			if page_frame & 0xfff != 0 {
 				return Err(()); /* Not aligned */
 			}
+			let paddr: PhysAddr = crate::get_paddr!(page_frame);
 			let pd_index: usize = ((page_frame & 0xffc00000) >> 22) as usize;
 			let i: usize = ((page_frame & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
 			page_table.entries[i] = 0.into();
-			Ok(())
+			// TODO: if last of page_table
+			Ok(paddr)
 		}
 	}
 
