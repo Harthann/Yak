@@ -1,4 +1,4 @@
-VERSION			=	2
+VERSION			=	3
 
 QEMU			=	qemu-system-i386
 
@@ -25,6 +25,8 @@ GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
+
+XARGO_FLAGS		=	--target $(TARGER_ARCH)-kfs
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
@@ -58,8 +60,11 @@ debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
 				$(TERM_EMU) bash -c "cd $(MAKEFILE_PATH); gdb $(DIR_ISO)/boot/$(NAME) -x gdbstart"
 
-test:
-	echo $(TEST)
+release:		setup_release $(NAME)
+
+setup_release:
+				$(eval XARGO_FLAGS += --release)
+				$(eval RUST_KERNEL = target/i386-kfs/release/libkernel.a)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
@@ -69,7 +74,7 @@ ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 endif
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
 else
-				grub-mkrescue -o $(NAME) $(DIR_ISO)
+				grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO)
 endif
 
 # Link asm file with rust according to the linker script in arch directory
@@ -94,7 +99,7 @@ ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 endif
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
 else
-				xargo build --target $(TARGER_ARCH)-kfs
+				xargo build $(XARGO_FLAGS)
 endif
 
 # Check if the rust can compile without actually compiling it
@@ -105,9 +110,8 @@ ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 endif
 				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
 else
-				xargo build --target $(TARGER_ARCH)-kfs
+				xargo check $(XARGO_FLAGS)
 endif
-
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)

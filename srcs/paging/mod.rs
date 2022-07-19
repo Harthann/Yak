@@ -30,15 +30,15 @@ pub fn init_paging() {
 		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 		let pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
 		let ipt_paddr: PhysAddr = pd_paddr + 0x1000;
-		let mut init_page_tab: &mut PageTable = &mut *(ipt_paddr as *mut _);
-		init_page_tab.entries[768] = (pt_paddr | 3).into();
+		let init_page_tab: &mut PageTable = &mut *(ipt_paddr as *mut _);
+		init_page_tab.set_entry(768, pt_paddr | 3);
 		crate::refresh_tlb!();
 		let page_tab: &mut PageTable = page_directory.get_page_table(768);
 		page_tab.init();
-		page_directory.entries[768] = (pt_paddr | 3).into();
+		page_directory.set_entry(768, pt_paddr | 3);
 		init_page_tab.clear();
-		init_page_tab.entries[0] = ((pd_paddr + 0x1000) | 3).into();
-		init_page_tab.entries[768] = (pt_paddr | 3).into();
+		init_page_tab.set_entry(0, (pd_paddr + 0x1000) | 3);
+		init_page_tab.set_entry(768, pt_paddr | 3);
 		crate::refresh_tlb!();
 		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 	}

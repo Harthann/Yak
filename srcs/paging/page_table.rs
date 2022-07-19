@@ -25,6 +25,10 @@ impl PageTable {
 		}
 	}
 
+	pub fn set_entry(&mut self, index: usize, value: u32) {
+		self.entries[index] = value.into();
+	}
+
 	pub fn clear(&mut self) {
 		let mut i: usize = 0;
 
@@ -70,7 +74,7 @@ impl From<u32> for PageTableEntry {
 
 impl fmt::Display for PageTableEntry {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PAT: {} | G: {} | AVL: {:#010x} | Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
+		write!(f, "{:#010x} - P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PAT: {} | G: {} | AVL: {:#010x} | Address: {:#010x}", self.get_vaddr(), self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_pat(),
 self.get_global(), self.get_avl(), self.get_paddr())
 	}

@@ -10,6 +10,8 @@ name='kernel'
 path='srcs/main.rs'
 crate-type = ["staticlib"]
 
+[profile.release]
+opt-level = "z"
 
 #	Dependencies
 [dependencies]

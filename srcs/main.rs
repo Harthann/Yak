@@ -82,6 +82,7 @@ fn test() {
 		}
 		kprintln!("alloc one");
 		res = alloc_pages(2000);
+		kprintln!("abc");
 		if !res.is_ok() {
 			kprintln!("ko");
 			core::arch::asm!("hlt");
