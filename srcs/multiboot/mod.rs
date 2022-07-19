@@ -54,7 +54,6 @@ pub fn read_tags() {
 		let mut ptr: *const u8 = multiboot_ptr.offset(8);
 		let mut tag_ptr: *const TagHeader = ptr as *const TagHeader;
 
-		kprintln!("Multiboot ptr: {:#x}", multiboot_ptr as u32);
 		while (*tag_ptr).size != 0 {
 			match (*tag_ptr).htype {
 				6 => {
@@ -72,7 +71,7 @@ pub fn read_tags() {
 						mmap_entry = mmap_entry.add(1);
 						i += 1;
 					}
-					
+					break ;
 				},
 				2 => {
 					let headers: &AddrTag = &*(tag_ptr as *const AddrTag);
@@ -88,9 +87,9 @@ pub fn read_tags() {
 	}
 }
 
-pub fn get_last_entry() -> &'static MemMapEntry {
+pub fn get_last_entry() -> Result<&'static MemMapEntry, ()> {
 	unsafe {
-		let mut mmap_entry: *const MemMapEntry = 0 as *const _;
+		let mut mmap_entry: *const MemMapEntry;
 		let mut ptr: *const u8 = multiboot_ptr.offset(8);
 		let mut tag_ptr: *const TagHeader = ptr as *const TagHeader;
 
@@ -102,16 +101,14 @@ pub fn get_last_entry() -> &'static MemMapEntry {
 				let mut i: u32 = 0;
 
 				while i < entry_number - 1 {
-						kprintln!("{:2} | {:#13x} | {:#9x} | {:4} | {:x}",
-									i, (*mmap_entry).baseaddr, (*mmap_entry).length, (*mmap_entry).mtype, (*mmap_entry).reserved);
 					mmap_entry = mmap_entry.add(1);
 					i += 1;
 				}
-				break ;
+				return Ok(&*mmap_entry);
 			}
 			ptr = ptr.add((((*tag_ptr).size + 7) & !7) as usize);
 			tag_ptr = ptr as *const TagHeader;
 		}
-		return & *mmap_entry;
+		Err(())
 	}
 }

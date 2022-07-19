@@ -30,9 +30,12 @@ pub type PhysAddr = u32;
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
-		let mmap_entry:&'static MemMapEntry = multiboot::get_last_entry();
-		/* Reserve space for kernel and SeaBIOS (GRUB) */
-		kmemory::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
+		let res = multiboot::get_last_entry();
+		if res.is_ok() {
+			let mmap_entry: &MemMapEntry = res.unwrap();
+			/* Reserve space for kernel and SeaBIOS (GRUB) */
+			kmemory::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
+		}
 		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		/* Init paging map */
