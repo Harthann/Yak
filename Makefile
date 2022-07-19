@@ -97,7 +97,7 @@ ifeq ($(shell which xargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build $(XARGO_FLAGS)
 else
 				xargo build $(XARGO_FLAGS)
 endif
@@ -110,7 +110,7 @@ ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 endif
 				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
 else
-				xargo check $(XARGO_FLAGS)
+				xargo check
 endif
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
