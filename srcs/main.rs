@@ -66,7 +66,7 @@ fn test() {
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);
-		res = alloc_pages(8);
+		res = alloc_pages(50);
 		if !res.is_ok() {
 			kprintln!("ko");
 			core::arch::asm!("hlt");

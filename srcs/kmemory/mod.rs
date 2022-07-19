@@ -3,23 +3,24 @@ pub type VirtAddr   = u32;
 type Sector     = u8;
 
 /*  Hardcoded value corresponding to our paging maximum memory */
-const MAX_MEM:		  u64   = 1024 * 1024 * 4096;
+const MAX_MEM:			u64   = 1024 * 1024 * 4096;
 const PAGE_SIZE:		usize = 4096;
-const SECTOR_SIZE:	  usize = PAGE_SIZE * 8;
+const SECTOR_SIZE:		usize = PAGE_SIZE * 8;
 const SECTOR_NUMBER:	usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
+const MAP_SIZE:			usize = 131072;
 
 pub static mut PHYSMAP: Bitmaps = Bitmaps {
-		maps: [0; 131072]
+		maps: [0; MAP_SIZE]
 };
 
 pub struct Bitmaps {
-	maps: [Sector; 131072]
+	maps: [Sector; MAP_SIZE]
 }
 
 impl Bitmaps {
 	pub const fn new() -> Bitmaps {
 		Bitmaps {
-			maps: [0;131072],
+			maps: [0; MAP_SIZE],
 		}
 	}
 
@@ -53,7 +54,7 @@ impl Bitmaps {
 		while self.maps[i] == 0xff {
 			i += 1;
 		}
-		if i == 131072 {
+		if i == MAP_SIZE { // TODO -> if physaddr is 0 ?
 			return 0x0;
 		}
 		while (self.maps[i] >> shift) & 1 == 1 {

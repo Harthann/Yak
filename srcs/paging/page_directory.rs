@@ -23,12 +23,16 @@ impl PageDirectory {
 		}
 		let mut available: usize = 0;
 		let mut i: usize = 1; /* 0 reserved for page_table def */
+		let mut i_saved: usize = 1;
 		let mut j: usize = 0;
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
-				while j < 1024 {
+				while j < 1024 && available != nb {
 					if self.get_page_table(i).entries[j].get_present() == 0 {
+						if available == 0 {
+							i_saved = i;
+						}
 						available += 1;
 					} else {
 						available = 0;
@@ -42,17 +46,27 @@ impl PageDirectory {
 			i += 1;
 		}
 		if available != nb {
-			i = self.new_page_table()?;
+			let nb_pages: usize = (nb / 1024) + 1;
+			if nb_pages == 0 {
+				i_saved = self.new_page_table()?;
+			} else {
+				i_saved = self.new_page_tables(nb_pages)?;
+			}
 			j = nb;
 		}
 		j -= nb;
+		let vaddr: VirtAddr = get_vaddr!(i_saved, j);
 		let mut k: usize = 0;
 		while k < nb {
-			self.get_page_table(i).entries[j] = (kmemory::physmap_as_mut().get_page() | 3).into();
+			if j == 1024 {
+				i_saved += 1;
+				j = 0;
+			}
+			self.get_page_table(i_saved).entries[j] = (kmemory::physmap_as_mut().get_page() | 3).into();
 			j += 1;
 			k += 1;
 		}
-		Ok(get_vaddr!(i, j - nb))
+		Ok(vaddr)
 	}
 
 	pub fn new_page_frame(&mut self) -> Result<VirtAddr, ()> {
@@ -109,6 +123,38 @@ impl PageDirectory {
 			}
 			todo!();
 			//Err(())
+		}
+	}
+
+	pub fn new_page_tables(&mut self, nb: usize) -> Result<usize, ()> {
+		unsafe {
+			let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
+			let page_tab: &mut PageTable = page_directory.get_page_table(0);
+			let mut i: usize = 0;
+
+			while i < 1024 {
+				if self.entries[i].get_present() == 0 {
+					let mut j: usize = i + 1;
+					while j < 1024 && self.entries[j].get_present() == 0 && j - i != nb{
+						j += 1;
+					}
+					if j - i == nb && j < 1024 {
+						while i < j {
+							let pt_paddr: PhysAddr = pd_paddr + (i as u32 + 1) * 0x1000;
+							page_tab.entries[i] = (pt_paddr | 3).into();
+							crate::refresh_tlb!();
+							let new: &mut PageTable = page_directory.get_page_table(i);
+							new.clear();
+							self.entries[i] = (pt_paddr | 3).into();
+							crate::refresh_tlb!();
+							i += 1;
+						}
+						return Ok(i - nb);
+					}
+				}
+				i += 1;
+			}
+			Err(())
 		}
 	}
 
