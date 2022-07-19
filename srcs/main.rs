@@ -72,11 +72,26 @@ fn test() {
 			core::arch::asm!("hlt");
 		}
 		virt_addr = res.unwrap();
+		kprintln!("virt_addr: {:#x}", virt_addr);
 		let mut i: usize = 0; 
-		while i < (8 * 0x1000) - 4 {
+		while i < (50 * 0x1000) - 4 {
 			virt_addr += 4;
 			nb = &mut *(virt_addr as *mut usize);
-			kprintln!("{:#x}", virt_addr);
+			*nb = 8;
+			i += 4;
+		}
+		kprintln!("alloc one");
+		res = alloc_pages(2000);
+		if !res.is_ok() {
+			kprintln!("ko");
+			core::arch::asm!("hlt");
+		}
+		virt_addr = res.unwrap();
+		i = 0;
+		while i < (2000 * 0x1000) - 4 {
+			virt_addr += 4;
+			nb = &mut *(virt_addr as *mut usize);
+//			kprintln!("{:#x}", virt_addr);
 			*nb = 8;
 			i += 4;
 		}

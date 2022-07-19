@@ -36,11 +36,11 @@ pub fn init_paging() {
 }
 
 pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
-	unsafe{Ok(page_directory.new_page_frames(nb)?)}
+	unsafe{Ok(page_directory.get_page_frames(nb)?)}
 }
 
 pub fn alloc_page() -> Result<VirtAddr, ()> {
-	unsafe{Ok(page_directory.new_page_frame()?)}
+	unsafe{Ok(page_directory.get_page_frame()?)}
 }
 
 pub fn free_page(vaddr: VirtAddr) {

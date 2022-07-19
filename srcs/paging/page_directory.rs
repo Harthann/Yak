@@ -17,15 +17,16 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
-	pub fn new_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
-		if nb == 0 {
-			return Err(());
-		}
+	pub fn get_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
 		let mut i: usize = 1; /* 0 reserved for page_table def */
 		let mut i_saved: usize = 1;
 		let mut j: usize = 0;
-		while i < 1024 {
+
+		if nb == 0 {
+			return Err(());
+		}
+		while i < 1024 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -40,50 +41,34 @@ impl PageDirectory {
 					j += 1;
 				}
 			}
-			if available == nb {
-				break ;
-			}
 			i += 1;
 		}
 		if available != nb {
-			let nb_pages: usize = (nb / 1024) + 1;
-			if nb_pages == 0 {
-				i_saved = self.new_page_table()?;
-			} else {
-				i_saved = self.new_page_tables(nb_pages)?;
-			}
-			j = nb;
+			i_saved = self.claim_page_tables((nb / 1024) + 1)?;
+			j = 0;
+		} else {
+			j -= nb;
 		}
-		j -= nb;
 		let vaddr: VirtAddr = get_vaddr!(i_saved, j);
-		let mut k: usize = 0;
-		while k < nb {
-			if j == 1024 {
-				i_saved += 1;
-				j = 0;
-			}
-			self.get_page_table(i_saved).entries[j] = (kmemory::physmap_as_mut().get_page() | 3).into();
-			j += 1;
-			k += 1;
-		}
+		self.claim_index_page_frames(i_saved, j, nb);
 		Ok(vaddr)
 	}
 
-	pub fn new_page_frame(&mut self) -> Result<VirtAddr, ()> {
-		let page_frame = kmemory::physmap_as_mut().get_page();
+	pub fn get_page_frame(&mut self) -> Result<VirtAddr, ()> {
+		let paddr = kmemory::physmap_as_mut().get_page();
 		let mut i: usize = 1; /* 0 reserved for page_table def */
 
 		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
-				let res = self.get_page_table(i).new_frame(page_frame);
+				let res = self.get_page_table(i).new_frame(paddr);
 				if res.is_ok() {
 					return Ok(get_vaddr!(i, res.unwrap()));
 				}
 			}
 			i += 1;
 		}
-		i = self.new_page_table()?;
-		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(page_frame)?))
+		i = self.claim_page_table()?;
+		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr)?))
 	}
 
 	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) {
@@ -101,8 +86,23 @@ impl PageDirectory {
 		}
 	}
 
+	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) {
+		let mut i: usize = 0;
+
+		while i < nb {
+			if pt_index == 1024 {
+				pt_index = 0;
+				pd_index += 1;
+			}
+			let paddr: PhysAddr = kmemory::physmap_as_mut().get_page();
+			self.get_page_table(pd_index).new_index_frame(pt_index, paddr);
+			pt_index += 1;
+			i += 1;
+		}
+	}
+
 	/* Return index of the new page */
-	pub fn new_page_table(&mut self) -> Result<usize, ()> {
+	fn claim_page_table(&mut self) -> Result<usize, ()> {
 		unsafe {
 			let mut i: usize = 0;
 
@@ -126,8 +126,11 @@ impl PageDirectory {
 		}
 	}
 
-	pub fn new_page_tables(&mut self, nb: usize) -> Result<usize, ()> {
+	fn claim_page_tables(&mut self, nb: usize) -> Result<usize, ()> {
 		unsafe {
+			if nb == 0 {
+				return self.claim_page_table();
+			}
 			let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 			let page_tab: &mut PageTable = page_directory.get_page_table(0);
 			let mut i: usize = 0;
@@ -154,7 +157,8 @@ impl PageDirectory {
 				}
 				i += 1;
 			}
-			Err(())
+			todo!();
+			//Err(())
 		}
 	}
 
