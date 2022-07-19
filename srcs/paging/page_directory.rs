@@ -17,6 +17,10 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
+	/*
+		Claim 'nb' page frames (by lowest index), pages must be virtually
+		adjacents
+	*/
 	pub fn get_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
 		let mut i: usize = 1; /* 0 reserved for page_table def */
@@ -54,6 +58,7 @@ impl PageDirectory {
 		Ok(vaddr)
 	}
 
+	/* Claim a page frame (by lowest index) */
 	pub fn get_page_frame(&mut self) -> Result<VirtAddr, ()> {
 		let paddr = kmemory::physmap_as_mut().get_page();
 		let mut i: usize = 1; /* 0 reserved for page_table def */
@@ -71,21 +76,7 @@ impl PageDirectory {
 		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr)?))
 	}
 
-	pub fn remove_page_frame(&mut self, page_frame: VirtAddr) {
-		unsafe {
-			if page_frame & 0xfff != 0 {
-				return ; /* Not aligned */
-			}
-			let paddr: PhysAddr = crate::get_paddr!(page_frame);
-			let pd_index: usize = ((page_frame & 0xffc00000) >> 22) as usize;
-			let i: usize = ((page_frame & 0x3ff000) >> 12) as usize;
-			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
-			page_table.entries[i] = 0.into();
-			// TODO: if last of page_table
-			kmemory::physmap_as_mut().free_page(paddr);
-		}
-	}
-
+	/* Claim a range of page frames based on 'nb' size and specified index */
 	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) {
 		let mut i: usize = 0;
 
@@ -101,7 +92,7 @@ impl PageDirectory {
 		}
 	}
 
-	/* Return index of the new page */
+	/* Claim a new page table and return index of the new page */
 	fn claim_page_table(&mut self) -> Result<usize, ()> {
 		unsafe {
 			let mut i: usize = 0;
@@ -126,9 +117,13 @@ impl PageDirectory {
 		}
 	}
 
+	/*
+		Claim 'nb' new page tables adjacent and return the lowest index of those
+		pages.
+	*/
 	fn claim_page_tables(&mut self, nb: usize) -> Result<usize, ()> {
 		unsafe {
-			if nb == 0 {
+			if nb == 1 {
 				return self.claim_page_table();
 			}
 			let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
@@ -162,6 +157,23 @@ impl PageDirectory {
 		}
 	}
 
+	/* Remove a page frame at a specified virtual address */
+	pub fn remove_page_frame(&mut self, vaddr: VirtAddr) {
+		unsafe {
+			if vaddr & 0xfff != 0 {
+				return ; /* Not aligned */
+			}
+			let paddr: PhysAddr = crate::get_paddr!(vaddr);
+			let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+			let i: usize = ((vaddr & 0x3ff000) >> 12) as usize;
+			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
+			page_table.entries[i] = 0.into();
+			// TODO: if last of page_table
+			kmemory::physmap_as_mut().free_page(paddr);
+		}
+	}
+
+	/* Remove a page table at specified index */
 	pub fn remove_page_table(&mut self, index: usize) -> Result<(), ()> {
 		unsafe {
 			if self.entries[index].get_present() == 1 {
@@ -176,10 +188,15 @@ impl PageDirectory {
 		}
 	}
 
+	/*
+		Get the page_table at the specified index
+		The page table 0 index every page_table
+	*/
 	pub fn get_page_table(&self, index: usize) -> &mut PageTable {
 		unsafe{&mut *(get_vaddr!(0, index) as *mut _)}
 	}
 
+	/* Return the virtual address of the page directory */
 	pub fn get_vaddr(&self) -> VirtAddr {
 		(&*self as *const _) as VirtAddr
 	}

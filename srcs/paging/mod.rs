@@ -16,6 +16,15 @@ use page_table::PageTable;
 pub type VirtAddr = u32;
 pub type PhysAddr = u32;
 
+/*
+	Initiliaze the paging:
+	- setup a page_table at the index 768 containing kernel code paddrs and
+	page_directoy paddr
+	- reset the initial page_table at index 0 and setup the page to index every
+	page_tables in memory
+	- initialize the bitmap of page tables
+	- refresh tlb to clear the cache of the CPU
+*/
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
@@ -35,14 +44,19 @@ pub fn init_paging() {
 	}
 }
 
+/* Allocate 'nb' page frames */
 pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frames(nb)?)}
 }
 
+/* TODO: free nb page frames */
+
+/* Allocate a page frame */
 pub fn alloc_page() -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frame()?)}
 }
 
+/* Free a page frame */
 pub fn free_page(vaddr: VirtAddr) {
 	unsafe{page_directory.remove_page_frame(vaddr)};
 }
