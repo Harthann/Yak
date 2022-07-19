@@ -37,7 +37,7 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kinit() {
-//    multiboot::read_tags();
+	multiboot::read_tags();
 	init_paging();
 	kmain();
 }

@@ -2,6 +2,8 @@ pub mod page_directory;
 pub mod page_table;
 
 use crate::kmemory;
+use crate::multiboot;
+use crate::multiboot::MemMapEntry;
 
 #[allow(dead_code)]
 extern "C" {
@@ -28,6 +30,12 @@ pub type PhysAddr = u32;
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
+		let mmap_entry:&'static MemMapEntry = multiboot::get_last_entry();
+		/* Reserve space for kernel and SeaBIOS (GRUB) */
+		kmemory::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
+		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
+
+		/* Init paging map */
 		let pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
 		let ipt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let init_page_tab: &mut PageTable = &mut *(ipt_paddr as *mut _);
@@ -40,7 +48,6 @@ pub fn init_paging() {
 		init_page_tab.set_entry(0, (pd_paddr + 0x1000) | 3);
 		init_page_tab.set_entry(768, pt_paddr | 3);
 		crate::refresh_tlb!();
-		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 	}
 }
 
