@@ -59,7 +59,8 @@ debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
 				$(TERM_EMU) bash -c "cd $(MAKEFILE_PATH); gdb $(DIR_ISO)/boot/$(NAME) -x gdbstart"
 
-test: fclean $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+test: fclean $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
 				xargo test --target=$(TARGER_ARCH)-kfs -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
