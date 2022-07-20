@@ -16,6 +16,7 @@ mod multiboot;
 use paging::init_paging;
 use paging::alloc_page;
 use paging::alloc_pages;
+use paging::kalloc_pages;
 use paging::free_page;
 use paging::free_pages;
 use paging::page_directory;
@@ -103,6 +104,23 @@ fn test() {
 			i += 4;
 		}
 		free_pages(saved_virt_addr, 2000);
+		kprintln!("kalloc_pages");
+		res = kalloc_pages(32);
+		if !res.is_ok() {
+			kprintln!("ko");
+			core::arch::asm!("hlt");
+		}
+		virt_addr = res.unwrap();
+		saved_virt_addr = virt_addr;
+		i = 0;
+		while i < (32 * 0x1000) - 4 {
+			virt_addr += 4;
+			nb = &mut *(virt_addr as *mut usize);
+			kprintln!("{:#x}", virt_addr);
+			*nb = 8;
+			i += 4;
+		}
+		free_pages(saved_virt_addr, 32);
 		/*
 		let mut i = 0;
 		while i < 0x100000 {

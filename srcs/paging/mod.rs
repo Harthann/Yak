@@ -54,6 +54,10 @@ pub fn init_paging() {
 	}
 }
 
+pub fn kalloc_pages(nb: usize) -> Result<VirtAddr, ()> {
+	unsafe{Ok(page_directory.kget_page_frames(nb)?)}
+}
+
 /* Allocate 'nb' page frames */
 pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frames(nb)?)}
@@ -64,7 +68,7 @@ pub fn alloc_page() -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frame()?)}
 }
 
-/* TODO: free nb page frames */
+/* free multiple pages */
 pub fn free_pages(vaddr: VirtAddr, nb: usize) {
 	unsafe{page_directory.remove_page_frames(vaddr, nb)};
 }

@@ -23,6 +23,47 @@ impl PageDirectory {
 	}
 
 	/*
+		Get page frames that are virtually and physically adjacents, return the
+		virtual address of the first one
+	*/
+	pub fn kget_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
+		let mut available: usize = 0;
+		let mut i: usize = 1; /* 0 reserved for page_table def */
+		let mut i_saved: usize = 1;
+		let mut j: usize = 0;
+
+		if nb == 0 {
+			return Err(());
+		}
+		while i < 1024 && available != nb {
+			if self.entries[i].get_present() == 1 {
+				j = 0;
+				while j < 1024 && available != nb {
+					if self.get_page_table(i).entries[j].get_present() == 0 {
+						if available == 0 {
+							i_saved = i;
+						}
+						available += 1;
+					} else {
+						available = 0;
+					}
+					j += 1;
+				}
+			}
+			i += 1;
+		}
+		if available != nb {
+			i_saved = self.claim_page_tables((nb / 1024) + 1)?;
+			j = 0;
+		} else {
+			j -= nb;
+		}
+		let vaddr: VirtAddr = get_vaddr!(i_saved, j);
+		self.kclaim_index_page_frames(i_saved, j, nb)?;
+		Ok(vaddr)
+	}
+
+	/*
 		Claim 'nb' page frames (by lowest index), pages must be virtually
 		adjacents
 	*/
@@ -59,13 +100,13 @@ impl PageDirectory {
 			j -= nb;
 		}
 		let vaddr: VirtAddr = get_vaddr!(i_saved, j);
-		self.claim_index_page_frames(i_saved, j, nb);
+		self.claim_index_page_frames(i_saved, j, nb)?;
 		Ok(vaddr)
 	}
 
 	/* Claim a page frame (by lowest index) */
 	pub fn get_page_frame(&mut self) -> Result<VirtAddr, ()> {
-		let paddr = kmemory::physmap_as_mut().get_page();
+		let paddr = kmemory::physmap_as_mut().get_page()?;
 		let mut i: usize = 1; /* 0 reserved for page_table def */
 
 		while i < 1024 {
@@ -81,8 +122,29 @@ impl PageDirectory {
 		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr)?))
 	}
 
+	/*
+		Claim a range of page frames based on 'nb' size and specified index with
+		adjacent physical addresses
+	*/
+	fn kclaim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) -> Result <(), ()> {
+		let mut paddr: PhysAddr = kmemory::physmap_as_mut().get_pages(nb)?;
+
+		let mut i: usize = 0;
+		while i < nb {
+			if pt_index == 1024 {
+				pt_index = 0;
+				pd_index += 1;
+			}
+			self.get_page_table(pd_index).new_index_frame(pt_index, paddr);
+			pt_index += 1;
+			i += 1;
+			paddr += 4096;
+		}
+		Ok(())
+	}
+
 	/* Claim a range of page frames based on 'nb' size and specified index */
-	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) {
+	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) -> Result <(), ()> {
 		let mut i: usize = 0;
 
 		while i < nb {
@@ -90,11 +152,12 @@ impl PageDirectory {
 				pt_index = 0;
 				pd_index += 1;
 			}
-			let paddr: PhysAddr = kmemory::physmap_as_mut().get_page();
+			let paddr: PhysAddr = kmemory::physmap_as_mut().get_page()?;
 			self.get_page_table(pd_index).new_index_frame(pt_index, paddr);
 			pt_index += 1;
 			i += 1;
 		}
+		Ok(())
 	}
 
 	fn claim_index_page_table(&mut self, index: usize) {
