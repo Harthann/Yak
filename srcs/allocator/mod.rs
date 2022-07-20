@@ -16,7 +16,8 @@ extern "C" {
 const HEAP_SIZE: usize = 100 * 1024;
 
 pub fn init_heap() {
-	alloc_pages_at_addr(heap as u32, HEAP_SIZE / 4096);
+	let nb_page: usize = if HEAP_SIZE % 4096 == 0 {HEAP_SIZE / 4096} else {HEAP_SIZE / 4096 + 1};
+	alloc_pages_at_addr(heap as u32, nb_page);
 	unsafe{ALLOCATOR.init(heap as usize, HEAP_SIZE)};
 	unsafe {
 		use core::alloc::GlobalAlloc;

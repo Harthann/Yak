@@ -22,6 +22,8 @@ use paging::free_page;
 use paging::free_pages;
 use paging::page_directory;
 
+use paging::VirtAddr;
+
 use allocator::linked_list::LinkedListAllocator;
 use allocator::bump::BumpAllocator;
 use allocator::init_heap;
@@ -45,6 +47,19 @@ use cli::Command;
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
+use crate::paging::alloc_pages_at_addr;
+
+pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
+	let mut nb_page: usize = stack_size / 4096;
+	let stack_bottom: VirtAddr = stack_top - (stack_size - 1) as u32;
+	if stack_size % 4096 != 0 {
+		nb_page += 1;
+	}
+	kprintln!("alloc at {:#10x} - {} pages", stack_bottom, nb_page);
+	alloc_pages_at_addr(stack_bottom, nb_page);
+	stack_top
+}
+
 #[no_mangle]
 pub extern "C" fn kinit() {
 	kprintln!("kinit_start");
@@ -54,7 +69,9 @@ pub extern "C" fn kinit() {
 	init_paging();
 	kprintln!("init_heap");
 	init_heap();
-	kprintln!("kinit_end");
+	kprintln!("init_stack");
+	init_stack(0xffffffff, 8192);
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
 	kmain();
 }
 
@@ -70,7 +87,12 @@ fn test() {
 		/* TESTS PAGES */
 //		page_directory.new_page_table();
 //		kprintln!("page[1]: {}", page_directory.entries[0]);
+		let mut addr: u32;
+		core::arch::asm!("mov eax, esp", out("eax") addr);
+		kprintln!("stack_addr at: {:#010x}", addr);
+
 		let mut res = alloc_page();
+
 		if !res.is_ok() {
 			kprintln!("ko");
 			core::arch::asm!("hlt");
