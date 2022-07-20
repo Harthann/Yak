@@ -79,7 +79,7 @@ $(DIR_GRUB):
 
 # Build libkernel using xargo
 $(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS)
-ifeq ($(shell which xargo),)
+ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
@@ -97,7 +97,7 @@ ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 endif
 				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
 else
-				xargo build --target $(TARGER_ARCH)-kfs
+				xargo check --target $(TARGER_ARCH)-kfs
 endif
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
