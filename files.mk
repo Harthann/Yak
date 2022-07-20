@@ -7,7 +7,9 @@ RUST_SRCS		=	main.rs \
 					gdt.rs \
 					cli.rs \
 					page_directory.rs \
-					page_table.rs
+					page_table.rs \
+					linked_list.rs \
+					bump.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 

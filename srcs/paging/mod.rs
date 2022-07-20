@@ -58,6 +58,10 @@ pub fn kalloc_pages(nb: usize) -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.kget_page_frames(nb)?)}
 }
 
+pub fn alloc_pages_at_addr(vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
+	unsafe{Ok(page_directory.get_page_frames_at_addr(vaddr, nb)?)}
+}
+
 /* Allocate 'nb' page frames */
 pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frames(nb)?)}

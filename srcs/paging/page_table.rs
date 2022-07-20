@@ -56,7 +56,7 @@ impl PageTable {
 	}
 
 	pub fn get_vaddr(&self) -> VirtAddr {
-		(&*self as *const _) as VirtAddr
+		self as *const Self as VirtAddr
 	}
 }
 
@@ -126,6 +126,6 @@ impl PageTableEntry {
 	}
 
 	pub fn get_vaddr(&self) -> VirtAddr {
-		(&*self as *const _) as VirtAddr
+		self as *const Self as VirtAddr
 	}
 }

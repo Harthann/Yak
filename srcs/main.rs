@@ -12,6 +12,7 @@ mod paging;
 mod interrupts;
 mod kmemory;
 mod multiboot;
+mod allocator;
 
 use paging::init_paging;
 use paging::alloc_page;
@@ -21,13 +22,20 @@ use paging::free_page;
 use paging::free_pages;
 use paging::page_directory;
 
+use allocator::linked_list::LinkedListAllocator;
+use allocator::bump::BumpAllocator;
+use allocator::init_heap;
+
+#[global_allocator]
+static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
+
+
 #[allow(dead_code)]
 extern "C" {
 	static gdt_desc: u16;
 	fn _start();
 	fn stack_bottom();
 	fn stack_top();
-	fn heap();
 }
 
 use vga_buffer::color::Color;
@@ -39,8 +47,14 @@ pub extern "C" fn eh_personality() {}
 
 #[no_mangle]
 pub extern "C" fn kinit() {
+	kprintln!("kinit_start");
+	kprintln!("multiboot:");
 	multiboot::read_tags();
+	kprintln!("init_paging");
 	init_paging();
+	kprintln!("init_heap");
+	init_heap();
+	kprintln!("kinit_end");
 	kmain();
 }
 
@@ -116,7 +130,7 @@ fn test() {
 		while i < (32 * 0x1000) - 4 {
 			virt_addr += 4;
 			nb = &mut *(virt_addr as *mut usize);
-			kprintln!("{:#x}", virt_addr);
+//			kprintln!("{:#x}", virt_addr);
 			*nb = 8;
 			i += 4;
 		}

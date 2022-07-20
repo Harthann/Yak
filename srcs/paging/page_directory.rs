@@ -22,6 +22,17 @@ impl PageDirectory {
 		self.entries[index] = value.into();
 	}
 
+	pub fn get_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
+		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
+		
+		if self.entries[pd_index].get_present() == 0 {
+			self.claim_index_page_tables(pd_index, (nb / 1024) + 1)?;
+		}
+		self.claim_index_page_frames(pd_index, pt_index, nb)?;
+		Ok(vaddr)
+	}
+
 	/*
 		Get page frames that are virtually and physically adjacents, return the
 		virtual address of the first one
@@ -160,7 +171,7 @@ impl PageDirectory {
 		Ok(())
 	}
 
-	fn claim_index_page_table(&mut self, index: usize) {
+	fn claim_index_page_table(&mut self, index: usize) -> Result<usize, ()> {
 		unsafe {
 			let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
 			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
@@ -171,6 +182,7 @@ impl PageDirectory {
 			new.clear();
 			self.entries[index] = (pt_paddr | 3).into();
 			crate::refresh_tlb!();
+			Ok(index)
 		}
 	}
 
@@ -180,8 +192,7 @@ impl PageDirectory {
 
 			while i < 1024 {
 				if self.entries[i].get_present() == 0 {
-					self.claim_index_page_table(i);
-					return Ok(i);
+					return self.claim_index_page_table(i);
 				}
 				i += 1;
 			}
@@ -217,6 +228,19 @@ impl PageDirectory {
 			}
 			todo!();
 			//Err(())
+	}
+
+	fn claim_index_page_tables(&mut self, index: usize, nb: usize) -> Result<usize, ()> {
+		if nb == 1 {
+			return self.claim_index_page_table(index);
+		}
+		let mut count: usize = 0;
+
+		while count < nb {
+			self.claim_index_page_table(index + count)?;
+			count += 1;
+		}
+		Ok(index)
 	}
 
 	pub fn remove_page_frames(&mut self, mut vaddr: VirtAddr, nb: usize) {
@@ -274,7 +298,7 @@ impl PageDirectory {
 
 	/* Return the virtual address of the page directory */
 	pub fn get_vaddr(&self) -> VirtAddr {
-		(&*self as *const _) as VirtAddr
+		self as *const Self as VirtAddr
 	}
 }
 
@@ -382,6 +406,6 @@ impl PageDirectoryEntry {
 	}
 
 	pub fn get_vaddr(&self) -> VirtAddr {
-		(&*self as *const _) as VirtAddr
+		self as *const Self as VirtAddr
 	}
 }
