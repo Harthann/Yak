@@ -18,9 +18,6 @@ endif
 
 TARGER_ARCH 	=	i386
 
-LINKERFILE		=	linker.ld
-LINKERFLAGS		=	-n -T $(DIR_ARCH)/$(LINKERFILE)
-
 GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
@@ -30,7 +27,6 @@ LIBBOOT			=	libboot.a
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
 DOCKER_RUST		=	rust-compiler
-DOCKER_LINKER	=	linker
 
 DIR_ARCH		=	arch/i386
 DIR_CONFIG		=	config
@@ -76,14 +72,7 @@ endif
 
 # Link asm file with rust according to the linker script in arch directory
 $(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
-ifeq ($(shell which i386-elf-ld),)
-ifeq ($(shell docker images -q ${DOCKER_LINKER} 2> /dev/null),)
-				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_LINKER).dockerfile -t $(DOCKER_LINKER)
-endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) -m elf_i386 $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
-else
 				cp $(RUST_KERNEL) iso/boot/$(NAME)
-endif
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
