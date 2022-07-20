@@ -59,11 +59,14 @@ pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frames(nb)?)}
 }
 
-/* TODO: free nb page frames */
-
 /* Allocate a page frame */
 pub fn alloc_page() -> Result<VirtAddr, ()> {
 	unsafe{Ok(page_directory.get_page_frame()?)}
+}
+
+/* TODO: free nb page frames */
+pub fn free_pages(vaddr: VirtAddr, nb: usize) {
+	unsafe{page_directory.remove_page_frames(vaddr, nb)};
 }
 
 /* Free a page frame */

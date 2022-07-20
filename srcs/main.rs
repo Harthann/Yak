@@ -17,6 +17,7 @@ use paging::init_paging;
 use paging::alloc_page;
 use paging::alloc_pages;
 use paging::free_page;
+use paging::free_pages;
 use paging::page_directory;
 
 #[allow(dead_code)]
@@ -60,18 +61,21 @@ fn test() {
 			core::arch::asm!("hlt");
 		}
 		let mut virt_addr: u32 = res.unwrap();
+		let mut saved_virt_addr: u32 = virt_addr;
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
 		let mut nb: *mut usize = &mut *(virt_addr as *mut usize);
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);
+		free_page(saved_virt_addr);
 		res = alloc_pages(50);
 		if !res.is_ok() {
 			kprintln!("ko");
 			core::arch::asm!("hlt");
 		}
 		virt_addr = res.unwrap();
+		saved_virt_addr = virt_addr;
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		let mut i: usize = 0; 
 		while i < (50 * 0x1000) - 4 {
@@ -80,6 +84,7 @@ fn test() {
 			*nb = 8;
 			i += 4;
 		}
+		free_pages(saved_virt_addr, 50);
 		kprintln!("alloc one");
 		res = alloc_pages(2000);
 		kprintln!("abc");
@@ -88,6 +93,7 @@ fn test() {
 			core::arch::asm!("hlt");
 		}
 		virt_addr = res.unwrap();
+		saved_virt_addr = virt_addr;
 		i = 0;
 		while i < (2000 * 0x1000) - 4 {
 			virt_addr += 4;
@@ -96,6 +102,7 @@ fn test() {
 			*nb = 8;
 			i += 4;
 		}
+		free_pages(saved_virt_addr, 2000);
 		/*
 		let mut i = 0;
 		while i < 0x100000 {

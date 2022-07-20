@@ -156,6 +156,20 @@ impl PageDirectory {
 			//Err(())
 	}
 
+	pub fn remove_page_frames(&mut self, mut vaddr: VirtAddr, nb: usize) {
+		if vaddr & 0xfff != 0 {
+			return ; /* Not aligned */
+		}
+		let mut i: usize = 0;
+
+		while i < nb {
+			self.remove_page_frame(vaddr);
+			vaddr += 4096;
+			i += 1;
+		}
+	}
+
+
 	/* Remove a page frame at a specified virtual address */
 	pub fn remove_page_frame(&mut self, vaddr: VirtAddr) {
 		unsafe {
