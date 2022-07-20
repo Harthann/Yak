@@ -25,6 +25,7 @@ GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
+LIBBOOT			=	libboot.a
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
@@ -45,21 +46,21 @@ DIR_GRUB		=	$(DIR_ISO)/boot/grub
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
 include files.mk
 
-RUST_KERNEL 	=	target/i386-kfs/debug/libkernel.a
+RUST_KERNEL 	=	target/i386-kfs/debug/kernel
 NAME			=	kfs_$(VERSION)
 
 all:			$(NAME)
 
 boot:			$(NAME)
-				$(QEMU) -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log 2> qemu.log
+				$(QEMU) -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
 				$(TERM_EMU) bash -c "cd $(MAKEFILE_PATH); gdb $(DIR_ISO)/boot/$(NAME) -x gdbstart"
 
-test:
-	echo $(TEST)
+test: fclean $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+				xargo test --target=$(TARGER_ARCH)-kfs -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
@@ -80,20 +81,21 @@ ifeq ($(shell docker images -q ${DOCKER_LINKER} 2> /dev/null),)
 endif
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) -m elf_i386 $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
 else
-				i386-elf-ld $(LINKERFLAGS) $(BOOTOBJS) $(RUST_KERNEL) -o $(DIR_ISO)/boot/$(NAME)
+				cp $(RUST_KERNEL) iso/boot/$(NAME)
 endif
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using xargo
-$(RUST_KERNEL):	$(KERNELSRCS)
+$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS)
 ifeq ($(shell which xargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && xargo build --target=$(TARGER_ARCH)-kfs'
 else
+				i386-elf-ar rc libboot.a $(BOOTOBJS)
 				xargo build --target $(TARGER_ARCH)-kfs
 endif
 
@@ -107,7 +109,6 @@ endif
 else
 				xargo build --target $(TARGER_ARCH)-kfs
 endif
-
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)

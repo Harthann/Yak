@@ -3,8 +3,8 @@ use crate::{kprint, kprintln, hexdump, screenclear};
 use crate::io;
 use core::mem::size_of;
 
-pub static COMMANDS: [fn(&Command); 5] = [reboot, halt, hexdump_parser, clear, help];
-const KNOWN_CMD: [&str; 5]= ["reboot", "halt", "hexdump", "clear", "help"];
+pub static COMMANDS: [fn(&Command); 6] = [reboot, halt, hexdump_parser, clear, help, shutdown];
+const KNOWN_CMD: [&str; 6]= ["reboot", "halt", "hexdump", "clear", "help", "shutdown"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -25,6 +25,10 @@ fn help(_: &Command) {
 	for i in KNOWN_CMD {
 		kprintln!("    {}", i);
 	}
+}
+
+fn shutdown(_: &Command) {
+    io::outb(0xf4, 0x10);
 }
 
 fn hextou(slice: &[char]) -> Option<usize> {
