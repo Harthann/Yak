@@ -6,7 +6,7 @@ echo "Running kfs unit tests"
 cp $1 iso/boot/$2
 
 # Changing grub timeout
-if [ $(uname) -eq "Darwon" ]; then
+if [ $(uname) -eq "Darwin" ]; then
 	sed -i '' "s/timeout=./timeout=0/" iso/boot/grub/grub.cfg
 else
 	sed -i "s/timeout=./timeout=0/" iso/boot/grub/grub.cfg
