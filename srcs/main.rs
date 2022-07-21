@@ -4,7 +4,6 @@
 #![allow(dead_code)]
 #![no_main]
 
-
 /*  Custom test framwork    */
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
@@ -15,29 +14,28 @@ mod test;
 
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
-    kprintln!("Running {} tests", tests.len());
-    for test in tests {
-        test.run();
-    }
+	kprintln!("Running {} tests", tests.len());
+	for test in tests {
+		test.run();
+	}
 }
-
 
 #[cfg(test)]
 pub trait Testable {
-    fn run(&self) -> ();
+	fn run(&self) -> ();
 }
 
 #[cfg(test)]
 impl<T> Testable for T
 where T: Fn(),
 {
-    fn run(&self) {
-        kprint!("{}... ", core::any::type_name::<T>());
-        self();
-	    change_color!(Color::Green, Color::Black);
-        kprintln!("[ok]");
-	    change_color!(Color::White, Color::Black);
-    }
+	fn run(&self) {
+		kprint!("{}... ", core::any::type_name::<T>());
+		self();
+		change_color!(Color::Green, Color::Black);
+		kprintln!("[ok]");
+		change_color!(Color::White, Color::Black);
+	}
 }
 
 #[lang = "eh_personality"]
@@ -55,16 +53,16 @@ mod paging;
 mod interrupts;
 mod kmemory;
 mod multiboot;
+mod allocator;
 
 /*  Modules used function and variable  */
-use paging::{init_paging,
-alloc_page,
-alloc_pages,
-free_page,
-page_directory
-};
+use paging::{init_paging, alloc_page, alloc_pages, kalloc_pages, alloc_pages_at_addr, free_page, free_pages, page_directory, VirtAddr};
+use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, init_heap};
 use vga_buffer::color::Color;
 use cli::Command;
+
+#[global_allocator]
+static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
 
 /*  Code from boot section  */
 #[allow(dead_code)]
@@ -72,14 +70,31 @@ extern "C" {
 	static gdt_desc: u16;
 	fn stack_bottom();
 	fn stack_top();
-	fn heap();
+}
+
+pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
+	let mut nb_page: usize = stack_size / 4096;
+	let stack_bottom: VirtAddr = stack_top - (stack_size - 1) as u32;
+	if stack_size % 4096 != 0 {
+		nb_page += 1;
+	}
+	alloc_pages_at_addr(stack_bottom, nb_page);
+	stack_top
 }
 
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-//    multiboot::read_tags();
+	kprintln!("kinit_start");
+	kprintln!("multiboot:");
+	multiboot::read_tags();
+	kprintln!("init_paging");
 	init_paging();
+	kprintln!("init_heap");
+	init_heap();
+	kprintln!("init_stack");
+	init_stack(0xffffffff, 8192);
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
     
     #[cfg(test)]
     test_main();
@@ -121,32 +136,76 @@ fn test() {
 		/* TESTS PAGES */
 //		page_directory.new_page_table();
 //		kprintln!("page[1]: {}", page_directory.entries[0]);
+		let mut addr: u32;
+		core::arch::asm!("mov eax, esp", out("eax") addr);
+		kprintln!("stack_addr at: {:#010x}", addr);
+
 		let mut res = alloc_page();
+
 		if !res.is_ok() {
 			kprintln!("ko");
 			core::arch::asm!("hlt");
 		}
 		let mut virt_addr: u32 = res.unwrap();
+		let mut saved_virt_addr: u32 = virt_addr;
 		kprintln!("virt_addr: {:#x}", virt_addr);
 		kprintln!("paddr: {:#x}", get_paddr!(virt_addr as usize));
 		let mut nb: *mut usize = &mut *(virt_addr as *mut usize);
 		kprintln!("init value of nb: {:#x}", *nb);
 		*nb = 8;
 		kprintln!("next value of nb: {:#x}", *nb);
+		free_page(saved_virt_addr);
 		res = alloc_pages(50);
 		if !res.is_ok() {
 			kprintln!("ko");
 			core::arch::asm!("hlt");
 		}
 		virt_addr = res.unwrap();
+		saved_virt_addr = virt_addr;
+		kprintln!("virt_addr: {:#x}", virt_addr);
 		let mut i: usize = 0; 
-		while i < (8 * 0x1000) - 4 {
+		while i < (50 * 0x1000) - 4 {
 			virt_addr += 4;
 			nb = &mut *(virt_addr as *mut usize);
-			kprintln!("{:#x}", virt_addr);
 			*nb = 8;
 			i += 4;
 		}
+		free_pages(saved_virt_addr, 50);
+		kprintln!("alloc one");
+		res = alloc_pages(2000);
+		kprintln!("abc");
+		if !res.is_ok() {
+			kprintln!("ko");
+			core::arch::asm!("hlt");
+		}
+		virt_addr = res.unwrap();
+		saved_virt_addr = virt_addr;
+		i = 0;
+		while i < (2000 * 0x1000) - 4 {
+			virt_addr += 4;
+			nb = &mut *(virt_addr as *mut usize);
+//			kprintln!("{:#x}", virt_addr);
+			*nb = 8;
+			i += 4;
+		}
+		free_pages(saved_virt_addr, 2000);
+		kprintln!("kalloc_pages");
+		res = kalloc_pages(32);
+		if !res.is_ok() {
+			kprintln!("ko");
+			core::arch::asm!("hlt");
+		}
+		virt_addr = res.unwrap();
+		saved_virt_addr = virt_addr;
+		i = 0;
+		while i < (32 * 0x1000) - 4 {
+			virt_addr += 4;
+			nb = &mut *(virt_addr as *mut usize);
+//			kprintln!("{:#x}", virt_addr);
+			*nb = 8;
+			i += 4;
+		}
+		free_pages(saved_virt_addr, 32);
 		/*
 		let mut i = 0;
 		while i < 0x100000 {

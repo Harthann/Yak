@@ -25,6 +25,10 @@ impl PageTable {
 		}
 	}
 
+	pub fn set_entry(&mut self, index: usize, value: u32) {
+		self.entries[index] = value.into();
+	}
+
 	pub fn clear(&mut self) {
 		let mut i: usize = 0;
 
@@ -34,12 +38,16 @@ impl PageTable {
 		}
 	}
 
-	pub fn new_frame(&mut self, page_frame: PhysAddr) -> Result<u16, ()> {
+	pub fn new_index_frame(&mut self, index: usize, paddr: PhysAddr) {
+		self.entries[index] = (paddr | 3).into();
+	}
+
+	pub fn new_frame(&mut self, paddr: PhysAddr) -> Result<u16, ()> {
 		let mut i: usize = 0;
 
 		while i < 1024 {
 			if self.entries[i].get_present() != 1 {
-				self.entries[i] = (page_frame | 3).into();
+				self.entries[i] = (paddr | 3).into();
 				return Ok(i as u16);
 			}
 			i += 1;
@@ -48,7 +56,7 @@ impl PageTable {
 	}
 
 	pub fn get_vaddr(&self) -> VirtAddr {
-		(&*self as *const _) as VirtAddr
+		self as *const Self as VirtAddr
 	}
 }
 
@@ -66,7 +74,7 @@ impl From<u32> for PageTableEntry {
 
 impl fmt::Display for PageTableEntry {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PAT: {} | G: {} | AVL: {:#010x} | Address: {:#010x}", self.get_present(), self.get_writable(), self.get_user_supervisor(),
+		write!(f, "{:#010x} - P: {} | R/W: {} | U/S: {} | PWT: {} | PCD: {} | A: {} | D: {} | PAT: {} | G: {} | AVL: {:#010x} | Address: {:#010x}", self.get_vaddr(), self.get_present(), self.get_writable(), self.get_user_supervisor(),
 self.get_pwt(), self.get_pcd(), self.get_accessed(), self.get_dirty(), self.get_pat(),
 self.get_global(), self.get_avl(), self.get_paddr())
 	}
@@ -118,6 +126,6 @@ impl PageTableEntry {
 	}
 
 	pub fn get_vaddr(&self) -> VirtAddr {
-		(&*self as *const _) as VirtAddr
+		self as *const Self as VirtAddr
 	}
 }

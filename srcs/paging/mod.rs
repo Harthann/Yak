@@ -2,6 +2,8 @@ pub mod page_directory;
 pub mod page_table;
 
 use crate::kmemory;
+use crate::multiboot;
+use crate::multiboot::MemMapEntry;
 
 #[allow(dead_code)]
 extern "C" {
@@ -16,33 +18,66 @@ use page_table::PageTable;
 pub type VirtAddr = u32;
 pub type PhysAddr = u32;
 
+/*
+	Initiliaze the paging:
+	- setup a page_table at the index 768 containing kernel code paddrs and
+	page_directoy paddr
+	- reset the initial page_table at index 0 and setup the page to index every
+	page_tables in memory
+	- initialize the bitmap of page tables
+	- refresh tlb to clear the cache of the CPU
+*/
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
+		let res = multiboot::get_last_entry();
+		if res.is_ok() {
+			let mmap_entry: &MemMapEntry = res.unwrap();
+			/* Reserve space for kernel and SeaBIOS (GRUB) */
+			kmemory::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
+		}
+		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
+
+		/* Init paging map */
 		let pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
 		let ipt_paddr: PhysAddr = pd_paddr + 0x1000;
-		let mut init_page_tab: &mut PageTable = &mut *(ipt_paddr as *mut _);
-		init_page_tab.entries[768] = (pt_paddr | 3).into();
+		let init_page_tab: &mut PageTable = &mut *(ipt_paddr as *mut _);
+		init_page_tab.set_entry(768, pt_paddr | 3);
 		crate::refresh_tlb!();
 		let page_tab: &mut PageTable = page_directory.get_page_table(768);
 		page_tab.init();
-		page_directory.entries[768] = (pt_paddr | 3).into();
+		page_directory.set_entry(768, pt_paddr | 3);
 		init_page_tab.clear();
-		init_page_tab.entries[0] = ((pd_paddr + 0x1000) | 3).into();
-		init_page_tab.entries[768] = (pt_paddr | 3).into();
+		init_page_tab.set_entry(0, (pd_paddr + 0x1000) | 3);
+		init_page_tab.set_entry(768, pt_paddr | 3);
 		crate::refresh_tlb!();
-		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 	}
 }
 
+pub fn kalloc_pages(nb: usize) -> Result<VirtAddr, ()> {
+	unsafe{Ok(page_directory.kget_page_frames(nb)?)}
+}
+
+pub fn alloc_pages_at_addr(vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
+	unsafe{Ok(page_directory.get_page_frames_at_addr(vaddr, nb)?)}
+}
+
+/* Allocate 'nb' page frames */
 pub fn alloc_pages(nb: usize) -> Result<VirtAddr, ()> {
-	unsafe{Ok(page_directory.new_page_frames(nb)?)}
+	unsafe{Ok(page_directory.get_page_frames(nb)?)}
 }
 
+/* Allocate a page frame */
 pub fn alloc_page() -> Result<VirtAddr, ()> {
-	unsafe{Ok(page_directory.new_page_frame()?)}
+	unsafe{Ok(page_directory.get_page_frame()?)}
 }
 
+/* free multiple pages */
+pub fn free_pages(vaddr: VirtAddr, nb: usize) {
+	unsafe{page_directory.remove_page_frames(vaddr, nb)};
+}
+
+/* Free a page frame */
 pub fn free_page(vaddr: VirtAddr) {
 	unsafe{page_directory.remove_page_frame(vaddr)};
 }

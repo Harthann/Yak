@@ -1,4 +1,4 @@
-VERSION			=	2
+VERSION			=	3
 
 QEMU			=	qemu-system-i386
 
@@ -23,6 +23,8 @@ GRUB_CFG		=	grub.cfg
 NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
 LIBBOOT			=	libboot.a
+
+XARGO_FLAGS		=	--target $(TARGER_ARCH)-kfs
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
@@ -55,9 +57,15 @@ debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
 				$(TERM_EMU) bash -c "cd $(MAKEFILE_PATH); gdb $(DIR_ISO)/boot/$(NAME) -x gdbstart"
 
+release:		setup_release $(NAME)
+
+setup_release:
+				$(eval XARGO_FLAGS += --release)
+				$(eval RUST_KERNEL = target/i386-kfs/release/libkernel.a)
+
 test: fclean $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
-				xargo test --target=$(TARGER_ARCH)-kfs -- $(NAME)
+				xargo test $(XARGO_FLAGS) -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
@@ -67,7 +75,7 @@ ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 endif
 				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
 else
-				grub-mkrescue -o $(NAME) $(DIR_ISO)
+				grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO)
 endif
 
 # Link asm file with rust according to the linker script in arch directory
@@ -83,10 +91,10 @@ ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && xargo build --target=$(TARGER_ARCH)-kfs'
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && xargo build $(XARGO_FLAGS)'
 else
 				i386-elf-ar rc libboot.a $(BOOTOBJS)
-				xargo build --target $(TARGER_ARCH)-kfs
+				xargo build $(XARGO_FLAGS)
 endif
 
 # Check if the rust can compile without actually compiling it
@@ -95,9 +103,9 @@ ifeq ($(shell which xargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
+				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check $(XARGO_FLAGS)
 else
-				xargo check --target $(TARGER_ARCH)-kfs
+				xargo check $(XARGO_FLAGS)
 endif
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
