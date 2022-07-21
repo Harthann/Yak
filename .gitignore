@@ -13,3 +13,4 @@ iso/
 Cargo.lock
 kernel.log
 qemu.log
+libboot.a

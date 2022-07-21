@@ -218,11 +218,23 @@ macro_rules! kprintln {
 }
 
 /* Setting our panic handler to our brand new kprintln */
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
 	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
 	kprintln!("{}", info);
 	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
+	loop {}
+}
+
+#[cfg(test)]
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
+	kprintln!("[failed]");
+	kprintln!("{}", info);
+	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
+    io::outb(0xf4, 0x11);
 	loop {}
 }
 
