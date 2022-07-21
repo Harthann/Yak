@@ -62,7 +62,7 @@ use vga_buffer::color::Color;
 use cli::Command;
 
 #[global_allocator]
-static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
+static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
 /*  Code from boot section  */
 #[allow(dead_code)]
