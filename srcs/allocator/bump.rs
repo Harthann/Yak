@@ -8,6 +8,7 @@ unsafe impl GlobalAlloc for BumpAllocator {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
 		let vaddr: u32 = self as *const Self as u32;
 		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
+
 		let alloc_start = align_up(mut_self.next, layout.align());
 		let alloc_end = match alloc_start.checked_add(layout.size()) {
 			Some(end) => end,
@@ -42,7 +43,6 @@ pub struct BumpAllocator {
 }
 
 impl BumpAllocator {
-	/// Creates a new empty bump allocator.
 	pub const fn new() -> Self {
 		BumpAllocator {
 				heap_start: 0,
@@ -52,10 +52,6 @@ impl BumpAllocator {
 		}
 	}
 
-	/// Initializes the bump allocator with the given heap bounds.
-	///
-	/// This method is unsafe because the caller must ensure that the given
-	/// memory range is unused. Also, this method must be called only once.
 	pub unsafe fn init(&mut self, heap_start: usize, heap_size: usize) {
 		self.heap_start = heap_start;
 		self.heap_end = heap_start + heap_size;

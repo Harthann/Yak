@@ -35,5 +35,4 @@ impl LinkedListAllocator {
 		node_ptr.write(node);
 		self.head.next = Some(&mut *node_ptr);
 	}
-
 }

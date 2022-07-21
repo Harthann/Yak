@@ -1,24 +1,40 @@
 pub mod linked_list;
 pub mod bump;
 
-use core::alloc::Layout;
+use core::alloc::{Layout, GlobalAlloc};
 
 use linked_list::LinkedListAllocator;
 use bump::BumpAllocator;
 
 use crate::paging::alloc_pages_at_addr;
+use crate::paging::kalloc_pages_at_addr;
 use crate::ALLOCATOR;
 
-extern "C" {
-	fn heap();
-}
-
 const HEAP_SIZE: usize = 100 * 1024;
+const KHEAP_SIZE: usize = 100 * 1024;
 
-pub fn init_heap() {
+/*
+pub fn init_heap(heap: u32, allocator) {
 	let nb_page: usize = if HEAP_SIZE % 4096 == 0 {HEAP_SIZE / 4096} else {HEAP_SIZE / 4096 + 1};
-	alloc_pages_at_addr(heap as u32, nb_page);
-	unsafe{ALLOCATOR.init(heap as usize, HEAP_SIZE)};
+	alloc_pages_at_addr(heap, nb_page);
+	unsafe{allocator.init(heap as usize, HEAP_SIZE)};
+	/* TESTS */
+	unsafe {
+		use core::alloc::GlobalAlloc;
+
+		let res = Layout::from_size_align(8, 8);
+		if res.is_ok() {
+			allocator.alloc(res.unwrap());
+		}
+	}
+}
+*/
+
+pub fn init_kheap(heap: u32) {
+	let nb_page: usize = if KHEAP_SIZE % 4096 == 0 {KHEAP_SIZE / 4096} else {KHEAP_SIZE / 4096 + 1};
+	kalloc_pages_at_addr(heap, nb_page);
+	unsafe{ALLOCATOR.init(heap as usize, KHEAP_SIZE)};
+	/* TESTS */
 	unsafe {
 		use core::alloc::GlobalAlloc;
 
