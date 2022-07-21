@@ -29,6 +29,7 @@ pub fn deallocate(ptr: *mut u8, size: usize, _align: usize) {
 }
 
 pub fn init_heap() {
+	crate::kprintln!("init_heap at {:#x}", heap as u32);
 	let nb_page: usize = if HEAP_SIZE % 4096 == 0 {HEAP_SIZE / 4096} else {HEAP_SIZE / 4096 + 1};
 	alloc_pages_at_addr(heap as u32, nb_page);
 	unsafe{ALLOCATOR.init(heap as usize, HEAP_SIZE)};

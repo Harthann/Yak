@@ -117,7 +117,10 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
-	let x = allocator::boxed::Box::new(5);
+	let x = allocator::boxed::Box::new(5 as u64);
+	kprintln!("New box value: {:?}", x);
+	let y = allocator::boxed::Box::new(5 as u8);
+	kprintln!("New box value: {:?}", y);
 
 	kprint!("$> ");
 	loop {
