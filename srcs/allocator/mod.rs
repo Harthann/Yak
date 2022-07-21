@@ -1,5 +1,6 @@
 pub mod linked_list;
 pub mod bump;
+pub mod boxed;
 
 use core::alloc::Layout;
 
@@ -14,6 +15,18 @@ extern "C" {
 }
 
 const HEAP_SIZE: usize = 100 * 1024;
+
+#[lang = "exchange_malloc"]
+#[no_mangle]
+pub fn allocate(size: usize, _align: usize) -> *mut u8 {
+	crate::kprintln!("Received allocation of {} bytes, aligned {}", size, _align);
+	0xffff as *mut u8
+}
+
+#[no_mangle]
+pub fn deallocate(ptr: *mut u8, size: usize, _align: usize) {
+	crate::kprintln!("Received deallocation of {} bytes, aligned {} at {:p}", size, _align, ptr);
+}
 
 pub fn init_heap() {
 	let nb_page: usize = if HEAP_SIZE % 4096 == 0 {HEAP_SIZE / 4096} else {HEAP_SIZE / 4096 + 1};

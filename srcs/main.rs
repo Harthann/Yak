@@ -1,4 +1,7 @@
 #![feature(const_mut_refs)]
+#![feature(box_syntax)]
+#![feature(ptr_internals)]
+#![feature(fundamental)]
 #![feature(lang_items)]
 #![no_std]
 #![allow(dead_code)]
@@ -113,6 +116,8 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::Red, Color::White);
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
+
+	let x = allocator::boxed::Box::new(5);
 
 	kprint!("$> ");
 	loop {
