@@ -22,6 +22,17 @@ impl PageDirectory {
 		self.entries[index] = value.into();
 	}
 
+	pub fn kget_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
+		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
+		
+		if self.entries[pd_index].get_present() == 0 {
+			self.claim_index_page_tables(pd_index, (nb / 1024) + 1)?;
+		}
+		self.kclaim_index_page_frames(pd_index, pt_index, nb)?;
+		Ok(vaddr)
+	}
+
 	pub fn get_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
 		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;

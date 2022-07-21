@@ -60,12 +60,16 @@ mod allocator;
 
 /*  Modules used function and variable  */
 use paging::{init_paging, alloc_page, alloc_pages, kalloc_pages, alloc_pages_at_addr, free_page, free_pages, page_directory, VirtAddr};
-use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, init_heap};
+use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, /*init_heap,*/ init_kheap};
 use vga_buffer::color::Color;
 use cli::Command;
 
+//#[global_allocator]
+//static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
 #[global_allocator]
 static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
+
 
 /*  Code from boot section  */
 #[allow(dead_code)]
@@ -73,6 +77,7 @@ extern "C" {
 	static gdt_desc: u16;
 	fn stack_bottom();
 	fn stack_top();
+	fn heap();
 }
 
 pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
@@ -94,7 +99,8 @@ pub extern "C" fn kinit() {
 	kprintln!("init_paging");
 	init_paging();
 	kprintln!("init_heap");
-	init_heap();
+	let heap_addr: u32 = heap as u32;
+	unsafe{init_kheap(heap_addr as u32, &mut ALLOCATOR)};
 	kprintln!("init_stack");
 	init_stack(0xffffffff, 8192);
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
