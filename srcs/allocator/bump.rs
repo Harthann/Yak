@@ -1,7 +1,16 @@
 use core::alloc::{GlobalAlloc, Layout};
+use crate::allocator::Allocator;
 
 fn align_up(addr: usize, align: usize) -> usize {
 	(addr + align - 1) & !(align - 1)
+}
+
+impl Allocator for BumpAllocator {
+	unsafe fn init(&mut self, heap_start: usize, heap_size: usize) {
+		self.heap_start = heap_start;
+		self.heap_end = heap_start + heap_size;
+		self.next = heap_start;
+	}
 }
 
 unsafe impl GlobalAlloc for BumpAllocator {
@@ -50,11 +59,5 @@ impl BumpAllocator {
 				next: 0,
 				allocations: 0
 		}
-	}
-
-	pub unsafe fn init(&mut self, heap_start: usize, heap_size: usize) {
-		self.heap_start = heap_start;
-		self.heap_end = heap_start + heap_size;
-		self.next = heap_start;
 	}
 }

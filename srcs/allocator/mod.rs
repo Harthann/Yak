@@ -30,17 +30,19 @@ pub fn init_heap(heap: u32, allocator) {
 }
 */
 
-pub fn init_kheap(heap: u32) {
+pub trait Allocator: GlobalAlloc {
+	unsafe fn init(&mut self, offset: usize, size: usize);
+}
+
+pub fn init_kheap(heap: u32, allocator: &mut dyn Allocator) {
 	let nb_page: usize = if KHEAP_SIZE % 4096 == 0 {KHEAP_SIZE / 4096} else {KHEAP_SIZE / 4096 + 1};
 	kalloc_pages_at_addr(heap, nb_page);
-	unsafe{ALLOCATOR.init(heap as usize, KHEAP_SIZE)};
+	unsafe{allocator.init(heap as usize, KHEAP_SIZE)};
 	/* TESTS */
 	unsafe {
-		use core::alloc::GlobalAlloc;
-
 		let res = Layout::from_size_align(8, 8);
 		if res.is_ok() {
-			ALLOCATOR.alloc(res.unwrap());
+			allocator.alloc(res.unwrap());
 		}
 	}
 }

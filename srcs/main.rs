@@ -93,7 +93,7 @@ pub extern "C" fn kinit() {
 	init_paging();
 	kprintln!("init_heap");
 	let heap_addr: u32 = heap as u32;
-	init_kheap(heap_addr as u32);
+	unsafe{init_kheap(heap_addr as u32, &mut ALLOCATOR)};
 	kprintln!("init_stack");
 	init_stack(0xffffffff, 8192);
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
