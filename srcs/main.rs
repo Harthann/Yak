@@ -4,7 +4,6 @@
 #![allow(dead_code)]
 #![no_main]
 
-
 /*  Custom test framwork    */
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
@@ -15,29 +14,28 @@ mod test;
 
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
-    kprintln!("Running {} tests", tests.len());
-    for test in tests {
-        test.run();
-    }
+	kprintln!("Running {} tests", tests.len());
+	for test in tests {
+		test.run();
+	}
 }
-
 
 #[cfg(test)]
 pub trait Testable {
-    fn run(&self) -> ();
+	fn run(&self) -> ();
 }
 
 #[cfg(test)]
 impl<T> Testable for T
 where T: Fn(),
 {
-    fn run(&self) {
-        kprint!("{}... ", core::any::type_name::<T>());
-        self();
-	    change_color!(Color::Green, Color::Black);
-        kprintln!("[ok]");
-	    change_color!(Color::White, Color::Black);
-    }
+	fn run(&self) {
+		kprint!("{}... ", core::any::type_name::<T>());
+		self();
+		change_color!(Color::Green, Color::Black);
+		kprintln!("[ok]");
+		change_color!(Color::White, Color::Black);
+	}
 }
 
 #[lang = "eh_personality"]
