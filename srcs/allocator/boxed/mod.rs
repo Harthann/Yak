@@ -4,7 +4,7 @@ use core::alloc::{
 GlobalAlloc,
 Layout
 };
-use core::ops::{Deref};
+use core::ops::{Deref, DerefMut};
 
 use core::ptr::{self, Unique, NonNull};
 use crate::allocator::ALLOCATOR;
@@ -29,6 +29,7 @@ impl<T> Box<T> {
 	pub fn try_new(x:T) -> Result<Self, ()> {
 		unsafe{ Self::try_new_in(x, &ALLOCATOR) }
 	}
+
 
 }
 
@@ -78,6 +79,11 @@ impl<T, A: GlobalAlloc> Box<T, A> {
 			}
 		}
 	}
+
+	pub fn write(mut boxed: Self, value: T) -> Box<T, A> {
+		*boxed = value;
+		boxed
+	}
 }
 
 impl<T, A: GlobalAlloc> Deref for Box<T, A> {
@@ -85,6 +91,13 @@ impl<T, A: GlobalAlloc> Deref for Box<T, A> {
 
 	fn deref(&self) -> &Self::Target {
 		unsafe{ self.ptr.as_ref() }
+	}
+}
+
+impl<T, A: GlobalAlloc> DerefMut for Box<T, A> {
+
+	fn deref_mut(&mut self) -> &mut T {
+		unsafe{ self.ptr.as_mut() }
 	}
 }
 

@@ -22,3 +22,20 @@ fn free_test() {
 	let x = crate::allocator::boxed::Box::new(5);
 	assert_eq!(ptr, (x.as_ref() as *const _) as u32);
 }
+
+#[test_case]
+fn test_mut_ref() {
+	let mut x = crate::allocator::boxed::Box::new(5);
+	assert_eq!(*x, 5);
+	let mut y = x.as_mut();
+	*y = 10;
+	assert_eq!(*x, 10);
+}
+
+#[test_case]
+fn test_write() {
+	let mut x = crate::allocator::boxed::Box::new(5);
+	assert_eq!(*x, 5);
+	x = Box::write(x, 10);
+	assert_eq!(*x, 10);
+}
