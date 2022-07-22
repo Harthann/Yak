@@ -10,6 +10,7 @@ fn trivial_assertion() {
 }
 
 #[test_case]
+#[should_panic]
 fn trivial_fail() {
-	assert_eq!(1, 1);
+	assert_eq!(2, 1);
 }

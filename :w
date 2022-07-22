@@ -123,9 +123,7 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
-	#[cfg(not(test))]
 	test();
-
 	let x = allocator::boxed::Box::new(5 as u64);
 	kprintln!("New value: {}", x);
 	kprint!("$> ");
@@ -141,6 +139,21 @@ pub extern "C" fn kmain() -> ! {
 #[cfg(not(test))]
 fn test() {
 	unsafe {
+	kprintln!("===== Testing Box structure =====");
+
+	let x = allocator::boxed::Box::new(5 as u64);
+	kprintln!("New box value: {}", x);
+	let y = allocator::boxed::Box::new(10 as u64);
+	kprintln!("New box value: {}", y);
+	let z = allocator::boxed::Box::try_new(10 as u64);
+	if z.is_err() {
+		kprintln!("Err with z alloc");
+	} else {
+		kprintln!("x: {}\ny: {}\nz: {}", x, y, z.unwrap());
+	}
+
+	kprintln!("=================================");
+
 	}
 }
 

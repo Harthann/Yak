@@ -9,12 +9,16 @@ use core::ops::{Deref};
 use core::ptr::{self, Unique, NonNull};
 use crate::allocator::ALLOCATOR;
 
-#[derive(Debug, Clone, Copy)]
-pub struct Box<T: ?Sized, A: GlobalAlloc + 'static = BumpAllocator>(NonNull<T>, &'static A);
-// {
-//	ptr: NonNull<T>,
-//	allocator: *mut A
-//}
+pub mod test;
+
+const GLOBAL_ALIGN: usize = 8;
+
+#[derive(Debug, Clone)]
+pub struct Box<T: ?Sized, A: GlobalAlloc + 'static = BumpAllocator> {
+	ptr: NonNull<T>, 
+	alloc: &'static A,
+	size: usize
+}
 
 impl<T> Box<T> {
 
@@ -26,29 +30,29 @@ impl<T> Box<T> {
 		unsafe{ Self::try_new_in(x, &ALLOCATOR) }
 	}
 
-	pub fn as_ptr(&self) -> *const T {
-		self.0.as_ptr()
-	}
-
 }
 
 impl<T, A: GlobalAlloc> Box<T, A> {
 	
 	pub fn new_in(x: T, alloc: &'static A) -> Self {
+		let size_var: usize = core::mem::size_of::<T>();
 		let mut ptr = {
-			let size_var: usize = core::mem::size_of::<T>();
 			if size_var == 0 {
 				NonNull::dangling()
 			} else {
 				unsafe {
-					NonNull::new(alloc.alloc(Layout::from_size_align(size_var, 8).unwrap()) as *mut T).expect("Allocator failed, probably OOM")
+					NonNull::new(alloc.alloc(Layout::from_size_align(size_var, GLOBAL_ALIGN).unwrap()) as *mut T).expect("Allocator failed, probably OOM")
 				}
 			}
 		};
 		unsafe {
 			*ptr.as_mut() = x;
 		}
-		Box (ptr,alloc)
+		Box {
+			ptr: ptr,
+			alloc: alloc,
+			size: size_var
+		}
 	}
 
 	pub fn try_new_in(x:T, alloc: &'static A) -> Result<Self, ()> {
@@ -58,7 +62,7 @@ impl<T, A: GlobalAlloc> Box<T, A> {
 				Some(NonNull::dangling())
 			} else {
 				unsafe {
-					NonNull::new(alloc.alloc(Layout::from_size_align(size_var, 8).unwrap()) as *mut T)				}
+					NonNull::new(alloc.alloc(Layout::from_size_align(size_var, GLOBAL_ALIGN).unwrap()) as *mut T)				}
 			}
 		};
 		match res {
@@ -66,24 +70,46 @@ impl<T, A: GlobalAlloc> Box<T, A> {
 			Some(T) => {
 				let mut ptr = res.unwrap();
 				unsafe { *ptr.as_mut() = x; }
-				Ok(Box (ptr,alloc))
+				Ok(Box {
+						ptr: ptr,
+						alloc: alloc,
+						size: core::mem::size_of::<T>()
+				})
 			}
 		}
 	}
 }
 
-
 impl<T, A: GlobalAlloc> Deref for Box<T, A> {
 	type Target = T;
 
 	fn deref(&self) -> &Self::Target {
-		unsafe{ self.0.as_ref() }
+		unsafe{ self.ptr.as_ref() }
 	}
 }
 
+impl<T: ?Sized, A: GlobalAlloc> Drop for Box<T, A> {
+	fn drop (&mut self) {
+		unsafe{ self.alloc.dealloc(self.ptr.as_ptr() as *mut u8, Layout::from_size_align(self.size, GLOBAL_ALIGN).unwrap()) };
+	}
+}
+
+impl<T: ?Sized, A: GlobalAlloc> AsMut<T> for Box<T,A> {
+	fn as_mut(&mut self) -> &mut T {
+		unsafe{ self.ptr.as_mut() }
+	}
+}
+
+impl<T: ?Sized, A: GlobalAlloc> AsRef<T> for Box<T,A> {
+	fn as_ref(&self) -> &T {
+		unsafe{ self.ptr.as_ref() }
+	}
+}
 
 impl<T: fmt::Display> fmt::Display for  Box<T> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:p} -> {}", self.as_ptr(), **self)
+		write!(f, "{:p} -> {}", self.ptr.as_ptr(), **self)
 	}
 }
+
+

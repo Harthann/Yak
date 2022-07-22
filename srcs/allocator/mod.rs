@@ -43,11 +43,4 @@ pub fn init_kheap(heap: VirtAddr, allocator: &mut dyn Allocator) {
 	let nb_page: usize = if KHEAP_SIZE % 4096 == 0 {KHEAP_SIZE / 4096} else {KHEAP_SIZE / 4096 + 1};
 	kalloc_pages_at_addr(heap, nb_page);
 	unsafe{allocator.init(heap, KHEAP_SIZE)};
-	/* TESTS */
-	unsafe {
-		let res = Layout::from_size_align(8, 8);
-		if res.is_ok() {
-			allocator.alloc(res.unwrap());
-		}
-	}
 }
