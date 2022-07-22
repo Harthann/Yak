@@ -1,7 +1,9 @@
 pub mod linked_list;
 pub mod bump;
+pub mod boxed;
 
 use core::alloc::{Layout, GlobalAlloc};
+use crate::ALLOCATOR;
 
 use linked_list::LinkedListAllocator;
 use bump::BumpAllocator;
@@ -36,6 +38,7 @@ fn align_up(addr: VirtAddr, align: usize) -> VirtAddr {
 
 /*
 pub fn init_heap(heap: u32, allocator) {
+>>>>>>> allocator
 	let nb_page: usize = if HEAP_SIZE % 4096 == 0 {HEAP_SIZE / 4096} else {HEAP_SIZE / 4096 + 1};
 	alloc_pages_at_addr(heap, nb_page);
 	unsafe{allocator.init(heap as usize, HEAP_SIZE)};

@@ -1,4 +1,7 @@
 #![feature(const_mut_refs)]
+#![feature(box_syntax)]
+#![feature(ptr_internals)]
+#![feature(fundamental)]
 #![feature(lang_items)]
 #![no_std]
 #![allow(dead_code)]
@@ -61,8 +64,12 @@ use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, /*init_he
 use vga_buffer::color::Color;
 use cli::Command;
 
+//#[global_allocator]
+//static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
 #[global_allocator]
-static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
+
 
 /*  Code from boot section  */
 #[allow(dead_code)]
@@ -115,6 +122,11 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::Red, Color::White);
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
+
+	let x = allocator::boxed::Box::new(5 as u64);
+	kprintln!("New box value: {:?}", x);
+	let y = allocator::boxed::Box::new(5 as u8);
+	kprintln!("New box value: {:?}", y);
 
 	kprint!("$> ");
 	loop {
