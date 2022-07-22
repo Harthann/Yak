@@ -18,9 +18,9 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 
 		if let Some((region, alloc_start)) = allocator.find_region(size, align) { 
 			let alloc_end = alloc_start.checked_add(size as u32).expect("overflow");
-			let excess_size = region.end_addr() - alloc_end;
+			let excess_size: usize = (region.end_addr() - alloc_end) as usize;
 			if excess_size > 0 {
-				allocator.add_free_region(alloc_end, excess_size as usize);
+				allocator.add_free_region(alloc_end, excess_size);
 			}
 			alloc_start as *mut u8
 		} else {
@@ -33,7 +33,7 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let (size, _) = LinkedListAllocator::size_align(layout);
-		mut_self.add_free_region(ptr as u32, size)
+		mut_self.add_free_region(ptr as VirtAddr, size)
 	}
 }
 
@@ -65,6 +65,7 @@ impl LinkedListAllocator {
 		Self {head: ListNode::new(0)}
 	}
 
+	/* Adjust the layout to contain a ListNode */
 	fn size_align(layout: Layout) -> (usize, usize) {
 			let layout = layout
 				.align_to(core::mem::align_of::<ListNode>())
@@ -74,20 +75,24 @@ impl LinkedListAllocator {
 			(size, layout.align())
 	}
 
-	fn alloc_from_region(region: &ListNode, size: usize, align: usize) -> Result<VirtAddr, ()> {
+	/* check if the given region has the size needed */
+	fn alloc_from_region(region: &ListNode, size: usize, align: usize)
+		-> Result<VirtAddr, ()> {
 		let alloc_start = align_up(region.start_addr(), align);
 		let alloc_end = alloc_start.checked_add(size as u32).ok_or(())?;
 		if alloc_end > region.end_addr() {
 			return Err(());
 		}
-		let excess_size = region.end_addr() - alloc_end;
-		if excess_size > 0 && (excess_size as usize) < core::mem::size_of::<ListNode>() {
+		let excess_size: usize = (region.end_addr() - alloc_end) as usize;
+		if excess_size > 0 && (excess_size) < core::mem::size_of::<ListNode>() {
 			return Err(());
 		}
-		Ok(alloc_start as VirtAddr)
+		Ok(alloc_start)
 	}
 
-	fn find_region(&mut self, size: usize, align: usize) -> Option<(&'static mut ListNode, VirtAddr)> {
+	/* find a region and remove it from the linked list */
+	fn find_region(&mut self, size: usize, align: usize)
+		-> Option<(&'static mut ListNode, VirtAddr)> {
 		let mut current = &mut self.head;
 
 		while let Some(ref mut region) = current.next {
@@ -103,8 +108,11 @@ impl LinkedListAllocator {
 		None
 	}
 
+	/* add a free region to the linked list */
 	unsafe fn add_free_region(&mut self, addr: VirtAddr, size: usize) {
-		/* TODO: Check if the region is large enough */
+		assert_eq!(align_up(addr, core::mem::align_of::<ListNode>()), addr);
+		assert!(size >= core::mem::size_of::<ListNode>());
+
 		let mut node: ListNode = ListNode::new(size);
 		node.next = self.head.next.take();
 		let node_ptr: *mut ListNode = addr as *mut ListNode;
