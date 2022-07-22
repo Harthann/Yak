@@ -57,12 +57,12 @@ impl ListNode {
 }
 
 pub struct LinkedListAllocator {
-	head: ListNode
+	head: *mut Option<*mut ListNode>
 }
 
 impl LinkedListAllocator {
 	pub const fn new() -> Self {
-		Self {head: ListNode::new(0)}
+		Self {head: core::ptr::null_mut()}
 	}
 
 	/* Adjust the layout to contain a ListNode */
@@ -91,9 +91,10 @@ impl LinkedListAllocator {
 	}
 
 	/* find a region and remove it from the linked list */
-	fn find_region(&mut self, size: usize, align: usize)
+	unsafe fn find_region(&mut self, size: usize, align: usize)
 		-> Option<(&'static mut ListNode, VirtAddr)> {
-		let mut current = &mut self.head;
+		crate::kprintln!("{:p}", self.head);
+		let mut current: &mut ListNode = &mut **(*self.head).as_mut().unwrap();
 
 		while let Some(ref mut region) = current.next {
 			if let Ok(alloc_start) = Self::alloc_from_region(&region, size, align) {
@@ -114,9 +115,17 @@ impl LinkedListAllocator {
 		assert!(size >= core::mem::size_of::<ListNode>());
 
 		let mut node: ListNode = ListNode::new(size);
-		node.next = self.head.next.take();
+		if self.head == core::ptr::null_mut() {
+			crate::kprintln!("Setup head");
+			let mut start: ListNode = ListNode::new(0);
+			let node_ptr: *mut Option<*mut ListNode> = addr as *mut Option<*mut ListNode>;
+			node_ptr.write(Some(&mut start as *mut _));
+			self.head = node_ptr;
+		}
+		crate::kprintln!("{:p}", self.head);
+		node.next = (**(*self.head).as_mut().unwrap()).next.take();
 		let node_ptr: *mut ListNode = addr as *mut ListNode;
 		node_ptr.write(node);
-		self.head.next = Some(&mut *node_ptr);
+		(**(*self.head).as_mut().unwrap()).next = Some(&mut *node_ptr);
 	}
 }
