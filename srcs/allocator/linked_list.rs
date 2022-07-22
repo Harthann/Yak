@@ -10,6 +10,7 @@ impl Allocator for LinkedListAllocator {
 
 unsafe impl GlobalAlloc for LinkedListAllocator {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+		crate::kprintln!("alloc !");
 		let vaddr: u32 = self as *const Self as u32;
 		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
 
@@ -24,6 +25,7 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 			}
 			alloc_start as *mut u8
 		} else {
+			crate::kprintln!("return null");
 			core::ptr::null_mut()
 		}
 	}
@@ -52,17 +54,18 @@ impl ListNode {
 	}
 
 	fn end_addr(&self) -> VirtAddr {
+		crate::kprintln!("self.start_addr(): {:#010x} - self.size: {}", self.start_addr(), self.size);
 		self.start_addr() + self.size as u32
 	}
 }
 
 pub struct LinkedListAllocator {
-	head: *mut Option<*mut ListNode>
+	head: ListNode
 }
 
 impl LinkedListAllocator {
 	pub const fn new() -> Self {
-		Self {head: core::ptr::null_mut()}
+		Self {head: ListNode::new(0)}
 	}
 
 	/* Adjust the layout to contain a ListNode */
@@ -80,10 +83,14 @@ impl LinkedListAllocator {
 		-> Result<VirtAddr, ()> {
 		let alloc_start = align_up(region.start_addr(), align);
 		let alloc_end = alloc_start.checked_add(size as u32).ok_or(())?;
+		crate::kprintln!("size: {}", size);
+		crate::kprintln!("alloc_start: {:#010x} - alloc_end: {:#010x}", alloc_start, alloc_end);
+		crate::kprintln!("region.end_addr: {:#010x}", region.end_addr());
 		if alloc_end > region.end_addr() {
 			return Err(());
 		}
 		let excess_size: usize = (region.end_addr() - alloc_end) as usize;
+		crate::kprintln!("excess_size: {}", excess_size);
 		if excess_size > 0 && (excess_size) < core::mem::size_of::<ListNode>() {
 			return Err(());
 		}
@@ -91,18 +98,20 @@ impl LinkedListAllocator {
 	}
 
 	/* find a region and remove it from the linked list */
-	unsafe fn find_region(&mut self, size: usize, align: usize)
+	fn find_region(&mut self, size: usize, align: usize)
 		-> Option<(&'static mut ListNode, VirtAddr)> {
-		crate::kprintln!("{:p}", self.head);
-		let mut current: &mut ListNode = &mut **(*self.head).as_mut().unwrap();
+		let mut current = &mut self.head;
 
+		crate::kprintln!("current.start_addr: {:#010x}", current.start_addr());
 		while let Some(ref mut region) = current.next {
+			crate::kprintln!("boop");
 			if let Ok(alloc_start) = Self::alloc_from_region(&region, size, align) {
 				let next = region.next.take();
 				let ret = Some((current.next.take().unwrap(), alloc_start));
 				current.next = next;
 				return ret;
 			} else {
+				crate::kprintln!("what");
 				current = current.next.as_mut().unwrap();
 			}
 		}
@@ -114,18 +123,13 @@ impl LinkedListAllocator {
 		assert_eq!(align_up(addr, core::mem::align_of::<ListNode>()), addr);
 		assert!(size >= core::mem::size_of::<ListNode>());
 
+		crate::kprintln!("SIZE: {}", size);
 		let mut node: ListNode = ListNode::new(size);
-		if self.head == core::ptr::null_mut() {
-			crate::kprintln!("Setup head");
-			let mut start: ListNode = ListNode::new(0);
-			let node_ptr: *mut Option<*mut ListNode> = addr as *mut Option<*mut ListNode>;
-			node_ptr.write(Some(&mut start as *mut _));
-			self.head = node_ptr;
-		}
-		crate::kprintln!("{:p}", self.head);
-		node.next = (**(*self.head).as_mut().unwrap()).next.take();
+		crate::kprintln!("start_addr: {:#010x}, end_addr: {:#010x}", node.start_addr(), node.end_addr());
+		node.next = self.head.next.take();
 		let node_ptr: *mut ListNode = addr as *mut ListNode;
 		node_ptr.write(node);
-		(**(*self.head).as_mut().unwrap()).next = Some(&mut *node_ptr);
+		self.head.next = Some(&mut *node_ptr);
+		crate::kprintln!("next: {:p}", &self.head.next);
 	}
 }
