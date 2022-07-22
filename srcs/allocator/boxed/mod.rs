@@ -1,4 +1,4 @@
-use crate::{BumpAllocator};
+use crate::{BumpAllocator, LinkedListAllocator};
 use core::fmt;
 use core::alloc::{
 GlobalAlloc,
@@ -14,8 +14,8 @@ pub mod test;
 const GLOBAL_ALIGN: usize = 8;
 
 #[derive(Debug, Clone)]
-pub struct Box<T: ?Sized, A: GlobalAlloc + 'static = BumpAllocator> {
-	ptr: NonNull<T>, 
+pub struct Box<T: ?Sized, A: GlobalAlloc + 'static = LinkedListAllocator> {
+	ptr: NonNull<T>,
 	alloc: &'static A,
 	size: usize
 }

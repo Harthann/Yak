@@ -18,7 +18,7 @@ unsafe impl GlobalAlloc for BumpAllocator {
 		let alloc_start = align_up(mut_self.next, layout.align());
 		let alloc_end: VirtAddr = match alloc_start.checked_add(layout.size() as u32) {
 			Some(end) => end,
-				None => return core::ptr::null_mut(),
+			None => return core::ptr::null_mut()
 		};
 
 		if alloc_end > mut_self.heap_end {

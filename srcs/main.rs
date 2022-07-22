@@ -21,6 +21,7 @@ fn test_runner(tests: &[&dyn Fn()]) {
 	for test in tests {
 		test.run();
 	}
+	io::outb(0xf4, 0x10);
 }
 
 #[cfg(test)]
@@ -64,11 +65,11 @@ use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, /*init_he
 use vga_buffer::color::Color;
 use cli::Command;
 
-//#[global_allocator]
-//static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
-
 #[global_allocator]
-static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
+static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
+//#[global_allocator]
+//static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
 
 
 /*  Code from boot section  */
@@ -99,19 +100,17 @@ pub extern "C" fn kinit() {
 	kprintln!("init_paging");
 	init_paging();
 	kprintln!("init_heap");
-	let heap_addr: u32 = heap as u32;
-	unsafe{init_kheap(heap_addr as u32, &mut ALLOCATOR)};
-	kprintln!("init_stack");
-	init_stack(0xffffffff, 8192);
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
-    
-    #[cfg(test)]
-    test_main();
+	unsafe {init_kheap(heap as u32, 100 * 4096 , &mut ALLOCATOR)};
+//	kprintln!("init_stack");
+//	init_stack(0xffffffff, 8192);
+//	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
 
-    #[cfg(not(test))]
+	#[cfg(test)]
+	test_main();
+
+	#[cfg(not(test))]
 	kmain();
 
-    io::outb(0xf4, 0x10);
 }
 
 #[no_mangle]
@@ -135,6 +134,7 @@ pub extern "C" fn kmain() -> ! {
 			clihandle!(charcode);
 		}
 	}
+	io::outb(0xf4, 0x10);
 }
 
 /*  Function to put all tests and keep main clean */
