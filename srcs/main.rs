@@ -123,11 +123,7 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
 	change_color!(Color::White, Color::Black);
 
-	let x = allocator::boxed::Box::new(5 as u64);
-	kprintln!("New box value: {:?}", x);
-	let y = allocator::boxed::Box::new(5 as u8);
-	kprintln!("New box value: {:?}", y);
-
+	test();
 	kprint!("$> ");
 	loop {
 		if keyboard::keyboard_event() {
@@ -141,6 +137,22 @@ pub extern "C" fn kmain() -> ! {
 #[cfg(not(test))]
 fn test() {
 	unsafe {
+	kprintln!("===== Testing Box structure =====");
+
+	let x = allocator::boxed::Box::new(5 as u64);
+	kprintln!("New box value: {}", x);
+	let y = allocator::boxed::Box::new(10 as u64);
+	kprintln!("New box value: {}", y);
+	let z = allocator::boxed::Box::try_new(10 as u64);
+	if z.is_ok() {
+		kprintln!("New box value: {}", z.unwrap());
+	} else {
+		kprintln!("x: {}\ny: {}", x, y);
+	}
+
+	kprintln!("=================================");
+
+
 //		let ptr: kmemory::PhysAddr = kmemory::physmap_as_mut().get_page();
 //		kprintln!("Get this {:#x}", ptr);
 //		kprintln!("Get this {:#x}", kmemory::physmap_as_mut().get_page());
