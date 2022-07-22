@@ -99,19 +99,16 @@ pub extern "C" fn kinit() {
 	kprintln!("init_paging");
 	init_paging();
 	kprintln!("init_heap");
-	let heap_addr: u32 = heap as u32;
-	unsafe {init_kheap(heap_addr as u32, &mut ALLOCATOR)};
-	kprintln!("init_stack");
-	init_stack(0xffffffff, 8192);
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
+	unsafe {init_kheap(heap as u32, &mut ALLOCATOR)};
+//	kprintln!("init_stack");
+//	init_stack(0xffffffff, 8192);
+//	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
 
-    #[cfg(test)]
-    test_main();
+	#[cfg(test)]
+	test_main();
 
-    #[cfg(not(test))]
+	#[cfg(not(test))]
 	kmain();
-
-    io::outb(0xf4, 0x10);
 }
 
 #[no_mangle]
@@ -135,6 +132,7 @@ pub extern "C" fn kmain() -> ! {
 			clihandle!(charcode);
 		}
 	}
+	io::outb(0xf4, 0x10);
 }
 
 /*  Function to put all tests and keep main clean */
