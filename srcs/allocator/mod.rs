@@ -10,9 +10,6 @@ use bump::BumpAllocator;
 
 use crate::paging::{VirtAddr, alloc_pages_at_addr, kalloc_pages_at_addr};
 
-const HEAP_SIZE: usize = 100 * 1024;
-const KHEAP_SIZE: usize = 100 * 1024;
-
 pub trait Allocator: GlobalAlloc {
 	unsafe fn init(&mut self, offset: VirtAddr, size: usize);
 }
@@ -36,14 +33,14 @@ fn align_up(addr: VirtAddr, align: usize) -> VirtAddr {
 	(addr + align as u32 - 1) & !(align as u32 - 1)
 }
 
-pub fn init_heap(heap: VirtAddr, allocator: &mut dyn Allocator) {
-	let nb_page: usize = if HEAP_SIZE % 4096 == 0 {HEAP_SIZE / 4096} else {HEAP_SIZE / 4096 + 1};
+pub fn init_heap(heap: VirtAddr, size: usize, allocator: &mut dyn Allocator) {
+	let nb_page: usize = size / 4096 + (size % 4096 != 0) as usize;
 	alloc_pages_at_addr(heap, nb_page);
-	unsafe{allocator.init(heap, HEAP_SIZE)};
+	unsafe{allocator.init(heap, size)};
 }
 
-pub fn init_kheap(heap: VirtAddr, allocator: &mut dyn Allocator) {
-	let nb_page: usize = if KHEAP_SIZE % 4096 == 0 {KHEAP_SIZE / 4096} else {KHEAP_SIZE / 4096 + 1};
+pub fn init_kheap(heap: VirtAddr, size: usize,  allocator: &mut dyn Allocator) {
+	let nb_page: usize = size / 4096 + (size % 4096 != 0) as usize;
 	kalloc_pages_at_addr(heap, nb_page);
-	unsafe{allocator.init(heap, KHEAP_SIZE)};
+	unsafe{allocator.init(heap, size)};
 }

@@ -99,7 +99,7 @@ pub extern "C" fn kinit() {
 	kprintln!("init_paging");
 	init_paging();
 	kprintln!("init_heap");
-	unsafe {init_kheap(heap as u32, &mut ALLOCATOR)};
+	unsafe {init_kheap(heap as u32, 100 * 4096 , &mut ALLOCATOR)};
 //	kprintln!("init_stack");
 //	init_stack(0xffffffff, 8192);
 //	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
