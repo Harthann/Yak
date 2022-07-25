@@ -41,6 +41,7 @@ unsafe impl GlobalAlloc for BumpAllocator {
 	}
 }
 
+#[derive(Debug)]
 pub struct BumpAllocator {
 	heap_start: VirtAddr,
 	heap_end: VirtAddr,
