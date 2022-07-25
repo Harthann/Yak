@@ -125,23 +125,13 @@ $(DIR_OBJS):
 				mkdir -p $(DIR_OBJS)
 
 clean:
-ifneq (,$(wildcard $(DIR_OBJS)))
 				rm -rf $(DIR_OBJS)
-endif
-ifneq (,$(wildcard target))
 				rm -rf target
-endif
-ifneq (,$(wildcard Cargo.lock))
 				rm -rf Cargo.lock
-endif
-ifneq (,$(wildcard $(DIR_ISO)))
 				rm -rf $(DIR_ISO)
-endif
 
 fclean:			clean
-ifneq (,$(wildcard $(NAME)))
 				rm -rf $(NAME)
-endif
 
 re:				fclean
 				@$(MAKE) --no-print-directory
