@@ -21,8 +21,11 @@ pub trait AllocatorInit: GlobalAlloc {
 /* Custom trait to define Allocator design */
 pub trait Allocator {
 	fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
+	fn kallocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
 	fn deallocate(&self, ptr: NonNull<u8>, layout: Layout);
+	fn kdeallocate(&self, ptr: NonNull<u8>, layout: Layout);
 	fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
+	fn kallocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
 }
 
 /* Struct to wrap allocation */
@@ -144,6 +147,23 @@ impl Allocator for Global {
 	fn deallocate(&self, ptr: NonNull<u8>, layout: Layout) {
 		self.dealloc_impl(ptr.as_ptr(), layout, false);
 	}
+
+	#[inline]
+	fn kallocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+		self.alloc_impl(layout, false, true)
+	}
+
+	#[inline]
+	fn kallocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+		self.alloc_impl(layout, true, true)
+	}
+
+	#[inline]
+	fn kdeallocate(&self, ptr: NonNull<u8>, layout: Layout) {
+		self.dealloc_impl(ptr.as_ptr(), layout, true);
+	}
+
+
 
 }
 

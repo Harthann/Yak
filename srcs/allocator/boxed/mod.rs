@@ -14,9 +14,6 @@ Global};
 
 pub mod test;
 
-type VirtAddr = u32;
-type PhysAddr = usize;
-
 const GLOBAL_ALIGN: usize = 8;
 
 #[derive(Debug, Clone)]
@@ -25,23 +22,6 @@ pub struct Box<T: ?Sized, A: Allocator = Global> {
 	alloc: A,
 	layout: Layout
 }
-
-trait BoxAlloc<T> {
-	fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
-}
-
-impl<T> BoxAlloc<PhysAddr> for Box<T> {
-	fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
-		self.alloc.alloc_impl(layout, false, true)
-	}
-}
-
-impl<T> BoxAlloc<VirtAddr> for Box<T> {
-	fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
-		self.alloc.allocate(layout)
-	}
-}
-
 
 impl<T> Box<T> {
 
@@ -53,8 +33,18 @@ impl<T> Box<T> {
 		unsafe{ Self::try_new_in(x, Global) }
 	}
 
+
+	pub fn knew(x: T) -> Self {
+		unsafe{ Self::knew_in(x, Global) }
+	}
+
+	pub fn ktry_new(x:T) -> Result<Self, AllocError> {
+		unsafe{ Self::ktry_new_in(x, Global) }
+	}
+
 }
 
+/* This block implement virtual memory allocation for box */
 impl<T, A: Allocator> Box<T, A> {
 	
 	pub fn new_in(x: T, alloc: A) -> Self {
@@ -104,6 +94,54 @@ impl<T, A: Allocator> Box<T, A> {
 		boxed
 	}
 }
+
+/* This block implement physical memory allocation for box */
+impl<T, A: Allocator> Box<T, A> {
+	
+	pub fn knew_in(x: T, alloc: A) -> Self {
+		let boxed = Self::new_uninit_in(alloc);
+		Box::write(boxed, x)
+	}
+
+	pub fn knew_uninit_in(alloc: A) -> Self {
+		match Self::try_new_uninit_in(alloc) {
+			Ok(res) => res,
+			Err(_) => panic!("Allocation failed"),
+		}
+	}
+
+	pub fn ktry_new_in(x:T, alloc: A) -> Result<Self, AllocError> {
+		let mut ptr = Self::try_new_uninit_in(alloc)?;
+		Ok(Box::write(ptr, x))
+	}
+
+	pub fn ktry_new_uninit_in(alloc: A) -> Result<Self, AllocError> {
+		let mut layout: Layout = Layout::new::<T>();
+		let mut res = {
+			let size_var: usize = core::mem::size_of::<T>();
+			if size_var == 0 {
+				Some(NonNull::dangling())
+			} else {
+				unsafe {
+					layout = Layout::from_size_align(size_var, GLOBAL_ALIGN).unwrap();
+					Some(alloc.kallocate(layout)?.cast()) }
+			}
+		};
+		match res {
+			None => Err(AllocError{}),
+			Some(T) => {
+				let mut ptr = res.unwrap();
+				Ok(Box {
+						ptr: ptr,
+						alloc: alloc,
+						layout: layout
+				})
+			}
+		}
+	}
+}
+
+
 
 impl<T, A: Allocator> Deref for Box<T, A> {
 	type Target = T;
