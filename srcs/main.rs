@@ -111,6 +111,7 @@ pub extern "C" fn kinit() {
 	#[cfg(not(test))]
 	kmain();
 
+	io::outb(0xf4, 0x10);
 }
 
 #[no_mangle]
@@ -134,7 +135,6 @@ pub extern "C" fn kmain() -> ! {
 			clihandle!(charcode);
 		}
 	}
-	io::outb(0xf4, 0x10);
 }
 
 /*  Function to put all tests and keep main clean */
