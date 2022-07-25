@@ -63,7 +63,7 @@ impl PageTable {
 #[repr(transparent)]
 #[derive(Copy, Clone)]
 pub struct PageTableEntry {
-	value: u32
+	pub value: u32
 }
 
 impl From<u32> for PageTableEntry {

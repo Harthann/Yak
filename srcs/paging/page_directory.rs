@@ -279,7 +279,17 @@ impl PageDirectory {
 			let i: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
 			page_table.set_entry(i, 0);
-			// TODO: if last of page_table
+			// if last page_frame, free the page_table
+			let mut i = 0;
+			while i < 1024 {
+				if page_table.entries[i].value != 0 {
+					break ;
+				}
+				i += 1;
+			}
+			if i == 1024 {
+				self.remove_page_table(pd_index);
+			}
 			kmemory::physmap_as_mut().free_page(paddr);
 		}
 	}
