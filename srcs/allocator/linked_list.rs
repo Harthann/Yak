@@ -1,8 +1,8 @@
 use crate::paging::VirtAddr;
 use core::alloc::{Layout, GlobalAlloc};
-use crate::allocator::{Allocator, align_up};
+use crate::allocator::{AllocatorInit, align_up};
 
-impl Allocator for LinkedListAllocator {
+impl AllocatorInit for LinkedListAllocator {
 	unsafe fn init(&mut self, heap_start: VirtAddr, heap_size: usize) {
 		self.add_free_region(heap_start, heap_size);
 	}
