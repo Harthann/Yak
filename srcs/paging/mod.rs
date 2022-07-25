@@ -39,18 +39,25 @@ pub fn init_paging() {
 		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		/* Init paging map */
-		let pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
-		let ipt_paddr: PhysAddr = pd_paddr + 0x1000;
-		let init_page_tab: &mut PageTable = &mut *(ipt_paddr as *mut _);
-		init_page_tab.set_entry(768, pt_paddr | 3);
+		let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
+		let handler_pt_paddr: PhysAddr = pd_paddr + (1023 + 1) * 0x1000;
+		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
+		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
+		init_page_tab.set_entry(768, kernel_pt_paddr | 3);
+		init_page_tab.set_entry(1023, handler_pt_paddr | 3);
 		crate::refresh_tlb!();
-		let page_tab: &mut PageTable = page_directory.get_page_table(768);
-		page_tab.init();
-		page_directory.set_entry(768, pt_paddr | 3);
+		let kernel_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 768) as *mut _);
+		let handler_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1023) as *mut _);
+		kernel_page_tab.init();
+		handler_page_tab.set_entry(0, init_pt_paddr | 3);
+		handler_page_tab.set_entry(768, kernel_pt_paddr | 3);
+		handler_page_tab.set_entry(1023, handler_pt_paddr | 3);
+		page_directory.set_entry(0, 2);
+		page_directory.set_entry(768, kernel_pt_paddr | 3);
+		page_directory.set_entry(1023, handler_pt_paddr | 3);
+		crate::refresh_tlb!();
+		init_page_tab = page_directory.get_page_table(0);
 		init_page_tab.clear();
-		init_page_tab.set_entry(0, (pd_paddr + 0x1000) | 3);
-		init_page_tab.set_entry(768, pt_paddr | 3);
-		crate::refresh_tlb!();
 	}
 }
 
