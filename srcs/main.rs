@@ -1,4 +1,5 @@
 #![feature(const_mut_refs)]
+#![feature(rustc_attrs)]
 #![feature(box_syntax)]
 #![feature(ptr_internals)]
 #![feature(fundamental)]
@@ -58,6 +59,8 @@ mod interrupts;
 mod kmemory;
 mod multiboot;
 mod allocator;
+mod string;
+//mod vec;
 
 /*  Modules used function and variable  */
 use paging::{init_paging, alloc_page, alloc_pages, kalloc_pages, alloc_pages_at_addr, free_page, free_pages, page_directory, VirtAddr};
@@ -137,10 +140,11 @@ pub extern "C" fn kmain() -> ! {
 	}
 }
 
+
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
 	unsafe {
-	}
+}
 }
 
