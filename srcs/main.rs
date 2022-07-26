@@ -62,13 +62,12 @@ use memory::paging::{init_paging, page_directory};
 use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
+use memory::allocator::{Box};
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
-//#[global_allocator]
-//static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
-
+static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
 /*  Code from boot section  */
 #[allow(dead_code)]
@@ -87,7 +86,8 @@ use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
 pub extern "C" fn kinit() {
 	multiboot::read_tags();
 	init_paging();
-	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut ALLOCATOR)};
+	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, false, &mut ALLOCATOR)};
+	unsafe {init_heap(heap as u32 + 100 * 4096, 5 * 4096, PAGE_WRITABLE, true , &mut KALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
 	let stack_addr: VirtAddr = 0xbfffffff; /* stack user */
@@ -114,7 +114,7 @@ pub extern "C" fn kmain() -> ! {
 	#[cfg(not(test))]
 	test();
 
-	let x = memory::allocator::boxed::Box::new(5 as u64);
+	let x = Box::new(5 as u64);
 	kprintln!("New value: {}", x);
 	kprint!("$> ");
 	loop {
@@ -128,6 +128,10 @@ pub extern "C" fn kmain() -> ! {
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
+	let x = Box::new(10);
+	kprintln!("Virtual box: {}", x);
+	let y = Box::knew(5);//, crate::allocator::KGlobal);
+	kprintln!("Physical box: {}", y);
 //	unsafe {
 //	}
 }
