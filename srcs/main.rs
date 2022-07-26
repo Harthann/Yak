@@ -118,7 +118,7 @@ pub extern "C" fn kinit() {
 	let stack_addr: VirtAddr = 0xbfffffff; /* stack user */
 	init_stack(stack_addr, 8192, PAGE_WRITABLE | PAGE_USER, false);
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 32)};
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
 	#[cfg(test)]
 	test_main();
