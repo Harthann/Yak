@@ -229,7 +229,8 @@ impl PageDirectory {
 					}
 					if j - i == nb && j < 1024 {
 						while i < j {
-							self.claim_index_page_table(i);
+							let ret = self.claim_index_page_table(i);
+							assert!(ret.is_ok(), "unable to claim page table {}", i);
 							i += 1;
 						}
 						return Ok(i - nb);
@@ -288,7 +289,8 @@ impl PageDirectory {
 				i += 1;
 			}
 			if i == 1024 {
-				self.remove_page_table(pd_index);
+				let ret = self.remove_page_table(pd_index);
+				assert!(ret.is_ok(), "Unable to remove page table {}", pd_index);
 			}
 			kmemory::physmap_as_mut().free_page(paddr);
 		}
@@ -298,7 +300,7 @@ impl PageDirectory {
 	pub fn remove_page_table(&mut self, index: usize) -> Result<(), ()> {
 		unsafe {
 			if self.entries[index].get_present() == 1 {
-				let page_table: &mut PageTable = self.get_page_table(index);;
+				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
 				self.entries[index] = (0x00000002 as u32).into();
 				crate::refresh_tlb!();

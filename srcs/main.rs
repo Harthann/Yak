@@ -60,7 +60,7 @@ mod multiboot;
 mod allocator;
 
 /*  Modules used function and variable  */
-use paging::{init_paging, alloc_page, alloc_pages, kalloc_pages, alloc_pages_at_addr, free_page, free_pages, page_directory, VirtAddr};
+use paging::{init_paging, alloc_pages_at_addr, page_directory, VirtAddr};
 use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, /*init_heap,*/ init_kheap};
 use vga_buffer::color::Color;
 use cli::Command;
@@ -87,7 +87,7 @@ pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
 	if stack_size % 4096 != 0 {
 		nb_page += 1;
 	}
-	alloc_pages_at_addr(stack_bottom, nb_page);
+	alloc_pages_at_addr(stack_bottom, nb_page).expect("unable to allocate pages for stack");
 	stack_top
 }
 
@@ -140,7 +140,7 @@ pub extern "C" fn kmain() -> ! {
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
-	unsafe {
-	}
+//	unsafe {
+//	}
 }
 

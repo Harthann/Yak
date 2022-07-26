@@ -1,5 +1,3 @@
-use std::process::Command;
-
 fn main() {
 	// Linking the C/asm library
 	println!("cargo:rustc-link-search=native=./");

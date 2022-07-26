@@ -1,7 +1,5 @@
 use crate::allocator::boxed::Box;
 
-use crate::kprintln;
-
 #[test_case]
 fn basic_allocation() {
 	let x = crate::allocator::boxed::Box::new(5);

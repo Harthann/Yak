@@ -6,7 +6,7 @@ Layout
 };
 use core::ops::{Deref, DerefMut};
 
-use core::ptr::{self, Unique, NonNull};
+use core::ptr::{NonNull};
 use crate::allocator::ALLOCATOR;
 
 pub mod test;
@@ -57,7 +57,7 @@ impl<T, A: GlobalAlloc> Box<T, A> {
 	}
 
 	pub fn try_new_in(x:T, alloc: &'static A) -> Result<Self, ()> {
-		let mut res = {
+		let res = {
 			let size_var: usize = core::mem::size_of::<T>();
 			if size_var == 0 {
 				Some(NonNull::dangling())

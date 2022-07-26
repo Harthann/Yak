@@ -2,11 +2,8 @@ pub mod linked_list;
 pub mod bump;
 pub mod boxed;
 
-use core::alloc::{Layout, GlobalAlloc};
+use core::alloc::GlobalAlloc;
 use crate::ALLOCATOR;
-
-use linked_list::LinkedListAllocator;
-use bump::BumpAllocator;
 
 use crate::paging::{VirtAddr, alloc_pages_at_addr, kalloc_pages_at_addr};
 
@@ -35,12 +32,12 @@ fn align_up(addr: VirtAddr, align: usize) -> VirtAddr {
 
 pub fn init_heap(heap: VirtAddr, size: usize, allocator: &mut dyn Allocator) {
 	let nb_page: usize = size / 4096 + (size % 4096 != 0) as usize;
-	alloc_pages_at_addr(heap, nb_page);
+	alloc_pages_at_addr(heap, nb_page).expect("unable to allocate pages for heap");
 	unsafe{allocator.init(heap, size)};
 }
 
 pub fn init_kheap(heap: VirtAddr, size: usize,  allocator: &mut dyn Allocator) {
 	let nb_page: usize = size / 4096 + (size % 4096 != 0) as usize;
-	kalloc_pages_at_addr(heap, nb_page);
+	kalloc_pages_at_addr(heap, nb_page).expect("unable to allocate pages for kheap");
 	unsafe{allocator.init(heap, size)};
 }
