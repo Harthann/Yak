@@ -94,16 +94,13 @@ pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	kprintln!("kinit_start");
-	kprintln!("multiboot:");
 	multiboot::read_tags();
-	kprintln!("init_paging");
 	init_paging();
-	kprintln!("init_heap");
 	unsafe {init_kheap(heap as u32, 100 * 4096 , &mut ALLOCATOR)};
-	kprintln!("init_stack");
-//	init_stack(0xffffffff, 8192); -> do not do that here now, page_table are there
-//	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
+	let kstack_addr: VirtAddr = 0xffbfffff;
+	init_stack(kstack_addr, 8192);
+	/* Reserve some spaces to push things before main */
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 32)};
 
 	#[cfg(test)]
 	test_main();
