@@ -12,7 +12,7 @@ fn basic_allocation() {
 
 #[test_case]
 fn free_test() {
-	let mut ptr: u32;
+	let ptr: u32;
 	{
 		let x = crate::allocator::boxed::Box::new(5);
 		ptr = (x.as_ref() as *const _) as u32;
@@ -25,7 +25,7 @@ fn free_test() {
 fn test_mut_ref() {
 	let mut x = crate::allocator::boxed::Box::new(5);
 	assert_eq!(*x, 5);
-	let mut y = x.as_mut();
+	let y = x.as_mut();
 	*y = 10;
 	assert_eq!(*x, 10);
 }
