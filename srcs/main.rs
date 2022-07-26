@@ -1,4 +1,5 @@
 #![feature(const_mut_refs)]
+#![feature(specialization)]
 #![feature(box_syntax)]
 #![feature(ptr_internals)]
 #![feature(fundamental)]
@@ -64,13 +65,12 @@ use paging::{init_paging, alloc_pages_at_addr, page_directory, VirtAddr};
 use allocator::{linked_list::LinkedListAllocator, /*init_heap,*/ init_kheap};
 use vga_buffer::color::Color;
 use cli::Command;
+use allocator::{Box};
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
-//#[global_allocator]
-//static mut ALLOCATOR: BumpAllocator = BumpAllocator::new();
-
+static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
 /*  Code from boot section  */
 #[allow(dead_code)]
@@ -101,6 +101,7 @@ pub extern "C" fn kinit() {
 	init_paging();
 	kprintln!("init_heap");
 	unsafe {init_kheap(heap as u32, 100 * 4096 , &mut ALLOCATOR)};
+	unsafe {init_kheap(paging::alloc_pages(5).expect("Failed"), 100 * 4096 , &mut KALLOCATOR)};
 	kprintln!("init_stack");
 //	init_stack(0xffffffff, 8192); -> do not do that here now, page_table are there
 //	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
@@ -124,7 +125,7 @@ pub extern "C" fn kmain() -> ! {
 	#[cfg(not(test))]
 	test();
 
-	let x = allocator::boxed::Box::new(5 as u64);
+	let x = Box::new(5 as u64);
 	kprintln!("New value: {}", x);
 	kprint!("$> ");
 	loop {
@@ -138,6 +139,10 @@ pub extern "C" fn kmain() -> ! {
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
+	let x = Box::new(10);
+	kprintln!("Virtual box: {}", x);
+	let y = Box::knew(5);//, crate::allocator::KGlobal);
+	kprintln!("Physical box: {}", y);
 //	unsafe {
 //	}
 }
