@@ -11,6 +11,7 @@ pub struct Vec<T, A: Allocator = crate::allocator::Global> {
 	ptr: NonNull<T>,
 	capacity: usize,
 	len: usize,
+	alloc: A
 }
 
 pub fn test() {
@@ -21,14 +22,15 @@ impl<T> Vec<T> {
 
 	pub const fn new() -> Vec<T> {
 		Vec {
-			ptr: NonNull::<char>::dangling(),
+			ptr: NonNull::<T>::dangling(),
 			capacity: 0,
-			len: 0
+			len: 0,
+			alloc: Global
 		}
 	}
 
 	pub const fn with_capcaity(capacity: usize) -> Vec<T> {
-		Self::with_capacity_in(capacity, Global);
+		Self::with_capacity_in(capacity, &Global);
 		todo!()
 	}
 
@@ -40,16 +42,16 @@ impl<T> Vec<T> {
 
 impl<T, A: Allocator> Vec<T,A> {
 	
-	pub const fn with_capacity_in(capacity: usize, alloc: dyn Allocator) -> NonNull<T> {
+	pub const fn with_capacity_in(capacity: usize, alloc: &dyn Allocator) -> NonNull<T> {
 		match Self::try_alloc(capacity, alloc) {
 			Ok(x) => x,
 			Err(_) => panic!("Allocation failed")
 		}
 	}
 
-	fn try_alloc(capacity: usize, alloc: dyn Allocator) -> Result<NonNull<T>, AllocError> {
+	fn try_alloc(capacity: usize, alloc: &dyn Allocator) -> Result<NonNull<T>, AllocError> {
 		let layout = Layout::from_size_align(capacity, GLOBAL_ALIGN).unwrap();
 		let res = alloc.allocate(layout)?.cast();
-		crate::kprintln!("Test: {}", res);
+		crate::kprintln!("Test: {:?}", res);
 	}
 }
