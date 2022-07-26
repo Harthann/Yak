@@ -6,7 +6,6 @@ use crate::paging::PhysAddr;
 use crate::paging::VirtAddr;
 use crate::paging::PageTable;
 
-use crate::paging::KERNEL_BASE;
 use crate::get_vaddr;
 
 use crate::paging::page_directory;
@@ -184,7 +183,7 @@ impl PageDirectory {
 
 	fn claim_index_page_table(&mut self, index: usize) -> Result<usize, ()> {
 		unsafe {
-			let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
+			let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
 			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
 			page_tab.set_entry(index, pt_paddr | 3);

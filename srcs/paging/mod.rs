@@ -10,8 +10,6 @@ extern "C" {
 	pub static mut page_directory: PageDirectory;
 }
 
-const KERNEL_BASE: usize = 0xc0000000;
-
 use page_directory::PageDirectory;
 use page_table::PageTable;
 
@@ -29,7 +27,7 @@ pub type PhysAddr = u32;
 */
 pub fn init_paging() {
 	unsafe {
-		let pd_paddr: PhysAddr = page_directory.get_vaddr() - KERNEL_BASE as PhysAddr;
+		let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 		let res = multiboot::get_last_entry();
 		if res.is_ok() {
 			let mmap_entry: &MemMapEntry = res.unwrap();
@@ -47,7 +45,7 @@ pub fn init_paging() {
 		init_page_tab.set_entry(1023, handler_pt_paddr | 3);
 		crate::refresh_tlb!();
 		let kernel_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 768) as *mut _);
-		let handler_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1023) as *mut _);
+		let mut handler_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1023) as *mut _);
 		kernel_page_tab.init();
 		handler_page_tab.set_entry(0, init_pt_paddr | 3);
 		handler_page_tab.set_entry(768, kernel_pt_paddr | 3);
@@ -57,7 +55,10 @@ pub fn init_paging() {
 		page_directory.set_entry(1023, handler_pt_paddr | 3);
 		crate::refresh_tlb!();
 		init_page_tab = page_directory.get_page_table(0);
+		handler_page_tab = page_directory.get_page_table(1023);
 		init_page_tab.clear();
+		handler_page_tab.set_entry(0, 0);
+		crate::refresh_tlb!();
 	}
 }
 

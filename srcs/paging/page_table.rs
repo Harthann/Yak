@@ -3,7 +3,10 @@ use core::fmt;
 use crate::page_directory;
 use crate::paging::PhysAddr;
 use crate::paging::VirtAddr;
-use crate::paging::KERNEL_BASE;
+
+extern "C" {
+	fn _start_rodata();
+}
 
 #[repr(transparent)]
 pub struct PageTable {
@@ -16,13 +19,19 @@ impl PageTable {
 
 		let page_directory_entry: usize = unsafe{page_directory.get_vaddr() as usize};
 		while i < 1024 {
-			if i * 0x1000 <= page_directory_entry - KERNEL_BASE {
-				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
+			if i == 0 /* gdt */ ||
+(i >= (_start_rodata as usize & 0x3ff000) >> 12 &&
+i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12) /* VGA_BUFFER */ {
+				self.entries[i] = (((i * 0x1000) | 3) as u32).into(); // WRITABLE
+			}
+			else if i < (_start_rodata as usize & 0x3ff000) >> 12 {
+				self.entries[i] = (((i * 0x1000) | 1) as u32).into(); // NON-WRITABLE
 			} else {
 				self.entries[i] = 0x0.into();
 			}
 			i += 1;
 		}
+		crate::kprintln!("end setup");
 	}
 
 	pub fn set_entry(&mut self, index: usize, value: u32) {
