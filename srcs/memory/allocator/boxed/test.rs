@@ -1,4 +1,4 @@
-use crate::allocator::boxed::Box;
+use crate::memory::allocator::boxed::Box;
 
 #[test_case]
 fn basic_allocation() {

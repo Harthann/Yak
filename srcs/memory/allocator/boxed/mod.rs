@@ -3,7 +3,7 @@ use core::alloc::Layout;
 use core::ops::{Deref, DerefMut};
 
 use core::ptr::NonNull;
-use crate::allocator::{
+use crate::memory::allocator::{
 AllocError,
 Allocator,
 Global};

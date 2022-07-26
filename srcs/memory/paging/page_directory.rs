@@ -1,14 +1,9 @@
 use core::fmt;
 
-use crate::kmemory;
-
-use crate::paging::PhysAddr;
-use crate::paging::VirtAddr;
-use crate::paging::PageTable;
-
 use crate::get_vaddr;
 
-use crate::paging::page_directory;
+use crate::memory::{VirtAddr, PhysAddr};
+use crate::memory::paging::{page_directory, PageTable, bitmap};
 
 use crate::PAGE_WRITABLE;
 
@@ -129,7 +124,7 @@ impl PageDirectory {
 
 	/* Claim a page frame (by lowest index) */
 	pub fn get_page_frame(&mut self, flags: u32) -> Result<VirtAddr, ()> {
-		let paddr = kmemory::physmap_as_mut().get_page()?;
+		let paddr = bitmap::physmap_as_mut().get_page()?;
 		let mut i: usize = 0;
 
 		while i < 1023 { /* 1023 reserved for page_table def */
@@ -150,7 +145,7 @@ impl PageDirectory {
 		adjacent physical addresses
 	*/
 	fn kclaim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize, flags: u32) -> Result <(), ()> {
-		let mut paddr: PhysAddr = kmemory::physmap_as_mut().get_pages(nb)?;
+		let mut paddr: PhysAddr = bitmap::physmap_as_mut().get_pages(nb)?;
 
 		let mut i: usize = 0;
 		while i < nb {
@@ -175,7 +170,7 @@ impl PageDirectory {
 				pt_index = 0;
 				pd_index += 1;
 			}
-			let paddr: PhysAddr = kmemory::physmap_as_mut().get_page()?;
+			let paddr: PhysAddr = bitmap::physmap_as_mut().get_page()?;
 			self.get_page_table(pd_index).new_index_frame(pt_index, paddr, flags);
 			pt_index += 1;
 			i += 1;
@@ -293,7 +288,7 @@ impl PageDirectory {
 				let ret = self.remove_page_table(pd_index);
 				assert!(ret.is_ok(), "Unable to remove page table {}", pd_index);
 			}
-			kmemory::physmap_as_mut().free_page(paddr);
+			bitmap::physmap_as_mut().free_page(paddr);
 		}
 	}
 

@@ -9,7 +9,7 @@ Layout
 use core::ptr::NonNull;
 use crate::ALLOCATOR;
 
-use crate::paging::VirtAddr;
+use crate::memory::VirtAddr;
 
 /*	Trait definitions to inialize a global allocator */
 pub trait AllocatorInit: GlobalAlloc {

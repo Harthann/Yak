@@ -48,20 +48,18 @@ pub extern "C" fn eh_personality() {}
 
 
 /*  Modules import  */
-mod io;
-mod keyboard;
-mod vga_buffer;
-mod gdt;
 mod cli;
-mod paging;
-mod interrupts;
-mod kmemory;
+mod gdt;
+mod keyboard;
+mod memory;
 mod multiboot;
-mod allocator;
+mod interrupts;
+mod io;
+mod vga_buffer;
 
 /*  Modules used function and variable  */
-use paging::{init_paging, alloc_pages_at_addr, kalloc_pages_at_addr, page_directory, VirtAddr};
-use allocator::{linked_list::LinkedListAllocator, AllocatorInit};
+use memory::paging::{init_paging, page_directory};
+use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
 
@@ -81,31 +79,8 @@ extern "C" {
 	fn heap();
 }
 
-use crate::paging::{PAGE_WRITABLE, PAGE_USER};
-
-pub fn init_memory(addr: VirtAddr, size: usize, flags: u32, kphys: bool) -> Result<VirtAddr, ()>{
-	assert!(size % 4096 == 0, "size must be a multiple of 4096");
-	let nb_page: usize = size / 4096;
-
-	if kphys {
-		kalloc_pages_at_addr(addr, nb_page, flags)
-	} else {
-		alloc_pages_at_addr(addr, nb_page, flags)
-	}
-}
-
-/* kphys => physically contiguous */
-pub fn init_heap(heap: VirtAddr, size: usize, flags: u32, kphys: bool, allocator: &mut dyn AllocatorInit) -> VirtAddr {
-	init_memory(heap, size, flags, kphys).expect("unable to allocate pages for heap");
-	unsafe{allocator.init(heap, size)};
-	heap
-}
-
-pub fn init_stack(stack_top: VirtAddr, size: usize, flags: u32, kphys: bool) -> VirtAddr {
-	let stack_bottom: VirtAddr = stack_top - (size - 1) as u32;
-	init_memory(stack_bottom, size, flags, kphys).expect("unable to allocate pages for stack");
-	stack_top
-}
+use crate::memory::{init_heap, init_stack, VirtAddr};
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -139,7 +114,7 @@ pub extern "C" fn kmain() -> ! {
 	#[cfg(not(test))]
 	test();
 
-	let x = allocator::boxed::Box::new(5 as u64);
+	let x = memory::allocator::boxed::Box::new(5 as u64);
 	kprintln!("New value: {}", x);
 	kprint!("$> ");
 	loop {

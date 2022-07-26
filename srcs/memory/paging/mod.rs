@@ -1,9 +1,10 @@
 pub mod page_directory;
 pub mod page_table;
+pub mod bitmap;
 
-use crate::kmemory;
 use crate::multiboot;
 use crate::multiboot::MemMapEntry;
+use crate::memory::{VirtAddr, PhysAddr};
 
 #[allow(dead_code)]
 extern "C" {
@@ -12,9 +13,6 @@ extern "C" {
 
 use page_directory::PageDirectory;
 use page_table::PageTable;
-
-pub type VirtAddr = u32;
-pub type PhysAddr = u32;
 
 pub const PAGE_WRITABLE: u32 = 0b10;
 pub const PAGE_USER: u32 = 0xb100;
@@ -35,9 +33,9 @@ pub fn init_paging() {
 		if res.is_ok() {
 			let mmap_entry: &MemMapEntry = res.unwrap();
 			/* Reserve space for kernel and SeaBIOS (GRUB) */
-			kmemory::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
+			bitmap::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
 		}
-		kmemory::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
+		bitmap::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		/* Init paging map */
 		let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
@@ -101,14 +99,14 @@ pub fn free_page(vaddr: VirtAddr) {
 macro_rules! get_paddr {
 	($vaddr:expr) =>
 		(
-			page_directory.get_page_table((($vaddr as usize) & 0xffc00000) >> 22).entries[(($vaddr as usize) & 0x3ff000) >> 12].get_paddr() + ((($vaddr as usize) & 0xfff) as crate::paging::PhysAddr)
+			page_directory.get_page_table((($vaddr as usize) & 0xffc00000) >> 22).entries[(($vaddr as usize) & 0x3ff000) >> 12].get_paddr() + ((($vaddr as usize) & 0xfff) as crate::memory::PhysAddr)
 		);
 }
 
 #[macro_export]
 macro_rules! get_vaddr {
 	($pd_index:expr, $pt_index:expr) =>
-		(((($pd_index as usize) << 22) | (($pt_index as usize) << 12)) as crate::paging::VirtAddr);
+		(((($pd_index as usize) << 22) | (($pt_index as usize) << 12)) as crate::memory::VirtAddr);
 }
 
 #[macro_export]

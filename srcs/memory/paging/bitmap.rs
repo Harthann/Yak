@@ -1,5 +1,5 @@
-pub type PhysAddr   = u32;
-pub type VirtAddr   = u32;
+use crate::memory::PhysAddr;
+
 type Sector     = u8;
 
 /*  Hardcoded value corresponding to our paging maximum memory */
