@@ -2,13 +2,12 @@ pub mod linked_list;
 pub mod bump;
 pub mod boxed;
 
-use core::alloc::{Layout, GlobalAlloc};
+use core::alloc::{
+GlobalAlloc,
+Layout
+};
 use core::ptr::NonNull;
 use crate::ALLOCATOR;
-
-
-use linked_list::LinkedListAllocator;
-use bump::BumpAllocator;
 
 use crate::paging::{VirtAddr, alloc_pages_at_addr, kalloc_pages_at_addr};
 
@@ -109,8 +108,8 @@ impl Global {
 	pub fn alloc_impl(&self, layout: Layout, zeroed: bool, phys_memory: bool) -> Result<NonNull<u8>, AllocError> {
 		match layout.size() {
 			0 => { return Ok(NonNull::dangling()); },
-			size => {
-				let mut raw_ptr: *mut u8;
+			_size => {
+				let raw_ptr: *mut u8;
 				if phys_memory == true {
 					raw_ptr = unsafe{ if zeroed {kalloc_zeroed(layout)} else {kalloc(layout)} };
 				} else {
@@ -188,12 +187,12 @@ fn align_up(addr: VirtAddr, align: usize) -> VirtAddr {
 
 pub fn init_heap(heap: VirtAddr, size: usize, allocator: &mut dyn AllocatorInit) {
 	let nb_page: usize = size / 4096 + (size % 4096 != 0) as usize;
-	alloc_pages_at_addr(heap, nb_page);
+	alloc_pages_at_addr(heap, nb_page).expect("unable to allocate pages for heap");
 	unsafe{allocator.init(heap, size)};
 }
 
 pub fn init_kheap(heap: VirtAddr, size: usize,  allocator: &mut dyn AllocatorInit) {
 	let nb_page: usize = size / 4096 + (size % 4096 != 0) as usize;
-	kalloc_pages_at_addr(heap, nb_page);
+	kalloc_pages_at_addr(heap, nb_page).expect("unable to allocate pages for kheap");
 	unsafe{allocator.init(heap, size)};
 }

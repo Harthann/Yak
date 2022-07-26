@@ -1,17 +1,14 @@
-use crate::{BumpAllocator, LinkedListAllocator};
 use core::fmt;
-use core::alloc::{
-GlobalAlloc,
-Layout
-};
+use core::alloc::Layout;
 use core::ops::{Deref, DerefMut};
 
-use core::ptr::{self, Unique, NonNull};
-use crate::allocator::{ALLOCATOR,
+use core::ptr::NonNull;
+use crate::allocator::{
 AllocError,
 Allocator,
 Global};
 
+#[cfg(test)]
 pub mod test;
 
 const GLOBAL_ALIGN: usize = 8;
@@ -26,20 +23,20 @@ pub struct Box<T: ?Sized, A: Allocator = Global> {
 impl<T> Box<T> {
 
 	pub fn new(x: T) -> Self {
-		unsafe{ Self::new_in(x, Global) }
+		Self::new_in(x, Global)
 	}
 
 	pub fn try_new(x:T) -> Result<Self, AllocError> {
-		unsafe{ Self::try_new_in(x, Global) }
+		Self::try_new_in(x, Global)
 	}
 
 
 	pub fn knew(x: T) -> Self {
-		unsafe{ Self::knew_in(x, Global) }
+		Self::knew_in(x, Global)
 	}
 
 	pub fn ktry_new(x:T) -> Result<Self, AllocError> {
-		unsafe{ Self::ktry_new_in(x, Global) }
+		Self::ktry_new_in(x, Global)
 	}
 
 }
@@ -60,26 +57,24 @@ impl<T, A: Allocator> Box<T, A> {
 	}
 
 	pub fn try_new_in(x:T, alloc: A) -> Result<Self, AllocError> {
-		let mut ptr = Self::try_new_uninit_in(alloc)?;
+		let ptr = Self::try_new_uninit_in(alloc)?;
 		Ok(Box::write(ptr, x))
 	}
 
 	pub fn try_new_uninit_in(alloc: A) -> Result<Self, AllocError> {
 		let mut layout: Layout = Layout::new::<T>();
-		let mut res = {
+		let res = {
 			let size_var: usize = core::mem::size_of::<T>();
 			if size_var == 0 {
 				Some(NonNull::dangling())
 			} else {
-				unsafe {
 					layout = Layout::from_size_align(size_var, GLOBAL_ALIGN).unwrap();
-					Some(alloc.allocate(layout)?.cast()) }
+					Some(alloc.allocate(layout)?.cast())
 			}
 		};
 		match res {
 			None => Err(AllocError{}),
-			Some(T) => {
-				let mut ptr = res.unwrap();
+			Some(ptr) => {
 				Ok(Box {
 						ptr: ptr,
 						alloc: alloc,
@@ -111,26 +106,24 @@ impl<T, A: Allocator> Box<T, A> {
 	}
 
 	pub fn ktry_new_in(x:T, alloc: A) -> Result<Self, AllocError> {
-		let mut ptr = Self::try_new_uninit_in(alloc)?;
+		let ptr = Self::try_new_uninit_in(alloc)?;
 		Ok(Box::write(ptr, x))
 	}
 
 	pub fn ktry_new_uninit_in(alloc: A) -> Result<Self, AllocError> {
 		let mut layout: Layout = Layout::new::<T>();
-		let mut res = {
+		let res = {
 			let size_var: usize = core::mem::size_of::<T>();
 			if size_var == 0 {
 				Some(NonNull::dangling())
 			} else {
-				unsafe {
 					layout = Layout::from_size_align(size_var, GLOBAL_ALIGN).unwrap();
-					Some(alloc.kallocate(layout)?.cast()) }
+					Some(alloc.kallocate(layout)?.cast())
 			}
 		};
 		match res {
 			None => Err(AllocError{}),
-			Some(T) => {
-				let mut ptr = res.unwrap();
+			Some(ptr) => {
 				Ok(Box {
 						ptr: ptr,
 						alloc: alloc,
@@ -160,7 +153,7 @@ impl<T, A: Allocator> DerefMut for Box<T, A> {
 
 impl<T: ?Sized, A: Allocator> Drop for Box<T, A> {
 	fn drop (&mut self) {
-		unsafe{ self.alloc.deallocate(self.ptr.cast(), self.layout) };
+		self.alloc.deallocate(self.ptr.cast(), self.layout);
 	}
 }
 

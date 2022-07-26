@@ -11,10 +11,10 @@ impl AllocatorInit for LinkedListAllocator {
 unsafe impl GlobalAlloc for LinkedListAllocator {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
 		let vaddr: u32 = self as *const Self as u32;
-		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
+		let mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let (size, align) = LinkedListAllocator::size_align(layout);
-		let mut allocator = mut_self;
+		let allocator = mut_self;
 
 		if let Some((region, alloc_start)) = allocator.find_region(size, align) { 
 			let alloc_end = alloc_start.checked_add(size as u32).expect("overflow");
@@ -30,7 +30,7 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 
 	unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
 		let vaddr: u32 = self as *const Self as u32;
-		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
+		let mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let (size, _) = LinkedListAllocator::size_align(layout);
 		mut_self.add_free_region(ptr as VirtAddr, size)
