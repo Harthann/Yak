@@ -10,6 +10,8 @@ use crate::get_vaddr;
 
 use crate::paging::page_directory;
 
+use crate::PAGE_WRITABLE;
+
 #[repr(transparent)]
 pub struct PageDirectory {
 	pub entries: [PageDirectoryEntry; 1024]
@@ -21,25 +23,25 @@ impl PageDirectory {
 		self.entries[index] = value.into();
 	}
 
-	pub fn kget_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
+	pub fn kget_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
 		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 		
 		if self.entries[pd_index].get_present() == 0 {
 			self.claim_index_page_tables(pd_index, (nb / 1024) + 1)?;
 		}
-		self.kclaim_index_page_frames(pd_index, pt_index, nb)?;
+		self.kclaim_index_page_frames(pd_index, pt_index, nb, flags)?;
 		Ok(vaddr)
 	}
 
-	pub fn get_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize) -> Result<VirtAddr, ()> {
+	pub fn get_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
 		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 		
 		if self.entries[pd_index].get_present() == 0 {
 			self.claim_index_page_tables(pd_index, (nb / 1024) + 1)?;
 		}
-		self.claim_index_page_frames(pd_index, pt_index, nb)?;
+		self.claim_index_page_frames(pd_index, pt_index, nb, flags)?;
 		Ok(vaddr)
 	}
 
@@ -47,7 +49,7 @@ impl PageDirectory {
 		Get page frames that are virtually and physically adjacents, return the
 		virtual address of the first one
 	*/
-	pub fn kget_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
+	pub fn kget_page_frames(&mut self, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
 		let mut i: usize = 768; // map kernel page if physically neighbour > 0xc0000000
 		let mut i_saved: usize = 0;
@@ -80,7 +82,7 @@ impl PageDirectory {
 			j -= nb;
 		}
 		let vaddr: VirtAddr = get_vaddr!(i_saved, j);
-		self.kclaim_index_page_frames(i_saved, j, nb)?;
+		self.kclaim_index_page_frames(i_saved, j, nb, flags)?;
 		Ok(vaddr)
 	}
 
@@ -88,7 +90,7 @@ impl PageDirectory {
 		Claim 'nb' page frames (by lowest index), pages must be virtually
 		adjacents
 	*/
-	pub fn get_page_frames(&mut self, nb: usize) -> Result<VirtAddr, ()> {
+	pub fn get_page_frames(&mut self, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
 		let mut i: usize = 0;
 		let mut i_saved: usize = 1;
@@ -121,18 +123,18 @@ impl PageDirectory {
 			j -= nb;
 		}
 		let vaddr: VirtAddr = get_vaddr!(i_saved, j);
-		self.claim_index_page_frames(i_saved, j, nb)?;
+		self.claim_index_page_frames(i_saved, j, nb, flags)?;
 		Ok(vaddr)
 	}
 
 	/* Claim a page frame (by lowest index) */
-	pub fn get_page_frame(&mut self) -> Result<VirtAddr, ()> {
+	pub fn get_page_frame(&mut self, flags: u32) -> Result<VirtAddr, ()> {
 		let paddr = kmemory::physmap_as_mut().get_page()?;
 		let mut i: usize = 0;
 
 		while i < 1023 { /* 1023 reserved for page_table def */
 			if self.entries[i].get_present() == 1 {
-				let res = self.get_page_table(i).new_frame(paddr);
+				let res = self.get_page_table(i).new_frame(paddr, flags);
 				if res.is_ok() {
 					return Ok(get_vaddr!(i, res.unwrap()));
 				}
@@ -140,14 +142,14 @@ impl PageDirectory {
 			i += 1;
 		}
 		i = self.claim_page_table()?;
-		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr)?))
+		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr, flags)?))
 	}
 
 	/*
 		Claim a range of page frames based on 'nb' size and specified index with
 		adjacent physical addresses
 	*/
-	fn kclaim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) -> Result <(), ()> {
+	fn kclaim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize, flags: u32) -> Result <(), ()> {
 		let mut paddr: PhysAddr = kmemory::physmap_as_mut().get_pages(nb)?;
 
 		let mut i: usize = 0;
@@ -156,7 +158,7 @@ impl PageDirectory {
 				pt_index = 0;
 				pd_index += 1;
 			}
-			self.get_page_table(pd_index).new_index_frame(pt_index, paddr);
+			self.get_page_table(pd_index).new_index_frame(pt_index, paddr, flags);
 			pt_index += 1;
 			i += 1;
 			paddr += 4096;
@@ -165,7 +167,7 @@ impl PageDirectory {
 	}
 
 	/* Claim a range of page frames based on 'nb' size and specified index */
-	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize) -> Result <(), ()> {
+	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize, flags: u32) -> Result <(), ()> {
 		let mut i: usize = 0;
 
 		while i < nb {
@@ -174,7 +176,7 @@ impl PageDirectory {
 				pd_index += 1;
 			}
 			let paddr: PhysAddr = kmemory::physmap_as_mut().get_page()?;
-			self.get_page_table(pd_index).new_index_frame(pt_index, paddr);
+			self.get_page_table(pd_index).new_index_frame(pt_index, paddr, flags);
 			pt_index += 1;
 			i += 1;
 		}
@@ -186,11 +188,11 @@ impl PageDirectory {
 			let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
 			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
-			page_tab.set_entry(index, pt_paddr | 3);
+			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | 1);
 			crate::refresh_tlb!();
 			let new: &mut PageTable = page_directory.get_page_table(index);
 			new.clear();
-			self.entries[index] = (pt_paddr | 3).into();
+			self.entries[index] = (pt_paddr | PAGE_WRITABLE | 1).into();
 			crate::refresh_tlb!();
 			Ok(index)
 		}
