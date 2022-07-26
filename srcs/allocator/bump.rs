@@ -1,8 +1,8 @@
 use crate::paging::VirtAddr;
 use core::alloc::{GlobalAlloc, Layout};
-use crate::allocator::{Allocator, align_up};
+use crate::allocator::{AllocatorInit, align_up};
 
-impl Allocator for BumpAllocator {
+impl AllocatorInit for BumpAllocator {
 	unsafe fn init(&mut self, heap_start: VirtAddr, heap_size: usize) {
 		self.heap_start = heap_start;
 		self.heap_end = heap_start + heap_size as u32;

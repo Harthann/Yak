@@ -8,6 +8,7 @@
 #![allow(dead_code)]
 #![no_main]
 
+
 /*  Custom test framwork    */
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test_runner)]
@@ -48,6 +49,8 @@ where T: Fn(),
 pub extern "C" fn eh_personality() {}
 
 
+const GLOBAL_ALIGN: usize = 8;
+
 /*  Modules import  */
 mod io;
 mod keyboard;
@@ -60,11 +63,11 @@ mod kmemory;
 mod multiboot;
 mod allocator;
 mod string;
-//mod vec;
+mod vec;
 
 /*  Modules used function and variable  */
-use paging::{init_paging, alloc_page, alloc_pages, kalloc_pages, alloc_pages_at_addr, free_page, free_pages, page_directory, VirtAddr};
-use allocator::{linked_list::LinkedListAllocator, bump::BumpAllocator, /*init_heap,*/ init_kheap};
+use paging::{init_paging, alloc_pages_at_addr, page_directory, VirtAddr};
+use allocator::{linked_list::LinkedListAllocator, /*init_heap,*/ init_kheap};
 use vga_buffer::color::Color;
 use cli::Command;
 
@@ -90,7 +93,7 @@ pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
 	if stack_size % 4096 != 0 {
 		nb_page += 1;
 	}
-	alloc_pages_at_addr(stack_bottom, nb_page);
+	alloc_pages_at_addr(stack_bottom, nb_page).expect("unable to allocate pages for stack");
 	stack_top
 }
 
@@ -104,8 +107,8 @@ pub extern "C" fn kinit() {
 	init_paging();
 	kprintln!("init_heap");
 	unsafe {init_kheap(heap as u32, 100 * 4096 , &mut ALLOCATOR)};
-//	kprintln!("init_stack");
-//	init_stack(0xffffffff, 8192);
+	kprintln!("init_stack");
+//	init_stack(0xffffffff, 8192); -> do not do that here now, page_table are there
 //	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
 
 	#[cfg(test)]
@@ -113,8 +116,6 @@ pub extern "C" fn kinit() {
 
 	#[cfg(not(test))]
 	kmain();
-
-	io::outb(0xf4, 0x10);
 }
 
 #[no_mangle]
@@ -144,7 +145,6 @@ pub extern "C" fn kmain() -> ! {
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
-	unsafe {
-}
+	vec::test();
 }
 
