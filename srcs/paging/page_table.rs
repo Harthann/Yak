@@ -31,7 +31,6 @@ i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12) /* VGA_BUF
 			}
 			i += 1;
 		}
-		crate::kprintln!("end setup");
 	}
 
 	pub fn set_entry(&mut self, index: usize, value: u32) {
