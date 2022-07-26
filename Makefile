@@ -61,7 +61,7 @@ release:		setup_release $(NAME)
 
 setup_release:
 				$(eval XARGO_FLAGS += --release)
-				$(eval RUST_KERNEL = target/i386-kfs/release/libkernel.a)
+				$(eval RUST_KERNEL = target/i386-kfs/release/kernel)
 
 test: fclean $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
@@ -80,7 +80,7 @@ endif
 
 # Link asm file with rust according to the linker script in arch directory
 $(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
-				cp $(RUST_KERNEL) iso/boot/$(NAME)
+				cp -f $(RUST_KERNEL) iso/boot/$(NAME)
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
