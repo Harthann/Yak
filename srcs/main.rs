@@ -1,4 +1,5 @@
 #![feature(const_mut_refs)]
+#![feature(nonnull_slice_from_raw_parts)]
 #![feature(rustc_attrs)]
 #![feature(box_syntax)]
 #![feature(ptr_internals)]

@@ -10,6 +10,7 @@ Global
 #[cfg(test)]
 pub mod test;
 
+#[derive(Clone, Debug)]
 pub struct Vec<T, A: Allocator = crate::allocator::Global> {
 	ptr: NonNull<T>,
 	capacity: usize,
@@ -50,11 +51,27 @@ impl<T> Vec<T> {
 	}
 
 	pub fn push(&mut self, value: T) {
-		todo!()
+		if self.len + 1 < self.capacity {
+			unsafe {
+				self.ptr.as_ptr()
+						.add(self.len)
+						.write(value);
+			}
+			self.len += 1;
+		} else {
+			todo!()
+		}
 	}
 
 	pub fn pop(&mut self) -> Option<T> {
-		todo!()
+		if self.len == 0 {
+			None
+		} else {
+			unsafe {
+				self.len -= 1;
+				Some(core::ptr::read(self.ptr.as_ptr().add(self.len)))
+			}
+		}
 	}
 
 	pub fn reserve(&mut self, additional: usize) {
@@ -88,3 +105,17 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 }
+
+impl<T: core::fmt::Display + core::fmt::Debug, A: Allocator> core::fmt::Display for Vec<T, A> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+		unsafe {
+		write!(f, "Vec: {}\nPtr: {:p}\nCapacity: {}\nLength: {}\nArray: {:?}\n{}"
+						, '{', self.ptr, self.capacity, self.len, NonNull::slice_from_raw_parts(self.ptr, self.len).as_ref(),'}')
+		}
+	}
+}
+
+/* TODO!: Trait to be implemented
+**	Drop, Deref, DerefMut, AsMut, AsRef, Index, IndexMut, IntoIterator
+*/
+
