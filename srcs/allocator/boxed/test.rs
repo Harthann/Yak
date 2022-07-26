@@ -32,7 +32,7 @@ fn test_mut_ref() {
 
 #[test_case]
 fn test_array() {
-	let mut x = Box::new([5; 10]);
+	let x = Box::new([5; 10]);
 	assert_eq!(*x, [5; 10]);
 }
 

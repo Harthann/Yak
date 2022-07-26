@@ -87,29 +87,28 @@ extern "C" {
 	fn heap();
 }
 
-pub fn init_stack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
+use crate::paging::{PAGE_WRITABLE};
+
+pub fn init_kstack(stack_top: VirtAddr, stack_size: usize) -> VirtAddr {
 	let mut nb_page: usize = stack_size / 4096;
 	let stack_bottom: VirtAddr = stack_top - (stack_size - 1) as u32;
 	if stack_size % 4096 != 0 {
 		nb_page += 1;
 	}
-	alloc_pages_at_addr(stack_bottom, nb_page).expect("unable to allocate pages for stack");
+	alloc_pages_at_addr(stack_bottom, nb_page, PAGE_WRITABLE).expect("unable to allocate pages for stack");
 	stack_top
 }
 
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	kprintln!("kinit_start");
-	kprintln!("multiboot:");
 	multiboot::read_tags();
-	kprintln!("init_paging");
 	init_paging();
-	kprintln!("init_heap");
 	unsafe {init_kheap(heap as u32, 100 * 4096 , &mut ALLOCATOR)};
-	kprintln!("init_stack");
-//	init_stack(0xffffffff, 8192); -> do not do that here now, page_table are there
-//	unsafe{core::arch::asm!("mov esp, eax", in("eax") 0xffffffff as u32)};
+	let kstack_addr: VirtAddr = 0xffbfffff;
+	init_kstack(kstack_addr, 8192);
+	/* Reserve some spaces to push things before main */
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 32)};
 
 	#[cfg(test)]
 	test_main();

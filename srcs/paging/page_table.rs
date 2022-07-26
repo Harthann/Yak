@@ -1,9 +1,12 @@
 use core::fmt;
 
 use crate::page_directory;
-use crate::paging::PhysAddr;
-use crate::paging::VirtAddr;
-use crate::paging::KERNEL_BASE;
+use crate::paging::{PhysAddr, VirtAddr};
+use crate::PAGE_WRITABLE;
+
+extern "C" {
+	fn _start_rodata();
+}
 
 #[repr(transparent)]
 pub struct PageTable {
@@ -16,13 +19,19 @@ impl PageTable {
 
 		let page_directory_entry: usize = unsafe{page_directory.get_vaddr() as usize};
 		while i < 1024 {
-			if i * 0x1000 <= page_directory_entry - KERNEL_BASE {
-				self.entries[i] = (((i * 0x1000) | 3) as u32).into();
+			if i == 0 /* gdt */ ||
+(i >= (_start_rodata as usize & 0x3ff000) >> 12 &&
+i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12) /* VGA_BUFFER */ {
+				self.entries[i] = ((i * 0x1000) as u32 | PAGE_WRITABLE | 1).into();
+			}
+			else if i < (_start_rodata as usize & 0x3ff000) >> 12 {
+				self.entries[i] = ((i * 0x1000) as u32 | 1).into();
 			} else {
 				self.entries[i] = 0x0.into();
 			}
 			i += 1;
 		}
+		crate::kprintln!("end setup");
 	}
 
 	pub fn set_entry(&mut self, index: usize, value: u32) {
@@ -38,16 +47,16 @@ impl PageTable {
 		}
 	}
 
-	pub fn new_index_frame(&mut self, index: usize, paddr: PhysAddr) {
-		self.entries[index] = (paddr | 3).into();
+	pub fn new_index_frame(&mut self, index: usize, paddr: PhysAddr, flags: u32) {
+		self.entries[index] = (paddr | flags | 1).into();
 	}
 
-	pub fn new_frame(&mut self, paddr: PhysAddr) -> Result<u16, ()> {
+	pub fn new_frame(&mut self, paddr: PhysAddr, flags: u32) -> Result<u16, ()> {
 		let mut i: usize = 0;
 
 		while i < 1024 {
 			if self.entries[i].get_present() != 1 {
-				self.entries[i] = (paddr | 3).into();
+				self.entries[i] = (paddr | flags | 1).into();
 				return Ok(i as u16);
 			}
 			i += 1;
