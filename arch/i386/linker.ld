@@ -22,6 +22,7 @@ SECTIONS {
 		*(.text*)
 	}
 
+	_start_rodata = .;
 	.rodata ALIGN(0x1000) : AT(ADDR(.rodata) - KERNEL_BASE)
 	{
 		*(.rodata*)
