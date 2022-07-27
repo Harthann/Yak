@@ -20,8 +20,8 @@ pub struct Vec<T, A: Allocator = Global> {
 
 pub fn test() {
 	use crate::kprintln;
-	
-let mut x: Vec<u32> = Vec::new();
+
+	let mut x: Vec<u32> = Vec::new();
 
 	kprintln!("x: {}\nx.capacity: {}\nx.len: {}", x, x.capacity(), x.len());
 	x.reserve(10);
@@ -50,10 +50,6 @@ impl<T> Vec<T> {
 }
 
 impl<T, A: Allocator> Vec<T,A> {
-
-	pub fn raw_size(&self) -> usize {
-		self.capacity * core::mem::size_of::<T>()
-	}
 
 	pub fn capacity(&self) -> usize {
 		self.capacity
