@@ -80,3 +80,19 @@ fn test_slices() {
 	x.push(15);
 	assert_eq!(x.as_slice(), [5, 10, 15]);
 }
+
+#[test_case]
+fn test_deref() {
+	print_fn!();
+	
+	let mut x: Vec<u32> = Vec::new();
+
+	x.push(15);
+	x.push(15);
+	x.push(0);
+	x.push(15);
+	x.push(0);
+	x.push(15);
+	x.push(15);
+	kprintln!("X: {}", x);
+}

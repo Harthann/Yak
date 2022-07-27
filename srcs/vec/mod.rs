@@ -20,12 +20,19 @@ pub struct Vec<T, A: Allocator = Global> {
 
 pub fn test() {
 	use crate::kprintln;
-
+	
 	let mut x: Vec<u32> = Vec::new();
 
-	kprintln!("x: {}\nx.capacity: {}\nx.len: {}", x, x.capacity(), x.len());
-	x.reserve(10);
-	kprintln!("x.capacity: {}\nx.len: {}", x.capacity(), x.len());
+	x.push(15);
+	x.push(12);
+	x.push(0);
+	x.push(15);
+	x.push(0);
+	x.push(14);
+	x.push(15);
+	kprintln!("X: {:?}", x.as_slice());
+	x.reverse();
+	kprintln!("X: {:?}", x.as_slice());
 }
 
 impl<T> Vec<T> {
@@ -202,13 +209,31 @@ impl<T, A: Allocator> Drop for Vec<T,A> {
 
 impl<T, A: Allocator> AsRef<[T]> for Vec<T, A> {
 	fn as_ref(&self) -> &[T] {
-		self.as_slice()
+		self
 	}
 }
 
 
 impl<T, A: Allocator> AsMut<[T]> for Vec<T, A> {
 	fn as_mut(&mut self) -> &mut [T] {
-		self.as_mut()
+		self
+	}
+}
+
+use core::ops;
+
+impl<T, A: Allocator> ops::Deref for Vec<T, A> {
+	type Target = [T];
+
+	fn deref(&self) -> &[T] {
+		self.as_slice()
+	}
+}
+
+
+impl<T, A: Allocator> ops::DerefMut for Vec<T, A> {
+
+	fn deref_mut(&mut self) -> &mut [T] {
+		self.as_mut_slice()
 	}
 }
