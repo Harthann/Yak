@@ -199,3 +199,16 @@ impl<T, A: Allocator> Drop for Vec<T,A> {
 		}
 	}
 }
+
+impl<T, A: Allocator> AsRef<[T]> for Vec<T, A> {
+	fn as_ref(&self) -> &[T] {
+		self.as_slice()
+	}
+}
+
+
+impl<T, A: Allocator> AsMut<[T]> for Vec<T, A> {
+	fn as_mut(&mut self) -> &mut [T] {
+		self.as_mut()
+	}
+}
