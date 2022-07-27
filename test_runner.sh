@@ -20,8 +20,9 @@ echo "" > kernel.log
 qemu-system-i386 -d int \
 			-drive format=raw,file=$2 \
 			-nographic \
-			-device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log | less +F | awk '
-  /ok/ {len=split($0,a," "); a[len] = "\033[32m" a[len] "\033[39m"; for (i=0; i<=len; i++){printf "%s ",a[i]}; printf "\n"; system("")}'
+			-no-reboot \
+			-device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log | less +F | awk "
+  /ok/ {sub(/ok/,\"\\033\[32mok\\033\[39m\"); print; system(\"\")}"
 
 ret=${PIPESTATUS[0]}
 

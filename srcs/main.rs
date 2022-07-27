@@ -13,7 +13,27 @@
 #![reexport_test_harness_main = "test_main"]
 
 #[cfg(test)]
-mod test;
+#[macro_export]
+macro_rules! function {
+	() => {{
+		fn f() {}
+		fn type_name_of<T>(_: T) -> &'static str {
+			core::any::type_name::<T>()
+		}
+		let mut name = type_name_of(f);
+		name = &name[..name.len() - 3];
+		let split = name.split("::");
+		split.last().unwrap()
+	}}
+}
+
+#[cfg(test)]
+#[macro_export]
+macro_rules! print_fn {
+	() => {
+		crate::kprint!("{:40}{}", function!(), "");
+	}
+}
 
 #[cfg(test)]
 fn test_runner(tests: &[&dyn Fn()]) {
@@ -34,7 +54,6 @@ impl<T> Testable for T
 where T: Fn(),
 {
 	fn run(&self) {
-		kprint!("{}... ", core::any::type_name::<T>());
 		self();
 		change_color!(Color::Green, Color::Black);
 		kprintln!("[ok]");
