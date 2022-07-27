@@ -11,6 +11,15 @@ fn basic_allocation() {
 }
 
 #[test_case]
+fn test_diff_ptr() {
+	let x = Box::new(0 as usize);
+	let y = Box::new(0 as usize);
+	let ptr_x = (x.as_ref() as *const _) as u32;
+	let ptr_y = (y.as_ref() as *const _) as u32;
+	assert_ne!(ptr_x, ptr_y);
+}
+
+#[test_case]
 fn free_test() {
 	let ptr: u32;
 	{
