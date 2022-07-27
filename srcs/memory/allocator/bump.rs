@@ -1,6 +1,6 @@
-use crate::paging::VirtAddr;
+use crate::memory::VirtAddr;
 use core::alloc::{GlobalAlloc, Layout};
-use crate::allocator::{AllocatorInit, align_up};
+use crate::memory::allocator::{AllocatorInit, align_up};
 
 impl AllocatorInit for BumpAllocator {
 	unsafe fn init(&mut self, heap_start: VirtAddr, heap_size: usize) {

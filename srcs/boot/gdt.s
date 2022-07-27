@@ -133,6 +133,14 @@ gdt_start:
 			at limit_flags,	db 0b11000000
 			at base_end,	db 0x0
 		iend
+	task_state:
+		istruc segment_descriptor
+			at limit,		dw tss
+			at base,		db 0x68, 0x0, 0x0
+			at access,		db 0b10001001; 0x89 (PRESENT_BYTE | WRITABLE_SEGMENT | NOT_FOR_CPU)
+			at limit_flags,	db 0b00000000
+			at base_end,	db 0x0
+		iend
 gdt_end:
 ;[bits 32]
 ;gdt descriptor ; (48 bits)
@@ -145,3 +153,4 @@ gdt_end:
 gdt_desc:
 	offset	dw gdt_end - gdt_start
 	size	dd gdt_start
+tss:

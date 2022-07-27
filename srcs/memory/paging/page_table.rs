@@ -1,7 +1,7 @@
 use core::fmt;
 
 use crate::page_directory;
-use crate::paging::{PhysAddr, VirtAddr};
+use crate::memory::{PhysAddr, VirtAddr};
 use crate::PAGE_WRITABLE;
 
 extern "C" {

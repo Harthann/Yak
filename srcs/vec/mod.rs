@@ -1,7 +1,7 @@
 use core::ptr::{NonNull};
 use core::alloc::{Layout, };
 use crate::GLOBAL_ALIGN;
- use crate::allocator::{
+ use crate::memory::allocator::{
 Allocator,
 AllocError,
 Global
@@ -11,22 +11,28 @@ Global
 pub mod test;
 
 #[derive(Clone, Debug)]
-pub struct Vec<T, A: Allocator = crate::allocator::Global> {
-	ptr: NonNull<T>,
+pub struct Vec<T, A: Allocator = Global> {
+	ptr: Option<NonNull<T>>,
 	capacity: usize,
 	len: usize,
 	alloc: A
 }
 
 pub fn test() {
-	let x = Vec::<i32>::with_capacity(5);
+	use crate::kprintln;
+	
+let mut x: Vec<u32> = Vec::new();
+
+	kprintln!("x: {}\nx.capacity: {}\nx.len: {}", x, x.capacity(), x.len());
+	x.reserve(10);
+	kprintln!("x.capacity: {}\nx.len: {}", x.capacity(), x.len());
 }
 
 impl<T> Vec<T> {
 
 	pub fn new() -> Vec<T> {
 		Vec {
-			ptr: NonNull::<T>::dangling(),
+			ptr: None,
 			capacity: 0,
 			len: 0,
 			alloc: Global
@@ -35,7 +41,7 @@ impl<T> Vec<T> {
 
 	pub fn with_capacity(capacity: usize) -> Vec<T> {
 		Vec {
-			ptr: Self::with_capacity_in(capacity, &Global),
+			ptr: Some(Self::with_capacity_in(capacity, &Global)),
 			capacity: capacity,
 			len: 0,
 			alloc: Global
@@ -53,30 +59,48 @@ impl<T, A: Allocator> Vec<T,A> {
 		self.len
 	}
 
+	pub fn allocator(&self) -> &A {
+		&self.alloc
+	}
+
+	pub fn realloc(&mut self, new_size: usize) -> Result<(), AllocError> {
+		if self.ptr.is_none() {
+			self.ptr = Some(Self::try_alloc(new_size, self.allocator())?);
+			self.capacity = new_size;
+			if new_size < self.len() { self.len = self.capacity }
+			Ok(())
+		} else {
+			let layout: Layout = Layout::from_size_align(self.capacity(), GLOBAL_ALIGN).unwrap();
+			match self.allocator().realloc(self.ptr.unwrap().cast(), layout, new_size) {
+				Ok(ptr) => { self.ptr = Some(ptr.cast()); Ok(())},
+				Err(x) => Err(x)
+			}
+		}
+	}
 
 	pub fn reserve(&mut self, additional: usize) {
-		match self.try_reserve(additional) {
+		match self.try_reserve(self.capacity + additional) {
 			Ok(_) => {},
 			Err(_) => panic!("Couldn't reserve more")
 		};
 	}
 
 	pub fn try_reserve(&mut self, additional: usize) -> Result<(), AllocError> {
-		let layout: Layout = Layout::from_size_align(self.capacity(), GLOBAL_ALIGN).unwrap();
-		// self.alloc().realloc(self.as_ptr(), layout, self.capacity() + additional);
-		todo!()
+		self.realloc(self.capacity() + additional)
 	}
 
 	pub fn push(&mut self, value: T) {
-		if self.len + 1 < self.capacity {
+		if self.len + 1 < self.capacity && self.ptr.is_some() {
 			unsafe {
-				self.ptr.as_ptr()
+				self.ptr.unwrap().as_ptr()
 						.add(self.len)
 						.write(value);
 			}
 			self.len += 1;
+		} else if self.ptr.is_none() {
+			self.reserve(8);
 		} else {
-			todo!()
+			self.reserve(self.capacity() + 8);
 		}
 	}
 
@@ -86,7 +110,7 @@ impl<T, A: Allocator> Vec<T,A> {
 		} else {
 			unsafe {
 				self.len -= 1;
-				Some(core::ptr::read(self.ptr.as_ptr().add(self.len)))
+				Some(core::ptr::read(self.as_ptr().add(self.len)))
 			}
 		}
 	}
@@ -101,22 +125,38 @@ impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn as_slice(&self) -> &[T] {
 		unsafe {
-			NonNull::slice_from_raw_parts(self.ptr, self.len).as_ref()
+			if self.ptr.is_some() {
+				NonNull::slice_from_raw_parts(self.ptr.unwrap(), self.len).as_ref()
+			} else {
+				&[]
+			}
 		}
 	}
 
 	pub fn as_mut_slice(&mut self) -> &mut [T] {
 		unsafe {
-			NonNull::slice_from_raw_parts(self.ptr, self.len).as_mut()
+			if self.ptr.is_some() {
+				NonNull::slice_from_raw_parts(self.ptr.unwrap(), self.len).as_mut()
+			} else {
+				&mut []
+			}
 		}
 	}
 
 	pub fn as_ptr(&self) -> *const T {
-		todo!()
+		if self.ptr.is_some() {
+			self.ptr.unwrap().as_ptr()
+		} else {
+			core::ptr::null()
+		}
 	}
 
 	pub fn as_mut_ptr(&mut self) -> *mut T {
-		todo!()
+		if self.ptr.is_some() {
+			self.ptr.unwrap().as_ptr()
+		} else {
+			core::ptr::null_mut()
+		}
 	}
 }
 
@@ -143,7 +183,7 @@ impl<T: core::fmt::Display + core::fmt::Debug, A: Allocator> core::fmt::Display 
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		unsafe {
 		write!(f, "Vec: {}\nPtr: {:p}\nCapacity: {}\nLength: {}\nArray: {:?}\n{}"
-						, '{', self.ptr, self.capacity, self.len, self.as_slice(),'}')
+						, '{', self.as_ptr(), self.capacity, self.len, self.as_slice(),'}')
 		}
 	}
 }
