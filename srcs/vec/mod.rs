@@ -41,13 +41,30 @@ impl<T> Vec<T> {
 			alloc: Global
 		}
 	}
+}
+
+impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn capacity(&self) -> usize {
 		self.capacity
 	}
-	
+
 	pub fn len(&self) -> usize {
 		self.len
+	}
+
+
+	pub fn reserve(&mut self, additional: usize) {
+		match self.try_reserve(additional) {
+			Ok(_) => {},
+			Err(_) => panic!("Couldn't reserve more")
+		};
+	}
+
+	pub fn try_reserve(&mut self, additional: usize) -> Result<(), AllocError> {
+		let layout: Layout = Layout::from_size_align(self.capacity(), GLOBAL_ALIGN).unwrap();
+		// self.alloc().realloc(self.as_ptr(), layout, self.capacity() + additional);
+		todo!()
 	}
 
 	pub fn push(&mut self, value: T) {
@@ -74,10 +91,6 @@ impl<T> Vec<T> {
 		}
 	}
 
-	pub fn reserve(&mut self, additional: usize) {
-		todo!()
-	}
-
 	pub fn insert(&mut self, index: usize, element: T) {
 		todo!()
 	}
@@ -85,11 +98,31 @@ impl<T> Vec<T> {
 	pub fn remove(&mut self, index: usize) -> T {
 		todo!()
 	}
+
+	pub fn as_slice(&self) -> &[T] {
+		unsafe {
+			NonNull::slice_from_raw_parts(self.ptr, self.len).as_ref()
+		}
+	}
+
+	pub fn as_mut_slice(&mut self) -> &mut [T] {
+		unsafe {
+			NonNull::slice_from_raw_parts(self.ptr, self.len).as_mut()
+		}
+	}
+
+	pub fn as_ptr(&self) -> *const T {
+		todo!()
+	}
+
+	pub fn as_mut_ptr(&mut self) -> *mut T {
+		todo!()
+	}
 }
 
 
 impl<T, A: Allocator> Vec<T,A> {
-	
+
 	pub fn with_capacity_in(capacity: usize, alloc: &dyn Allocator) -> NonNull<T> {
 		match Self::try_alloc(capacity, alloc) {
 			Ok(x) => x,
@@ -110,7 +143,7 @@ impl<T: core::fmt::Display + core::fmt::Debug, A: Allocator> core::fmt::Display 
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		unsafe {
 		write!(f, "Vec: {}\nPtr: {:p}\nCapacity: {}\nLength: {}\nArray: {:?}\n{}"
-						, '{', self.ptr, self.capacity, self.len, NonNull::slice_from_raw_parts(self.ptr, self.len).as_ref(),'}')
+						, '{', self.ptr, self.capacity, self.len, self.as_slice(),'}')
 		}
 	}
 }
