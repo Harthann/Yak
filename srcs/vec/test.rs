@@ -53,7 +53,6 @@ fn test_big_alloc() {
 /* Should send an error */
 	{
 		let x = Vec::<u32, Global>::try_alloc(200000, &Global);
-		assert!(1 == 2);
 		assert_eq!(x, Err(AllocError));
 	}
 
