@@ -51,6 +51,10 @@ impl<T> Vec<T> {
 
 impl<T, A: Allocator> Vec<T,A> {
 
+	pub fn raw_size(&self) -> usize {
+		self.capacity * core::mem::size_of::<T>()
+	}
+
 	pub fn capacity(&self) -> usize {
 		self.capacity
 	}
@@ -70,7 +74,7 @@ impl<T, A: Allocator> Vec<T,A> {
 			if new_size < self.len() { self.len = self.capacity }
 			Ok(())
 		} else {
-			let layout: Layout = Layout::from_size_align(self.capacity(), GLOBAL_ALIGN).unwrap();
+			let layout = Self::layout(self.capacity());
 			match self.allocator().realloc(self.ptr.unwrap().cast(), layout, new_size) {
 				Ok(ptr) => { self.ptr = Some(ptr.cast()); Ok(())},
 				Err(x) => Err(x)
@@ -160,7 +164,6 @@ impl<T, A: Allocator> Vec<T,A> {
 	}
 }
 
-
 impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn with_capacity_in(capacity: usize, alloc: &dyn Allocator) -> NonNull<T> {
@@ -170,9 +173,12 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
+	pub fn layout(size: usize) -> Layout {
+		Layout::from_size_align(size * core::mem::size_of::<T>(), GLOBAL_ALIGN).unwrap()
+	}
+
 	fn try_alloc(capacity: usize, alloc: &dyn Allocator) -> Result<NonNull<T>, AllocError> {
-		let layout = Layout::from_size_align(capacity, GLOBAL_ALIGN).unwrap();
-		match alloc.allocate(layout) {
+		match alloc.allocate(Self::layout(capacity)) {
 			Ok(res) => Ok(res.cast()),
 			Err(_) => Err(AllocError{})
 		}
@@ -181,14 +187,19 @@ impl<T, A: Allocator> Vec<T,A> {
 
 impl<T: core::fmt::Display + core::fmt::Debug, A: Allocator> core::fmt::Display for Vec<T, A> {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-		unsafe {
 		write!(f, "Vec: {}\nPtr: {:p}\nCapacity: {}\nLength: {}\nArray: {:?}\n{}"
 						, '{', self.as_ptr(), self.capacity, self.len, self.as_slice(),'}')
-		}
 	}
 }
 
 /* TODO!: Trait to be implemented
 **	Drop, Deref, DerefMut, AsMut, AsRef, Index, IndexMut, IntoIterator
 */
-
+impl<T, A: Allocator> Drop for Vec<T,A> {
+	fn drop(&mut self) {
+		if self.ptr.is_some() {
+			self.allocator()
+				.deallocate(self.ptr.unwrap().cast(), Layout::from_size_align(self.capacity(), GLOBAL_ALIGN).unwrap());
+		}
+	}
+}

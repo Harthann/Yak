@@ -37,6 +37,7 @@ unsafe fn dealloc(ptr: *mut u8, layout: Layout) {
 
 #[inline]
 unsafe fn realloc(ptr: *mut u8, old: Layout, new_size: usize) -> *mut u8 {
+	crate::kprintln!("Get new pointer: {:?}", new_size);
 	let new_ptr: *mut u8 = alloc(Layout::from_size_align(new_size, old.align()).unwrap());
 	if new_ptr.is_null() { return core::ptr::null_mut(); }
 
@@ -88,6 +89,7 @@ impl Allocator for Global {
 			Ok(ptr)
 		} else {
 			let raw_ptr = unsafe{ realloc(ptr.as_ptr(), oldlayout, new_size) };
+			crate::kprintln!("New ptr? {:?}", raw_ptr);
 			NonNull::new(raw_ptr).ok_or(AllocError{})
 		}
 	}

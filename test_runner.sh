@@ -19,6 +19,7 @@ grub-mkrescue -o $2 iso
 qemu-system-i386 -d int \
 			-drive format=raw,file=$2 \
 			-nographic \
+			-no-reboot \
 			-device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log
 
 ret=$(echo $?)
