@@ -18,7 +18,6 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 
 		if let Some((region, alloc_start)) = allocator.find_region(size, align) { 
 			let alloc_end = alloc_start.checked_add(size as u32).expect("overflow");
-			crate::kprintln!("alloc_start: {:x}, alloc_end: {:x}, size: {}", alloc_start, alloc_end, alloc_end as u32 - alloc_start as u32);
 			let excess_size: usize = (region.end_addr() - alloc_end) as usize;
 			if excess_size > 0 {
 				allocator.add_free_region(alloc_end, excess_size);

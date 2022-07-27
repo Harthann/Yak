@@ -199,7 +199,7 @@ impl<T, A: Allocator> Drop for Vec<T,A> {
 	fn drop(&mut self) {
 		if self.ptr.is_some() {
 			self.allocator()
-				.deallocate(self.ptr.unwrap().cast(), Layout::from_size_align(self.capacity(), GLOBAL_ALIGN).unwrap());
+				.deallocate(self.ptr.unwrap().cast(), Self::layout(self.capacity()));
 		}
 	}
 }

@@ -84,12 +84,10 @@ impl Allocator for Global {
 
 	#[inline]
 	fn realloc(&self, ptr: NonNull<u8>, oldlayout: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError> {
-		crate::kprintln!("realloc requested for {:?} | {:?} | {}", ptr, oldlayout, new_size);
 		if oldlayout.size() >= new_size {
 			Ok(ptr)
 		} else {
 			let raw_ptr = unsafe{ realloc(ptr.as_ptr(), oldlayout, new_size) };
-			crate::kprintln!("New ptr? {:?}", raw_ptr);
 			NonNull::new(raw_ptr).ok_or(AllocError{})
 		}
 	}

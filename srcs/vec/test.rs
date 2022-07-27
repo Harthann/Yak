@@ -4,6 +4,7 @@ use crate::vec::Vec;
 
 #[test_case]
 fn test_basics() {
+	print_fn!();
 	let mut x: Vec<u32> = Vec::new();
 	let mut y: Vec<u32> = Vec::with_capacity(10);
 
@@ -20,6 +21,7 @@ fn test_basics() {
 
 #[test_case]
 fn test_reserve() {
+	print_fn!();
 	let mut x: Vec<u32> = Vec::new();
 
 	assert_eq!(x.capacity(), 0);
@@ -29,35 +31,49 @@ fn test_reserve() {
 
 #[test_case]
 fn test_free() {
-	let x: Vec<u32> = Vec::with_capacity(10000);
+	print_fn!();
+	let x: Vec<u32> = Vec::with_capacity(1000);
 	let ptr: u32;
 
 	{
-		let y: Vec<u32> = Vec::with_capacity(10000);
+		let y: Vec<u32> = Vec::with_capacity(1000);
 		ptr = y.as_ptr() as u32;
 		assert!(x.as_ptr() != y.as_ptr());
 	}
-	let z: Vec<u32> = Vec::with_capacity(10000);
+	let z: Vec<u32> = Vec::with_capacity(1000);
 	assert_eq!(ptr, z.as_ptr() as u32);
 }
 
 #[test_case]
 fn test_big_alloc() {
-	kprintln!("==================");
-	let size = 100;
-	let mut x: Vec<u32> = Vec::with_capacity(size);
-	
-	kprintln!("Test: {}", x.raw_size());
+	use crate::vec::{Global, AllocError};
 
-//	for i in 0..size {
-//		x.push(i as u32);
-//	}
-	assert_eq!(x.capacity(), size);
+	print_fn!();
+
+/* Should send an error */
+	{
+		let x = Vec::<u32, Global>::try_alloc(200000, &Global);
+		assert!(1 == 2);
+		assert_eq!(x, Err(AllocError));
+	}
+
+/* Big chunk */
+	{
+		let size = 100000;
+		let mut x: Vec<u32> = Vec::with_capacity(size);
+
+		for i in 0..size {
+			x.push(i as u32);
+		}
+		x.push(100000 as u32);
+		assert_eq!(x.capacity(), size);
+	}
 }
 
 /* Simply test if conversion is working */
 #[test_case]
 fn test_slices() {
+	print_fn!();
 	let mut x: Vec<u32> = Vec::with_capacity(10);
 
 	x.push(5);

@@ -32,7 +32,7 @@ pub trait Allocator {
 }
 
 /* Allocation error type definition */
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct AllocError;
 
 
