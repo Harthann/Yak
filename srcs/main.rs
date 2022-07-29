@@ -154,6 +154,5 @@ pub extern "C" fn kmain() -> ! {
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
-	vec::test();
 }
 
