@@ -1,5 +1,6 @@
 use core::ptr::{NonNull};
 use core::alloc::{Layout, };
+use core::ops;
 use crate::GLOBAL_ALIGN;
  use crate::memory::allocator::{
 Allocator,
@@ -31,8 +32,10 @@ pub fn test() {
 	x.push(14);
 	x.push(15);
 	kprintln!("X: {:?}", x.as_slice());
+	assert_eq!(x, [15, 14, 0, 15, 0, 12, 15]);
 	x.reverse();
-	kprintln!("X: {:?}", x.as_slice());
+//	kprintln!("X: {}", x.as_slice()[..]);
+//	kprintln!("X: {}", x[1..3]);
 }
 
 impl<T> Vec<T> {
@@ -131,23 +134,11 @@ impl<T, A: Allocator> Vec<T,A> {
 	}
 
 	pub fn as_slice(&self) -> &[T] {
-		unsafe {
-			if self.ptr.is_some() {
-				NonNull::slice_from_raw_parts(self.ptr.unwrap(), self.len).as_ref()
-			} else {
-				&[]
-			}
-		}
+		self
 	}
 
 	pub fn as_mut_slice(&mut self) -> &mut [T] {
-		unsafe {
-			if self.ptr.is_some() {
-				NonNull::slice_from_raw_parts(self.ptr.unwrap(), self.len).as_mut()
-			} else {
-				&mut []
-			}
-		}
+		self
 	}
 
 	pub fn as_ptr(&self) -> *const T {
@@ -195,9 +186,7 @@ impl<T: core::fmt::Display + core::fmt::Debug, A: Allocator> core::fmt::Display 
 	}
 }
 
-/* TODO!: Trait to be implemented
-**	Drop, Deref, DerefMut, AsMut, AsRef, Index, IndexMut, IntoIterator
-*/
+/* Drop will simplu deallocate our vector from the heap using the allocator */
 impl<T, A: Allocator> Drop for Vec<T,A> {
 	fn drop(&mut self) {
 		if self.ptr.is_some() {
@@ -220,20 +209,71 @@ impl<T, A: Allocator> AsMut<[T]> for Vec<T, A> {
 	}
 }
 
-use core::ops;
 
+/* The deref trait allow us to dereference our vector to a slice
+** Doing so rust understand if we try to access slices method
+** and dereference the vector for us
+*/
 impl<T, A: Allocator> ops::Deref for Vec<T, A> {
 	type Target = [T];
 
 	fn deref(&self) -> &[T] {
-		self.as_slice()
+		unsafe {
+			if self.ptr.is_some() {
+				NonNull::slice_from_raw_parts(self.ptr.unwrap(), self.len).as_mut()
+			} else {
+				&mut []
+			}
+		}
 	}
 }
-
 
 impl<T, A: Allocator> ops::DerefMut for Vec<T, A> {
 
 	fn deref_mut(&mut self) -> &mut [T] {
-		self.as_mut_slice()
+		unsafe {
+			if self.ptr.is_some() {
+				NonNull::slice_from_raw_parts(self.ptr.unwrap(), self.len).as_mut()
+			} else {
+				&mut []
+			}
+		}
 	}
 }
+
+/* Macro to implement multiple PartialEq easily
+** Taken from the rust source code
+*/
+macro_rules! __impl_slice_eq1 {
+    ([$($vars:tt)*] $lhs:ty, $rhs:ty $(where $ty:ty: $bound:ident)?) => {
+        impl<T, U, $($vars)*> PartialEq<$rhs> for $lhs
+        where
+            T: PartialEq<U>,
+            $($ty: $bound)?
+        {
+            #[inline]
+            fn eq(&self, other: &$rhs) -> bool { self[..] == other[..] }
+            #[inline]
+            fn ne(&self, other: &$rhs) -> bool { self[..] != other[..] }
+        }
+    }
+}
+
+/* Implement to compare two vector */
+__impl_slice_eq1! { [A1: Allocator, A2: Allocator] Vec<T, A1>, Vec<U, A2> }
+
+/*	Implement to compare Vec with ref slice */
+__impl_slice_eq1! { [A: Allocator] Vec<T, A>, &[U] }
+__impl_slice_eq1! { [A: Allocator] Vec<T, A>, &mut [U]}
+__impl_slice_eq1! { [A: Allocator] &[T], Vec<U, A>}
+__impl_slice_eq1! { [A: Allocator] &mut [T], Vec<U, A>}
+
+
+/*	Implement to compare Vec with slice */
+__impl_slice_eq1! { [A: Allocator] Vec<T, A>, [U] }
+__impl_slice_eq1! { [A: Allocator] [T], Vec<U, A> }
+
+/* Implement to compare Vec with known size array/slice */
+__impl_slice_eq1! { [A: Allocator, const N: usize] Vec<T, A>, [U; N] }
+__impl_slice_eq1! { [A: Allocator, const N: usize] [T; N], Vec<U, A> }
+

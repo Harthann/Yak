@@ -84,15 +84,15 @@ fn test_slices() {
 #[test_case]
 fn test_deref() {
 	print_fn!();
-	
+
 	let mut x: Vec<u32> = Vec::new();
 
-	x.push(15);
-	x.push(15);
-	x.push(0);
-	x.push(15);
-	x.push(0);
-	x.push(15);
-	x.push(15);
-	kprintln!("X: {}", x);
+	x.push(1);
+	x.push(2);
+	x.push(3);
+	x.push(4);
+
+	assert_eq!(x[..], [1, 2, 3, 4]);
+	x.reverse();
+	assert_eq!(x[..], [4, 3, 2, 1]);
 }
