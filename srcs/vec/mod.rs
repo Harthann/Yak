@@ -19,6 +19,19 @@ pub struct Vec<T, A: Allocator = Global> {
 	alloc: A
 }
 
+#[macro_export]
+macro_rules! vec {
+    () => (
+        $crate::vec::Vec::new()
+    );
+    ($elem:expr; $n:expr) => (
+        Vec::from_elem($elem, $n)
+    );
+    ($($x:expr),+ $(,)?) => (
+        Vec::into_vec(&[$($x),+])
+    );
+}
+
 pub fn test() {
 	use crate::kprintln;
 	
@@ -50,6 +63,21 @@ impl<T> Vec<T> {
 		}
 	}
 
+	pub fn into_vec(slice: &[T]) -> Vec<T> {
+		let mut x: Vec<T> = Self::new();
+		x.extend_from_slice(&slice);
+		x
+	}
+
+	pub fn from_elem(elem: T, n: usize) -> Vec<T> {
+		let mut x: Vec<T> = Self::with_capacity(n);
+		let slice = core::slice::from_ref(&elem);
+		for _i in 0..n {
+			x.extend_from_slice(&slice);
+		}
+		x
+	}
+
 }
 
 impl<T, A: Allocator> Vec<T,A> {
@@ -62,8 +90,16 @@ impl<T, A: Allocator> Vec<T,A> {
 		self.len
 	}
 
+	pub fn empty(&self) -> bool {
+		self.len == 0
+	}
+
 	pub fn allocator(&self) -> &A {
 		&self.alloc
+	}
+
+	pub fn clear(&mut self) {
+		self.len = 0;
 	}
 
 	pub fn realloc(&mut self, new_size: usize) -> Result<(), AllocError> {
@@ -135,7 +171,6 @@ impl<T, A: Allocator> Vec<T,A> {
 	}
 
 	pub fn extend_from_slice(&mut self, elements: &[T]) {
-		crate::kprintln!("{} {} {}", self.len, self.capacity, elements.len());
 		if self.len + elements.len() > self.capacity {
 			self.reserve(self.capacity() + elements.len());
 		}
@@ -148,7 +183,7 @@ impl<T, A: Allocator> Vec<T,A> {
 	}
 
 	pub fn remove(&mut self, index: usize) -> Option<T> {
-		if self.len > index {
+		if self.len < index {
 			None
 		} else {
 			unsafe{

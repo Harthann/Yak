@@ -3,7 +3,7 @@ use crate::vec::Vec;
 
 
 #[test_case]
-fn test_basics() {
+fn vector_basics() {
 	print_fn!();
 	let mut x: Vec<u32> = Vec::new();
 	let mut y: Vec<u32> = Vec::with_capacity(10);
@@ -20,7 +20,7 @@ fn test_basics() {
 }
 
 #[test_case]
-fn test_reserve() {
+fn vector_reserve() {
 	print_fn!();
 	let mut x: Vec<u32> = Vec::new();
 
@@ -30,7 +30,7 @@ fn test_reserve() {
 }
 
 #[test_case]
-fn test_free() {
+fn vector_free() {
 	print_fn!();
 	let x: Vec<u32> = Vec::with_capacity(1000);
 	let ptr: u32;
@@ -45,7 +45,7 @@ fn test_free() {
 }
 
 #[test_case]
-fn test_big_alloc() {
+fn vector_big_alloc() {
 	use crate::vec::{Global, AllocError};
 
 	print_fn!();
@@ -70,7 +70,7 @@ fn test_big_alloc() {
 
 /* Simply test if conversion is working */
 #[test_case]
-fn test_slices() {
+fn vector_slices() {
 	print_fn!();
 	let mut x: Vec<u32> = Vec::with_capacity(10);
 
@@ -81,7 +81,7 @@ fn test_slices() {
 }
 
 #[test_case]
-fn test_deref() {
+fn vector_deref() {
 	print_fn!();
 
 	let mut x: Vec<u32> = Vec::new();
@@ -98,7 +98,7 @@ fn test_deref() {
 
 
 #[test_case]
-fn test_insertion() {
+fn vector_insertion() {
 	print_fn!();
 
 	let mut x: Vec<u32> = Vec::new();
@@ -116,7 +116,7 @@ fn test_insertion() {
 }
 
 #[test_case]
-fn test_extend_from_slice() {
+fn vector_extend_from_slice() {
 	print_fn!();
 
 	let mut x: Vec<u32> = Vec::new();
@@ -126,11 +126,47 @@ fn test_extend_from_slice() {
 	assert_eq!(x[..], [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4]);
 }
 
+use crate::vec;
+
+/*
+** vec![x..y] use specific function called "into_vec"
+** vec!() simply calls Vec::new()
+** vec![x; y] use specific function called from_elem
+** Assuming function related to macros works if macros works
+*/
 #[test_case]
-fn test_remove() {
+fn vector_macros() {
 	print_fn!();
 
-	let mut x: Vec<u32> = Vec::new();
-	x.extend_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4]);
-	kprintln!("{:?}", x);
+	let mut x: Vec<u32> = vec![0,1,2,3,4,5];
+	let mut y: Vec<u32> = vec!();//[0,1,2,3,4,5];
+	let mut z: Vec<u32> = vec![5; 10];//[0,1,2,3,4,5];
+
+	assert_eq!(x[..], [0,1,2,3,4,5]);
+
+	assert_eq!(y[..], []);
+	assert_eq!(y.capacity(), 0);
+	assert_eq!(y.len(), 0);
+
+	assert_eq!(z[..], [5; 10]);
+	assert_eq!(z.capacity(), 10);
+	assert_eq!(z.len(), 10);
+}
+
+#[test_case]
+fn vector_remove() {
+	print_fn!();
+
+	let mut x: Vec<u32> = vec![0,1,2,3,4,5];
+	let base_len = x.len();
+
+	assert_eq!(x.remove(1), Some(1));
+	assert_eq!(x.len(), base_len - 1);
+	assert_eq!(x.remove(3), Some(4));
+	assert_eq!(x.len(), base_len - 2);
+	assert_eq!(x.remove(50), None);
+
+	assert_eq!(x.empty(), false);
+	x.clear();
+	assert_eq!(x.empty(), true);
 }
