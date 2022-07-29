@@ -77,7 +77,6 @@ mod gdt;
 mod keyboard;
 mod memory;
 mod multiboot;
-mod string;
 mod vec;
 mod interrupts;
 mod io;

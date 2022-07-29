@@ -32,17 +32,6 @@ macro_rules! vec {
     );
 }
 
-pub fn test() {
-	use crate::kprintln;
-	
-	let mut x: Vec<u32> = Vec::new();
-
-	x.push(1);
-	kprintln!("X: {:?}", x.as_slice());
-	x.reverse();
-	kprintln!("{}", x == [4, 3, 2, 1]);
-}
-
 impl<T> Vec<T> {
 
 	pub fn new() -> Vec<T> {
