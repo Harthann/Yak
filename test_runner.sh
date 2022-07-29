@@ -22,7 +22,9 @@ qemu-system-i386 -d int \
 			-nographic \
 			-no-reboot \
 			-device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log | less +F | awk "
-  /ok/ {sub(/ok/,\"\033[32mok\033[39m\"); print; system(\"\")}"
+  /ok/ {sub(/ok/,\"\033[32mok\033[39m\");}
+  /failed/ {sub(/failed/,\"\033[31mfailed\033[39m\");}
+  // {print; system(\"\")}"
 
 ret=${PIPESTATUS[0]}
 
