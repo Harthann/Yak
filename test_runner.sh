@@ -21,7 +21,7 @@ qemu-system-i386 -d int \
 			-drive format=raw,file=$2 \
 			-nographic \
 			-no-reboot \
-			-device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log | less +F | awk "
+			-device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log | awk "
   /ok/ {sub(/ok/,\"\033[32mok\033[39m\");}
   /failed/ {sub(/failed/,\"\033[31mfailed\033[39m\");}
   // {print; system(\"\")}"
