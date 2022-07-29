@@ -128,9 +128,8 @@ impl<T, A: Allocator> Vec<T,A> {
 			core::ptr::copy(self.as_ptr().add(index),
 							self.as_mut_ptr().add(index + 1),
 							self.len() - index);
+			core::ptr::write(self.as_mut_ptr().add(index), element);
 		}
-		// self[index] = element;
-		self[index] = element;
 		self.len += 1;
 	}
 

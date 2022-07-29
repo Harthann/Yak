@@ -104,8 +104,8 @@ fn test_insertion() {
 
 	let mut x: Vec<u32> = Vec::new();
 
-	for i in 0..10 {
+	for i in 0..5 {
 		x.insert(i, i as u32);
 	}
-	kprintln!("{x}");
+	assert_eq!(x[..], [0, 1, 2, 3, 4]);
 }
