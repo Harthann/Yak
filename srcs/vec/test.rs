@@ -64,7 +64,6 @@ fn test_big_alloc() {
 		for i in 0..size {
 			x.push(i as u32);
 		}
-		x.push(100000 as u32);
 		assert_eq!(x.capacity(), size);
 	}
 }
@@ -108,4 +107,30 @@ fn test_insertion() {
 		x.insert(i, i as u32);
 	}
 	assert_eq!(x[..], [0, 1, 2, 3, 4]);
+	x.insert(3, 10);
+	x.insert(3, 10);
+	x.insert(3, 10);
+	assert_eq!(x[..], [0, 1, 2, 10, 10, 10, 3, 4]);
+	x.insert(x.len(), 15);
+	assert_eq!(x[..], [0, 1, 2, 10, 10, 10, 3, 4, 15]);
+}
+
+#[test_case]
+fn test_extend_from_slice() {
+	print_fn!();
+
+	let mut x: Vec<u32> = Vec::new();
+	x.extend_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7]);
+	assert_eq!(x[..], [0, 1, 2, 3, 4, 5, 6, 7]);
+	x.extend_from_slice(&[0, 1, 2, 3, 4]);
+	assert_eq!(x[..], [0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4]);
+}
+
+#[test_case]
+fn test_remove() {
+	print_fn!();
+
+	let mut x: Vec<u32> = Vec::new();
+	x.extend_from_slice(&[0, 1, 2, 3, 4, 5, 6, 7, 0, 1, 2, 3, 4]);
+	kprintln!("{:?}", x);
 }

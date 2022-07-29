@@ -63,7 +63,7 @@ setup_release:
 				$(eval XARGO_FLAGS += --release)
 				$(eval RUST_KERNEL = target/i386-kfs/release/kernel)
 
-test: fclean $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+test: $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
 				xargo test $(XARGO_FLAGS) -- $(NAME)
 

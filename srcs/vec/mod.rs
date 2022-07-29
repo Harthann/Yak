@@ -28,8 +28,6 @@ pub fn test() {
 	kprintln!("X: {:?}", x.as_slice());
 	x.reverse();
 	kprintln!("{}", x == [4, 3, 2, 1]);
-//	kprintln!("X: {}", x.as_slice()[..]);
-//	kprintln!("X: {}", x[1..3]);
 }
 
 impl<T> Vec<T> {
@@ -51,6 +49,7 @@ impl<T> Vec<T> {
 			alloc: Global
 		}
 	}
+
 }
 
 impl<T, A: Allocator> Vec<T,A> {
@@ -76,14 +75,17 @@ impl<T, A: Allocator> Vec<T,A> {
 		} else {
 			let layout = Self::layout(self.capacity());
 			match self.allocator().realloc(self.ptr.unwrap().cast(), layout, new_size) {
-				Ok(ptr) => { self.ptr = Some(ptr.cast()); Ok(())},
+				Ok(ptr) => { self.ptr = Some(ptr.cast());
+							self.capacity = new_size;
+							Ok(())
+				},
 				Err(x) => Err(x)
 			}
 		}
 	}
 
 	pub fn reserve(&mut self, additional: usize) {
-		match self.try_reserve(self.capacity + additional) {
+		match self.try_reserve(additional) {
 			Ok(_) => {},
 			Err(_) => panic!("Couldn't reserve more")
 		};
@@ -95,7 +97,7 @@ impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn push(&mut self, value: T) {
 		if self.len + 1 > self.capacity {
-			self.reserve(self.capacity() + 8);
+			self.reserve(8);
 		} else if self.ptr.is_none() {
 			self.reserve(8);
 		}
@@ -118,12 +120,11 @@ impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn insert(&mut self, index: usize, element: T) {
 		if self.len + 1 > self.capacity {
-			self.reserve(self.capacity() + 8);
+			self.reserve(8);
 		} else if self.ptr.is_none() {
 			self.reserve(8);
 		}
 
-		// memmove(ptr + index, ptr + index + 1);
 		unsafe{
 			core::ptr::copy(self.as_ptr().add(index),
 							self.as_mut_ptr().add(index + 1),
@@ -133,10 +134,32 @@ impl<T, A: Allocator> Vec<T,A> {
 		self.len += 1;
 	}
 
-	pub fn remove(&mut self, index: usize) -> T {
-		// memmove(ptr + index + 1, ptr + index);
-		// self.len -= 1;
-		todo!()
+	pub fn extend_from_slice(&mut self, elements: &[T]) {
+		crate::kprintln!("{} {} {}", self.len, self.capacity, elements.len());
+		if self.len + elements.len() > self.capacity {
+			self.reserve(self.capacity() + elements.len());
+		}
+		unsafe{
+			core::ptr::copy(elements.as_ptr(),
+							self.as_mut_ptr().add(self.len()),
+							elements.len());
+			self.len += elements.len();
+		}
+	}
+
+	pub fn remove(&mut self, index: usize) -> Option<T> {
+		if self.len > index {
+			None
+		} else {
+			unsafe{
+				let erased = core::ptr::read(self.as_ptr().add(index));
+				core::ptr::copy(self.as_ptr().add(index + 1),
+								self.as_mut_ptr().add(index),
+								self.len() - index);
+				self.len -= 1;
+				Some(erased)
+			}
+		}
 	}
 
 	pub fn as_slice(&self) -> &[T] {
