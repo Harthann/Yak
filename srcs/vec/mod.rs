@@ -24,16 +24,10 @@ pub fn test() {
 	
 	let mut x: Vec<u32> = Vec::new();
 
-	x.push(15);
-	x.push(12);
-	x.push(0);
-	x.push(15);
-	x.push(0);
-	x.push(14);
-	x.push(15);
+	x.push(1);
 	kprintln!("X: {:?}", x.as_slice());
-	assert_eq!(x, [15, 14, 0, 15, 0, 12, 15]);
 	x.reverse();
+	kprintln!("{}", x == [4, 3, 2, 1]);
 //	kprintln!("X: {}", x.as_slice()[..]);
 //	kprintln!("X: {}", x[1..3]);
 }
@@ -100,18 +94,15 @@ impl<T, A: Allocator> Vec<T,A> {
 	}
 
 	pub fn push(&mut self, value: T) {
-		if self.len + 1 < self.capacity && self.ptr.is_some() {
-			unsafe {
-				self.ptr.unwrap().as_ptr()
-						.add(self.len)
-						.write(value);
-			}
-			self.len += 1;
+		if self.len + 1 > self.capacity {
+			self.reserve(self.capacity() + 8);
 		} else if self.ptr.is_none() {
 			self.reserve(8);
-		} else {
-			self.reserve(self.capacity() + 8);
 		}
+		unsafe{ self.ptr.unwrap().as_ptr()
+						.add(self.len)
+						.write(value); }
+		self.len += 1;
 	}
 
 	pub fn pop(&mut self) -> Option<T> {
@@ -126,10 +117,26 @@ impl<T, A: Allocator> Vec<T,A> {
 	}
 
 	pub fn insert(&mut self, index: usize, element: T) {
-		todo!()
+		if self.len + 1 > self.capacity {
+			self.reserve(self.capacity() + 8);
+		} else if self.ptr.is_none() {
+			self.reserve(8);
+		}
+
+		// memmove(ptr + index, ptr + index + 1);
+		unsafe{
+			core::ptr::copy(self.as_ptr().add(index),
+							self.as_mut_ptr().add(index + 1),
+							self.len() - index);
+		}
+		// self[index] = element;
+		self[index] = element;
+		self.len += 1;
 	}
 
 	pub fn remove(&mut self, index: usize) -> T {
+		// memmove(ptr + index + 1, ptr + index);
+		// self.len -= 1;
 		todo!()
 	}
 

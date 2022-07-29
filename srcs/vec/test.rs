@@ -96,3 +96,16 @@ fn test_deref() {
 	x.reverse();
 	assert_eq!(x[..], [4, 3, 2, 1]);
 }
+
+
+#[test_case]
+fn test_insertion() {
+	print_fn!();
+
+	let mut x: Vec<u32> = Vec::new();
+
+	for i in 0..10 {
+		x.insert(i, i as u32);
+	}
+	kprintln!("{x}");
+}
