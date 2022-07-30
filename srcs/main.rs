@@ -78,6 +78,7 @@ mod keyboard;
 mod memory;
 mod multiboot;
 mod vec;
+mod string;
 mod interrupts;
 mod io;
 mod vga_buffer;
@@ -154,5 +155,6 @@ pub extern "C" fn kmain() -> ! {
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
+	string::test();
 }
 
