@@ -234,7 +234,7 @@ fn panic(info: &PanicInfo) -> ! {
 	kprintln!("[failed]");
 	kprintln!("{}", info);
 	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
-    io::outb(0xf4, 0x11);
+	io::outb(0xf4, 0x11);
 	loop {}
 }
 

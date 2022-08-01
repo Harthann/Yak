@@ -16,6 +16,7 @@ pub fn test() {
 	crate::kprintln!("{}", y);
 }
 
+#[derive(PartialEq, Debug)]
 pub struct String {
 	vec: Vec<u8>
 }
@@ -58,12 +59,18 @@ impl String {
 		todo!()
 	}
 
-	pub fn pop(&mut self) -> Option<u8> {
-		self.vec.pop()
+	pub fn pop(&mut self) -> Option<char> {
+		match self.vec.pop() {
+			Some(x) => Some(x as char),
+			None => None
+		}
 	}
 
-	pub fn remove(&mut self, idx: usize) -> Option<u8> {
-		self.vec.remove(idx)
+	pub fn remove(&mut self, idx: usize) -> Option<char> {
+		match self.vec.remove(idx) {
+			Some(x) => Some(x as char),
+			None => None
+		}
 	}
 
 	pub fn clear(&mut self) {

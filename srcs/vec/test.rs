@@ -138,9 +138,9 @@ use crate::vec;
 fn vector_macros() {
 	print_fn!();
 
-	let mut x: Vec<u32> = vec![0,1,2,3,4,5];
-	let mut y: Vec<u32> = vec!();//[0,1,2,3,4,5];
-	let mut z: Vec<u32> = vec![5; 10];//[0,1,2,3,4,5];
+	let x: Vec<u32> = vec![0,1,2,3,4,5];
+	let y: Vec<u32> = vec!();//[0,1,2,3,4,5];
+	let z: Vec<u32> = vec![5; 10];//[0,1,2,3,4,5];
 
 	assert_eq!(x[..], [0,1,2,3,4,5]);
 
