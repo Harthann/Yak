@@ -22,10 +22,8 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 			if excess_size > 0 {
 				allocator.add_free_region(alloc_end, excess_size);
 			}
-			unsafe {
 				crate::TRACKER.allocation += 1;
-				crate::TRACKER.allocated_bytes += size;
-			}
+				crate::TRACKER.allocated_bytes += layout.size();
 			alloc_start as *mut u8
 		} else {
 			core::ptr::null_mut()
@@ -37,10 +35,8 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 		let mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let (size, _) = LinkedListAllocator::size_align(layout);
-		unsafe {
 			crate::TRACKER.freed += 1;
 			crate::TRACKER.freed_bytes += layout.size();
-		}
 		mut_self.add_free_region(ptr as VirtAddr, size)
 	}
 }

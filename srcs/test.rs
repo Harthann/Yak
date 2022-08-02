@@ -24,13 +24,24 @@ macro_rules! print_fn {
 	}
 }
 
+
+pub fn leaks() -> bool {
+	unsafe {
+		crate::TRACKER.allocation != crate::TRACKER.freed ||
+		crate::TRACKER.allocated_bytes != crate::TRACKER.freed_bytes
+	}
+}
+
 #[cfg(test)]
 pub fn test_runner(tests: &[&dyn Fn()]) {
 	crate::kprintln!("Running {} tests", tests.len());
 	for test in tests {
 		test.run();
+		if leaks() == true {
+			crate::memory_state();
+			panic!("Memory leaks test failed");
+		}
 	}
-	crate::memory_leaks();
 	io::outb(0xf4, 0x10);
 }
 

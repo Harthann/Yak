@@ -36,17 +36,9 @@ static mut TRACKER: Tracker = Tracker {
 	freed_bytes: 0
 };
 
-pub fn memory_leaks() {
-	#[cfg(test)]
-	print_fn!();
-
+pub fn memory_state() {
 	unsafe {
-		#[cfg(test)]
-		assert_eq!(TRACKER.allocation, TRACKER.freed);
-		#[cfg(test)]
-		assert_eq!(TRACKER.allocated_bytes, TRACKER.freed_bytes);
-
-		kprintln!("Allocation: {} for {} bytes", TRACKER.allocation, TRACKER.allocated_bytes);
+		kprintln!("\nAllocation: {} for {} bytes", TRACKER.allocation, TRACKER.allocated_bytes);
 		kprintln!("Free:       {} for {} bytes", TRACKER.freed, TRACKER.freed_bytes);
 	}
 }
@@ -71,7 +63,6 @@ use memory::paging::{init_paging, page_directory};
 use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
-use memory::allocator::{Box};
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
