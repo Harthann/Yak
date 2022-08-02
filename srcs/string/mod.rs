@@ -56,7 +56,9 @@ impl String {
 	}
 
 	pub fn push_str(&mut self, value: &str) {
-		todo!()
+		for i in value.chars() {
+			self.push(i);
+		}
 	}
 
 	pub fn pop(&mut self) -> Option<char> {
@@ -78,7 +80,7 @@ impl String {
 	}
 
 	pub fn insert(&mut self, idx: usize, ch: char) {
-		todo!()
+		self.vec.insert(idx, ch as u8);
 	}
 
 	pub fn insert_str(&mut self, idx: usize, string: &str) {

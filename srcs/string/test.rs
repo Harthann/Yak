@@ -64,3 +64,42 @@ fn string_clear() {
 	assert_eq!(x.len(), 0);
 	assert_eq!(&x[..], "");
 }
+
+#[test_case]
+fn string_deref() {
+	print_fn!();
+
+	let mut x = String::from("Ceci est un test");
+	let mut iter = x.split(' ');
+
+	assert_eq!(iter.next(), Some("Ceci"));
+	assert_eq!(iter.next(), Some("est"));
+	assert_eq!(iter.next(), Some("un"));
+	assert_eq!(iter.next(), Some("test"));
+	assert_eq!(iter.next(), None);
+}
+
+//#[test_case]
+//fn string_push_str() {
+//	print_fn!();
+//
+//	let mut x = String::from("Hello");
+//
+//	assert_eq!(&x[..], "Hello");
+//	assert_eq!(x.len(), 5);
+//	
+//	x.push_str(" world!");
+//	assert_eq!(&x[..], "Hello world!");
+//	assert_eq!(x.len(), 12);
+//}
+
+#[test_case]
+fn string_insert() {
+	print_fn!();
+
+	let mut x = String::from("Hello");
+
+	kprintln!("{} {} {}", x, x.len(), x.capacity());
+	x.insert(3, 'k');
+	kprintln!("{}", x);
+}
