@@ -12,57 +12,10 @@
 
 /*  Custom test framwork    */
 #![feature(custom_test_frameworks)]
-#![test_runner(crate::test_runner)]
+#![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-#[cfg(test)]
-#[macro_export]
-macro_rules! function {
-	() => {{
-		fn f() {}
-		fn type_name_of<T>(_: T) -> &'static str {
-			core::any::type_name::<T>()
-		}
-		let mut name = type_name_of(f);
-		name = &name[..name.len() - 3];
-		let split = name.split("::");
-		split.last().unwrap()
-	}}
-}
 
-#[cfg(test)]
-#[macro_export]
-macro_rules! print_fn {
-	() => {
-		crate::kprint!("{:40}{}", function!(), "");
-	}
-}
-
-#[cfg(test)]
-fn test_runner(tests: &[&dyn Fn()]) {
-	kprintln!("Running {} tests", tests.len());
-	for test in tests {
-		test.run();
-	}
-	io::outb(0xf4, 0x10);
-}
-
-#[cfg(test)]
-pub trait Testable {
-	fn run(&self) -> ();
-}
-
-#[cfg(test)]
-impl<T> Testable for T
-where T: Fn(),
-{
-	fn run(&self) {
-		self();
-		change_color!(Color::Green, Color::Black);
-		kprintln!("[ok]");
-		change_color!(Color::White, Color::Black);
-	}
-}
 
 #[lang = "eh_personality"]
 #[no_mangle]
@@ -83,6 +36,9 @@ mod interrupts;
 mod io;
 mod vga_buffer;
 
+#[cfg(test)]
+mod test;
+
 /*  Modules used function and variable  */
 use memory::paging::{init_paging, page_directory};
 use memory::allocator::linked_list::LinkedListAllocator;
@@ -92,8 +48,8 @@ use memory::allocator::{Box};
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
-
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
 
 /*  Code from boot section  */
 #[allow(dead_code)]

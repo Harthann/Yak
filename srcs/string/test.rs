@@ -1,4 +1,7 @@
-use crate::{kprintln, print_fn};
+use crate::{
+kprintln,
+print_fn
+};
 use crate::string::String;
 
 #[test_case]

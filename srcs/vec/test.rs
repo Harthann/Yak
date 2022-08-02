@@ -1,4 +1,7 @@
-use crate::kprintln;
+use crate::{
+kprintln,
+print_fn
+};
 use crate::vec::Vec;
 
 
