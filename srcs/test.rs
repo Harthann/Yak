@@ -35,6 +35,7 @@ pub fn leaks() -> bool {
 #[cfg(test)]
 pub fn test_runner(tests: &[&dyn Fn()]) {
 	crate::kprintln!("Running {} tests", tests.len());
+	crate::memory_state();
 	for test in tests {
 		test.run();
 		if leaks() == true {
