@@ -30,6 +30,7 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 	for test in tests {
 		test.run();
 	}
+	crate::memory_leaks();
 	io::outb(0xf4, 0x10);
 }
 

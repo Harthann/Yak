@@ -15,14 +15,41 @@
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
-
-
 #[lang = "eh_personality"]
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
-
 const GLOBAL_ALIGN: usize = 8;
+
+/* Allocation tracking */
+pub struct Tracker {
+	allocation:			usize,
+	allocated_bytes:	usize,
+	freed:				usize,
+	freed_bytes:		usize
+}
+
+static mut TRACKER: Tracker = Tracker {
+	allocation: 0,
+	allocated_bytes: 0,
+	freed: 0,
+	freed_bytes: 0
+};
+
+pub fn memory_leaks() {
+	#[cfg(test)]
+	print_fn!();
+
+	unsafe {
+		#[cfg(test)]
+		assert_eq!(TRACKER.allocation, TRACKER.freed);
+		#[cfg(test)]
+		assert_eq!(TRACKER.allocated_bytes, TRACKER.freed_bytes);
+
+		kprintln!("Allocation: {} for {} bytes", TRACKER.allocation, TRACKER.allocated_bytes);
+		kprintln!("Free:       {} for {} bytes", TRACKER.freed, TRACKER.freed_bytes);
+	}
+}
 
 /*  Modules import  */
 mod cli;
@@ -96,8 +123,7 @@ pub extern "C" fn kmain() -> ! {
 	#[cfg(not(test))]
 	test();
 
-	let x = Box::new(5 as u64);
-	kprintln!("New value: {}", x);
+
 	kprint!("$> ");
 	loop {
 		if keyboard::keyboard_event() {
