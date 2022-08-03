@@ -128,3 +128,16 @@ fn string_remove() {
 	x.remove(x.len());
 	assert_eq!(&x[..], "eloWorld");
 }
+
+use crate::string::ToString;
+#[test_case]
+fn to_string() {
+	print_fn!();
+
+	let x = "Hello World";
+	let y: u8 = 42;
+
+	let string = x.to_string();
+	assert_eq!(&string[..], "Hello World");
+	assert_eq!(&y.to_string()[..], "42");
+}

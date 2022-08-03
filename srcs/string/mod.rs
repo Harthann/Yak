@@ -138,3 +138,47 @@ impl fmt::Display for String {
 	}
 }
 
+/* Write and ToString impl are taken from rust source code */
+impl fmt::Write for String {
+	#[inline]
+	fn write_str(&mut self, s: &str) -> fmt::Result {
+		self.push_str(s);
+		Ok(())
+	}
+
+	#[inline]
+	fn write_char(&mut self, c: char) -> fmt::Result {
+		self.push(c);
+		Ok(())
+	}
+}
+
+
+/* ToStirng impl for different type */
+pub trait ToString {
+	fn to_string(&self) -> String;
+}
+
+impl<T: fmt::Display + ?Sized> ToString for T {
+	// A common guideline is to not inline generic functions. However,
+	// removing `#[inline]` from this method causes non-negligible regressions.
+	// See <https://github.com/rust-lang/rust/pull/74852>, the last attempt
+	// to try to remove it.
+	#[inline]
+	default fn to_string(&self) -> String {
+		let mut buf = String::new();
+		let mut formatter = core::fmt::Formatter::new(&mut buf);
+		// Bypass format_args!() to avoid write_str with zero-length strs
+		fmt::Display::fmt(self, &mut formatter)
+			.expect("a Display implementation returned an error unexpectedly");
+		buf
+	}
+}
+
+impl ToString for str {
+
+	#[inline]
+	fn to_string(&self) -> String {
+		String::from(self)
+	}
+}
