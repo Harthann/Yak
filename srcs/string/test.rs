@@ -134,10 +134,9 @@ use crate::string::ToString;
 fn to_string() {
 	print_fn!();
 
-	let x = "Hello World";
+	let x = String::from("Hello World");
 	let y: u8 = 42;
 
-	let string = x.to_string();
-	assert_eq!(&string[..], "Hello World");
-	assert_eq!(&y.to_string()[..], "42");
+	assert_eq!(x, "Hello World".to_string());
+	assert_eq!(y.to_string(), "42");
 }

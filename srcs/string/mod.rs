@@ -16,7 +16,7 @@ pub fn test() {
 	crate::kprintln!("{}", y);
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub struct String {
 	vec: Vec<u8>
 }
@@ -135,6 +135,65 @@ impl fmt::Display for String {
 	#[inline]
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		fmt::Display::fmt(&**self, f)
+	}
+}
+
+
+/* Equality implementation between two String */
+impl PartialEq for String {
+	#[inline]
+	fn eq(&self, other: &String) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &String) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+/* Equality implementation betwee String and str either lhs or rhs */
+impl PartialEq<str> for String {
+	#[inline]
+	fn eq(&self, other: &str) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &str) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+impl PartialEq<String> for str {
+	#[inline]
+	fn eq(&self, other: &String) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &String) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+/* Same as previous implementation but takes ref to str instead */
+impl PartialEq<&str> for String {
+	#[inline]
+	fn eq(&self, other: &&str) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &&str) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+impl PartialEq<String> for &str {
+	#[inline]
+	fn eq(&self, other: &String) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &String) -> bool {
+		PartialEq::ne(&self[..], &other[..])
 	}
 }
 
