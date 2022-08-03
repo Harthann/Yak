@@ -82,27 +82,25 @@ fn string_deref() {
 	assert_eq!(iter.next(), None);
 }
 
-//#[test_case]
-//fn string_push_str() {
-//	print_fn!();
-//
-//	let mut x = String::from("Hello");
-//
-//	assert_eq!(&x[..], "Hello");
-//	assert_eq!(x.len(), 5);
-//	
-//	x.push_str(" world!");
-//	assert_eq!(&x[..], "Hello world!");
-//	assert_eq!(x.len(), 12);
-//}
-
 #[test_case]
-fn string_insert() {
+fn string_push_str() {
 	print_fn!();
 
 	let mut x = String::from("Hello");
 
-	kprintln!("{} {} {}", x, x.len(), x.capacity());
-	x.insert(3, 'k');
-	kprintln!("{}", x);
+	assert_eq!(&x[..], "Hello");
+	assert_eq!(x.len(), 5);
+	
+	x.push_str(" world!");
+	assert_eq!(&x[..], "Hello world!");
+	assert_eq!(x.len(), 12);
 }
+
+//#[test_case]
+//fn string_insert() {
+//	print_fn!();
+//
+//	let mut x = String::from("Hello");
+//
+//	x.insert(3, 'k');
+//}
