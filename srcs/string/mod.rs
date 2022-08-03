@@ -23,34 +23,41 @@ pub struct String {
 
 impl String {
 
+	#[inline]
 	pub fn new() -> String {
 		String {
 			vec: Vec::new()
 		}
 	}
 
+	#[inline]
 	pub fn with_capacity(capacity: usize) -> String {
 		String {
 			vec: Vec::with_capacity(capacity)
 		}
 	}
 
+	#[inline]
 	pub fn as_str(&self) -> &str {
 		self
 	}
 
+	#[inline]
 	pub fn as_mut_str(&mut self) -> &mut str {
 		self
 	}
 
+	#[inline]
 	pub fn capacity(&self) -> usize {
 		self.vec.capacity()
 	}
 
+	#[inline]
 	pub fn reserve(&mut self, additional: usize) {
 		self.vec.reserve(additional);
 	}
 
+	#[inline]
 	pub fn push(&mut self, value: char) {
 		self.vec.push(value as u8);
 	}
@@ -75,16 +82,25 @@ impl String {
 		}
 	}
 
+	#[inline]
 	pub fn clear(&mut self) {
 		self.vec.clear();
 	}
 
+	#[inline]
 	pub fn insert(&mut self, idx: usize, ch: char) {
 		self.vec.insert(idx, ch as u8);
 	}
 
-	pub fn insert_str(&mut self, idx: usize, string: &str) {
+	pub fn try_insert(&mut self, idx: usize, ch: char) -> Result<(), ()> {
 		todo!()
+	}
+
+	pub fn insert_str(&mut self, mut idx: usize, string: &str) {
+		for i in string.chars() {
+			self.vec.insert(idx, i as u8);
+			idx += 1;
+		}
 	}
 }
 
