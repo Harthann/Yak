@@ -99,7 +99,7 @@ impl<T, A: Allocator> Vec<T,A> {
 			Ok(())
 		} else {
 			let layout = Self::layout(self.capacity());
-			match self.allocator().realloc(self.ptr.unwrap().cast(), layout, new_size) {
+			match self.allocator().realloc(self.ptr.unwrap().cast(), layout, new_size * core::mem::size_of::<T>()) {
 				Ok(ptr) => { self.ptr = Some(ptr.cast());
 							self.capacity = new_size;
 							Ok(())

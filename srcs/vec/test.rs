@@ -103,9 +103,12 @@ fn vector_insertion() {
 
 	let mut x: Vec<u32> = Vec::new();
 
+	assert_eq!(x.capacity(), 0);
+	assert_eq!(x.len(), 0);
 	for i in 0..5 {
 		x.insert(i, i as u32);
 	}
+	assert_eq!(x.capacity(), 8);
 	assert_eq!(x[..], [0, 1, 2, 3, 4]);
 	x.insert(3, 10);
 	x.insert(3, 10);
