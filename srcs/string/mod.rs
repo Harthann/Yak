@@ -16,41 +16,48 @@ pub fn test() {
 	crate::kprintln!("{}", y);
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Debug)]
 pub struct String {
 	vec: Vec<u8>
 }
 
 impl String {
 
+	#[inline]
 	pub fn new() -> String {
 		String {
 			vec: Vec::new()
 		}
 	}
 
+	#[inline]
 	pub fn with_capacity(capacity: usize) -> String {
 		String {
 			vec: Vec::with_capacity(capacity)
 		}
 	}
 
+	#[inline]
 	pub fn as_str(&self) -> &str {
 		self
 	}
 
+	#[inline]
 	pub fn as_mut_str(&mut self) -> &mut str {
 		self
 	}
 
+	#[inline]
 	pub fn capacity(&self) -> usize {
 		self.vec.capacity()
 	}
 
+	#[inline]
 	pub fn reserve(&mut self, additional: usize) {
 		self.vec.reserve(additional);
 	}
 
+	#[inline]
 	pub fn push(&mut self, value: char) {
 		self.vec.push(value as u8);
 	}
@@ -75,16 +82,25 @@ impl String {
 		}
 	}
 
+	#[inline]
 	pub fn clear(&mut self) {
 		self.vec.clear();
 	}
 
+	#[inline]
 	pub fn insert(&mut self, idx: usize, ch: char) {
 		self.vec.insert(idx, ch as u8);
 	}
 
-	pub fn insert_str(&mut self, idx: usize, string: &str) {
+	pub fn try_insert(&mut self, idx: usize, ch: char) -> Result<(), ()> {
 		todo!()
+	}
+
+	pub fn insert_str(&mut self, mut idx: usize, string: &str) {
+		for i in string.chars() {
+			self.vec.insert(idx, i as u8);
+			idx += 1;
+		}
 	}
 }
 
@@ -122,3 +138,106 @@ impl fmt::Display for String {
 	}
 }
 
+
+/* Equality implementation between two String */
+impl PartialEq for String {
+	#[inline]
+	fn eq(&self, other: &String) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &String) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+/* Equality implementation betwee String and str either lhs or rhs */
+impl PartialEq<str> for String {
+	#[inline]
+	fn eq(&self, other: &str) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &str) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+impl PartialEq<String> for str {
+	#[inline]
+	fn eq(&self, other: &String) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &String) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+/* Same as previous implementation but takes ref to str instead */
+impl PartialEq<&str> for String {
+	#[inline]
+	fn eq(&self, other: &&str) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &&str) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+impl PartialEq<String> for &str {
+	#[inline]
+	fn eq(&self, other: &String) -> bool {
+		PartialEq::eq(&self[..], &other[..])
+	}
+	#[inline]
+	fn ne(&self, other: &String) -> bool {
+		PartialEq::ne(&self[..], &other[..])
+	}
+}
+
+/* Write and ToString impl are taken from rust source code */
+impl fmt::Write for String {
+	#[inline]
+	fn write_str(&mut self, s: &str) -> fmt::Result {
+		self.push_str(s);
+		Ok(())
+	}
+
+	#[inline]
+	fn write_char(&mut self, c: char) -> fmt::Result {
+		self.push(c);
+		Ok(())
+	}
+}
+
+
+/* ToStirng impl for different type */
+pub trait ToString {
+	fn to_string(&self) -> String;
+}
+
+impl<T: fmt::Display + ?Sized> ToString for T {
+	// A common guideline is to not inline generic functions. However,
+	// removing `#[inline]` from this method causes non-negligible regressions.
+	// See <https://github.com/rust-lang/rust/pull/74852>, the last attempt
+	// to try to remove it.
+	#[inline]
+	default fn to_string(&self) -> String {
+		let mut buf = String::new();
+		let mut formatter = core::fmt::Formatter::new(&mut buf);
+		// Bypass format_args!() to avoid write_str with zero-length strs
+		fmt::Display::fmt(self, &mut formatter)
+			.expect("a Display implementation returned an error unexpectedly");
+		buf
+	}
+}
+
+impl ToString for str {
+
+	#[inline]
+	fn to_string(&self) -> String {
+		String::from(self)
+	}
+}
