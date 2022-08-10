@@ -27,8 +27,8 @@ macro_rules! print_fn {
 
 pub fn leaks() -> bool {
 	unsafe {
-		crate::TRACKER.allocation != crate::TRACKER.freed ||
-		crate::TRACKER.allocated_bytes != crate::TRACKER.freed_bytes
+		crate::KTRACKER.allocation != crate::KTRACKER.freed ||
+		crate::KTRACKER.allocated_bytes != crate::KTRACKER.freed_bytes
 	}
 }
 
