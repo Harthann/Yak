@@ -9,6 +9,7 @@
 #![feature(lang_items)]
 #![no_std]
 #![allow(dead_code)]
+#![allow(incomplete_features)]
 #![no_main]
 
 
@@ -86,10 +87,12 @@ use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	multiboot::read_tags();
+//	multiboot::read_tags();
 	init_paging();
-	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut ALLOCATOR)};
-//	unsafe {init_heap(heap as u32 + 100 * 4096, 5 * 4096, PAGE_WRITABLE, true , &mut KALLOCATOR)};
+	/* HEAP KERNEL */
+	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
+	/* HEAP USER */
+	unsafe {init_heap(0x0 as u32, 100 * 4096, PAGE_WRITABLE | PAGE_USER, false , &mut ALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
 	let stack_addr: VirtAddr = 0xbfffffff; /* stack user */
@@ -106,16 +109,12 @@ pub extern "C" fn kinit() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);
-	kprintln!("Press Ctrl-{} to navigate to the second workspace", '2');
+	let workspace_msg = string::String::from("Press Ctrl-2 to navigate to the second workspace");
+	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
-
-	#[cfg(not(test))]
-	test();
-
 
 	kprint!("$> ");
 	loop {
@@ -126,10 +125,8 @@ pub extern "C" fn kmain() -> ! {
 	}
 }
 
-
 /*  Function to put all tests and keep main clean */
 #[cfg(not(test))]
 fn test() {
 	string::test();
 }
-

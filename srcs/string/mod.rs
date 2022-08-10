@@ -92,10 +92,6 @@ impl String {
 		self.vec.insert(idx, ch as u8);
 	}
 
-	pub fn try_insert(&mut self, idx: usize, ch: char) -> Result<(), ()> {
-		todo!()
-	}
-
 	pub fn insert_str(&mut self, mut idx: usize, string: &str) {
 		for i in string.chars() {
 			self.vec.insert(idx, i as u8);

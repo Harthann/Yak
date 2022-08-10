@@ -5,14 +5,14 @@ use crate::GLOBAL_ALIGN;
  use crate::memory::allocator::{
 Allocator,
 AllocError,
-Global
+KGlobal
 };
 
 #[cfg(test)]
 pub mod test;
 
 #[derive(Clone, Debug)]
-pub struct Vec<T, A: Allocator = Global> {
+pub struct Vec<T, A: Allocator = KGlobal> {
 	ptr: Option<NonNull<T>>,
 	capacity: usize,
 	len: usize,
@@ -39,16 +39,16 @@ impl<T> Vec<T> {
 			ptr: None,
 			capacity: 0,
 			len: 0,
-			alloc: Global
+			alloc: KGlobal
 		}
 	}
 
 	pub fn with_capacity(capacity: usize) -> Vec<T> {
 		Vec {
-			ptr: Some(Self::with_capacity_in(capacity, &Global)),
+			ptr: Some(Self::with_capacity_in(capacity, &KGlobal)),
 			capacity: capacity,
 			len: 0,
-			alloc: Global
+			alloc: KGlobal
 		}
 	}
 
