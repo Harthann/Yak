@@ -39,10 +39,17 @@ static mut TRACKER: Tracker = Tracker {
 	freed_bytes: 0
 };
 
+static mut KTRACKER: Tracker = Tracker {
+	allocation: 0,
+	allocated_bytes: 0,
+	freed: 0,
+	freed_bytes: 0
+};
+
 pub fn memory_state() {
 	unsafe {
-		kprintln!("\nAllocation: {} for {} bytes", TRACKER.allocation, TRACKER.allocated_bytes);
-		kprintln!("Free:       {} for {} bytes", TRACKER.freed, TRACKER.freed_bytes);
+		kprintln!("\nAllocation: {} for {} bytes", KTRACKER.allocation, KTRACKER.allocated_bytes);
+		kprintln!("Free:       {} for {} bytes", KTRACKER.freed, KTRACKER.freed_bytes);
 	}
 }
 

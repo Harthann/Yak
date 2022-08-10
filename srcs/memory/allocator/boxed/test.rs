@@ -2,7 +2,7 @@ use crate::memory::allocator::boxed::Box;
 use crate::print_fn;
 
 #[test_case]
-fn basic_allocation() {
+fn box_basic_allocation() {
 	print_fn!();
 	let x = Box::new(5);
 	assert_eq!(*x, 5);
@@ -13,7 +13,7 @@ fn basic_allocation() {
 }
 
 #[test_case]
-fn test_diff_ptr() {
+fn box_test_diff_ptr() {
 	print_fn!();
 	let x = Box::new(0 as usize);
 	let y = Box::new(0 as usize);
@@ -23,7 +23,7 @@ fn test_diff_ptr() {
 }
 
 #[test_case]
-fn free_test() {
+fn box_free_test() {
 	print_fn!();
 	let ptr: u32;
 	{
@@ -35,7 +35,7 @@ fn free_test() {
 }
 
 #[test_case]
-fn test_mut_ref() {
+fn box_test_mut_ref() {
 	print_fn!();
 	let mut x = Box::new(5);
 	assert_eq!(*x, 5);
@@ -45,14 +45,14 @@ fn test_mut_ref() {
 }
 
 #[test_case]
-fn test_array() {
+fn box_test_array() {
 	print_fn!();
 	let x = Box::new([5; 10]);
 	assert_eq!(*x, [5; 10]);
 }
 
 #[test_case]
-fn test_write() {
+fn box_test_write() {
 	print_fn!();
 	let mut x = Box::new(5);
 	assert_eq!(*x, 5);

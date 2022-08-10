@@ -16,7 +16,7 @@ pub mod test;
 const GLOBAL_ALIGN: usize = 8;
 
 #[derive(Debug, Clone)]
-pub struct Box<T: ?Sized, A: Allocator = Global> {
+pub struct Box<T: ?Sized, A: Allocator = KGlobal> {
 	ptr: NonNull<T>,
 	alloc: A,
 	layout: Layout
@@ -24,12 +24,12 @@ pub struct Box<T: ?Sized, A: Allocator = Global> {
 
 impl<T> Box<T> {
 
-	pub fn new(x: T) -> Box<T, Global> {
-		Self::new_in(x, Global)
+	pub fn new(x: T) -> Box<T, KGlobal> {
+		Self::new_in(x, KGlobal)
 	}
 
-	pub fn try_new(x:T) -> Result<Box<T, Global>, AllocError> {
-		Self::try_new_in(x, Global)
+	pub fn try_new(x:T) -> Result<Box<T, KGlobal>, AllocError> {
+		Self::try_new_in(x, KGlobal)
 	}
 
 	pub fn knew(x: T) -> Box<T, KGlobal> {

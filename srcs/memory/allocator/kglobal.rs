@@ -21,7 +21,13 @@ pub struct KGlobal;
 */
 #[inline]
 unsafe fn alloc(layout: Layout) -> *mut u8 {
-	KALLOCATOR.alloc(layout)
+	let ptr = KALLOCATOR.alloc(layout);
+	if !ptr.is_null() {
+		crate::KTRACKER.allocation += 1;
+		crate::KTRACKER.allocated_bytes += layout.size();
+	}
+	ptr
+
 }
 
 #[inline]
@@ -34,6 +40,8 @@ unsafe fn alloc_zeroed(layout: Layout) -> *mut u8 {
 #[inline]
 unsafe fn dealloc(ptr: *mut u8, layout: Layout) {
 	KALLOCATOR.dealloc(ptr, layout);
+	crate::KTRACKER.freed += 1;
+	crate::KTRACKER.freed_bytes += layout.size();
 }
 
 #[inline]
