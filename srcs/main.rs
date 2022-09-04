@@ -91,9 +91,12 @@ extern "C" {
 use crate::memory::{init_heap, init_stack, VirtAddr};
 use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
 
+use crate::interrupts::init_idt;
+
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
+	unsafe{init_idt()};
 //	multiboot::read_tags();
 	init_paging();
 	/* HEAP KERNEL */
