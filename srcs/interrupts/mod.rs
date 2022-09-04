@@ -1,3 +1,24 @@
+static IDTR: IDTR = IDTR {
+	size: 0,
+	offset: 0
+};
+
+pub unsafe fn init_idt()
+{
+	let idt_descs: &mut [InterruptDescriptor; 0xff] = &mut *(IDTR.offset as *mut _);
+	let mut i = 0;
+	while i < 0xff {
+		idt_descs[i].init_idt_desc(0, 0x8e, 0);
+		i += 1;
+	}
+	core::arch::asm!("lidtl [IDTR]");
+}
+
+pub struct IDTR {
+	pub size:			u16,
+	pub offset:			u32
+}
+
 pub struct InterruptDescriptor {
 	offset_0:		u16,
 	selector:		u16,
@@ -7,13 +28,17 @@ pub struct InterruptDescriptor {
 }
 
 impl InterruptDescriptor {
+	pub fn init_idt_desc(&mut self, offset: u32, select: u16, type_attr: u8)
+	{
+		self.set_offset(offset);
+		self.selector = select;
+		self.zero = 0;
+		self.type_attr = type_attr;
+	}
+
 	pub fn set_offset(&mut self, offset: u32) {
 		self.offset_0 = (offset & 0x0000ffff) as u16;
 		self.offset_1 = ((offset & 0xffff0000) >> 16) as u16;
-	}
-
-	pub fn set_selector(&mut self, selector: u16) {
-		self.selector = selector;
 	}
 
 	pub fn set_gate_type(&mut self, gate_type: u8) {
@@ -50,9 +75,4 @@ impl InterruptDescriptor {
 	pub fn get_p(&self) -> u8 {
 		(self.type_attr & 0b10000000) >> 7
 	}
-}
-
-pub struct IDTR {
-	size:			u16,
-	offset:			u32
 }

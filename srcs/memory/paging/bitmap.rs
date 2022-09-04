@@ -117,7 +117,7 @@ impl Bitmaps {
 }
 
 pub fn physmap_as_mut() -> &'static mut Bitmaps {
-    unsafe {
-        return &mut PHYSMAP;
-    }
+	unsafe {
+		return &mut PHYSMAP;
+	}
 }
