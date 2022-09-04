@@ -1,7 +1,7 @@
 const IDT_SIZE: usize = 32;
 
 static mut IDT: IDT = IDT {
-	idt_descs: [InterruptDescriptor {
+	idt_entries: [InterruptDescriptor {
 					offset_0: 0,
 					selector: 0,
 					zero: 0,
@@ -18,18 +18,18 @@ pub unsafe fn init_idt()
 {
 	let mut i;
 
-	IDT.idtr.offset = (&IDT.idt_descs as *const _) as u32;
+	IDT.idtr.offset = (&IDT.idt_entries as *const _) as u32;
 	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_SIZE) as u16;
 	i = 0;
 	while i < IDT_SIZE {
-		IDT.idt_descs[i].init_idt_desc(0, 0x8e, 0);
+		IDT.idt_entries[i].init_idt_desc(0, 0x8e, 0);
 		i += 1;
 	}
 	core::arch::asm!("lidt [{}]", in(reg) &IDT.idtr as *const _);
 }
 
 pub struct IDT {
-	pub idt_descs: [InterruptDescriptor; IDT_SIZE],
+	pub idt_entries: [InterruptDescriptor; IDT_SIZE],
 	pub idtr: IDTR
 }
 
