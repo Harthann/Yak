@@ -72,7 +72,7 @@ fn string_clear() {
 fn string_deref() {
 	print_fn!();
 
-	let mut x = String::from("Ceci est un test");
+	let x = String::from("Ceci est un test");
 	let mut iter = x.split(' ');
 
 	assert_eq!(iter.next(), Some("Ceci"));

@@ -14,15 +14,19 @@ static mut IDT: IDT = IDT {
 	}
 };
 
-pub unsafe fn init_idt()
-{
+/* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
+pub unsafe fn exception_handler() {
+	core::arch::asm!("cli; hlt");
+}
+
+pub unsafe fn init_idt() {
 	let mut i;
 
 	IDT.idtr.offset = (&IDT.idt_entries as *const _) as u32;
 	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_SIZE) as u16;
 	i = 0;
 	while i < IDT_SIZE {
-		IDT.idt_entries[i].init_idt_desc(0, 0x8e, 0);
+		IDT.idt_entries[i].init(0, 0x08, 0x8e);
 		i += 1;
 	}
 	core::arch::asm!("lidt [{}]", in(reg) &IDT.idtr as *const _);
@@ -48,7 +52,7 @@ pub struct InterruptDescriptor {
 }
 
 impl InterruptDescriptor {
-	pub fn init_idt_desc(&mut self, offset: u32, select: u16, type_attr: u8)
+	pub fn init(&mut self, offset: u32, select: u16, type_attr: u8)
 	{
 		self.set_offset(offset);
 		self.selector = select;
