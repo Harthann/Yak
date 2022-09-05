@@ -7,7 +7,7 @@ static mut IDT: IDT = IDT {
 					zero: 0,
 					type_attr: 0,
 					offset_1: 0
-				}; IDT_SIZE],
+				}; 256],
 	idtr: IDTR {
 		size: 0,
 		offset: 0
@@ -32,8 +32,9 @@ pub unsafe fn init_idt() {
 	core::arch::asm!("lidt [{}]", in(reg) &IDT.idtr as *const _);
 }
 
+#[repr(align(16))]
 pub struct IDT {
-	pub idt_entries: [InterruptDescriptor; IDT_SIZE],
+	pub idt_entries: [InterruptDescriptor; 256],
 	pub idtr: IDTR
 }
 
