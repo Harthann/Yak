@@ -126,6 +126,7 @@ $(DIR_OBJS):
 
 clean:
 				rm -rf $(DIR_OBJS)
+				rm -rf $(LIBBOOT)
 				rm -rf target
 				rm -rf Cargo.lock
 				rm -rf $(DIR_ISO)
