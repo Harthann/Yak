@@ -6,18 +6,6 @@ QEMU			=	qemu-system-i386
 
 HOST			=	$(shell uname)
 
-ifneq ($(shell which gnome-terminal),)
-TERM_EMU	=	gnome-terminal --
-else ifneq ($(shell which xterm),)
-TERM_EMU	=	xterm -e
-else ifneq ($(shell which konsole),)
-TERM_EMU	=	konsole -e
-else ifeq ($(shell which terminator),)
-TERM_EMU	=	terminator -x
-else
-TERM_EMU	=	$(TERM_EMU)
-endif
-
 TARGER_ARCH 	=	i386
 
 GRUB_CFG		=	grub.cfg
@@ -57,8 +45,8 @@ boot:			$(NAME)
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
-				echo -e "target remote localhost:1234\nbreak kmain\nc\n" > gdbstart
-				$(TERM_EMU) bash -c "cd $(MAKEFILE_PATH); gdb $(DIR_ISO)/boot/$(NAME) -x gdbstart"
+				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kmain" -ex "c"
+				pkill qemu
 
 release:		setup_release $(NAME)
 
@@ -130,7 +118,6 @@ $(DIR_OBJS):
 clean:
 				rm -rf $(DIR_OBJS)
 				rm -rf $(LIBBOOT)
-				rm -rf gdbstart
 				rm -rf qemu.log kernel.log
 				rm -rf target
 				rm -rf Cargo.lock
