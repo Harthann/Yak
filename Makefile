@@ -1,3 +1,5 @@
+SHELL			=	/bin/bash
+
 VERSION			=	3
 
 QEMU			=	qemu-system-i386
@@ -55,6 +57,7 @@ boot:			$(NAME)
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				echo -e "target remote localhost:1234\nbreak kmain\nc\n" > gdbstart
 				$(TERM_EMU) bash -c "cd $(MAKEFILE_PATH); gdb $(DIR_ISO)/boot/$(NAME) -x gdbstart"
 
 release:		setup_release $(NAME)
@@ -127,6 +130,8 @@ $(DIR_OBJS):
 clean:
 				rm -rf $(DIR_OBJS)
 				rm -rf $(LIBBOOT)
+				rm -rf gdbstart
+				rm -rf qemu.log kernel.log
 				rm -rf target
 				rm -rf Cargo.lock
 				rm -rf $(DIR_ISO)
