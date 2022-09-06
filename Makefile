@@ -1,5 +1,7 @@
 SHELL			=	/bin/bash
 
+export RUSTUP_TOOLCHAIN=nightly
+
 VERSION			=	3
 
 QEMU			=	qemu-system-i386
