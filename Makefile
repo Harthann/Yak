@@ -16,7 +16,7 @@ NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
 LIBBOOT			=	libboot.a
 
-XARGO_FLAGS		=	--target $(TARGER_ARCH)-kfs
+XARGO_FLAGS		=	$(release) --target $(TARGER_ARCH)-kfs
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
@@ -36,8 +36,8 @@ DIR_GRUB		=	$(DIR_ISO)/boot/grub
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
 include files.mk
 
-RUST_KERNEL 	=	target/i386-kfs/debug/kernel
-NAME			=	kfs_$(VERSION)
+RUST_KERNEL 	?=	target/i386-kfs/debug/kernel
+NAME			?=	kfs_$(VERSION)
 
 all:			$(NAME)
 
@@ -50,11 +50,11 @@ debug:			$(NAME)
 				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kmain" -ex "c"
 				pkill qemu
 
-release:		setup_release $(NAME)
-
-setup_release:
-				$(eval XARGO_FLAGS += --release)
-				$(eval RUST_KERNEL = target/i386-kfs/release/kernel)
+release:
+	make clean all \
+		release=--release \
+		RUST_KERNEL=target/i386-kfs/release/kernel \
+		NAME=kfs
 
 test: $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
@@ -79,7 +79,7 @@ $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using xargo
-$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS)
+$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile
 ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
