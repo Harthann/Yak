@@ -1,4 +1,5 @@
 use crate::vec::Vec;
+use crate::memory::allocator::AllocError;
 use core::{
 str,
 ops,
@@ -52,6 +53,7 @@ impl String {
 		self.vec.capacity()
 	}
 
+/* Insertion functions wrapper of vec container */
 	#[inline]
 	pub fn reserve(&mut self, additional: usize) {
 		self.vec.reserve(additional);
@@ -68,6 +70,50 @@ impl String {
 		}
 	}
 
+	#[inline]
+	pub fn insert(&mut self, idx: usize, ch: char) {
+		self.vec.insert(idx, ch as u8);
+	}
+
+	pub fn insert_str(&mut self, mut idx: usize, string: &str) {
+		for i in string.chars() {
+			self.vec.insert(idx, i as u8);
+			idx += 1;
+		}
+	}
+
+	#[inline]
+	pub fn try_reserve(&mut self, additional: usize) -> Result<(), AllocError> {
+		self.vec.try_reserve(additional)
+	}
+
+	#[inline]
+	pub fn try_push(&mut self, value: char) -> Result<(), AllocError>  {
+		self.vec.try_push(value as u8)
+	}
+
+	pub fn try_push_str(&mut self, value: &str) -> Result<(), AllocError>  {
+		for i in value.chars() {
+			self.try_push(i)?;
+		}
+        Ok(())
+	}
+
+	#[inline]
+	pub fn try_insert(&mut self, idx: usize, ch: char) -> Result<(), AllocError>  {
+		self.vec.try_insert(idx, ch as u8)
+	}
+
+	pub fn try_insert_str(&mut self, mut idx: usize, string: &str) -> Result<(), AllocError>  {
+		for i in string.chars() {
+			self.vec.try_insert(idx, i as u8)?;
+			idx += 1;
+		}
+        Ok(())
+	}
+
+
+/* Deletion function wrapper */
 	pub fn pop(&mut self) -> Option<char> {
 		match self.vec.pop() {
 			Some(x) => Some(x as char),
@@ -85,18 +131,6 @@ impl String {
 	#[inline]
 	pub fn clear(&mut self) {
 		self.vec.clear();
-	}
-
-	#[inline]
-	pub fn insert(&mut self, idx: usize, ch: char) {
-		self.vec.insert(idx, ch as u8);
-	}
-
-	pub fn insert_str(&mut self, mut idx: usize, string: &str) {
-		for i in string.chars() {
-			self.vec.insert(idx, i as u8);
-			idx += 1;
-		}
 	}
 }
 
