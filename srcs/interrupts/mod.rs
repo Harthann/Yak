@@ -1,4 +1,5 @@
 const IDT_SIZE: usize = 32;
+const IDT_MAX_DESCRIPTORS: usize = 256;
 
 static mut IDT: IDT = IDT {
 	idt_entries: [InterruptDescriptor {
@@ -7,7 +8,7 @@ static mut IDT: IDT = IDT {
 					zero: 0,
 					type_attr: 0,
 					offset_1: 0
-				}; 256],
+				}; IDT_MAX_DESCRIPTORS],
 	idtr: IDTR {
 		size: 0,
 		offset: 0
@@ -16,17 +17,18 @@ static mut IDT: IDT = IDT {
 
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
 pub unsafe fn exception_handler() {
-	core::arch::asm!("cli; hlt");
+	core::panic!("Exception handler !");
 }
 
 pub unsafe fn init_idt() {
 	let mut i;
 
 	IDT.idtr.offset = (&IDT.idt_entries as *const _) as u32;
-	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_SIZE) as u16;
+	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_MAX_DESCRIPTORS - 1) as u16;
 	i = 0;
 	while i < IDT_SIZE {
-		IDT.idt_entries[i].init(0, 0x08, 0x8e);
+		let offset: u32 = (&exception_handler as *const _) as u32;
+		IDT.idt_entries[i].init(offset, 0x08, 0x8e);
 		i += 1;
 	}
 	core::arch::asm!("lidt [{}]", in(reg) &IDT.idtr as *const _);
@@ -34,7 +36,7 @@ pub unsafe fn init_idt() {
 
 #[repr(align(16))]
 pub struct IDT {
-	pub idt_entries: [InterruptDescriptor; 256],
+	pub idt_entries: [InterruptDescriptor; IDT_MAX_DESCRIPTORS],
 	pub idtr: IDTR
 }
 
