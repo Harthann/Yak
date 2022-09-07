@@ -9,13 +9,6 @@
 ; gdt
 extern gdt_desc
 
-%macro reload_gdt 0
-	lgdt [gdt_desc]
-	jmp 0x08:.reload_cs
-	.reload_cs:
-	reload_segments
-%endmacro
-
 %macro reload_segments 0
 	mov ax, 0x10
 	mov ds, ax
@@ -26,7 +19,6 @@ extern gdt_desc
 %endmacro
 
 ; paging
-
 %macro setup_page_table 2
 	mov eax, 0x0
 	mov ebx, %2
