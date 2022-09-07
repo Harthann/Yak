@@ -72,6 +72,9 @@ impl<T> Vec<T> {
 
 impl<T, A: Allocator> Vec<T,A> {
 
+/*
+** Informative gettersabout the vector metadata
+*/
 	pub fn capacity(&self) -> usize {
 		self.capacity
 	}
@@ -86,10 +89,6 @@ impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn allocator(&self) -> &A {
 		&self.alloc
-	}
-
-	pub fn clear(&mut self) {
-		self.len = 0;
 	}
 
 	pub fn realloc(&mut self, new_size: usize) -> Result<(), AllocError> {
@@ -110,17 +109,14 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
-	pub fn reserve(&mut self, additional: usize) {
-		match self.try_reserve(additional) {
-			Ok(_) => {},
-			Err(_) => panic!("Couldn't reserve more")
-		};
-	}
-
 	pub fn try_reserve(&mut self, additional: usize) -> Result<(), AllocError> {
 		self.realloc(self.capacity() + additional)
 	}
 
+/*
+** Insertion function implementations, if an allocation fail code will panic
+** For safety and custom behaviour these can be call with {try_} as prefix
+*/
 	pub fn push(&mut self, value: T) {
 		if self.len + 1 > self.capacity {
 			self.reserve(8);
@@ -172,6 +168,19 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
+	pub fn reserve(&mut self, additional: usize) {
+		match self.try_reserve(additional) {
+			Ok(_) => {},
+			Err(_) => panic!("Couldn't reserve more")
+		};
+	}
+
+/*=== Deletion functions ===*/
+	pub fn clear(&mut self) {
+		self.len = 0;
+	}
+
+
 	pub fn remove(&mut self, index: usize) -> Option<T> {
 		if self.len < index {
 			None
@@ -187,6 +196,7 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
+/*=== Conversion ===*/
 	pub fn as_slice(&self) -> &[T] {
 		self
 	}
