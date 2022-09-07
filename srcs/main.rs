@@ -97,8 +97,10 @@ use crate::interrupts::init_idt;
 #[no_mangle]
 pub extern "C" fn kinit() {
 	unsafe{init_idt()};
+	unsafe{core::arch::asm!("int 0x80")};
 //	multiboot::read_tags();
 	init_paging();
+	unsafe{core::arch::asm!("int 0x80")};
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 	/* HEAP USER */
