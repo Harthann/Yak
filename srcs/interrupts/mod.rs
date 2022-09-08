@@ -2,10 +2,43 @@ const GDT_OFFSET_KERNEL_CODE: u16 = 0x08; /* TODO: compute it ? */
 const IDT_SIZE: usize = 32;
 const IDT_MAX_DESCRIPTORS: usize = 256;
 
-static mut ISR_STUB_TABLE: [u32; IDT_SIZE] = [0; IDT_SIZE];
+const STR_EXCEPTION: [&'static str; IDT_SIZE] = [
+	"Divide-by-zero",
+	"Debug",
+	"Non-maskable Interrupt",
+	"Breakpoint",
+	"Overflow",
+	"Bound Range Exceeded",
+	"Invalid Opcode",
+	"Device Not Available",
+	"Double Fault",
+	"Coprocessor Segment Overrun",
+	"Invalid TSS",
+	"Segment Not Present",
+	"Stack-Segment Fault",
+	"General Protection Fault",
+	"Page Fault",
+	"Reserved",
+	"x87 Floating-Point Exception",
+	"Alignment Check",
+	"Machine Check",
+	"SIMD Floating-Point Exception",
+	"Virtualization Exception",
+	"Control Protection Exception",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Reserved",
+	"Hypervisor Injection Exception",
+	"VMM Communication Exception",
+	"Security Exception",
+	"Reserved",
+	"Triple Fault"
+];
 
 extern "C" {
-        static mut isr_stub_table: [u32; IDT_SIZE];
+	static mut isr_stub_table: [u32; IDT_SIZE];
 }
 
 static mut IDT: IDT = IDT {
@@ -45,11 +78,15 @@ pub struct Registers {
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
-	let int_no: u32 = reg.int_no;
-	if int_no == 3 || int_no == 4 {
-		crate::kprintln!("Exception ! {}", int_no);
+	let int_no: usize = reg.int_no as usize;
+	if int_no < IDT_SIZE {
+		if int_no == 3 || int_no == 4 {
+			crate::kprintln!("{} exception (code: {})", STR_EXCEPTION[int_no], int_no);
+		} else {
+			panic!("{} exception (code: {})", STR_EXCEPTION[int_no], int_no);
+		}
 	} else {
-		panic!("Exception ! {}", int_no);
+		panic!("Unknown Exception: {}", int_no);
 	}
 }
 
@@ -58,11 +95,6 @@ pub unsafe fn init_idt() {
 
 	IDT.idtr.offset = (&IDT.idt_entries[0] as *const _) as u32;
 	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_MAX_DESCRIPTORS - 1) as u16;
-	i = 0;
-	while i < IDT_SIZE {
-		ISR_STUB_TABLE[i] = exception_handler as u32;
-		i += 1;
-	}
 	i = 0;
 	while i < IDT_SIZE {
 		let offset: u32 = isr_stub_table[i];
