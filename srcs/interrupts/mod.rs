@@ -22,10 +22,35 @@ static mut IDT: IDT = IDT {
 	}
 };
 
+#[repr(C, packed)]
+pub struct Registers {
+	ds:			u32,
+	edi:		u32,
+	esi:		u32,
+	ebp:		u32,
+	esp:		u32,
+	ebx:		u32,
+	edx:		u32,
+	ecx:		u32,
+	eax:		u32,
+	int_no:		u32,
+	err_code:	u32,
+	eip:		u32,
+	cs:			u32,
+	eflags:		u32,
+	useresp:	u32,
+	ss:			u32
+}
+
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
 #[no_mangle]
-pub extern "C" fn exception_handler(i: u32) {
-	panic!("Exception ! {}", i);
+pub extern "C" fn exception_handler(reg: Registers) {
+	let int_no: u32 = reg.int_no;
+	if int_no == 3 || int_no == 4 {
+		crate::kprintln!("Exception ! {}", int_no);
+	} else {
+		panic!("Exception ! {}", int_no);
+	}
 }
 
 pub unsafe fn init_idt() {
@@ -45,24 +70,23 @@ pub unsafe fn init_idt() {
 		i += 1;
 	}
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
-//	core::arch::asm!("sti");
 }
 
 #[repr(C, align(16))]
-pub struct IDT {
+struct IDT {
 	pub idt_entries: [InterruptDescriptor; IDT_MAX_DESCRIPTORS],
 	pub idtr: IDTR
 }
 
 #[repr(packed)]
-pub struct IDTR {
+struct IDTR {
 	pub size:			u16,
 	pub offset:			u32
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
-pub struct InterruptDescriptor {
+struct InterruptDescriptor {
 	offset_0:		u16,
 	selector:		u16,
 	zero:			u8,

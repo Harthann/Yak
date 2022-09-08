@@ -16,9 +16,7 @@ RUST_SRCS		=	main.rs \
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
 BOOTSRCS		=	boot.s \
-				gdt.s \
-				idt.s
+					gdt.s \
+					idt.s
 
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
-
-
