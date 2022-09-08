@@ -45,7 +45,7 @@ pub unsafe fn init_idt() {
 		i += 1;
 	}
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
-	core::arch::asm!("sti");
+//	core::arch::asm!("sti");
 }
 
 #[repr(C, align(16))]
