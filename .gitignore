@@ -2,7 +2,7 @@
 *.swo
 *.o
 *.d
-kfs_*
+kfs*
 *.bin
 iso/
 
