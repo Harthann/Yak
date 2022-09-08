@@ -19,9 +19,9 @@ static mut IDT: IDT = IDT {
 };
 
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
-pub unsafe fn exception_handler() {
-	crate::kprintln!("Exception !");
-	core::arch::asm!("cli; hlt");
+#[no_mangle]
+pub extern "C" fn exception_handler() {
+	panic!("Exception !");
 }
 
 pub unsafe fn init_idt() {
@@ -31,19 +31,17 @@ pub unsafe fn init_idt() {
 	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_MAX_DESCRIPTORS - 1) as u16;
 	i = 0;
 	while i < IDT_SIZE {
-		ISR_STUB_TABLE[i] = (&exception_handler as *const _) as u32;
+		ISR_STUB_TABLE[i] = exception_handler as u32;
 		i += 1;
 	}
 	i = 0;
 	while i < IDT_SIZE {
-		let offset: u32 = (&ISR_STUB_TABLE[i] as *const _) as u32;
+		let offset: u32 = ISR_STUB_TABLE[i];
 		IDT.idt_entries[i].init(offset, GDT_OFFSET_KERNEL_CODE, 0x8e);
 		i += 1;
 	}
-	crate::kprintln!("itdr: {:#x}", (&IDT.idtr as *const _) as u32);
-	core::arch::asm!("lidt [{}]", in(reg) &IDT.idtr as *const _);
+	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
 	core::arch::asm!("sti");
-	crate::kprintln!("lol");
 }
 
 #[repr(C, align(16))]
