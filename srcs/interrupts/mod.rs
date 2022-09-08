@@ -30,11 +30,11 @@ const STR_EXCEPTION: [&'static str; IDT_SIZE] = [
 	"Reserved",
 	"Reserved",
 	"Reserved",
+	"Reserved",
 	"Hypervisor Injection Exception",
 	"VMM Communication Exception",
 	"Security Exception",
-	"Reserved",
-	"Triple Fault"
+	"Reserved"
 ];
 
 extern "C" {
