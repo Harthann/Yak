@@ -97,17 +97,12 @@ use crate::interrupts::init_idt;
 #[no_mangle]
 pub extern "C" fn kinit() {
 	unsafe{init_idt()};
-	unsafe{core::arch::asm!("int3")};
 //	multiboot::read_tags();
 	init_paging();
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
-	/* HEAP USER */
-	unsafe {init_heap(0x0 as u32, 100 * 4096, PAGE_WRITABLE | PAGE_USER, false , &mut ALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
-	let stack_addr: VirtAddr = 0xbfffffff; /* stack user */
-	init_stack(stack_addr, 8192, PAGE_WRITABLE | PAGE_USER, false);
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
