@@ -126,7 +126,7 @@ clean:
 				rm -rf $(DIR_ISO)
 
 fclean:			clean
-				rm -rf $(NAME)
+				rm -rf kfs*
 
 re:				fclean
 				@$(MAKE) --no-print-directory
