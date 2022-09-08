@@ -1,5 +1,12 @@
+const GDT_OFFSET_KERNEL_CODE: u16 = 0x08; /* TODO: compute it ? */
 const IDT_SIZE: usize = 32;
 const IDT_MAX_DESCRIPTORS: usize = 256;
+
+static mut ISR_STUB_TABLE: [u32; IDT_SIZE] = [0; IDT_SIZE];
+
+extern "C" {
+        static mut isr_stub_table: [u32; IDT_SIZE];
+}
 
 static mut IDT: IDT = IDT {
 	idt_entries: [InterruptDescriptor {
@@ -16,35 +23,44 @@ static mut IDT: IDT = IDT {
 };
 
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
-pub unsafe fn exception_handler() {
-	core::panic!("Exception handler !");
+#[no_mangle]
+pub extern "C" fn exception_handler(i: u32) {
+	panic!("Exception ! {}", i);
 }
 
 pub unsafe fn init_idt() {
 	let mut i;
 
-	IDT.idtr.offset = (&IDT.idt_entries as *const _) as u32;
+	IDT.idtr.offset = (&IDT.idt_entries[0] as *const _) as u32;
 	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_MAX_DESCRIPTORS - 1) as u16;
 	i = 0;
 	while i < IDT_SIZE {
-		let offset: u32 = (&exception_handler as *const _) as u32;
-		IDT.idt_entries[i].init(offset, 0x08, 0x8e);
+		ISR_STUB_TABLE[i] = exception_handler as u32;
 		i += 1;
 	}
-	core::arch::asm!("lidt [{}]", in(reg) &IDT.idtr as *const _);
+	i = 0;
+	while i < IDT_SIZE {
+		let offset: u32 = isr_stub_table[i];
+		IDT.idt_entries[i].init(offset, GDT_OFFSET_KERNEL_CODE, 0x8e);
+		i += 1;
+	}
+	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
+//	core::arch::asm!("sti");
 }
 
-#[repr(align(16))]
+#[repr(C, align(16))]
 pub struct IDT {
 	pub idt_entries: [InterruptDescriptor; IDT_MAX_DESCRIPTORS],
 	pub idtr: IDTR
 }
 
+#[repr(packed)]
 pub struct IDTR {
 	pub size:			u16,
 	pub offset:			u32
 }
 
+#[repr(packed)]
 #[derive(Copy, Clone)]
 pub struct InterruptDescriptor {
 	offset_0:		u16,

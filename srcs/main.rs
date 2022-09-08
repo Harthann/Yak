@@ -12,7 +12,6 @@
 #![allow(incomplete_features)]
 #![no_main]
 
-
 /*  Custom test framwork    */
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test::test_runner)]
@@ -78,11 +77,9 @@ use cli::Command;
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
-
 /*  Code from boot section  */
 #[allow(dead_code)]
 extern "C" {
-	static gdt_desc: u16;
 	fn stack_bottom();
 	fn stack_top();
 	fn heap();
@@ -93,20 +90,24 @@ use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
 
 use crate::interrupts::init_idt;
 
+use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
+
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	unsafe{init_idt()};
 //	multiboot::read_tags();
+	/* Init paging and remove identity paging */
 	init_paging();
+	/* Update gdtr with higher half kernel gdt addr */
+	unsafe {
+		update_gdtr();
+		reload_gdt!();
+		init_idt();
+	}
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
-	/* HEAP USER */
-	unsafe {init_heap(0x0 as u32, 100 * 4096, PAGE_WRITABLE | PAGE_USER, false , &mut ALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
-	let stack_addr: VirtAddr = 0xbfffffff; /* stack user */
-	init_stack(stack_addr, 8192, PAGE_WRITABLE | PAGE_USER, false);
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 

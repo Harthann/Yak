@@ -42,12 +42,12 @@ NAME			?=	kfs_$(VERSION)
 all:			$(NAME)
 
 boot:			$(NAME)
-				$(QEMU) -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log
+				$(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
 				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
-				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kmain" -ex "c"
+				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c"
 				pkill qemu
 
 release:
