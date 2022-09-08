@@ -86,7 +86,7 @@ extern "C" {
 }
 
 use crate::memory::{init_heap, init_stack, VirtAddr};
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
+use crate::memory::paging::PAGE_WRITABLE;
 
 use crate::interrupts::init_idt;
 

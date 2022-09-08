@@ -46,13 +46,13 @@ fn vector_free() {
 
 #[test_case]
 fn vector_big_alloc() {
-	use crate::vec::{Global, AllocError};
+	use crate::vec::{KGlobal, AllocError};
 
 	print_fn!();
 
 /* Should send an error */
 	{
-		let x = Vec::<u32, Global>::try_alloc(200000, &Global);
+		let x = Vec::<u32, KGlobal>::try_alloc(200000, &KGlobal);
 		assert_eq!(x, Err(AllocError));
 	}
 

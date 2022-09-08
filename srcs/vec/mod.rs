@@ -5,8 +5,8 @@ use crate::GLOBAL_ALIGN;
  use crate::memory::allocator::{
 Allocator,
 AllocError,
-KGlobal,
-Global
+//Global,
+KGlobal
 };
 
 #[cfg(test)]

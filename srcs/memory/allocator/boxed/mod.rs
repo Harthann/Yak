@@ -6,7 +6,7 @@ use core::ptr::NonNull;
 use crate::memory::allocator::{
 AllocError,
 Allocator,
-Global,
+//Global,
 KGlobal
 };
 
