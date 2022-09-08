@@ -19,8 +19,7 @@ static mut IDT: IDT = IDT {
 };
 
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
-#[no_mangle]
-pub extern "C" fn exception_handler() {
+pub fn exception_handler() {
 	panic!("Exception !");
 }
 

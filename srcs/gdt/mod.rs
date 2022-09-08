@@ -1,6 +1,24 @@
 use core::fmt;
 use crate::kprintln;
 
+pub const KERNEL_BASE: usize = 0xc0000000;
+
+extern "C" {
+	pub fn gdt_start();
+	pub fn gdt_desc();
+}
+
+#[repr(packed)]
+pub struct GDTR {
+	size: u16,
+	offset: u32
+}
+
+pub unsafe fn update_gdtr() {
+	let gdtr: &mut GDTR = &mut *((gdt_desc as usize + KERNEL_BASE) as *mut _);
+	gdtr.offset = (gdt_start as usize + KERNEL_BASE) as u32;
+}
+
 pub struct SegmentDescriptor {
 	limit:			u16,
 	base:			[u8; 3],
@@ -57,15 +75,10 @@ limit_flags: {:#06b}",
 }
 
 #[allow(dead_code)]
-extern "C" {
-	fn gdt_desc();
-}
-
-#[allow(dead_code)]
 pub fn print_gdt() {
-	let mut segments: *mut SegmentDescriptor = 0x800 as *mut _;
+	let mut segments: *mut SegmentDescriptor = (gdt_start as usize + KERNEL_BASE) as *mut _;
 	let mut id = 0;
-	let end = gdt_desc as *mut SegmentDescriptor;
+	let end = (gdt_desc as usize + KERNEL_BASE) as *mut SegmentDescriptor;
 	while segments < end {
 		let segment = unsafe{&*segments};
 		kprintln!("\nSegment {}:\n{}", id, segment);
@@ -76,7 +89,7 @@ pub fn print_gdt() {
 
 #[allow(dead_code)]
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor{
-	let segments: *mut SegmentDescriptor = 0x800 as *mut _;
+	let segments: *mut SegmentDescriptor = (gdt_start as usize + KERNEL_BASE) as *mut _;
 	unsafe{&mut *(segments.add(index))}
 }
 
@@ -92,13 +105,15 @@ pub fn set_segment(index:usize, base: u32, limit:u32, flag:u8, access:u8) {
 
 #[macro_export]
 macro_rules! reload_gdt {
-	() => (unsafe{core::arch::asm!("lgdt [gdt_desc]")};
-	unsafe{core::arch::asm!("ljmp $0x08, $2f",
-				"2:",
-				"movw $0x10, %ax",
-				"movw %ax, %ds",
-				"movw %ax, %es",
-				"movw %ax, %fs",
-				"movw %ax, %gs",
-				"movw %ax, %ss", options(att_syntax))};);
+	() => (
+		core::arch::asm!("lgdt [{}]", in(reg) (gdt_desc as usize + KERNEL_BASE));
+		core::arch::asm!("ljmp $0x08, $2f",
+			"2:",
+			"movw $0x10, %ax",
+			"movw %ax, %ds",
+			"movw %ax, %es",
+			"movw %ax, %fs",
+			"movw %ax, %gs",
+			"movw %ax, %ss", options(att_syntax));
+	);
 }
