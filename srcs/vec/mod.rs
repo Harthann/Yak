@@ -72,6 +72,9 @@ impl<T> Vec<T> {
 
 impl<T, A: Allocator> Vec<T,A> {
 
+/*
+** Informative gettersabout the vector metadata
+*/
 	pub fn capacity(&self) -> usize {
 		self.capacity
 	}
@@ -86,10 +89,6 @@ impl<T, A: Allocator> Vec<T,A> {
 
 	pub fn allocator(&self) -> &A {
 		&self.alloc
-	}
-
-	pub fn clear(&mut self) {
-		self.len = 0;
 	}
 
 	pub fn realloc(&mut self, new_size: usize) -> Result<(), AllocError> {
@@ -110,17 +109,14 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
-	pub fn reserve(&mut self, additional: usize) {
-		match self.try_reserve(additional) {
-			Ok(_) => {},
-			Err(_) => panic!("Couldn't reserve more")
-		};
-	}
-
 	pub fn try_reserve(&mut self, additional: usize) -> Result<(), AllocError> {
 		self.realloc(self.capacity() + additional)
 	}
 
+/*
+** Insertion function implementations, if an allocation fail code will panic
+** For safety and custom behaviour these can be call with {try_} as prefix
+*/
 	pub fn push(&mut self, value: T) {
 		if self.len + 1 > self.capacity {
 			self.reserve(8);
@@ -131,17 +127,6 @@ impl<T, A: Allocator> Vec<T,A> {
 						.add(self.len)
 						.write(value); }
 		self.len += 1;
-	}
-
-	pub fn pop(&mut self) -> Option<T> {
-		if self.len == 0 {
-			None
-		} else {
-			unsafe {
-				self.len -= 1;
-				Some(core::ptr::read(self.as_ptr().add(self.len)))
-			}
-		}
 	}
 
 	pub fn insert(&mut self, index: usize, element: T) {
@@ -172,6 +157,72 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
+	pub fn reserve(&mut self, additional: usize) {
+		match self.try_reserve(additional) {
+			Ok(_) => {},
+			Err(_) => panic!("Couldn't reserve more")
+		};
+	}
+
+    pub fn try_push(&mut self, value: T) -> Result<(), AllocError> {
+		if self.len + 1 > self.capacity {
+			self.try_reserve(8)?;
+		} else if self.ptr.is_none() {
+			self.try_reserve(8)?;
+		}
+		unsafe{ self.ptr.unwrap().as_ptr()
+						.add(self.len)
+						.write(value); }
+		self.len += 1;
+        Ok(())
+	}
+
+	pub fn try_insert(&mut self, index: usize, element: T) -> Result<(), AllocError> {
+		if self.len + 1 > self.capacity {
+			self.try_reserve(8)?;
+		} else if self.ptr.is_none() {
+			self.try_reserve(8)?;
+		}
+
+		unsafe{
+			core::ptr::copy(self.as_ptr().add(index),
+							self.as_mut_ptr().add(index + 1),
+							self.len() - index);
+			core::ptr::write(self.as_mut_ptr().add(index), element);
+		}
+		self.len += 1;
+        Ok(())
+	}
+
+	pub fn try_extend_from_slice(&mut self, elements: &[T]) -> Result<(), AllocError> {
+		if self.len + elements.len() > self.capacity {
+			self.try_reserve(self.capacity() + elements.len())?;
+		}
+		unsafe{
+			core::ptr::copy(elements.as_ptr(),
+							self.as_mut_ptr().add(self.len()),
+							elements.len());
+			self.len += elements.len();
+		}
+        Ok(())
+	}
+
+/*=== Deletion functions ===*/
+	pub fn clear(&mut self) {
+		self.len = 0;
+	}
+
+	pub fn pop(&mut self) -> Option<T> {
+		if self.len == 0 {
+			None
+		} else {
+			unsafe {
+				self.len -= 1;
+				Some(core::ptr::read(self.as_ptr().add(self.len)))
+			}
+		}
+	}
+
 	pub fn remove(&mut self, index: usize) -> Option<T> {
 		if self.len < index {
 			None
@@ -187,6 +238,7 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
+/*=== Conversion ===*/
 	pub fn as_slice(&self) -> &[T] {
 		self
 	}
