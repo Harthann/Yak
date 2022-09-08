@@ -78,11 +78,9 @@ use cli::Command;
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
-
 /*  Code from boot section  */
 #[allow(dead_code)]
 extern "C" {
-	static gdt_desc: u16;
 	fn stack_bottom();
 	fn stack_top();
 	fn heap();
@@ -93,12 +91,20 @@ use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
 
 use crate::interrupts::init_idt;
 
+use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
+
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	unsafe{init_idt()};
 //	multiboot::read_tags();
+	/* Init paging and remove identity paging */
 	init_paging();
+	/* Update gdtr with higher half kernel gdt addr */
+	unsafe {
+		update_gdtr();
+		reload_gdt!();
+		init_idt();
+	}
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */

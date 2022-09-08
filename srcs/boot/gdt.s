@@ -151,6 +151,6 @@ gdt_end:
 ;|31         0|15   0|
 ;|------------|------|
 gdt_desc:
-	offset	dw gdt_end - gdt_start
-	size	dd gdt_start
+	size	dw gdt_end - gdt_start
+	offset	dd gdt_start
 tss:
