@@ -4,6 +4,10 @@ const IDT_MAX_DESCRIPTORS: usize = 256;
 
 static mut ISR_STUB_TABLE: [u32; IDT_SIZE] = [0; IDT_SIZE];
 
+extern "C" {
+        static mut isr_stub_table: [u32; IDT_SIZE];
+}
+
 static mut IDT: IDT = IDT {
 	idt_entries: [InterruptDescriptor {
 					offset_0: 0,
@@ -20,8 +24,8 @@ static mut IDT: IDT = IDT {
 
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
 #[no_mangle]
-pub extern "C" fn exception_handler() {
-	panic!("Exception !");
+pub extern "C" fn exception_handler(i: u32) {
+	panic!("Exception ! {}", i);
 }
 
 pub unsafe fn init_idt() {
@@ -36,7 +40,7 @@ pub unsafe fn init_idt() {
 	}
 	i = 0;
 	while i < IDT_SIZE {
-		let offset: u32 = ISR_STUB_TABLE[i];
+		let offset: u32 = isr_stub_table[i];
 		IDT.idt_entries[i].init(offset, GDT_OFFSET_KERNEL_CODE, 0x8e);
 		i += 1;
 	}
