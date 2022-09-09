@@ -55,6 +55,8 @@ static mut IDT: IDT = IDT {
 	}
 };
 
+
+#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
 pub struct Registers {
 	ds:			u32,
@@ -80,13 +82,13 @@ pub struct Registers {
 pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
 	if int_no < IDT_SIZE {
-		if int_no == 3 || int_no == 4 {
-			crate::kprintln!("{} exception (code: {})", STR_EXCEPTION[int_no], int_no);
-		} else {
-			panic!("{} exception (code: {})", STR_EXCEPTION[int_no], int_no);
+		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
+		if int_no != 3 && int_no != 4 {
+			unsafe{core::arch::asm!("hlt")};
 		}
 	} else {
-		panic!("Unknown Exception: {}", int_no);
+		crate::kprintln!("Unknown exception (code: {}):\n{:#x?}", int_no, reg);
+		unsafe{core::arch::asm!("hlt")};
 	}
 }
 
