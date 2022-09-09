@@ -81,6 +81,8 @@ pub struct Registers {
 	ss:			u32
 }
 
+use crate::pic::{PIC1_INTERRUPT, PIC2_INTERRUPT};
+
 /* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
@@ -93,19 +95,16 @@ pub extern "C" fn exception_handler(reg: Registers) {
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
 	} else {
-		if int_no < 0x21 && int_no > 0x28 + 7 {
+		if int_no < PIC1_INTERRUPT as usize && int_no > PIC2_INTERRUPT as usize + 7 {
 			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
 			unsafe{core::arch::asm!("hlt")};
 		} else {
-			crate::kprintln!("\nKeyboard event (code: {}):\n{:#x?}", int_no, reg);
+//			crate::kprintln!("\nKeyboard event (code: {}):\n{:#x?}", int_no, reg);
+			crate::pic::end_of_interrupts(int_no - PIC1_INTERRUPT as usize);
 			if crate::keyboard::keyboard_event() {
 				let charcode = crate::keyboard::handle_event();
 				crate::clihandle!(charcode);
 			}
-			crate::pic::irq_clear_mask(0x00);
-			crate::pic::irq_clear_mask(0x08);
-			crate::pic::pic_set_interrupt_masks();
-//			unsafe{core::arch::asm!("sti")};
 		}
 	}
 }

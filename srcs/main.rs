@@ -137,12 +137,7 @@ pub extern "C" fn kmain() -> ! {
 	unsafe{core::arch::asm!("int 0x80")};
 
 	kprint!("$> ");
-	loop {
-//		if keyboard::keyboard_event() {
-//			let charcode = keyboard::handle_event();
-//			clihandle!(charcode);
-//		}
-	}
+	loop {}
 }
 
 /*  Function to put all tests and keep main clean */

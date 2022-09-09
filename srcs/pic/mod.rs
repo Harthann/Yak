@@ -87,14 +87,17 @@ pub fn irq_clear_mask(mut irq: usize)
 	outb(port, value);
 }
 
+pub const PIC1_INTERRUPT: u8 = 0x20;
+pub const PIC2_INTERRUPT: u8 = 0x28;
+
 pub fn pic_set_interrupt_masks()
 {
-	irq_set_mask(0x00);
-	irq_set_mask(0x08);
+	irq_set_mask((PIC1_INTERRUPT - PIC1_INTERRUPT) as usize);
+	irq_set_mask((PIC2_INTERRUPT - PIC1_INTERRUPT) as usize);
 	unsafe{core::arch::asm!("sti")};
 }
 
 pub fn setup_pic8259() {
-	pic_remap(0x20, 0x28);
+	pic_remap(PIC1_INTERRUPT, PIC2_INTERRUPT);
 	pic_set_interrupt_masks();
 }
