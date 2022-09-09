@@ -1,7 +1,10 @@
 use core::arch::asm;
+use core::mem::size_of;
+
 use crate::{kprint, kprintln, hexdump, screenclear};
 use crate::io;
-use core::mem::size_of;
+use crate::string::String;
+use crate::memory::allocator;
 
 pub static COMMANDS: [fn(&Command); 6] = [reboot, halt, hexdump_parser, clear, help, shutdown];
 const KNOWN_CMD: [&str; 6]= ["reboot", "halt", "hexdump", "clear", "help", "shutdown"];
@@ -31,46 +34,45 @@ fn shutdown(_: &Command) {
     io::outb(0xf4, 0x10);
 }
 
-fn hextou(slice: &[char]) -> Option<usize> {
+fn hextou(string: &str) -> Option<usize> {
+	let mut slice = string.chars();
 	let mut addr: usize = 0;
 	let mut byte;
 
-	if slice.len() < 2 || slice.len() > (2 + size_of::<usize>() * 2 ) || (slice[0] != '0' || slice[1] != 'x') {
+	if string.len() < 2 || string.len() > (2 + size_of::<usize>() * 2) || !string.starts_with("0x") {
 		return None;
 	}
-	for i in slice.iter().skip(2) {
+	for i in slice.skip(2) {
 		if !i.is_ascii_hexdigit() {
 			return None;
 		}
 		if i.is_ascii_digit()	{
-			byte = *i as u8 - b'0';
+			byte = i as u8 - b'0';
 		} else {
-			byte = *i as u8 - b'a' + 10;
+			byte = i as u8 - b'a' + 10;
 		}
 		addr = (addr << 4) | (byte & 0xf) as usize;
 	}
 	return Some(addr);
 }
 
-fn atou(slice: &[char]) -> Option<usize> {
+fn atou(string: &str) -> Option<usize> {
+	let mut slice = string.chars();
 	let mut num: usize = 0;
 
-	if slice[0] == '-' {
-		return None;
-	}
 	for i in slice {
 		if !i.is_ascii_digit() {
 			return None;
 		}
 		num *= 10;
-		num += (*i as u8 - b'0') as usize;
+		num += (i as u8 - b'0') as usize;
 	}
 	return Some(num);
 }
 
 fn hexdump_parser(command: &Command) {
-	let cmd = command.command;
-	let iter = cmd.split(|a| *a == ' ' || *a == '\t' || *a == '\0');
+	let cmd = &command.command;
+	let iter = cmd.split(&[' ', '\t', '\0'][..]);
 
 	let mut count: i32 = 0;
 	let mut addr: usize = 0;
@@ -89,65 +91,47 @@ fn hexdump_parser(command: &Command) {
 		if index == 1  {
 			match hextou(item) {
 			Some(x) => addr = x,
-			_		=> {kprintln!("Invalid arg"); return;},
+			_		=> {kprintln!("Invalid arg hex"); return;},
 			}
 		} else if index == 2 {
 			match atou(item) {
 			Some(x) => size = x,
-			_		=> {kprintln!("Invalid arg"); return;},
+			_		=> {kprintln!("Invalid arg int"); return;},
 			}
 		}
 	}
 	hexdump!(addr as *const u8, size);
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Command {
-	pub command: [char; 76],
-	pub length: usize,
+	pub command: String
 }
 
 impl Command {
 	pub const fn new() -> Command {
 		Command {
-			command: ['\0'; 76],
-			length: 0
+			command: String::new()
 		}
 	}
 
-	fn append(&mut self, x: char) -> Result<(), ()> {
-		if self.length < 76 {
-			self.command[self.length] = x;
-			self.length += 1;
-			return Ok(());
-		}
-		return Err(());
+	fn append(&mut self, x: char) -> Result<(), allocator::AllocError> {
+		self.command.try_push(x)
 	}
 
-	pub fn pop_back(&mut self) {
-		if self.length != 0 {
-			self.length -= 1;
-			self.command[self.length] = '\0';
-		}
+	pub fn len(&self) -> usize {
+		self.command.len()
 	}
 
 	pub fn clear(&mut self) {
-		while  {
-			if self.length != 0 {
-				self.length -= 1;
-			}
-			self.command[self.length] = '\0';
-			self.length != 0
-		} {}
+		self.command.clear();
 	}
 
 	pub fn is_known(&self) -> Option<usize> {
 		let mut j = 0;
 		while j < KNOWN_CMD.len() {
-			let len = KNOWN_CMD[j].chars().count();
-			if (self.command[len] == '\0' || self.command[len] == ' ')
-				&& KNOWN_CMD[j].chars().zip(self.command.iter()).position(|(a, b)| a != *b) == None
-			{
+			let cmd: &str = self.command.split(" ").nth(0)?;
+			if Some(cmd) == Some(KNOWN_CMD[j]) {
 				return Some(j);
 			}
 			j += 1;
@@ -163,11 +147,11 @@ impl Command {
 				self.clear();
 			}
 		} else if charcode == '\x08' {
-			self.pop_back();
+			self.command.pop();
 		} else if charcode == '\n' {
 			match self.is_known() {
 				Some(x) => COMMANDS[x](&self),
-				_		=> {if self.length != 0 {kprintln!("Unknown command. Type `help` to list available commands")}},
+				_		=> {if self.command.len() != 0 {kprintln!("Unknown command. Type `help` to list available commands")}},
 			}
 			self.clear();
 			kprint!("$> ");

@@ -1,18 +1,13 @@
-use core::ptr::{NonNull};
-use core::alloc::{Layout, };
+use core::ptr::NonNull;
+use core::alloc::Layout;
 use core::ops;
 use crate::GLOBAL_ALIGN;
- use crate::memory::allocator::{
-Allocator,
-AllocError,
-//Global,
-KGlobal
-};
+use crate::memory::allocator::{Allocator,AllocError,/*Global,*/KGlobal};
 
 #[cfg(test)]
 pub mod test;
 
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone)]
 pub struct Vec<T, A: Allocator = KGlobal> {
 	ptr: Option<NonNull<T>>,
 	capacity: usize,
@@ -22,20 +17,20 @@ pub struct Vec<T, A: Allocator = KGlobal> {
 
 #[macro_export]
 macro_rules! vec {
-    () => (
-        $crate::vec::Vec::new()
-    );
-    ($elem:expr; $n:expr) => (
-        Vec::from_elem($elem, $n)
-    );
-    ($($x:expr),+ $(,)?) => (
-        Vec::into_vec(&[$($x),+])
-    );
+	() => (
+		$crate::vec::Vec::new()
+	);
+	($elem:expr; $n:expr) => (
+		Vec::from_elem($elem, $n)
+	);
+	($($x:expr),+ $(,)?) => (
+		Vec::into_vec(&[$($x),+])
+	);
 }
 
 impl<T> Vec<T> {
 
-	pub fn new() -> Vec<T> {
+	pub const fn new() -> Vec<T> {
 		Vec {
 			ptr: None,
 			capacity: 0,
@@ -292,7 +287,7 @@ impl<T: core::fmt::Display + core::fmt::Debug, A: Allocator> core::fmt::Display 
 	}
 }
 
-/* Drop will simplu deallocate our vector from the heap using the allocator */
+/* Drop will simply deallocate our vector from the heap using the allocator */
 impl<T, A: Allocator> Drop for Vec<T,A> {
 	fn drop(&mut self) {
 		if self.ptr.is_some() {

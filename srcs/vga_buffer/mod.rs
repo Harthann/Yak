@@ -10,7 +10,7 @@ use color::ColorCode;
 mod cursor;
 use cursor::Cursor;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct Screen {
 	cursor: Cursor,
 	buffer: Buffer,
@@ -72,7 +72,7 @@ impl Buffer {
 }
 
 pub static mut WRITER: Writer = Writer {
-	screens:		[Screen::new(); NB_SCREEN],
+	screens:		[Screen::new(), Screen::new(), Screen::new()],
 	screen_index:	0,
 	vga_buffer:		VGABUFF_OFFSET as _
 };
@@ -98,9 +98,14 @@ impl Writer {
 				let mut pos: (usize, usize) = self.screens[self.screen_index].cursor.get_pos();
 				if byte == 0x08
 				{
-					if pos.0 == 0 || self.get_screen().get_command().length == 0
+					if self.get_screen().get_command().len() == 0
 						{return ;}
-					pos.0 -= 1;
+					if pos.0 != 0 {
+						pos.0 -= 1;
+					} else if pos.1 != 0{
+						pos.1 -= 1;
+						pos.0 = 79;
+					}
 					code = 0x0
 				}
 				else if pos.0 >= BUFFER_WIDTH {
