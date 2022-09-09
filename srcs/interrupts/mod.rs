@@ -1,4 +1,6 @@
-const GDT_OFFSET_KERNEL_CODE: u16 = 0x08; /* TODO: compute it ? */
+use crate::syscalls::syscall_handler;
+
+const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
 const IDT_SIZE: usize = 32;
 const IDT_MAX_DESCRIPTORS: usize = 256;
 
@@ -39,6 +41,7 @@ const STR_EXCEPTION: [&'static str; IDT_SIZE] = [
 
 extern "C" {
 	static mut isr_stub_table: [u32; IDT_SIZE];
+	static isr_stub_syscall: u32;
 }
 
 static mut IDT: IDT = IDT {
@@ -86,6 +89,8 @@ pub extern "C" fn exception_handler(reg: Registers) {
 		if int_no != 3 && int_no != 4 {
 			unsafe{core::arch::asm!("hlt")};
 		}
+	} else if int_no == 0x80 {
+		syscall_handler(reg);
 	} else {
 		crate::kprintln!("Unknown exception (code: {}):\n{:#x?}", int_no, reg);
 		unsafe{core::arch::asm!("hlt")};
@@ -103,6 +108,8 @@ pub unsafe fn init_idt() {
 		IDT.idt_entries[i].init(offset, GDT_OFFSET_KERNEL_CODE, 0x8e);
 		i += 1;
 	}
+	/* syscalls */
+	IDT.idt_entries[0x80].init(isr_stub_syscall, GDT_OFFSET_KERNEL_CODE, 0x8e);
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
 }
 

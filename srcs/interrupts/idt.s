@@ -1,13 +1,16 @@
 %include "idt.h"
 
 global isr_stub_table
+global isr_stub_syscall
 
 isr_stub_table:
 	%assign i 0 
 	%rep	32 
-		dd isr_stub_%+i ; use DQ instead if targeting 64-bit
+		dd isr_stub_%+i
 	%assign i i+1 
 	%endrep
+
+isr_stub_syscall dd isr_stub_128
 
 isr_common_stub:
 	pusha

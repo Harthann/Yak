@@ -61,6 +61,7 @@ mod multiboot;
 mod vec;
 mod string;
 mod interrupts;
+mod syscalls;
 mod io;
 mod vga_buffer;
 
@@ -126,6 +127,8 @@ pub extern "C" fn kmain() -> ! {
 	let workspace_msg = string::String::from("Press Ctrl-2 to navigate to the second workspace");
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
+
+	unsafe{core::arch::asm!("int 0x80")};
 
 	kprint!("$> ");
 	loop {
