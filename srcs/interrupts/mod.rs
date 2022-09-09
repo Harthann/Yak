@@ -1,10 +1,11 @@
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
-const IDT_SIZE: usize = 32;
+const IDT_SIZE: usize = 48;
 const IDT_MAX_DESCRIPTORS: usize = 256;
 
-const STR_EXCEPTION: [&'static str; IDT_SIZE] = [
+const EXCEPTION_SIZE: usize = 32;
+const STR_EXCEPTION: [&'static str; EXCEPTION_SIZE] = [
 	"Divide-by-zero",
 	"Debug",
 	"Non-maskable Interrupt",
@@ -84,7 +85,7 @@ pub struct Registers {
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
-	if int_no < IDT_SIZE {
+	if int_no < EXCEPTION_SIZE {
 		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
 		if int_no != 3 && int_no != 4 {
 			unsafe{core::arch::asm!("hlt")};
@@ -93,7 +94,11 @@ pub extern "C" fn exception_handler(reg: Registers) {
 		syscall_handler(reg);
 	} else {
 		crate::kprintln!("Unknown exception (code: {}):\n{:#x?}", int_no, reg);
-		unsafe{core::arch::asm!("hlt")};
+		if int_no != 0x21 {
+			unsafe{core::arch::asm!("hlt")};
+		} else {
+			crate::pic::end_of_interrupts(0);
+		}
 	}
 }
 

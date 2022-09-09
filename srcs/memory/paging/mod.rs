@@ -29,6 +29,7 @@ pub const PAGE_USER: u32 = 0xb100;
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
+		// TODO: multiboot get all entry type 2 and claim them
 		let res = multiboot::get_last_entry();
 		if res.is_ok() {
 			let mmap_entry: &MemMapEntry = res.unwrap();

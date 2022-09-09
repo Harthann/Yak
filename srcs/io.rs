@@ -1,6 +1,11 @@
 use core::arch::asm;
 
 #[allow(dead_code)]
+pub fn io_wait() {
+	outb(0x80, 0);
+}
+
+#[allow(dead_code)]
 pub fn outb(port: u16, cmd: u8) {
 	unsafe {
 		asm!("out dx, al",

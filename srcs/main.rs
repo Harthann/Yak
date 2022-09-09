@@ -64,7 +64,7 @@ mod interrupts;
 mod syscalls;
 mod io;
 mod vga_buffer;
-mod apic;
+mod pic;
 
 #[cfg(test)]
 mod test;
@@ -74,7 +74,7 @@ use memory::paging::{init_paging, page_directory};
 use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
-use apic::init_apic;
+use pic::setup_pic8259;
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
@@ -116,7 +116,7 @@ pub extern "C" fn kinit() {
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
-    init_apic();
+	setup_pic8259();
 
 	#[cfg(test)]
 	test_main();
@@ -138,10 +138,10 @@ pub extern "C" fn kmain() -> ! {
 
 	kprint!("$> ");
 	loop {
-		if keyboard::keyboard_event() {
-			let charcode = keyboard::handle_event();
-			clihandle!(charcode);
-		}
+//		if keyboard::keyboard_event() {
+//			let charcode = keyboard::handle_event();
+//			clihandle!(charcode);
+//		}
 	}
 }
 
