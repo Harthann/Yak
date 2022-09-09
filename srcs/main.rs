@@ -64,6 +64,7 @@ mod interrupts;
 mod syscalls;
 mod io;
 mod vga_buffer;
+mod apic;
 
 #[cfg(test)]
 mod test;
@@ -73,6 +74,7 @@ use memory::paging::{init_paging, page_directory};
 use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
+use apic::init_apic;
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
@@ -105,12 +107,16 @@ pub extern "C" fn kinit() {
 		reload_gdt!();
 		init_idt();
 	}
+
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
+
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
+
+    init_apic();
 
 	#[cfg(test)]
 	test_main();
