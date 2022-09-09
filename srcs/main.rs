@@ -134,7 +134,7 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
 
-	unsafe{core::arch::asm!("int 0x80")};
+//	unsafe{core::arch::asm!("int 0x80")};
 
 	kprint!("$> ");
 	loop {}
