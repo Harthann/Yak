@@ -93,11 +93,19 @@ pub extern "C" fn exception_handler(reg: Registers) {
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
 	} else {
-		crate::kprintln!("Unknown exception (code: {}):\n{:#x?}", int_no, reg);
-		if int_no != 0x21 {
+		if int_no < 0x21 && int_no > 0x28 + 7 {
+			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
 			unsafe{core::arch::asm!("hlt")};
 		} else {
-			crate::pic::end_of_interrupts(0);
+			crate::kprintln!("\nKeyboard event (code: {}):\n{:#x?}", int_no, reg);
+			if crate::keyboard::keyboard_event() {
+				let charcode = crate::keyboard::handle_event();
+				crate::clihandle!(charcode);
+			}
+			crate::pic::irq_clear_mask(0x00);
+			crate::pic::irq_clear_mask(0x08);
+			crate::pic::pic_set_interrupt_masks();
+//			unsafe{core::arch::asm!("sti")};
 		}
 	}
 }

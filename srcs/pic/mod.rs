@@ -57,15 +57,44 @@ pub fn pic_remap(offset1: u8, offset2: u8) {
 	outb(PIC2_DATA, a2);
 }
 
+pub fn irq_set_mask(mut irq: usize)
+{
+	let port: u16;
+	let value: u8;
+
+	if irq < 8 {
+		port = PIC1_DATA;
+	} else {
+		port = PIC2_DATA;
+		irq -= 8;
+	}
+	value = inb(port) | (1 << irq);
+	outb(port, value);
+}
+
+pub fn irq_clear_mask(mut irq: usize)
+{
+	let port: u16;
+	let value: u8;
+
+	if irq < 8 {
+		port = PIC1_DATA;
+	} else {
+		port = PIC2_DATA;
+		irq -= 8;
+	}
+	value = inb(port) & !(1 << irq);
+	outb(port, value);
+}
+
 pub fn pic_set_interrupt_masks()
 {
-	outb(PIC1_DATA, 0xfd);
-	outb(PIC2_DATA, 0xff);
+	irq_set_mask(0x00);
+	irq_set_mask(0x08);
 	unsafe{core::arch::asm!("sti")};
 }
 
 pub fn setup_pic8259() {
 	pic_remap(0x20, 0x28);
 	pic_set_interrupt_masks();
-	crate::kprintln!("Will set up pic");
 }
