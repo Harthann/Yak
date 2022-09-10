@@ -5,8 +5,10 @@ use crate::io;
 use crate::string::String;
 use crate::memory::allocator;
 
-pub static COMMANDS: [fn(&Command); 6] = [reboot, halt, hexdump_parser, clear, help, shutdown];
-const KNOWN_CMD: [&str; 6]= ["reboot", "halt", "hexdump", "clear", "help", "shutdown"];
+const NB_CMDS: usize = 7;
+
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, clear, help, shutdown, keymap];
+const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "clear", "help", "shutdown", "keymap"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -30,7 +32,7 @@ fn help(_: &Command) {
 }
 
 fn shutdown(_: &Command) {
-    io::outb(0xf4, 0x10);
+	io::outb(0xf4, 0x10);
 }
 
 fn hextou(string: &str) -> Option<usize> {
@@ -72,7 +74,7 @@ fn atou(string: &str) -> Option<usize> {
 	return Some(num);
 }
 
-fn		hexdump_parser(command: &Command) {
+fn hexdump_parser(command: &Command) {
 	let cmd = &command.command;
 
 	let mut count: i32 = 0;
@@ -85,7 +87,8 @@ fn		hexdump_parser(command: &Command) {
 	}
 
 	if count != 3 {
-		kprintln!("Invalid number of argument");
+		kprintln!("Invalid number of arguments.");
+		kprintln!("Usage: hexdump [addr] [size]");
 		return ;
 	}
 
@@ -95,13 +98,50 @@ fn		hexdump_parser(command: &Command) {
 			if count > 0 {
 				match atou(iter) {
 					Some(x)	=> args[count as usize - 1] = x,
-					_		=> {kprintln!("Invalid arg"); return;}
+					_		=> {kprintln!("Invalid argument.");
+								kprintln!("Usage: hexdump [addr] [size]");
+								return ;}
 				}
 			}
 			count += 1;
 		}
 	}
 	hexdump!(args[0] as *const u8, args[1]);
+}
+
+use crate::keyboard::{KEYMAP, KEYMAP_US, KEYMAP_FR};
+
+fn keymap(command: &Command) {
+	let cmd = &command.command;
+	let mut count: usize = 0;
+
+	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
+		if iter.len() != 0 {
+			count += 1;
+		}
+	}
+
+	if count != 2 {
+		kprintln!("Invalid number of arguments.");
+		kprintln!("Usage: keymap {{us, fr}}");
+		return ;
+	}
+
+	count = 0;
+	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
+		if count > 0 {
+			if iter == "us" {
+				unsafe {KEYMAP = &KEYMAP_US};
+			} else if iter == "fr" {
+				unsafe {KEYMAP = &KEYMAP_FR};
+			} else {
+				kprintln!("Invalid argument.");
+				kprintln!("Usage: keymap {{us, fr}}");
+			}
+			return ;
+		}
+		count += 1;
+	}
 }
 
 #[derive(Debug, Clone)]
