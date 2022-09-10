@@ -7,8 +7,8 @@ use crate::memory::allocator;
 
 const NB_CMDS: usize = 7;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, clear, help, shutdown, keymap];
-const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "clear", "help", "shutdown", "keymap"];
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, clear, help, shutdown];
+const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "clear", "help", "shutdown"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
