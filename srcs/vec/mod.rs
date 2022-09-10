@@ -346,18 +346,18 @@ impl<T, A: Allocator> ops::DerefMut for Vec<T, A> {
 ** Taken from the rust source code
 */
 macro_rules! __impl_slice_eq1 {
-    ([$($vars:tt)*] $lhs:ty, $rhs:ty $(where $ty:ty: $bound:ident)?) => {
-        impl<T, U, $($vars)*> PartialEq<$rhs> for $lhs
-        where
-            T: PartialEq<U>,
-            $($ty: $bound)?
-        {
-            #[inline]
-            fn eq(&self, other: &$rhs) -> bool { self[..] == other[..] }
-            #[inline]
-            fn ne(&self, other: &$rhs) -> bool { self[..] != other[..] }
-        }
-    }
+	([$($vars:tt)*] $lhs:ty, $rhs:ty $(where $ty:ty: $bound:ident)?) => {
+		impl<T, U, $($vars)*> PartialEq<$rhs> for $lhs
+		where
+			T: PartialEq<U>,
+			$($ty: $bound)?
+		{
+			#[inline]
+			fn eq(&self, other: &$rhs) -> bool { self[..] == other[..] }
+			#[inline]
+			fn ne(&self, other: &$rhs) -> bool { self[..] != other[..] }
+		}
+	}
 }
 
 /* Implement to compare two vector */

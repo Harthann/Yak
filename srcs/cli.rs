@@ -1,5 +1,4 @@
 use core::arch::asm;
-use core::mem::size_of;
 
 use crate::{kprint, kprintln, hexdump, screenclear};
 use crate::io;
@@ -35,11 +34,11 @@ fn shutdown(_: &Command) {
 }
 
 fn hextou(string: &str) -> Option<usize> {
-	let mut slice = string.chars();
+	let slice = string.chars();
 	let mut addr: usize = 0;
 	let mut byte;
 
-	if string.len() < 2 || string.len() > (2 + size_of::<usize>() * 2) || !string.starts_with("0x") {
+	if !string.starts_with("0x") {
 		return None;
 	}
 	for i in slice.skip(2) {
@@ -57,9 +56,12 @@ fn hextou(string: &str) -> Option<usize> {
 }
 
 fn atou(string: &str) -> Option<usize> {
-	let mut slice = string.chars();
+	let slice = string.chars();
 	let mut num: usize = 0;
 
+	if string.starts_with("0x") {
+		return hextou(string);
+	}
 	for i in slice {
 		if !i.is_ascii_digit() {
 			return None;
@@ -70,37 +72,36 @@ fn atou(string: &str) -> Option<usize> {
 	return Some(num);
 }
 
-fn hexdump_parser(command: &Command) {
+fn		hexdump_parser(command: &Command) {
 	let cmd = &command.command;
-	let iter = cmd.split(&[' ', '\t', '\0'][..]);
 
 	let mut count: i32 = 0;
-	let mut addr: usize = 0;
-	let mut size: usize = 0;
+	let mut args: [usize; 2] = [0, 0];
 
-	for i in iter.clone() {
-		if i.len()	!= 0 {
-			count += 1
+	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
+		if iter.len() != 0 {
+			count += 1;
 		}
 	}
+
 	if count != 3 {
 		kprintln!("Invalid number of argument");
 		return ;
 	}
-	for (index, item) in iter.enumerate() {
-		if index == 1  {
-			match hextou(item) {
-			Some(x) => addr = x,
-			_		=> {kprintln!("Invalid arg hex"); return;},
+
+	count = 0;
+	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
+		if iter.len() != 0 {
+			if count > 0 {
+				match atou(iter) {
+					Some(x)	=> args[count as usize - 1] = x,
+					_		=> {kprintln!("Invalid arg"); return;}
+				}
 			}
-		} else if index == 2 {
-			match atou(item) {
-			Some(x) => size = x,
-			_		=> {kprintln!("Invalid arg int"); return;},
-			}
+			count += 1;
 		}
 	}
-	hexdump!(addr as *const u8, size);
+	hexdump!(args[0] as *const u8, args[1]);
 }
 
 #[derive(Debug, Clone)]
