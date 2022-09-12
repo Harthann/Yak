@@ -83,12 +83,14 @@ pub struct Registers {
 
 use crate::pic::{PIC1_INTERRUPT, PIC2_INTERRUPT};
 
-/* TODO: [https://wiki.osdev.org/Interrupts_tutorial]*/
+/* [https://wiki.osdev.org/Interrupts_tutorial]*/
+/* TODO: lock mutex before write and int */
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE {
 		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
+		crate::pic::end_of_interrupts(int_no as usize);
 		if int_no != 3 && int_no != 4 {
 			unsafe{core::arch::asm!("hlt")};
 		}
