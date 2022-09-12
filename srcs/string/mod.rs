@@ -238,7 +238,7 @@ impl fmt::Write for String {
 }
 
 
-/* ToStirng impl for different type */
+/* ToString impl for different type */
 pub trait ToString {
 	fn to_string(&self) -> String;
 }
@@ -260,7 +260,6 @@ impl<T: fmt::Display + ?Sized> ToString for T {
 }
 
 impl ToString for str {
-
 	#[inline]
 	fn to_string(&self) -> String {
 		String::from(self)
