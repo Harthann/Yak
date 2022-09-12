@@ -2,6 +2,17 @@ use crate::vec::Vec;
 use crate::memory::allocator::AllocError;
 use core::{str,ops,fmt};
 
+#[cfg(test)]
+pub mod test;
+
+pub fn test() {
+	let x = String::new();
+	let y = String::from("abcdef");
+
+	crate::kprintln!("{}", x);
+	crate::kprintln!("{}", y);
+}
+
 #[derive(Debug, Clone)]
 pub struct String {
 	vec: Vec<u8>

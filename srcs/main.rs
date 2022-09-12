@@ -98,7 +98,7 @@ use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	multiboot::read_tags();
+//	multiboot::read_tags();
 	/* Init paging and remove identity paging */
 	init_paging();
 	/* Update gdtr with higher half kernel gdt addr */
