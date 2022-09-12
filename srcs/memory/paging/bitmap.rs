@@ -9,7 +9,7 @@ const SECTOR_SIZE:		usize = PAGE_SIZE * 8;
 const SECTOR_NUMBER:	usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
 
 pub static mut PHYSMAP: Bitmaps = Bitmaps {
-		maps: [0; SECTOR_NUMBER]
+	maps: [0; SECTOR_NUMBER]
 };
 
 pub struct Bitmaps {

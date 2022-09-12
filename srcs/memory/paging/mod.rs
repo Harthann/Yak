@@ -3,7 +3,6 @@ pub mod page_table;
 pub mod bitmap;
 
 use crate::multiboot;
-use crate::multiboot::MemMapEntry;
 use crate::memory::{VirtAddr, PhysAddr};
 
 #[allow(dead_code)]
@@ -29,13 +28,7 @@ pub const PAGE_USER: u32 = 0xb100;
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-		// TODO: multiboot get all entry type 2 and claim them
-		let res = multiboot::get_last_entry();
-		if res.is_ok() {
-			let mmap_entry: &MemMapEntry = res.unwrap();
-			/* Reserve space for kernel and SeaBIOS (GRUB) */
-			bitmap::physmap_as_mut().claim_range(mmap_entry.baseaddr as PhysAddr, mmap_entry.length as usize / 4096);
-		}
+		multiboot::claim_multiboot();
 		bitmap::physmap_as_mut().claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		/* Init paging map */
