@@ -1,4 +1,4 @@
-# kfs 'Jellyfish' - 3.0
+# kfs 'Jellyfish' - 4.0
 
 Our simple Kernel From Scratch made out of asm and rust for i386 - x86.  
 
