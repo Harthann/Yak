@@ -119,7 +119,7 @@ pub fn keyboard_event() -> bool {
 }
 
 pub fn handle_event() -> char {
-	let mut keycode: u8 = io::inb(0x60);
+	let keycode: u8 = io::inb(0x60);
 	
 	let charcode = keyboard_to_ascii(keycode);
 	if charcode >= '1' && charcode <= ('0' as u8 + NB_SCREEN as u8) as char && getflag!(SpecialKeyFlag::Ctrl) {
@@ -130,8 +130,6 @@ pub fn handle_event() -> char {
 		kprint!("{}", charcode);
 	}
 	else {
-		if keycode == 224
-			{ keycode = io::inb(0x60);}
 		let special_keys: &SpecialKeys = unsafe{&KEYMAP.special_keys};
 		if keycode == special_keys.shift_l[PRESSED] {
 			setflag!(SpecialKeyFlag::ShiftLeft);

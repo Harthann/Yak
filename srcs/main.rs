@@ -137,8 +137,6 @@ pub extern "C" fn kmain() -> ! {
 	unsafe{core::arch::asm!("int 0x80")};
 	kprint!("$> ");
 	loop {
-//		kprintln!("a");
 		unsafe{core::arch::asm!("hlt")};
-//		kprintln!("b");
 	}
 }
