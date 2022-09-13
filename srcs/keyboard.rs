@@ -131,35 +131,24 @@ pub fn handle_event() -> char {
 	}
 	else {
 		let special_keys: &SpecialKeys = unsafe{&KEYMAP.special_keys};
-		if keycode == special_keys.shift_l[PRESSED] {
-			setflag!(SpecialKeyFlag::ShiftLeft);
-		} else if keycode == special_keys.shift_r[PRESSED] {
-			setflag!(SpecialKeyFlag::ShiftRight);
-		} else if keycode == special_keys.ctrl[PRESSED] {
-			setflag!(SpecialKeyFlag::Ctrl);
-		} else if keycode == special_keys.alt[PRESSED] {
-			setflag!(SpecialKeyFlag::Opt);
-		} else if keycode == special_keys.special_l[PRESSED] {
-			setflag!(SpecialKeyFlag::CmdLeft);
-		} else if keycode == special_keys.special_r[PRESSED] {
-			setflag!(SpecialKeyFlag::CmdRight);
-		} else if keycode == special_keys.caps[PRESSED] {
-			unsetflag!(SpecialKeyFlag::Caps);
-		} else if keycode == special_keys.shift_l[RELEASED] {
-			unsetflag!(SpecialKeyFlag::ShiftLeft);
-		} else if keycode == special_keys.shift_r[RELEASED] {
-			unsetflag!(SpecialKeyFlag::ShiftRight);
-		} else if keycode == special_keys.ctrl[RELEASED] {
-			unsetflag!(SpecialKeyFlag::Ctrl);
-		} else if keycode == special_keys.alt[RELEASED] {
-			unsetflag!(SpecialKeyFlag::Opt);
-		} else if keycode == special_keys.special_l[RELEASED] {
-			unsetflag!(SpecialKeyFlag::CmdLeft);
-		} else if keycode == special_keys.special_r[RELEASED] {
-			unsetflag!(SpecialKeyFlag::CmdRight);
-		} else {
-			return '\0';
-		}
+        match keycode {
+            _ if keycode == special_keys.shift_l[PRESSED]       => setflag!(SpecialKeyFlag::ShiftLeft),
+            _ if keycode == special_keys.shift_r[PRESSED]       => setflag!(SpecialKeyFlag::ShiftRight),
+			_ if keycode == special_keys.ctrl[PRESSED]          => setflag!(SpecialKeyFlag::Ctrl),
+			_ if keycode == special_keys.alt[PRESSED]           => setflag!(SpecialKeyFlag::Opt),
+			_ if keycode == special_keys.special_l[PRESSED]     => setflag!(SpecialKeyFlag::CmdLeft),
+			_ if keycode == special_keys.special_r[PRESSED]     => setflag!(SpecialKeyFlag::CmdRight),
+			_ if keycode == special_keys.caps[PRESSED]          => unsetflag!(SpecialKeyFlag::Caps),
+
+			_ if keycode == special_keys.shift_l[RELEASED]      => unsetflag!(SpecialKeyFlag::ShiftLeft),
+			_ if keycode == special_keys.shift_r[RELEASED]      => unsetflag!(SpecialKeyFlag::ShiftRight),
+			_ if keycode == special_keys.ctrl[RELEASED]         => unsetflag!(SpecialKeyFlag::Ctrl),
+			_ if keycode == special_keys.alt[RELEASED]          => unsetflag!(SpecialKeyFlag::Opt),
+			_ if keycode == special_keys.special_l[RELEASED]    => unsetflag!(SpecialKeyFlag::CmdLeft),
+			_ if keycode == special_keys.special_r[RELEASED]    => unsetflag!(SpecialKeyFlag::CmdRight),
+
+            _ => return '\0',
+        };
 	}
 	return charcode;
 }
