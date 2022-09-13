@@ -88,7 +88,7 @@ use crate::pic::{PIC1_INTERRUPT, PIC2_INTERRUPT};
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
-	if int_no < EXCEPTION_SIZE {
+	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
 		if int_no != 3 && int_no != 4 {
 			unsafe{core::arch::asm!("hlt")};
@@ -96,7 +96,7 @@ pub extern "C" fn exception_handler(reg: Registers) {
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
 	} else {
-		if int_no < PIC1_INTERRUPT as usize && int_no > PIC2_INTERRUPT as usize + 7 {
+		if int_no < PIC1_INTERRUPT as usize || int_no > PIC2_INTERRUPT as usize + 7 {
 			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
 			unsafe{core::arch::asm!("hlt")};
 		} else {

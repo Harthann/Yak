@@ -5,10 +5,10 @@ use crate::io;
 use crate::string::String;
 use crate::memory::allocator;
 
-const NB_CMDS: usize = 7;
+const NB_CMDS: usize = 8;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, clear, help, shutdown];
-const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "clear", "help", "shutdown"];
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown];
+const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -142,6 +142,50 @@ fn keymap(command: &Command) {
 		}
 		count += 1;
 	}
+}
+
+extern "C" {
+	pub fn int(nb: u8);
+}
+
+fn interrupt(command: &Command) {
+	let cmd = &command.command;
+
+	let mut count: i32 = 0;
+	let mut arg: usize = 0;
+
+	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
+		if iter.len() != 0 {
+			count += 1;
+		}
+	}
+
+	if count != 2 {
+		kprintln!("Invalid number of arguments.");
+		kprintln!("Usage: int [nb]");
+		return ;
+	}
+
+	count = 0;
+	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
+		if iter.len() != 0 {
+			if count > 0 {
+				match atou(iter) {
+					Some(x)	=> arg = x,
+					_		=> {kprintln!("Invalid argument.");
+								kprintln!("Usage: int [nb]");
+								return ;}
+				}
+			}
+			count += 1;
+		}
+	}
+	if arg > 255 {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: int [nb]");
+		return ;
+	}
+	unsafe{int(arg as u8)};
 }
 
 #[derive(Debug, Clone)]
