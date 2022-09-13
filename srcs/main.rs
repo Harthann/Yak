@@ -65,6 +65,7 @@ mod syscalls;
 mod io;
 mod vga_buffer;
 mod pic;
+mod proc;
 
 #[cfg(test)]
 mod test;

@@ -1,10 +1,25 @@
+use crate::memory::MemoryZone;
+use crate::vec::Vec;
+
+enum Status
+{
+	Run,
+	Zombie,
+	Thead
+}
+
+type Id = u32;
+
+struct Signal {
+}
+
 struct Process {
-	pid: usize,
-	status: u8,
-	parent: &Process,
-	childs: Vec<&Process>,
-	stack: &MemoryZone,
-	heap: &MemoryZone,
-	signals: Vec<&Process>, /* TODO: VecDeque ? */
-	owner: usize
+	pid: Id,
+	status: Status,
+	parent: *const Process,
+	childs: Vec<*mut Process>,
+	stack: MemoryZone,
+	heap: MemoryZone,
+	signals: Vec<Signal>, /* TODO: VecDeque ? */
+	owner: Id
 }
