@@ -1,6 +1,7 @@
 use core::fmt;
 use crate::kprintln;
 pub mod tss;
+pub use tss::Tss;
 
 pub const KERNEL_BASE: usize = 0xc0000000;
 

@@ -108,17 +108,25 @@ pub extern "C" fn kinit() {
 		reload_gdt!();
 		init_idt();
 	}
-	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
 
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
+	let tmp = init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
 	setup_pic8259();
+	
+	let mut tss: gdt::Tss = gdt::Tss::default() ;
+/*	Kernel stack entry on tss */
+	tss.esp0 = tmp as u32;
+	tss.ss = 0x18;
+/*	Page directory entry for virt addr */
+	tss.
+	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
+
 
 	#[cfg(test)]
 	test_main();
