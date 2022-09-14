@@ -1,6 +1,11 @@
 use crate::io;
 use crate::vga_buffer::color::Color;
 
+use crate::memory::allocator::{
+KTRACKER,
+TRACKER
+};
+
 #[cfg(test)]
 #[macro_export]
 macro_rules! function {
@@ -27,8 +32,8 @@ macro_rules! print_fn {
 
 pub fn leaks() -> bool {
 	unsafe {
-		crate::KTRACKER.allocation != crate::KTRACKER.freed ||
-		crate::KTRACKER.allocated_bytes != crate::KTRACKER.freed_bytes
+		KTRACKER.allocation != KTRACKER.freed ||
+		KTRACKER.allocated_bytes != KTRACKER.freed_bytes
 	}
 }
 
@@ -38,11 +43,11 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 	for test in tests {
 		test.run();
 		if leaks() == true {
-			crate::memory_state();
+			crate::memory::allocator::tracker::memory_state();
 			panic!("Memory leaks test failed");
 		}
 	}
-	crate::memory_state();
+	crate::memory::allocator::tracker::memory_state();
 	io::outb(0xf4, 0x10);
 }
 

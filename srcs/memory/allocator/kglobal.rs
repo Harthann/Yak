@@ -5,7 +5,8 @@ Layout
 use core::ptr::NonNull;
 use crate::memory::allocator::{
 Allocator,
-AllocError
+AllocError,
+KTRACKER
 };
 use crate::KALLOCATOR;
 
@@ -23,8 +24,8 @@ pub struct KGlobal;
 unsafe fn alloc(layout: Layout) -> *mut u8 {
 	let ptr = KALLOCATOR.alloc(layout);
 	if !ptr.is_null() {
-		crate::KTRACKER.allocation += 1;
-		crate::KTRACKER.allocated_bytes += layout.size();
+		KTRACKER.allocation += 1;
+		KTRACKER.allocated_bytes += layout.size();
 	}
 	ptr
 
@@ -40,8 +41,8 @@ unsafe fn alloc_zeroed(layout: Layout) -> *mut u8 {
 #[inline]
 unsafe fn dealloc(ptr: *mut u8, layout: Layout) {
 	KALLOCATOR.dealloc(ptr, layout);
-	crate::KTRACKER.freed += 1;
-	crate::KTRACKER.freed_bytes += layout.size();
+	KTRACKER.freed += 1;
+	KTRACKER.freed_bytes += layout.size();
 }
 
 #[inline]

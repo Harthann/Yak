@@ -1,6 +1,9 @@
 pub mod linked_list;
 pub mod bump;
 
+pub mod tracker;
+pub use tracker::{KTRACKER, TRACKER};
+
 mod boxed;
 pub use boxed::Box;
 
@@ -17,6 +20,7 @@ Layout
 use core::ptr::NonNull;
 
 use crate::memory::VirtAddr;
+
 
 /*	Trait definitions to inialize a global allocator */
 pub trait AllocatorInit: GlobalAlloc {
