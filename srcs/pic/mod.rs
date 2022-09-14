@@ -98,6 +98,6 @@ pub fn pic_set_interrupt_masks()
 }
 
 pub fn setup_pic8259() {
-	pic_remap(PIC1_INTERRUPT, PIC2_INTERRUPT);
 	pic_set_interrupt_masks();
+	pic_remap(PIC1_INTERRUPT, PIC2_INTERRUPT);
 }

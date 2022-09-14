@@ -1,4 +1,5 @@
 #![feature(const_mut_refs)]
+#![feature(naked_functions)]
 #![feature(fmt_internals)]
 #![feature(specialization)]
 #![feature(nonnull_slice_from_raw_parts)]
