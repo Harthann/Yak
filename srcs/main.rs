@@ -87,6 +87,7 @@ extern "C" {
 	fn stack_bottom();
 	fn stack_top();
 	fn heap();
+	fn jump_usermode();
 }
 
 use crate::memory::{init_heap, init_stack, VirtAddr};
@@ -95,6 +96,8 @@ use crate::memory::paging::PAGE_WRITABLE;
 use crate::interrupts::init_idt;
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
+	
+use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -108,7 +111,6 @@ pub extern "C" fn kinit() {
 		reload_gdt!();
 		init_idt();
 	}
-	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
 
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
@@ -119,6 +121,23 @@ pub extern "C" fn kinit() {
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
 	setup_pic8259();
+	
+	gdt::tss::init_tss(kstack_addr);
+	reload_tss!();
+/*	Kernel stack entry on tss */
+
+//	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
+	let userpage = alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
+	unsafe {
+		for i in 0..4095 {
+			*((userpage + i) as *mut u8) = 0x90;
+		}
+		*((userpage + 4095) as *mut u8) = 0xfa;
+	}
+	memory::paging::print_pdentry(1);
+//	unsafe {
+//		core::arch::asm!("mov eax, 0x400000", "jmp eax");
+//	}
 
 	#[cfg(test)]
 	test_main();
@@ -128,7 +147,16 @@ pub extern "C" fn kinit() {
 }
 
 #[no_mangle]
+pub fn userfunc() {
+	kprintln!("Usermode");
+	unsafe{ core::arch::asm!("cli");}
+}
+
+#[no_mangle]
 pub extern "C" fn kmain() -> ! {
+	unsafe {
+		jump_usermode();
+	}
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);
