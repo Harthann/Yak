@@ -108,6 +108,7 @@ pub extern "C" fn kinit() {
 		reload_gdt!();
 		init_idt();
 	}
+	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
 
 	/* HEAP KERNEL */
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
