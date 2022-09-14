@@ -24,5 +24,16 @@ struct Process {
 	owner: Id
 }
 
+enum State {
+}
+
+struct ProcessControlBlock {
+	addr: VirtAddr,
+	name: String,
+	state: State,
+	stack: MemoryZone,
+	next_task: *mut ProcessControlBlock
+}
+
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: u32) {
 }
