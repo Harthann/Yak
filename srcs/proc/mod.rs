@@ -1,8 +1,8 @@
 use crate::memory::MemoryZone;
 use crate::vec::Vec;
+use crate::VirtAddr;
 
-enum Status
-{
+enum Status {
 	Run,
 	Zombie,
 	Thead
@@ -22,4 +22,7 @@ struct Process {
 	heap: MemoryZone,
 	signals: Vec<Signal>, /* TODO: VecDeque ? */
 	owner: Id
+}
+
+pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: u32) {
 }
