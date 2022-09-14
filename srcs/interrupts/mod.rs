@@ -235,4 +235,3 @@ unsafe extern "C" fn isr_common_stub() {
 	iretd",
 	options(noreturn));
 }
-
