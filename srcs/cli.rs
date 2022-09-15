@@ -38,7 +38,6 @@ fn shutdown(_: &Command) {
 fn hextou(string: &str) -> Option<usize> {
 	let slice = string.chars();
 	let mut addr: usize = 0;
-	let mut byte;
 
 	if !string.starts_with("0x") {
 		return None;
@@ -47,31 +46,17 @@ fn hextou(string: &str) -> Option<usize> {
 		if !i.is_ascii_hexdigit() {
 			return None;
 		}
-		if i.is_ascii_digit()	{
-			byte = i as u8 - b'0';
-		} else {
-			byte = i as u8 - b'a' + 10;
-		}
+		let byte = i.to_digit(16).unwrap();
 		addr = (addr << 4) | (byte & 0xf) as usize;
 	}
 	return Some(addr);
 }
 
 fn atou(string: &str) -> Option<usize> {
-	let slice = string.chars();
-	let mut num: usize = 0;
-
 	if string.starts_with("0x") {
 		return hextou(string);
 	}
-	for i in slice {
-		if !i.is_ascii_digit() {
-			return None;
-		}
-		num *= 10;
-		num += (i as u8 - b'0') as usize;
-	}
-	return Some(num);
+	string.parse::<usize>().ok()
 }
 
 fn hexdump_parser(command: &Command) {
