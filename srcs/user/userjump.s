@@ -1,5 +1,6 @@
 global jump_usermode
-extern userfunc
+global userfunc
+global userfunc_end
 
 jump_usermode:
 	mov ax, (5 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
@@ -17,5 +18,8 @@ jump_usermode:
 	push 0x400000 ; instruction address to return to
 	iret
 
-;userfunc:
-;	cli
+userfunc:
+	mov eax, 5
+	sysenter
+	int 0x80
+userfunc_end:	

@@ -66,6 +66,7 @@ mod syscalls;
 mod io;
 mod vga_buffer;
 mod pic;
+mod user;
 
 #[cfg(test)]
 mod test;
@@ -87,7 +88,6 @@ extern "C" {
 	fn stack_bottom();
 	fn stack_top();
 	fn heap();
-	fn jump_usermode();
 }
 
 use crate::memory::{init_heap, init_stack, VirtAddr};
@@ -98,19 +98,6 @@ use crate::interrupts::init_idt;
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 
-fn test_user_page() {
-	let userpage = alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
-	unsafe {
-		let mut i = 0;
-		while i < 4095 {
-			*((userpage + i) as *mut u8) = 0x90;
-			i += 1;
-		}
-		*((userpage + 4095) as *mut u8) = 0xfa;
-	}
-	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
-	memory::paging::print_pdentry(1);
-}
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -138,7 +125,7 @@ pub extern "C" fn kinit() {
 	reload_tss!();
 
 	/*	Kernel stack entry on tss */
-	test_user_page();
+	user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
@@ -148,16 +135,8 @@ pub extern "C" fn kinit() {
 }
 
 #[no_mangle]
-pub fn userfunc() {
-	kprintln!("Usermode");
-	unsafe{ core::arch::asm!("cli");}
-}
-
-#[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	unsafe {
-		jump_usermode();
-	}
+
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);
