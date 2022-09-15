@@ -135,8 +135,19 @@ pub extern "C" fn kinit() {
 	kmain();
 }
 
+pub fn test_task() {
+	unsafe {
+		proc::init_tasking();
+		crate::kprintln!("main task !");
+		proc::next_task();
+		crate::kprintln!("return to main task!");
+	}
+}
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
+
+	test_task();
 
 	kprintln!("Hello World of {}!", 42);
 
