@@ -124,8 +124,8 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-	/*	Kernel stack entry on tss */
-	user::test_user_page();
+	/*	Function to test and enter usermode */
+//	user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
