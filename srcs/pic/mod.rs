@@ -39,14 +39,17 @@ pub fn pic_remap(offset1: u8, offset2: u8) {
 	io_wait();
 	outb(PIC2_CMD, ICW1_INIT | ICW1_ICW4);
 	io_wait();
+
 	outb(PIC1_DATA, offset1);
 	io_wait();
 	outb(PIC2_DATA, offset2);
 	io_wait();
+
 	outb(PIC1_DATA, 4);
 	io_wait();
 	outb(PIC2_DATA, 2);
 	io_wait();
+
 	outb(PIC1_DATA, ICW4_8086);
 	io_wait();
 	outb(PIC2_DATA, ICW4_8086);
@@ -57,17 +60,17 @@ pub fn pic_remap(offset1: u8, offset2: u8) {
 	outb(PIC2_DATA, a2);
 }
 
-pub fn irq_set_mask(mut irq: usize)
+pub fn irq_set_mask(mut irq: usize, port: u16)
 {
-	let port: u16;
+	//let port: u16;
 	let value: u8;
 
-	if irq < 8 {
-		port = PIC1_DATA;
-	} else {
-		port = PIC2_DATA;
-		irq -= 8;
-	}
+	//if irq < 8 {
+	//	port = PIC1_DATA;
+	//} else {
+	//	port = PIC2_DATA;
+	//	irq -= 8;
+	//}
 	value = inb(port) | (1 << irq);
 	outb(port, value);
 }
@@ -92,8 +95,14 @@ pub const PIC2_INTERRUPT: u8 = 0x28;
 
 pub fn pic_set_interrupt_masks()
 {
-	irq_set_mask((PIC1_INTERRUPT - PIC1_INTERRUPT) as usize);
-	irq_set_mask((PIC2_INTERRUPT - PIC1_INTERRUPT) as usize);
+	//irq_set_mask((PIC1_INTERRUPT - PIC1_INTERRUPT) as usize);
+//	irq_set_mask(0b00000000 as usize, PIC1_DATA);
+	crate::kprintln!("PIC1: {:#b} {0}", inb(PIC1_DATA));
+	crate::kprintln!("PIC2: {:#b} {0}", inb(PIC2_DATA));
+	outb(PIC1_DATA, 0b001111000);
+	outb(PIC2_DATA, 0b01111111);
+//	irq_set_mask(0b00000000 as usize, PIC2_DATA);
+	//irq_set_mask((PIC2_INTERRUPT - PIC1_INTERRUPT) as usize);
 	unsafe{core::arch::asm!("sti")};
 }
 
