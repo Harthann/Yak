@@ -96,8 +96,21 @@ use crate::memory::paging::PAGE_WRITABLE;
 use crate::interrupts::init_idt;
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
-	
 use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
+
+fn test_user_page() {
+	let userpage = alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
+	unsafe {
+		let mut i = 0;
+		while i < 4095 {
+			*((userpage + i) as *mut u8) = 0x90;
+			i += 1;
+		}
+		*((userpage + 4095) as *mut u8) = 0xfa;
+	}
+	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
+	memory::paging::print_pdentry(1);
+}
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -113,31 +126,20 @@ pub extern "C" fn kinit() {
 	}
 
 	/* HEAP KERNEL */
-	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	let tmp = init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
+	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
 	setup_pic8259();
-	
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
-/*	Kernel stack entry on tss */
 
-//	kprintln!("tss size: {}", core::mem::size_of::<gdt::tss::Tss>());
-	let userpage = alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
-	unsafe {
-		for i in 0..4095 {
-			*((userpage + i) as *mut u8) = 0x90;
-		}
-		*((userpage + 4095) as *mut u8) = 0xfa;
-	}
-	memory::paging::print_pdentry(1);
-//	unsafe {
-//		core::arch::asm!("mov eax, 0x400000", "jmp eax");
-//	}
+	/*	Kernel stack entry on tss */
+	test_user_page();
+
 	#[cfg(test)]
 	test_main();
 
