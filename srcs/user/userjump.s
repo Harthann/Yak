@@ -20,6 +20,5 @@ jump_usermode:
 
 userfunc:
 	mov eax, 5
-	sysenter
 	int 0x80
 userfunc_end:	
