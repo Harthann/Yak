@@ -66,6 +66,7 @@ mod syscalls;
 mod io;
 mod vga_buffer;
 mod pic;
+mod user;
 
 #[cfg(test)]
 mod test;
@@ -95,6 +96,8 @@ use crate::memory::paging::PAGE_WRITABLE;
 use crate::interrupts::init_idt;
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
+use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
+
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -110,14 +113,19 @@ pub extern "C" fn kinit() {
 	}
 
 	/* HEAP KERNEL */
-	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
+	let tmp = init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
+	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
 
 	setup_pic8259();
+	gdt::tss::init_tss(kstack_addr);
+	reload_tss!();
+
+	/*	Kernel stack entry on tss */
+	user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
@@ -128,6 +136,7 @@ pub extern "C" fn kinit() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
+
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);

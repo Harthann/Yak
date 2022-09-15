@@ -1,5 +1,7 @@
 use core::fmt;
 use crate::kprintln;
+pub mod tss;
+pub use tss::{Tss, init_tss};
 
 pub const KERNEL_BASE: usize = 0xc0000000;
 
@@ -116,4 +118,14 @@ macro_rules! reload_gdt {
 			"movw %ax, %gs",
 			"movw %ax, %ss", options(att_syntax));
 	);
+}
+
+#[macro_export]
+macro_rules! reload_tss {
+	() => (
+		unsafe {
+			core::arch::asm!("mov ax, 0x38",
+						"ltr ax");
+		}
+	)
 }

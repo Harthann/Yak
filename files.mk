@@ -12,12 +12,14 @@ RUST_SRCS		=	main.rs \
 					bump.rs \
 					global.rs \
 					kglobal.rs \
+					tss.rs \
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
 BOOTSRCS		=	boot.s \
 					gdt.s \
 					idt.s \
-					int.s
+					int.s \
+					userjump.s
 
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)

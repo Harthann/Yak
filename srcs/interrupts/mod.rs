@@ -122,7 +122,7 @@ pub unsafe fn init_idt() {
 		i += 1;
 	}
 	/* syscalls */
-	IDT.idt_entries[0x80].init(isr_stub_syscall, GDT_OFFSET_KERNEL_CODE, 0x8e);
+	IDT.idt_entries[0x80].init(isr_stub_syscall, GDT_OFFSET_KERNEL_CODE, 0xee);
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
 }
 
