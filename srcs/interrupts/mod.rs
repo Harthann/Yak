@@ -90,7 +90,7 @@ pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
-		if int_no != 3 { /* breakpoint */
+		if int_no != 3 && int_no != 1 { /* TODO: HOW TO GET IF IT'S A TRAP OR NOT */
 			unsafe{core::arch::asm!("hlt")};
 		}
 	} else if int_no == 0x80 {
