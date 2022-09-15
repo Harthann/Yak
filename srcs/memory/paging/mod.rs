@@ -14,7 +14,7 @@ use page_directory::PageDirectory;
 use page_table::PageTable;
 
 pub const PAGE_WRITABLE: u32 = 0b10;
-pub const PAGE_USER: u32 = 0xb100;
+pub const PAGE_USER: u32 = 0b100;
 
 /*
 	Initiliaze the paging:
@@ -39,6 +39,7 @@ pub fn init_paging() {
 		init_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
 		init_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
 		crate::refresh_tlb!();
+
 		let kernel_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 768) as *mut _);
 		let mut handler_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1023) as *mut _);
 		kernel_page_tab.init();
@@ -49,11 +50,18 @@ pub fn init_paging() {
 		page_directory.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
 		page_directory.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
 		crate::refresh_tlb!();
+
 		init_page_tab = page_directory.get_page_table(0);
 		handler_page_tab = page_directory.get_page_table(1023);
 		init_page_tab.clear();
 		handler_page_tab.set_entry(0, 0);
 		crate::refresh_tlb!();
+	}
+}
+
+pub fn print_pdentry(index: usize) {
+	unsafe {
+		crate::kprintln!("{}", page_directory.entries[index]);
 	}
 }
 

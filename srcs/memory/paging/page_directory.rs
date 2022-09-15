@@ -23,7 +23,7 @@ impl PageDirectory {
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 		
 		if self.entries[pd_index].get_present() == 0 {
-			self.claim_index_page_tables(pd_index, (nb / 1024) + 1)?;
+			self.claim_index_page_tables(pd_index, (nb / 1024) + 1, flags)?;
 		}
 		self.kclaim_index_page_frames(pd_index, pt_index, nb, flags)?;
 		Ok(vaddr)
@@ -34,7 +34,7 @@ impl PageDirectory {
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 		
 		if self.entries[pd_index].get_present() == 0 {
-			self.claim_index_page_tables(pd_index, (nb / 1024) + 1)?;
+			self.claim_index_page_tables(pd_index, (nb / 1024) + 1, flags)?;
 		}
 		self.claim_index_page_frames(pd_index, pt_index, nb, flags)?;
 		Ok(vaddr)
@@ -71,7 +71,7 @@ impl PageDirectory {
 			i += 1;
 		}
 		if available != nb {
-			i_saved = self.claim_page_tables((nb / 1024) + 1)?;
+			i_saved = self.claim_page_tables((nb / 1024) + 1, flags)?;
 			j = 0;
 		} else {
 			j -= nb;
@@ -112,7 +112,7 @@ impl PageDirectory {
 			i += 1;
 		}
 		if available != nb {
-			i_saved = self.claim_page_tables((nb / 1024) + 1)?;
+			i_saved = self.claim_page_tables((nb / 1024) + 1, flags)?;
 			j = 0;
 		} else {
 			j -= nb;
@@ -136,7 +136,7 @@ impl PageDirectory {
 			}
 			i += 1;
 		}
-		i = self.claim_page_table()?;
+		i = self.claim_page_table(flags)?;
 		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr, flags)?))
 	}
 
@@ -178,7 +178,7 @@ impl PageDirectory {
 		Ok(())
 	}
 
-	fn claim_index_page_table(&mut self, index: usize) -> Result<usize, ()> {
+	fn claim_index_page_table(&mut self, index: usize, flags: u32) -> Result<usize, ()> {
 		unsafe {
 			let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
@@ -187,19 +187,19 @@ impl PageDirectory {
 			crate::refresh_tlb!();
 			let new: &mut PageTable = page_directory.get_page_table(index);
 			new.clear();
-			self.entries[index] = (pt_paddr | PAGE_WRITABLE | 1).into();
+			self.entries[index] = (pt_paddr | flags | 1).into();
 			crate::refresh_tlb!();
 			Ok(index)
 		}
 	}
 
 	/* Claim a new page table and return index of the new page */
-	fn claim_page_table(&mut self) -> Result<usize, ()> {
+	fn claim_page_table(&mut self, flags: u32) -> Result<usize, ()> {
 			let mut i: usize = 0;
 
 			while i < 1024 {
 				if self.entries[i].get_present() == 0 {
-					return self.claim_index_page_table(i);
+					return self.claim_index_page_table(i, flags);
 				}
 				i += 1;
 			}
@@ -211,9 +211,9 @@ impl PageDirectory {
 		Claim 'nb' new page tables adjacent and return the lowest index of those
 		pages.
 	*/
-	fn claim_page_tables(&mut self, nb: usize) -> Result<usize, ()> {
+	fn claim_page_tables(&mut self, nb: usize, flags: u32) -> Result<usize, ()> {
 			if nb == 1 {
-				return self.claim_page_table();
+				return self.claim_page_table(flags);
 			}
 			let mut i: usize = 0;
 
@@ -225,7 +225,7 @@ impl PageDirectory {
 					}
 					if j - i == nb && j < 1024 {
 						while i < j {
-							let ret = self.claim_index_page_table(i);
+							let ret = self.claim_index_page_table(i, flags);
 							assert!(ret.is_ok(), "unable to claim page table {}", i);
 							i += 1;
 						}
@@ -238,14 +238,14 @@ impl PageDirectory {
 			//Err(())
 	}
 
-	fn claim_index_page_tables(&mut self, index: usize, nb: usize) -> Result<usize, ()> {
+	fn claim_index_page_tables(&mut self, index: usize, nb: usize, flags: u32) -> Result<usize, ()> {
 		if nb == 1 {
-			return self.claim_index_page_table(index);
+			return self.claim_index_page_table(index, flags);
 		}
 		let mut count: usize = 0;
 
 		while count < nb {
-			self.claim_index_page_table(index + count)?;
+			self.claim_index_page_table(index + count, flags)?;
 			count += 1;
 		}
 		Ok(index)
