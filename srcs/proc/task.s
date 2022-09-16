@@ -2,7 +2,6 @@ global switch_task
 
 ; fn switch_task(reg_from: *const Registers, reg_to: *const Registers)
 switch_task:
-	cli
 	pusha
 	pushf
 
@@ -66,7 +65,5 @@ switch_task:
 	xchg eax, dword[esp]
 
 	mov eax, dword[eax]
-
-	sti
 
 	ret

@@ -83,13 +83,26 @@ pub struct Registers {
 
 use crate::pic::{PIC1_INTERRUPT, PIC2_INTERRUPT};
 
+fn page_fault_handler(reg: Registers) {
+	unsafe {
+		let cr2: usize;
+		core::arch::asm!("mov {}, cr2", out(reg) cr2);
+		crate::kprintln!("at addr {:#x}", cr2);
+	}
+	crate::kprintln!("{:#x?}", reg);
+}
+
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
-		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
+		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
+		match int_no { // TODO: enum exceptions
+			14 => page_fault_handler(reg),
+			_ => crate::kprintln!("{:#x?}", reg)
+		}
 		if int_no != 3 && int_no != 1 { /* TODO: HOW TO GET IF IT'S A TRAP OR NOT */
 			unsafe{core::arch::asm!("hlt")};
 		}

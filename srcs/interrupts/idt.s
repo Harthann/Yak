@@ -11,4 +11,3 @@ isr_stub_table:
 	%endrep
 
 isr_stub_syscall dd isr_stub_128
-

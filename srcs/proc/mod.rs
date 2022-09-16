@@ -109,7 +109,9 @@ pub unsafe fn next_task() {
 	crate::kprintln!("boop");
 	RUNNING_TASK = (*RUNNING_TASK).next;
 	crate::kprintln!("bap");
+	core::arch::asm!("cli");
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
+	core::arch::asm!("sti");
 	crate::kprintln!("bang");
 }
 
