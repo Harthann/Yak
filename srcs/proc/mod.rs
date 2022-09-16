@@ -86,10 +86,10 @@ impl Task {
 use crate::memory::allocator::Box;
 
 pub unsafe fn init_tasking() {
-	core::arch::asm!("mov {}, cr3", in(reg) MAIN_TASK.regs.cr3);
+	core::arch::asm!("mov {}, cr3", out(reg) MAIN_TASK.regs.cr3);
 	core::arch::asm!("pushf",
-					"mov {}, esp",
-					"popf", in(reg) MAIN_TASK.regs.eflags);
+					"mov {}, [esp]",
+					"popf", out(reg) MAIN_TASK.regs.eflags);
 	let mut other_task: Task = Task::new();
 	other_task.init(dumb_main as u32, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
 
