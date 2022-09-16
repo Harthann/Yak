@@ -29,6 +29,7 @@ static mut RUNNING_TASK: *const Task = core::ptr::null();
 static mut MAIN_TASK: Task = Task::new();
 
 #[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
 struct Registers {
 	eax:	u32,
 	ebx:	u32,
@@ -78,8 +79,11 @@ impl Task {
 		} else {
 			todo!();
 		}
+		crate::kprintln!("init task: {:#x?}", self.regs);
 	}
 }
+
+use crate::memory::allocator::Box;
 
 pub unsafe fn init_tasking() {
 	core::arch::asm!("mov {}, cr3", in(reg) MAIN_TASK.regs.cr3);
@@ -89,9 +93,11 @@ pub unsafe fn init_tasking() {
 	let mut other_task: Task = Task::new();
 	other_task.init(dumb_main as u32, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
 
-	MAIN_TASK.next = &other_task;
 	other_task.next = &MAIN_TASK;
+	let alloc = Box::new(other_task);
+	MAIN_TASK.next = &*alloc;
 	RUNNING_TASK = &MAIN_TASK;
+	crate::kprintln!("other task: {:#x?}", (*MAIN_TASK.next).regs);
 }
 
 fn dumb_main() {
@@ -106,9 +112,8 @@ extern "C" {
 pub unsafe fn next_task() {
 	crate::kprintln!("beep");
 	let last: *const Task = RUNNING_TASK;
-	crate::kprintln!("boop");
 	RUNNING_TASK = (*RUNNING_TASK).next;
-	crate::kprintln!("bap");
+	crate::kprintln!("RUNNING_TASK: {:#x?}", (*RUNNING_TASK).regs);
 	core::arch::asm!("cli");
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
 	core::arch::asm!("sti");
