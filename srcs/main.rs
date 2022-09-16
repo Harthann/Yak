@@ -148,5 +148,8 @@ pub extern "C" fn kmain() -> ! {
 	kprint!("$> ");
 	loop {
 		unsafe{core::arch::asm!("hlt")};
+		unsafe {
+			kprintln!("Jiffies: {}", pic::JIFFIES);
+		}
 	}
 }
