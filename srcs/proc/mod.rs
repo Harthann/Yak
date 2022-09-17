@@ -44,6 +44,8 @@ struct Registers {
 	cr3:	u32
 }
 
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
 struct Task {
 	regs: Registers,
 	next: *const Task
@@ -94,10 +96,14 @@ pub unsafe fn init_tasking() {
 	other_task.init(dumb_main as u32, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
 
 	other_task.next = &MAIN_TASK;
+	crate::kprintln!("other_task.next: {:#x?}", other_task.next);
 	let alloc = Box::new(other_task);
 	MAIN_TASK.next = &*alloc;
+	crate::kprintln!("main_task.next: {:#x?}", MAIN_TASK.next);
+	crate::kprintln!("other_task.next: {:#x?}", (*MAIN_TASK.next).next);
+	crate::kprintln!("main_task.next: {:#x?}", (*(*MAIN_TASK.next).next).next);
+	crate::kprintln!("other_task.next: {:#x?}", (*(*(*MAIN_TASK.next).next).next).next);
 	RUNNING_TASK = &MAIN_TASK;
-	crate::kprintln!("other task: {:#x?}", (*MAIN_TASK.next).regs);
 }
 
 fn dumb_main() {
@@ -110,12 +116,20 @@ extern "C" {
 }
 
 pub unsafe fn next_task() {
-	crate::kprintln!("beep");
 	let last: *const Task = RUNNING_TASK;
-	RUNNING_TASK = (*RUNNING_TASK).next;
+	crate::kprintln!("M41n_t4sk: {:#x?}", (*RUNNING_TASK));
+	crate::kprintln!("M41n_t4sk.n3xt: {:#x?}", (*RUNNING_TASK).next);
+	crate::kprintln!("0th3r_t4sk: {:#x?}", (*(*RUNNING_TASK).next));
+	crate::kprintln!("0th3r_t4sk.n3xt: {:#x?}", (*(*RUNNING_TASK).next).next);
 	crate::kprintln!("RUNNING_TASK: {:#x?}", (*RUNNING_TASK).regs);
+	crate::kprintln!("NEXT_RUNNING_TASK_PTR: {:#x?}", (*RUNNING_TASK).next);
+	RUNNING_TASK = (*RUNNING_TASK).next;
+	crate::kprintln!("NEXT_RUNNING_TASK: {:#x?}", (*RUNNING_TASK).regs);
+	crate::kprintln!("PREV_RUNNING_TASK_PTR: {:#x?}", (*RUNNING_TASK).next);
 	core::arch::asm!("cli");
+	crate::kprintln!("switching...");
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
+	crate::kprintln!("PREV_RUNNING_TASK: {:#x?}", (*(*RUNNING_TASK).next).regs);
 	core::arch::asm!("sti");
 	crate::kprintln!("bang");
 }

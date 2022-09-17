@@ -53,6 +53,8 @@ impl ListNode {
 	}
 
 	fn end_addr(&self) -> VirtAddr {
+		crate::kprintln!("start addr: {:#x?}", self.start_addr());
+		crate::kprintln!("size: {:#x?}", self.size);
 		self.start_addr() + self.size as u32
 	}
 }
