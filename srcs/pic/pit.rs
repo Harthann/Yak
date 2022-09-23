@@ -1,6 +1,5 @@
 use crate::io::{
-outb,
-inb
+outb
 };
 
 /*

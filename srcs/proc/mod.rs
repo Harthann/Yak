@@ -24,5 +24,5 @@ struct Process {
 	owner: Id
 }
 
-pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: u32) {
+pub fn		exec_fn(_addr: VirtAddr, _func: VirtAddr, _size: u32) {
 }

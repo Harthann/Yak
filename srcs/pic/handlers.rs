@@ -1,7 +1,5 @@
 use crate::pic::{
 PIC1_IRQ_OFFSET,
-PIC1_IRQ_KEYBOARD,
-PIC1_IRQ_TIMER
 };
 use crate::interrupts::Registers;
 

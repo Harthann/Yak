@@ -98,7 +98,7 @@ use crate::memory::paging::PAGE_WRITABLE;
 use crate::interrupts::init_idt;
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
-use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
+//use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 pub use pic::handlers::JIFFIES;
 
 
@@ -117,7 +117,7 @@ pub extern "C" fn kinit() {
 
 	/* HEAP KERNEL */
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	let tmp = init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
+	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	/* Reserve some spaces to push things before main */
