@@ -23,6 +23,7 @@ BOOTSRCS		=	boot.s \
 					gdt.s \
 					idt.s \
 					int.s \
-					userjump.s
+					userjump.s \
+					task.s
 
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)

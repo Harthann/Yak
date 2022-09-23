@@ -140,8 +140,33 @@ pub extern "C" fn kinit() {
 	kmain();
 }
 
+use proc::{Task, MAIN_TASK};
+use crate::memory::allocator::Box;
+
+fn dumb_main() {
+	crate::kprintln!("other task !");
+	unsafe {proc::next_task()};
+}
+
+pub fn test_task() {
+	unsafe {
+		proc::init_tasking();
+
+		let mut other_task: Task = Task::new();
+		other_task.init(dumb_main as u32, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
+		other_task.next = &mut MAIN_TASK;
+		let mut alloc = Box::new(other_task);
+		proc::append_task(alloc.as_mut());
+		crate::kprintln!("main task !");
+		proc::next_task();
+		crate::kprintln!("return to main task!");
+	}
+}
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
+
+	test_task();
 
 	kprintln!("Hello World of {}!", 42);
 

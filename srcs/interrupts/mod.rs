@@ -87,6 +87,15 @@ PIC1_IRQ_OFFSET,
 PIC2_IRQ_OFFSET
 };
 
+fn page_fault_handler(reg: Registers) {
+	unsafe {
+		let cr2: usize;
+		core::arch::asm!("mov {}, cr2", out(reg) cr2);
+		crate::kprintln!("at addr {:#x}", cr2);
+	}
+	crate::kprintln!("{:#x?}", reg);
+}
+
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
@@ -94,8 +103,12 @@ pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
 //	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
-		crate::kprintln!("\n{} exception (code: {}):\n{:#x?}", STR_EXCEPTION[int_no], int_no, reg);
-		if int_no != 3 { /* breakpoint */
+		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
+		match int_no { // TODO: enum exceptions
+			14 => page_fault_handler(reg),
+			_ => crate::kprintln!("{:#x?}", reg)
+		}
+		if int_no != 3 && int_no != 1 { /* TODO: HOW TO GET IF IT'S A TRAP OR NOT */
 			unsafe{core::arch::asm!("hlt")};
 		}
 	} else if int_no == 0x80 {
