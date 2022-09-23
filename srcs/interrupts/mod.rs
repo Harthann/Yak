@@ -43,6 +43,7 @@ const STR_EXCEPTION: [&'static str; EXCEPTION_SIZE] = [
 extern "C" {
 	static mut isr_stub_table: [u32; IDT_SIZE];
 	static isr_stub_syscall: u32;
+	static irq_stub_0: u32;
 }
 
 static mut IDT: IDT = IDT {
@@ -123,6 +124,7 @@ pub unsafe fn init_idt() {
 
 	/* syscalls */
 	IDT.idt_entries[0x80].init(isr_stub_syscall, GDT_OFFSET_KERNEL_CODE, 0xee);
+	IDT.idt_entries[32].init(irq_stub_0, GDT_OFFSET_KERNEL_CODE, 0x8e);
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
 }
 

@@ -68,6 +68,7 @@ mod vga_buffer;
 mod pic;
 mod proc;
 mod user;
+mod wrappers;
 
 #[cfg(test)]
 mod test;
@@ -98,6 +99,7 @@ use crate::interrupts::init_idt;
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
+pub use pic::handlers::JIFFIES;
 
 
 /*  Kernel initialisation   */
@@ -119,9 +121,12 @@ pub extern "C" fn kinit() {
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 4096)};
 
 	setup_pic8259();
+/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
+
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
@@ -148,8 +153,5 @@ pub extern "C" fn kmain() -> ! {
 	kprint!("$> ");
 	loop {
 		unsafe{core::arch::asm!("hlt")};
-		unsafe {
-			kprintln!("Jiffies: {}", pic::JIFFIES);
-		}
 	}
 }

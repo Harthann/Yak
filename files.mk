@@ -14,7 +14,8 @@ RUST_SRCS		=	main.rs \
 					kglobal.rs \
 					tss.rs \
 					handlers.rs \
-					pit.rs
+					pit.rs \
+					wrappers.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 
