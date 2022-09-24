@@ -4,7 +4,7 @@ global isr_stub_table
 global isr_stub_syscall
 global irq_stub_0
 
-extern jiffies_handler
+extern next_task
 
 extern JIFFIES
 irq_0:
@@ -22,7 +22,7 @@ irq_0:
 	pop edx
 	pop eax
 
-	call jiffies_handler
+	call next_task
 
 	iretd
 

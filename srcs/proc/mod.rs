@@ -106,9 +106,11 @@ extern "C" {
 	fn switch_task(reg_from: *const Registers, reg_to: *const Registers);
 }
 
-pub unsafe fn next_task() {
+#[no_mangle]
+pub unsafe extern "C" fn next_task() {
 	let last: *const Task = RUNNING_TASK;
 	RUNNING_TASK = (*RUNNING_TASK).next;
+	crate::kprintln!("Running task: {:#x?}", *RUNNING_TASK);
 	core::arch::asm!("cli");
 	crate::kprintln!("switching...");
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
