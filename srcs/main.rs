@@ -130,6 +130,9 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
+	let mut main_task: Task = Task::new();
+	unsafe{init_tasking(&mut main_task)};
+
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
 
@@ -140,10 +143,10 @@ pub extern "C" fn kinit() {
 	kmain();
 }
 
-use proc::{Task, MAIN_TASK};
-use crate::memory::allocator::Box;
+use proc::{Task, init_tasking};
 
 fn dumb_main() {
+	crate::kprintln!("dumbmain!!!");
 	loop {crate::kprintln!("2")};
 }
 
@@ -151,18 +154,17 @@ use crate::memory::paging::alloc_page;
 use crate::proc::exec_fn;
 
 pub fn test_task() {
-	unsafe {
-		proc::init_tasking();
-
-		let esp: u32;
-		let res = alloc_page(PAGE_WRITABLE);
-		if res.is_ok() {
-			esp = res.unwrap() + 0x1000;
-		} else {
-			todo!();
-		}
-		exec_fn(esp, dumb_main as u32, 0x1000);
+	let esp: u32;
+	let res = alloc_page(PAGE_WRITABLE);
+	if res.is_ok() {
+		esp = res.unwrap() + 0x1000;
+	} else {
+		todo!();
 	}
+	kprintln!("exec_fn()");
+	exec_fn(esp, dumb_main as u32, 0x1000);
+	kprintln!("after exec fn()");
+	loop {}
 }
 
 #[no_mangle]

@@ -1,5 +1,4 @@
 use crate::memory::MemoryZone;
-use crate::memory::paging::{alloc_page, PAGE_WRITABLE};
 use crate::vec::Vec;
 use crate::VirtAddr;
 
@@ -26,9 +25,9 @@ struct Process {
 }
 
 static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
-pub static mut MAIN_TASK: Task = Task::new();
 
 #[repr(C, packed)]
+#[derive(Debug, Clone, Copy)]
 pub struct Registers {
 	pub eax:	u32,
 	pub ebx:	u32,
@@ -45,8 +44,8 @@ pub struct Registers {
 
 pub struct Task {
 	pub regs: Registers,
-	pub prev: Option<&'static mut Task>,
-	pub next: Option<&'static mut Task>
+	pub prev: *mut Task,
+	pub next: Option<Box<Task>>
 }
 
 impl Task {
@@ -65,7 +64,7 @@ impl Task {
 				eflags: 0,
 				cr3: 0
 			},
-			prev: None,
+			prev: core::ptr::null_mut(),
 			next: None
 		}
 	}
@@ -80,31 +79,37 @@ impl Task {
 
 use crate::memory::allocator::Box;
 
-pub unsafe fn init_tasking() {
-	core::arch::asm!("mov {}, cr3", out(reg) MAIN_TASK.regs.cr3);
+pub unsafe fn init_tasking(main_task: &mut Task) {
+	core::arch::asm!("mov {}, cr3", out(reg) main_task.regs.cr3);
 	core::arch::asm!("pushf",
 					"mov {}, [esp]",
-					"popf", out(reg) MAIN_TASK.regs.eflags);
-	RUNNING_TASK = &mut MAIN_TASK;
+					"popf", out(reg) main_task.regs.eflags);
+	RUNNING_TASK = &mut *main_task;
 }
 
-pub unsafe fn append_task(new_task: &'static mut Task) {
+pub unsafe fn append_task(mut new_task: Task) {
 	/* TODO: mutex lock prevent switch_task .. */
 	let task: &mut Task = &mut *RUNNING_TASK;
-	new_task.prev = Some(&mut *RUNNING_TASK);
-	new_task.next = Some((*RUNNING_TASK).next.take().unwrap());
-	let next = new_task.next.take().unwrap();
-	next.prev = Some(new_task);
-	task.next = Some(next.prev.take().unwrap());
+	if !task.next.is_none() {
+		new_task.next = Some((*RUNNING_TASK).next.take().unwrap());
+		new_task.prev = RUNNING_TASK;
+		task.next = Some(Box::new(new_task));
+		task.prev = &mut *task.next.take().unwrap();
+	} else {
+		new_task.next = None;
+		new_task.prev = RUNNING_TASK;
+		task.next = Some(Box::new(new_task));
+		task.prev = task.next.take().unwrap().as_mut();
+	}
 }
 
 pub unsafe fn remove_task() {/* exit ? */
 	/* TODO: mutex lock prevent switch_task .. */
-	let task: &mut Task = &mut *RUNNING_TASK;
-	RUNNING_TASK = &mut *task.next.take().unwrap();
-	let prev = task.prev.take().unwrap();
-	prev.next = Some(task.next.take().unwrap());
-	(*RUNNING_TASK).prev = Some(task.prev.take().unwrap());
+	let mut task: &mut Task = &mut *RUNNING_TASK;
+	(*task.prev).next = Some(task.next.take().unwrap());
+	let mut next = task.next.take().unwrap();
+	next.as_mut().prev = task.prev;
+	RUNNING_TASK = &mut *next.as_mut();
 	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
@@ -115,10 +120,11 @@ extern "C" {
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
 	let last: *const Task = RUNNING_TASK;
-	RUNNING_TASK = &mut *(*RUNNING_TASK).next.take().unwrap();
+	RUNNING_TASK = (*RUNNING_TASK).prev;
 //	crate::kprintln!("Running task: {:#x?}", *RUNNING_TASK);
 	core::arch::asm!("cli");
 	crate::kprintln!("switching...");
+	crate::kprintln!("regs: {:#x?}", &(*RUNNING_TASK).regs);
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
 	core::arch::asm!("sti");
 }
@@ -126,9 +132,7 @@ pub unsafe extern "C" fn next_task() {
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: u32) {
 	unsafe {
 		let mut other_task: Task = Task::new();
-		other_task.init(addr, func, size, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
-		let boxed = Box::new(other_task);
-		let stask: &'static mut Task = Box::leak(boxed);
-		append_task(stask);
+		other_task.init(addr, func, size, (*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3);
+		append_task(other_task);
 	}
 }
