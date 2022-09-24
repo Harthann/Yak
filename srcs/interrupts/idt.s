@@ -4,6 +4,8 @@ global isr_stub_table
 global isr_stub_syscall
 global irq_stub_0
 
+extern jiffies_handler
+
 extern JIFFIES
 irq_0:
 	push eax
@@ -19,6 +21,9 @@ irq_0:
 
 	pop edx
 	pop eax
+
+	call jiffies_handler
+
 	iretd
 
 isr_stub_table:

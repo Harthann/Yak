@@ -144,8 +144,7 @@ use proc::{Task, MAIN_TASK};
 use crate::memory::allocator::Box;
 
 fn dumb_main() {
-	crate::kprintln!("other task !");
-	unsafe {proc::next_task()};
+	loop {crate::kprintln!("2")};
 }
 
 pub fn test_task() {
@@ -157,9 +156,7 @@ pub fn test_task() {
 		other_task.next = &mut MAIN_TASK;
 		let mut alloc = Box::new(other_task);
 		proc::append_task(alloc.as_mut());
-		crate::kprintln!("main task !");
-		proc::next_task();
-		crate::kprintln!("return to main task!");
+		loop {crate::kprintln!("1")};
 	}
 }
 

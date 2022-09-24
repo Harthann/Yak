@@ -96,6 +96,15 @@ fn page_fault_handler(reg: Registers) {
 	crate::kprintln!("{:#x?}", reg);
 }
 
+use crate::proc::next_task;
+
+#[no_mangle]
+pub extern "C" fn jiffies_handler() {
+	crate::kprintln!("Jiffies !");
+	unsafe {next_task()};
+	crate::kprintln!("End jiffies !");
+}
+
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
