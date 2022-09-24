@@ -147,16 +147,21 @@ fn dumb_main() {
 	loop {crate::kprintln!("2")};
 }
 
+use crate::memory::paging::alloc_page;
+use crate::proc::exec_fn;
+
 pub fn test_task() {
 	unsafe {
 		proc::init_tasking();
 
-		let mut other_task: Task = Task::new();
-		other_task.init(dumb_main as u32, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
-		other_task.next = &mut MAIN_TASK;
-		let mut alloc = Box::new(other_task);
-		proc::append_task(alloc.as_mut());
-		loop {crate::kprintln!("1")};
+		let esp: u32;
+		let res = alloc_page(PAGE_WRITABLE);
+		if res.is_ok() {
+			esp = res.unwrap() + 0x1000;
+		} else {
+			todo!();
+		}
+		exec_fn(esp, dumb_main as u32, 0x1000);
 	}
 }
 

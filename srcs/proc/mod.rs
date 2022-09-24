@@ -29,7 +29,6 @@ static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
 pub static mut MAIN_TASK: Task = Task::new();
 
 #[repr(C, packed)]
-#[derive(Debug, Copy, Clone)]
 pub struct Registers {
 	pub eax:	u32,
 	pub ebx:	u32,
@@ -44,10 +43,10 @@ pub struct Registers {
 	pub cr3:	u32
 }
 
-#[derive(Debug, Copy, Clone)]
 pub struct Task {
 	pub regs: Registers,
-	pub next: *mut Task
+	pub prev: Option<&'static mut Task>,
+	pub next: Option<&'static mut Task>
 }
 
 impl Task {
@@ -66,20 +65,16 @@ impl Task {
 				eflags: 0,
 				cr3: 0
 			},
-			next: core::ptr::null_mut()
+			prev: None,
+			next: None
 		}
 	}
 
-	pub fn init(&mut self, addr: u32, flags: u32, page_dir: u32) {
-		self.regs.eip = addr;
+	pub fn init(&mut self, addr: VirtAddr, func: u32, size: u32, flags: u32, page_dir: u32) {
+		self.regs.eip = func;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
-		let res = alloc_page(PAGE_WRITABLE);
-		if res.is_ok() {
-			self.regs.esp = res.unwrap() + 0x1000;
-		} else {
-			todo!();
-		}
+		self.regs.esp = addr + size;
 	}
 }
 
@@ -93,13 +88,24 @@ pub unsafe fn init_tasking() {
 	RUNNING_TASK = &mut MAIN_TASK;
 }
 
-pub unsafe fn append_task(new_task: &mut Task)
-{
-	let mut task: *mut Task = RUNNING_TASK;
-	while !(*task).next.is_null() {
-		task = (*task).next;
-	}
-	(*task).next = new_task;
+pub unsafe fn append_task(new_task: &'static mut Task) {
+	/* TODO: mutex lock prevent switch_task .. */
+	let task: &mut Task = &mut *RUNNING_TASK;
+	new_task.prev = Some(&mut *RUNNING_TASK);
+	new_task.next = Some((*RUNNING_TASK).next.take().unwrap());
+	let next = new_task.next.take().unwrap();
+	next.prev = Some(new_task);
+	task.next = Some(next.prev.take().unwrap());
+}
+
+pub unsafe fn remove_task() {/* exit ? */
+	/* TODO: mutex lock prevent switch_task .. */
+	let task: &mut Task = &mut *RUNNING_TASK;
+	RUNNING_TASK = &mut *task.next.take().unwrap();
+	let prev = task.prev.take().unwrap();
+	prev.next = Some(task.next.take().unwrap());
+	(*RUNNING_TASK).prev = Some(task.prev.take().unwrap());
+	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
 extern "C" {
@@ -109,8 +115,8 @@ extern "C" {
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
 	let last: *const Task = RUNNING_TASK;
-	RUNNING_TASK = (*RUNNING_TASK).next;
-	crate::kprintln!("Running task: {:#x?}", *RUNNING_TASK);
+	RUNNING_TASK = &mut *(*RUNNING_TASK).next.take().unwrap();
+//	crate::kprintln!("Running task: {:#x?}", *RUNNING_TASK);
 	core::arch::asm!("cli");
 	crate::kprintln!("switching...");
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
@@ -118,4 +124,11 @@ pub unsafe extern "C" fn next_task() {
 }
 
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: u32) {
+	unsafe {
+		let mut other_task: Task = Task::new();
+		other_task.init(addr, func, size, MAIN_TASK.regs.eflags, MAIN_TASK.regs.cr3);
+		let boxed = Box::new(other_task);
+		let stask: &'static mut Task = Box::leak(boxed);
+		append_task(stask);
+	}
 }
