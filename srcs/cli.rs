@@ -5,13 +5,19 @@ use crate::io;
 use crate::string::String;
 use crate::memory::allocator;
 
-const NB_CMDS: usize = 8;
+const NB_CMDS: usize = 9;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown];
-const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown"];
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown, jiffies];
+const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown", "jiffies"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
+}
+
+fn jiffies(_: &Command) {
+	unsafe {
+		crate::kprintln!("Jiffies: {}", crate::pic::JIFFIES);
+	}
 }
 
 fn halt(_: &Command) {

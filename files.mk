@@ -12,7 +12,10 @@ RUST_SRCS		=	main.rs \
 					bump.rs \
 					global.rs \
 					kglobal.rs \
-					tss.rs
+					tss.rs \
+					handlers.rs \
+					pit.rs \
+					wrappers.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 

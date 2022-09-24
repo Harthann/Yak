@@ -43,6 +43,7 @@ const STR_EXCEPTION: [&'static str; EXCEPTION_SIZE] = [
 extern "C" {
 	static mut isr_stub_table: [u32; IDT_SIZE];
 	static isr_stub_syscall: u32;
+	static irq_stub_0: u32;
 }
 
 static mut IDT: IDT = IDT {
@@ -81,7 +82,10 @@ pub struct Registers {
 	ss:			u32
 }
 
-use crate::pic::{PIC1_INTERRUPT, PIC2_INTERRUPT};
+use crate::pic::{
+PIC1_IRQ_OFFSET,
+PIC2_IRQ_OFFSET
+};
 
 fn page_fault_handler(reg: Registers) {
 	unsafe {
@@ -97,6 +101,7 @@ fn page_fault_handler(reg: Registers) {
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
+//	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
 		match int_no { // TODO: enum exceptions
@@ -109,16 +114,11 @@ pub extern "C" fn exception_handler(reg: Registers) {
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
 	} else {
-		if int_no < PIC1_INTERRUPT as usize || int_no > PIC2_INTERRUPT as usize + 7 {
+		if int_no < PIC1_IRQ_OFFSET as usize || int_no > PIC2_IRQ_OFFSET as usize + 7 {
 			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
 			unsafe{core::arch::asm!("hlt")};
 		} else {
-//			crate::kprintln!("\nKeyboard event (code: {}):\n{:#x?}", int_no, reg);
-			crate::pic::end_of_interrupts(int_no - PIC1_INTERRUPT as usize);
-			if crate::keyboard::keyboard_event() {
-				let charcode = crate::keyboard::handle_event();
-				crate::clihandle!(charcode);
-			}
+			crate::pic::handler(reg, int_no);
 		}
 	}
 }
@@ -134,8 +134,10 @@ pub unsafe fn init_idt() {
 		IDT.idt_entries[i].init(offset, GDT_OFFSET_KERNEL_CODE, 0x8e);
 		i += 1;
 	}
+
 	/* syscalls */
 	IDT.idt_entries[0x80].init(isr_stub_syscall, GDT_OFFSET_KERNEL_CODE, 0xee);
+	IDT.idt_entries[32].init(irq_stub_0, GDT_OFFSET_KERNEL_CODE, 0x8e);
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
 }
 
