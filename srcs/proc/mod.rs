@@ -1,16 +1,18 @@
-use crate::memory::MemoryZone;
+use crate::memory::{MemoryZone, Stack, Heap};
+use crate::KALLOCATOR;
 use crate::vec::Vec;
 use crate::VirtAddr;
 use crate::memory::paging::free_pages;
 
+type Id = u32;
+
+static mut next_pid: Id = 0;
 
 enum Status {
 	Run,
 	Zombie,
-	Thead
+	Thread
 }
-
-type Id = u32;
 
 struct Signal {
 }
@@ -19,12 +21,30 @@ struct Process {
 	pid: Id,
 	status: Status,
 	parent: *const Process,
-	childs: Vec<*mut Process>,
+	childs: Vec<Process>,
 	stack: MemoryZone,
 	heap: MemoryZone,
 	signals: Vec<Signal>, /* TODO: VecDeque ? */
 	owner: Id
 }
+
+/*
+impl Process {
+	pub const fn new() -> Self {
+		Self {
+			pid: 0,
+			status: 0,
+			parent: core::ptr::null(),
+			childs: Vec::new(),
+			stack: ,
+			heap: ,
+			signals: Vec::new(),
+			owner: 0
+		}
+	}
+	/* TODO: next_pid need to check overflow and if other pid is available */
+}
+*/
 
 static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
 
@@ -75,13 +95,13 @@ impl Task {
 		}
 	}
 
-	pub fn init(&mut self, addr: VirtAddr, func: u32, size: u32, flags: u32, page_dir: u32) {
+	pub fn init(&mut self, addr: VirtAddr, func: VirtAddr, size: usize, flags: u32, page_dir: u32) {
 		self.regs.eip = func;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
 		self.stack_ptr = addr;
-		self.stack_size = size as usize;
-		self.regs.esp = addr + size;
+		self.stack_size = size;
+		self.regs.esp = addr + size as u32;
 	}
 }
 
@@ -149,7 +169,7 @@ pub unsafe extern "C" fn next_task() {
 	core::arch::asm!("sti");
 }
 
-pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: u32) {
+pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {
 	unsafe {
 		let mut other_task: Task = Task::new();
 		other_task.init(addr, func, size, (*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3);
