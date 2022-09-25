@@ -44,7 +44,7 @@ pub struct Registers {
 
 pub struct Task {
 	pub regs: Registers,
-	pub prev: *mut Task,
+	pub next_ptr: *mut Task,
 	pub next: Option<Box<Task>>
 }
 
@@ -64,7 +64,7 @@ impl Task {
 				eflags: 0,
 				cr3: 0
 			},
-			prev: core::ptr::null_mut(),
+			next_ptr: core::ptr::null_mut(),
 			next: None
 		}
 	}
@@ -89,27 +89,37 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 
 pub unsafe fn append_task(mut new_task: Task) {
 	/* TODO: mutex lock prevent switch_task .. */
-	let task: &mut Task = &mut *RUNNING_TASK;
-	if !task.next.is_none() {
-		new_task.next = Some((*RUNNING_TASK).next.take().unwrap());
-		new_task.prev = RUNNING_TASK;
-		task.next = Some(Box::new(new_task));
-		task.prev = &mut *task.next.take().unwrap();
+	let mut task: &mut Task = &mut *RUNNING_TASK;
+	if !task.next_ptr.is_null() {
+		crate::kprintln!("lol");
+		while !task.next.is_none() {
+			task = &mut *task.next_ptr;
+		}
+		new_task.next_ptr = task.next_ptr;
 	} else {
-		new_task.next = None;
-		new_task.prev = RUNNING_TASK;
-		task.next = Some(Box::new(new_task));
-		task.prev = task.next.take().unwrap().as_mut();
+		new_task.next_ptr = &mut *task;
 	}
+	new_task.next = None;
+	task.next = Some(Box::new(new_task));
+	task.next_ptr = &mut *(task.next.as_mut().unwrap()).as_mut();
 }
 
 pub unsafe fn remove_task() {/* exit ? */
 	/* TODO: mutex lock prevent switch_task .. */
-	let mut task: &mut Task = &mut *RUNNING_TASK;
-	(*task.prev).next = Some(task.next.take().unwrap());
-	let mut next = task.next.take().unwrap();
-	next.as_mut().prev = task.prev;
-	RUNNING_TASK = &mut *next.as_mut();
+	crate::kprintln!("remove_task()");
+	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
+	while prev_task.next_ptr != &mut *RUNNING_TASK {
+		prev_task = &mut *prev_task.next_ptr;
+	}
+	(*prev_task).next_ptr = (*RUNNING_TASK).next_ptr;
+	if (*RUNNING_TASK).next.is_none() {
+		(*prev_task).next = None;
+	} else {
+		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
+	}
+	/* TODO: free stack ? */
+	RUNNING_TASK = &mut *prev_task;
+	crate::kprintln!("task removed finished");
 	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
@@ -120,11 +130,11 @@ extern "C" {
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
 	let last: *const Task = RUNNING_TASK;
-	RUNNING_TASK = (*RUNNING_TASK).prev;
-//	crate::kprintln!("Running task: {:#x?}", *RUNNING_TASK);
+	RUNNING_TASK = (*RUNNING_TASK).next_ptr;
+//	crate::kprintln!("Running task: {:#x?}", RUNNING_TASK);
+//	crate::kprintln!("Running task: {:#x?}", (*RUNNING_TASK).regs);
 	core::arch::asm!("cli");
 	crate::kprintln!("switching...");
-	crate::kprintln!("regs: {:#x?}", &(*RUNNING_TASK).regs);
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
 	core::arch::asm!("sti");
 }

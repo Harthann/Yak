@@ -146,8 +146,23 @@ pub extern "C" fn kinit() {
 use proc::{Task, init_tasking};
 
 fn dumb_main() {
-	crate::kprintln!("dumbmain!!!");
+	crate::kprintln!("dumbmain1!!!");
+	let mut i = 0;
+	while i < 2048 {
+		crate::kprintln!("1");
+		i += 1;
+	}
+	unsafe{proc::remove_task()};
+}
+
+fn dumb_main2() {
+	crate::kprintln!("dumbmain2!!!");
 	loop {crate::kprintln!("2")};
+}
+
+fn dumb_main3() {
+	crate::kprintln!("dumbmain3!!!");
+	loop {crate::kprintln!("3")};
 }
 
 use crate::memory::paging::alloc_page;
@@ -157,13 +172,29 @@ pub fn test_task() {
 	let esp: u32;
 	let res = alloc_page(PAGE_WRITABLE);
 	if res.is_ok() {
-		esp = res.unwrap() + 0x1000;
+		esp = res.unwrap();
 	} else {
 		todo!();
 	}
-	kprintln!("exec_fn()");
 	exec_fn(esp, dumb_main as u32, 0x1000);
-	kprintln!("after exec fn()");
+
+	let esp: u32;
+	let res = alloc_page(PAGE_WRITABLE);
+	if res.is_ok() {
+		esp = res.unwrap();
+	} else {
+		todo!();
+	}
+	exec_fn(esp, dumb_main2 as u32, 0x1000);
+
+	let esp: u32;
+	let res = alloc_page(PAGE_WRITABLE);
+	if res.is_ok() {
+		esp = res.unwrap();
+	} else {
+		todo!();
+	}
+	exec_fn(esp, dumb_main3 as u32, 0x1000);
 	loop {}
 }
 
