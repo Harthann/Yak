@@ -157,12 +157,22 @@ fn dumb_main() {
 
 fn dumb_main2() {
 	crate::kprintln!("dumbmain2!!!");
-	loop {crate::kprintln!("2")};
+	let mut i = 0;
+	while i < 2048 {
+		crate::kprintln!("2");
+		i += 1;
+	}
+	unsafe{proc::remove_task()};
 }
 
 fn dumb_main3() {
 	crate::kprintln!("dumbmain3!!!");
-	loop {crate::kprintln!("3")};
+	let mut i = 0;
+	while i < 2048 {
+		crate::kprintln!("3");
+		i += 1;
+	}
+	unsafe{proc::remove_task()};
 }
 
 use crate::memory::paging::alloc_page;
@@ -195,7 +205,34 @@ pub fn test_task() {
 		todo!();
 	}
 	exec_fn(esp, dumb_main3 as u32, 0x1000);
-	loop {}
+	
+	let mut i = 0;
+	while i < 10000 {
+		crate::kprintln!("main");
+		i += 1;
+	}
+//	loop {}
+}
+
+fn dumb_main4() {
+	crate::kprintln!("dumbmain4!!!");
+	let mut i = 0;
+	while i < 2048 {
+		crate::kprintln!("4");
+		i += 1;
+	}
+	unsafe{proc::remove_task()};
+}
+
+pub fn test_task2() {
+	let esp: u32;
+	let res = alloc_page(PAGE_WRITABLE);
+	if res.is_ok() {
+		esp = res.unwrap();
+	} else {
+		todo!();
+	}
+	exec_fn(esp, dumb_main4 as u32, 0x1000);
 }
 
 #[no_mangle]
@@ -211,6 +248,7 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
+	test_task2();
 	loop {
 		unsafe{core::arch::asm!("hlt")};
 	}

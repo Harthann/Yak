@@ -90,8 +90,8 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 pub unsafe fn append_task(mut new_task: Task) {
 	/* TODO: mutex lock prevent switch_task .. */
 	let mut task: &mut Task = &mut *RUNNING_TASK;
+	crate::kprintln!("append_task()");
 	if !task.next_ptr.is_null() {
-		crate::kprintln!("lol");
 		while !task.next.is_none() {
 			task = &mut *task.next_ptr;
 		}
@@ -120,6 +120,7 @@ pub unsafe fn remove_task() {/* exit ? */
 	/* TODO: free stack ? */
 	RUNNING_TASK = &mut *prev_task;
 	crate::kprintln!("task removed finished");
+	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
 	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
@@ -134,7 +135,7 @@ pub unsafe extern "C" fn next_task() {
 //	crate::kprintln!("Running task: {:#x?}", RUNNING_TASK);
 //	crate::kprintln!("Running task: {:#x?}", (*RUNNING_TASK).regs);
 	core::arch::asm!("cli");
-	crate::kprintln!("switching...");
+//	crate::kprintln!("switching...");
 	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
 	core::arch::asm!("sti");
 }
