@@ -205,7 +205,7 @@ pub fn test_task() {
 		todo!();
 	}
 	exec_fn(esp, dumb_main3 as u32, 0x1000);
-	
+
 	let mut i = 0;
 	while i < 10000 {
 		crate::kprintln!("main");

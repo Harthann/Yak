@@ -1,6 +1,8 @@
 use crate::memory::MemoryZone;
 use crate::vec::Vec;
 use crate::VirtAddr;
+use crate::memory::paging::free_pages;
+
 
 enum Status {
 	Run,
@@ -44,6 +46,8 @@ pub struct Registers {
 
 pub struct Task {
 	pub regs: Registers,
+	pub stack_ptr: u32, /* TODO: replace by MemoryZone ? */
+	pub stack_size: usize,
 	pub next_ptr: *mut Task,
 	pub next: Option<Box<Task>>
 }
@@ -64,6 +68,8 @@ impl Task {
 				eflags: 0,
 				cr3: 0
 			},
+			stack_ptr: 0,
+			stack_size: 0,
 			next_ptr: core::ptr::null_mut(),
 			next: None
 		}
@@ -73,6 +79,8 @@ impl Task {
 		self.regs.eip = func;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
+		self.stack_ptr = addr;
+		self.stack_size = size as usize;
 		self.regs.esp = addr + size;
 	}
 }
@@ -118,9 +126,10 @@ pub unsafe fn remove_task() {/* exit ? */
 		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
 	}
 	/* TODO: free stack ? */
+	free_pages((*RUNNING_TASK).stack_ptr, (*RUNNING_TASK).stack_size / 0x1000);
 	RUNNING_TASK = &mut *prev_task;
 	crate::kprintln!("task removed finished");
-	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
+//	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
 	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
