@@ -1,0 +1,3 @@
+[target.'cfg(target_os = "none")']
+runner = "./test_runner.sh"
+

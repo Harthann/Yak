@@ -1,4 +1,8 @@
-VERSION			=	1
+SHELL			=	/bin/bash
+
+export RUSTUP_TOOLCHAIN=nightly
+
+VERSION			=	4
 
 QEMU			=	qemu-system-i386
 
@@ -6,18 +10,17 @@ HOST			=	$(shell uname)
 
 TARGER_ARCH 	=	i386
 
-LINKERFILE		=	linker.ld
-LINKERFLAGS		=	-m elf_i386 -n -T $(DIR_ARCH)/$(LINKERFILE)
-
 GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
+LIBBOOT			=	libboot.a
+
+XARGO_FLAGS		=	$(release) --target $(TARGER_ARCH)-kfs
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
 DOCKER_RUST		=	rust-compiler
-DOCKER_LINKER	=	linker
 
 DIR_ARCH		=	arch/i386
 DIR_CONFIG		=	config
@@ -31,50 +34,72 @@ DIR_ISO			=	iso
 DIR_GRUB		=	$(DIR_ISO)/boot/grub
 
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
+include files.mk
 
-BOOTSRCS		=	header.s \
-					boot.s
-
-BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
-
-RUST_SRCS		=	main.rs \
-					vga_buffer.rs \
-					io.rs \
-					keyboard.rs \
-					cursor.rs \
-					color.rs
-
-KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
-
-
-RUST_KERNEL 	=	target/i386-kfs/debug/libkernel.a
-NAME			=	kfs_$(VERSION)
+RUST_KERNEL 	?=	target/i386-kfs/debug/kernel
+NAME			?=	kfs_$(VERSION)
 
 all:			$(NAME)
 
 boot:			$(NAME)
-				$(QEMU) -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				$(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log
 
+# This rule will run qemu with flags to wait gdb to connect to it
+debug:			$(NAME)
+				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c"
+				pkill qemu
+
+release:
+	make clean all \
+		release=--release \
+		RUST_KERNEL=target/i386-kfs/release/kernel \
+		NAME=kfs
+
+test: $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
+				xargo test $(XARGO_FLAGS) -- $(NAME)
+
+# Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
+ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat) ),) 
 ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_GRUB).dockerfile -t $(DOCKER_GRUB)
 endif
-				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
-
-$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) | $(DIR_GRUB)
-ifeq ($(shell docker images -q ${DOCKER_LINKER} 2> /dev/null),)
-				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_LINKER).dockerfile -t $(DOCKER_LINKER)
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
+else
+				grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO)
 endif
-				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_LINKER) $(LINKERFLAGS) $^ -o $(DIR_ISO)/boot/$(NAME)
+
+# Link asm file with rust according to the linker script in arch directory
+$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
+				cp -f $(RUST_KERNEL) iso/boot/$(NAME)
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
-$(RUST_KERNEL):	$(KERNELSRCS)
+# Build libkernel using xargo
+$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile
+ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run -it --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) build --target=$(TARGER_ARCH)-kfs
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && xargo build $(XARGO_FLAGS)'
+else
+				i386-elf-ar rc libboot.a $(BOOTOBJS)
+				xargo build $(XARGO_FLAGS)
+endif
+
+# Check if the rust can compile without actually compiling it
+check: $(KERNELSRCS)
+ifeq ($(shell which xargo),)
+ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
+				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
+endif
+				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check $(XARGO_FLAGS)
+else
+				xargo check $(XARGO_FLAGS)
+endif
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)
@@ -93,23 +118,15 @@ $(DIR_OBJS):
 				mkdir -p $(DIR_OBJS)
 
 clean:
-ifneq (,$(wildcard $(DIR_OBJS)))
 				rm -rf $(DIR_OBJS)
-endif
-ifneq (,$(wildcard target))
+				rm -rf $(LIBBOOT)
+				rm -rf qemu.log kernel.log
 				rm -rf target
-endif
-ifneq (,$(wildcard Cargo.lock))
 				rm -rf Cargo.lock
-endif
-ifneq (,$(wildcard $(DIR_ISO)))
 				rm -rf $(DIR_ISO)
-endif
 
 fclean:			clean
-ifneq (,$(wildcard $(NAME)))
-				rm -rf $(NAME)
-endif
+				rm -rf kfs*
 
 re:				fclean
 				@$(MAKE) --no-print-directory

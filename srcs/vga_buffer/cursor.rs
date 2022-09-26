@@ -10,7 +10,7 @@ pub struct Cursor {
 }
 
 impl Cursor {
-	pub const fn new(x: usize, y: usize, color_code: ColorCode) -> Cursor{
+	pub const fn new(x: usize, y: usize, color_code: ColorCode) -> Cursor {
 		Cursor {
 				x: x,
 				y: y,

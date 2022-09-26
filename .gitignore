@@ -1,7 +1,8 @@
 *.swp
+*.swo
 *.o
 *.d
-kfs_*
+kfs*
 *.bin
 iso/
 
@@ -12,3 +13,5 @@ iso/
 .bash_history
 Cargo.lock
 kernel.log
+qemu.log
+libboot.a
