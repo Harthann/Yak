@@ -159,13 +159,14 @@ extern "C" {
 
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
-	let last: *const Task = RUNNING_TASK;
-	RUNNING_TASK = (*RUNNING_TASK).next_ptr;
-//	crate::kprintln!("Running task: {:#x?}", RUNNING_TASK);
-//	crate::kprintln!("Running task: {:#x?}", (*RUNNING_TASK).regs);
 	core::arch::asm!("cli");
-//	crate::kprintln!("switching...");
-	switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
+
+	if !(*RUNNING_TASK).next_ptr.is_null() {
+		let last: *const Task = RUNNING_TASK;
+		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
+		switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
+	}
+
 	core::arch::asm!("sti");
 }
 
