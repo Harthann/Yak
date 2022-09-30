@@ -132,7 +132,7 @@ pub extern "C" fn kinit() {
 	unsafe{init_tasking(&mut main_task)};
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
+	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
 	sti!();
 
 	/*	Function to test and enter usermode */

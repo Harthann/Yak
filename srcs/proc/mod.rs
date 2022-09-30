@@ -3,6 +3,8 @@ use crate::KALLOCATOR;
 use crate::vec::Vec;
 use crate::VirtAddr;
 use crate::memory::paging::free_pages;
+use crate::PAGE_WRITABLE;
+use crate::alloc_page;
 
 type Id = u32;
 
@@ -47,6 +49,8 @@ impl Process {
 */
 
 static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
+#[no_mangle]
+pub static mut STACK_PTR: VirtAddr = 0;
 
 #[repr(C, packed)]
 #[derive(Debug, Clone, Copy)]
@@ -118,11 +122,17 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 	core::arch::asm!("pushf",
 					"mov {}, [esp]",
 					"popf", out(reg) main_task.regs.eflags);
+	let res = alloc_page(PAGE_WRITABLE); /* TODO: DO IT ON KERNEL STACK ? */
+	if res.is_ok() {
+		STACK_PTR = res.unwrap();
+	} else {
+		todo!();
+	}
 	RUNNING_TASK = &mut *main_task;
 }
 
 pub unsafe fn append_task(mut new_task: Task) {
-	core::arch::asm!("cli");
+	crate::cli!();
 	let mut task: &mut Task = &mut *RUNNING_TASK;
 	crate::kprintln!("append_task()");
 	print_tasks();
@@ -137,15 +147,16 @@ pub unsafe fn append_task(mut new_task: Task) {
 	new_task.next = None;
 	task.next = Some(Box::new(new_task));
 	task.next_ptr = &mut *(task.next.as_mut().unwrap()).as_mut();
-	core::arch::asm!("sti");
+	crate::sti!();
 }
 
-pub unsafe fn print_tasks() {
+pub unsafe extern "C" fn print_tasks() {
 	crate::kprintln!("PRINT_TASKS ==>");
 	let mut i = 0;
 	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
 	while prev_task.next_ptr != &mut *RUNNING_TASK {
-		crate::kprintln!("task.regs {}: {:#x?}", i, prev_task.regs);
+		crate::kprintln!("task ptr {}: {:p}", i, &mut *prev_task);
+		crate::kprintln!("task.regs: {:#x?}", prev_task.regs);
 		crate::kprintln!("task.next_ptr: {:#x?}", prev_task.next_ptr);
 		if prev_task.next_ptr.is_null() {
 			return ;
@@ -153,7 +164,8 @@ pub unsafe fn print_tasks() {
 		prev_task = &mut *prev_task.next_ptr;
 		i += 1;
 	}
-	crate::kprintln!("task.regs {}: {:#x?}", i, prev_task.regs);
+	crate::kprintln!("task ptr {}: {:p}", i, &mut *prev_task);
+	crate::kprintln!("task.regs: {:#x?}", prev_task.regs);
 	crate::kprintln!("task.next_ptr: {:#x?}", prev_task.next_ptr);
 }
 
@@ -165,6 +177,8 @@ pub unsafe fn remove_task() {/* exit ? */
 		prev_task = &mut *prev_task.next_ptr;
 	}
 	let ptr: *mut Task = &mut *prev_task;
+	crate::kprintln!("ptr: {:#x?}", ptr);
+	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
 	if ptr == (*RUNNING_TASK).next_ptr {
 		(*prev_task).next_ptr = core::ptr::null_mut();
 	} else {
@@ -177,7 +191,8 @@ pub unsafe fn remove_task() {/* exit ? */
 	} else {
 		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
 	}
-	RUNNING_TASK = ptr;
+	RUNNING_TASK = prev_task;
+	print_tasks();
 	crate::kprintln!("task removed finished");
 	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
 	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
@@ -189,6 +204,7 @@ extern "C" {
 
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
+	print_tasks();
 	if !(*RUNNING_TASK).next_ptr.is_null() {
 		let last: *const Task = RUNNING_TASK;
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
@@ -201,6 +217,7 @@ pub unsafe extern "C" fn next_task() {
 pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) -> !{
 	core::arch::asm!("call {}", in(reg) func);
 	crate::cli!();
+	core::arch::asm!("mov esp, {}", in(reg) STACK_PTR - 256);
 	remove_task();
 	crate::sti!();
 	loop {} /* waiting for switch - TODO: replace by int ? */
