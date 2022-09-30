@@ -247,7 +247,5 @@ pub extern "C" fn kmain() -> ! {
 
 	kprint!("$> ");
 	test_task2();
-	loop {
-		unsafe{core::arch::asm!("hlt")};
-	}
+	loop {}
 }
