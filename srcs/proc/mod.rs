@@ -96,12 +96,17 @@ impl Task {
 	}
 
 	pub fn init(&mut self, addr: VirtAddr, func: VirtAddr, size: usize, flags: u32, page_dir: u32) {
-		self.regs.eip = func;
+		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
 		self.stack_ptr = addr;
 		self.stack_size = size;
-		self.regs.esp = addr + size as u32;
+		self.regs.esp = addr + (size - 8) as u32;
+		unsafe {
+			core::arch::asm!("mov [{esp} + 4], {func}",
+				esp = in(reg) self.regs.esp,
+				func = in(reg) func);
+		}
 	}
 }
 
@@ -191,6 +196,12 @@ pub unsafe extern "C" fn next_task() {
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
 		switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
 	}
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) {
+	core::arch::asm!("call {}", in(reg) func);
+	remove_task();
 }
 
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {

@@ -121,9 +121,6 @@ pub extern "C" fn kinit() {
 	init_stack(kstack_addr, 32768, PAGE_WRITABLE, false);
 	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
-	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 8192)};
-
 	setup_pic8259();
 /* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
 	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
@@ -134,6 +131,9 @@ pub extern "C" fn kinit() {
 	let mut main_task: Task = Task::new();
 	unsafe{init_tasking(&mut main_task)};
 	sti!();
+
+	/* Reserve some spaces to push things before main */
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 8192)};
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -154,7 +154,6 @@ fn dumb_main() {
 		crate::kprintln!("dumb1");
 		i += 1;
 	}
-	unsafe{proc::remove_task()};
 }
 
 fn dumb_main2() {
@@ -164,7 +163,6 @@ fn dumb_main2() {
 		crate::kprintln!("dumb2");
 		i += 1;
 	}
-	unsafe{proc::remove_task()};
 }
 
 fn dumb_main3() {
@@ -174,7 +172,6 @@ fn dumb_main3() {
 		crate::kprintln!("dumb3");
 		i += 1;
 	}
-	unsafe{proc::remove_task()};
 }
 
 use crate::memory::paging::alloc_page;
@@ -224,7 +221,6 @@ fn dumb_main4() {
 		crate::kprintln!("dumb4");
 		i += 1;
 	}
-	unsafe{proc::remove_task()};
 }
 
 pub fn test_task2() {
