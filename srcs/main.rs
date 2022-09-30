@@ -118,8 +118,8 @@ pub extern "C" fn kinit() {
 
 	/* HEAP KERNEL */
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	init_stack(kstack_addr, 32768, PAGE_WRITABLE, false);
-	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
+	init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
+	unsafe {init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	setup_pic8259();
 /* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
@@ -130,10 +130,10 @@ pub extern "C" fn kinit() {
 
 	let mut main_task: Task = Task::new();
 	unsafe{init_tasking(&mut main_task)};
-	sti!();
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 8192)};
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
+	sti!();
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -236,7 +236,6 @@ pub fn test_task2() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-
 	test_task();
 
 	kprintln!("Hello World of {}!", 42);

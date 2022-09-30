@@ -95,6 +95,7 @@ impl Task {
 		}
 	}
 
+	/* TODO: handle args and setup stack there */
 	pub fn init(&mut self, addr: VirtAddr, func: VirtAddr, size: usize, flags: u32, page_dir: u32) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
@@ -157,7 +158,6 @@ pub unsafe fn print_tasks() {
 }
 
 pub unsafe fn remove_task() {/* exit ? */
-	core::arch::asm!("cli");
 	crate::kprintln!("remove_task()");
 	print_tasks();
 	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
@@ -181,8 +181,6 @@ pub unsafe fn remove_task() {/* exit ? */
 	crate::kprintln!("task removed finished");
 	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
 	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
-	core::arch::asm!("sti");
-	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
 extern "C" {
@@ -198,10 +196,14 @@ pub unsafe extern "C" fn next_task() {
 	}
 }
 
+/* TODO: handle args */
 #[no_mangle]
-pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) {
+pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) -> !{
 	core::arch::asm!("call {}", in(reg) func);
+	crate::cli!();
 	remove_task();
+	crate::sti!();
+	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {
