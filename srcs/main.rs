@@ -119,7 +119,7 @@ pub extern "C" fn kinit() {
 	/* HEAP KERNEL */
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	init_stack(kstack_addr, 32768, PAGE_WRITABLE, false);
-	unsafe {init_heap(heap as u32, 10 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
+	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 8192)};
