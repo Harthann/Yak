@@ -121,18 +121,18 @@ pub extern "C" fn kinit() {
 	init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
 	unsafe {init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
-	setup_pic8259();
-/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
-
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
 	let mut main_task: Task = Task::new();
 	unsafe{init_tasking(&mut main_task)};
 
+	setup_pic8259();
+	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
+
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 256)};
+	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
 	sti!();
 
 	/*	Function to test and enter usermode */
