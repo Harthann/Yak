@@ -122,10 +122,8 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 }
 
 pub unsafe fn append_task(mut new_task: Task) {
-	core::arch::asm!("cli");
+	crate::cli!();
 	let mut task: &mut Task = &mut *RUNNING_TASK;
-	crate::kprintln!("append_task()");
-	print_tasks();
 	if !task.next_ptr.is_null() {
 		while !task.next.is_none() {
 			task = &mut *task.next_ptr;
@@ -137,7 +135,7 @@ pub unsafe fn append_task(mut new_task: Task) {
 	new_task.next = None;
 	task.next = Some(Box::new(new_task));
 	task.next_ptr = &mut *(task.next.as_mut().unwrap()).as_mut();
-	core::arch::asm!("sti");
+	crate::sti!();
 }
 
 pub unsafe fn print_tasks() {
@@ -158,8 +156,6 @@ pub unsafe fn print_tasks() {
 }
 
 pub unsafe fn remove_task() {/* exit ? */
-	crate::kprintln!("remove_task()");
-	print_tasks();
 	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
 	while prev_task.next_ptr != &mut *RUNNING_TASK {
 		prev_task = &mut *prev_task.next_ptr;
@@ -172,15 +168,11 @@ pub unsafe fn remove_task() {/* exit ? */
 	}
 	free_pages((*RUNNING_TASK).stack_ptr, (*RUNNING_TASK).stack_size / 0x1000);
 	if (*RUNNING_TASK).next.is_none() {
-		crate::kprintln!("None!");
 		(*prev_task).next = None;
 	} else {
 		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
 	}
 	RUNNING_TASK = ptr;
-	crate::kprintln!("task removed finished");
-	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
-	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
 }
 
 extern "C" {
@@ -198,12 +190,25 @@ pub unsafe extern "C" fn next_task() {
 
 /* TODO: handle args */
 #[no_mangle]
-pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) -> !{
+pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) {
 	core::arch::asm!("call {}", in(reg) func);
 	crate::cli!();
 	remove_task();
-	crate::sti!();
-	loop {} /* waiting for switch - TODO: replace by int ? */
+	let regs: Registers = Registers {
+		eax: 0,
+		ebx: 0,
+		ecx: 0,
+		edx: 0,
+		esi: 0,
+		edi: 0,
+		esp: 0,
+		ebp: 0,
+		eip: 0,
+		eflags: 0,
+		cr3: 0
+	};
+	switch_task(&regs, &(*RUNNING_TASK).regs);
+	/* Never goes there */
 }
 
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {

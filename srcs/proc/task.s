@@ -66,4 +66,5 @@ switch_task:
 
 	mov eax, dword[eax]
 
+	sti
 	ret
