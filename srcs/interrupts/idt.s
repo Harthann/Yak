@@ -8,6 +8,7 @@ extern next_task
 
 extern JIFFIES
 irq_0:
+	cli
 	push eax
 	push edx
 
@@ -24,6 +25,7 @@ irq_0:
 
 	call next_task
 
+	sti
 	iretd
 
 isr_stub_table:

@@ -105,6 +105,7 @@ pub use pic::handlers::JIFFIES;
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
+	cli!();
 //	multiboot::read_tags();
 	/* Init paging and remove identity paging */
 	init_paging();
@@ -117,11 +118,11 @@ pub extern "C" fn kinit() {
 
 	/* HEAP KERNEL */
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	init_stack(kstack_addr, 8192, PAGE_WRITABLE, false);
-	unsafe {init_heap(heap as u32, 100 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
+	init_stack(kstack_addr, 32768, PAGE_WRITABLE, false);
+	unsafe {init_heap(heap as u32, 10 * 4096, PAGE_WRITABLE, true, &mut KALLOCATOR)};
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 4096)};
+	unsafe{core::arch::asm!("mov esp, eax", in("eax") kstack_addr - 8192)};
 
 	setup_pic8259();
 /* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
@@ -132,6 +133,7 @@ pub extern "C" fn kinit() {
 
 	let mut main_task: Task = Task::new();
 	unsafe{init_tasking(&mut main_task)};
+	sti!();
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -149,7 +151,7 @@ fn dumb_main() {
 	crate::kprintln!("dumbmain1!!!");
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("1");
+		crate::kprintln!("dumb1");
 		i += 1;
 	}
 	unsafe{proc::remove_task()};
@@ -159,7 +161,7 @@ fn dumb_main2() {
 	crate::kprintln!("dumbmain2!!!");
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("2");
+		crate::kprintln!("dumb2");
 		i += 1;
 	}
 	unsafe{proc::remove_task()};
@@ -169,7 +171,7 @@ fn dumb_main3() {
 	crate::kprintln!("dumbmain3!!!");
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("3");
+		crate::kprintln!("dumb3");
 		i += 1;
 	}
 	unsafe{proc::remove_task()};
@@ -211,6 +213,7 @@ pub fn test_task() {
 		crate::kprintln!("main");
 		i += 1;
 	}
+	crate::kprintln!("MAIN to {}", i);
 //	loop {}
 }
 
@@ -218,7 +221,7 @@ fn dumb_main4() {
 	crate::kprintln!("dumbmain4!!!");
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("4");
+		crate::kprintln!("dumb4");
 		i += 1;
 	}
 	unsafe{proc::remove_task()};

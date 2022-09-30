@@ -116,9 +116,10 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 }
 
 pub unsafe fn append_task(mut new_task: Task) {
-	/* TODO: mutex lock prevent switch_task .. */
+	core::arch::asm!("cli");
 	let mut task: &mut Task = &mut *RUNNING_TASK;
 	crate::kprintln!("append_task()");
+	print_tasks();
 	if !task.next_ptr.is_null() {
 		while !task.next.is_none() {
 			task = &mut *task.next_ptr;
@@ -130,26 +131,52 @@ pub unsafe fn append_task(mut new_task: Task) {
 	new_task.next = None;
 	task.next = Some(Box::new(new_task));
 	task.next_ptr = &mut *(task.next.as_mut().unwrap()).as_mut();
+	core::arch::asm!("sti");
+}
+
+pub unsafe fn print_tasks() {
+	crate::kprintln!("PRINT_TASKS ==>");
+	let mut i = 0;
+	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
+	while prev_task.next_ptr != &mut *RUNNING_TASK {
+		crate::kprintln!("task.regs {}: {:#x?}", i, prev_task.regs);
+		crate::kprintln!("task.next_ptr: {:#x?}", prev_task.next_ptr);
+		if prev_task.next_ptr.is_null() {
+			return ;
+		}
+		prev_task = &mut *prev_task.next_ptr;
+		i += 1;
+	}
+	crate::kprintln!("task.regs {}: {:#x?}", i, prev_task.regs);
+	crate::kprintln!("task.next_ptr: {:#x?}", prev_task.next_ptr);
 }
 
 pub unsafe fn remove_task() {/* exit ? */
-	/* TODO: mutex lock prevent switch_task .. */
+	core::arch::asm!("cli");
 	crate::kprintln!("remove_task()");
+	print_tasks();
 	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
 	while prev_task.next_ptr != &mut *RUNNING_TASK {
 		prev_task = &mut *prev_task.next_ptr;
 	}
-	(*prev_task).next_ptr = (*RUNNING_TASK).next_ptr;
+	let ptr: *mut Task = &mut *prev_task;
+	if ptr == (*RUNNING_TASK).next_ptr {
+		(*prev_task).next_ptr = core::ptr::null_mut();
+	} else {
+		(*prev_task).next_ptr = (*RUNNING_TASK).next_ptr;
+	}
+	free_pages((*RUNNING_TASK).stack_ptr, (*RUNNING_TASK).stack_size / 0x1000);
 	if (*RUNNING_TASK).next.is_none() {
+		crate::kprintln!("None!");
 		(*prev_task).next = None;
 	} else {
 		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
 	}
-	/* TODO: free stack ? */
-	free_pages((*RUNNING_TASK).stack_ptr, (*RUNNING_TASK).stack_size / 0x1000);
-	RUNNING_TASK = &mut *prev_task;
+	RUNNING_TASK = ptr;
 	crate::kprintln!("task removed finished");
-//	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
+	crate::kprintln!("prev_task.regs: {:#x?}", (*RUNNING_TASK).regs);
+	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
+	core::arch::asm!("sti");
 	loop {} /* waiting for switch - TODO: replace by int ? */
 }
 
@@ -159,15 +186,11 @@ extern "C" {
 
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
-	core::arch::asm!("cli");
-
 	if !(*RUNNING_TASK).next_ptr.is_null() {
 		let last: *const Task = RUNNING_TASK;
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
 		switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
 	}
-
-	core::arch::asm!("sti");
 }
 
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {

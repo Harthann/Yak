@@ -167,8 +167,6 @@ pub fn pic_init_masks()
 /* We need the bit to be 0 to activate */
 	outb(PIC1_DATA, 0xff ^ pic1mask);
 	outb(PIC2_DATA, 0xff ^ pic2mask);
-
-	unsafe{core::arch::asm!("sti")};
 }
 
 pub fn setup_pic8259() {
