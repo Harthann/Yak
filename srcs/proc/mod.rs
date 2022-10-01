@@ -6,9 +6,10 @@ use crate::memory::paging::free_pages;
 
 type Id = u32;
 
-static mut next_pid: Id = 0;
+static mut NEXT_PID: Id = 0;
 
 enum Status {
+	Disable,
 	Run,
 	Zombie,
 	Thread
@@ -28,23 +29,31 @@ struct Process {
 	owner: Id
 }
 
-/*
 impl Process {
 	pub const fn new() -> Self {
 		Self {
 			pid: 0,
-			status: 0,
+			status: Status::Disable,
 			parent: core::ptr::null(),
 			childs: Vec::new(),
-			stack: ,
-			heap: ,
+			stack: MemoryZone::new(),
+			heap: MemoryZone::new(),
 			signals: Vec::new(),
 			owner: 0
 		}
 	}
+
+	pub unsafe fn init(&mut self, parent: &Process, owner: Id) {
+		self.pid = NEXT_PID;
+		self.status = Status::Run;
+		self.parent = &*parent;
+		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
+		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
+		self.owner = owner;
+		NEXT_PID += 1;
+	}
 	/* TODO: next_pid need to check overflow and if other pid is available */
 }
-*/
 
 static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
 static mut STACK_TASK_SWITCH: VirtAddr = 0;
