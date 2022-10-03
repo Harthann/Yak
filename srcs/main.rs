@@ -8,6 +8,7 @@
 #![feature(ptr_internals)]
 #![feature(fundamental)]
 #![feature(lang_items)]
+#![feature(c_variadic)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -153,63 +154,57 @@ pub extern "C" fn kinit() {
 
 use proc::{Task, init_tasking};
 
-fn dumb_main() {
-	crate::kprintln!("dumbmain1!!!");
+fn dumb_main(nb: usize) {
+	crate::kprintln!("dumbmain{}!!!", nb);
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("dumb1");
+		crate::kprintln!("dumb{}", nb);
 		i += 1;
 	}
-	exec_fn(0x0, dumb_main2 as u32, 0x1000);
+	if nb > 1 {
+		dumb_main(nb - 1)
+	}
 }
 
-fn dumb_main2() {
-	crate::kprintln!("dumbmain2!!!");
+fn dumb_main2(nb: usize, nb2: u64) {
+	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("dumb2");
+		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
 		i += 1;
 	}
-	exec_fn(0x0, dumb_main3 as u32, 0x1000);
-}
-
-fn dumb_main3() {
-	crate::kprintln!("dumbmain3!!!");
-	let mut i = 0;
-	while i < 2048 {
-		crate::kprintln!("dumb3");
-		i += 1;
+	if nb > 1 {
+		dumb_main2(nb - 1, nb2)
 	}
 }
 
 use crate::memory::paging::alloc_page;
 use crate::proc::exec_fn;
 
-pub fn test_task() {
-	exec_fn(0x0, dumb_main as u32, 0x1000);
-	exec_fn(0x0, dumb_main2 as u32, 0x1000);
-	exec_fn(0x0, dumb_main3 as u32, 0x1000);
+use crate::vec::Vec;
 
+pub fn test_task() {
+	unsafe {
+		exec_fn!(dumb_main as u32, 3);
+		exec_fn!(dumb_main as u32, 2);
+		exec_fn!(dumb_main as u32, 1);
+	}
+
+	/*
 	let mut i = 0;
 	while i < 10000 {
 		crate::kprintln!("main");
 		i += 1;
 	}
 	crate::kprintln!("MAIN to {}", i);
+	*/
 //	loop {}
 }
 
-fn dumb_main4() {
-	crate::kprintln!("dumbmain4!!!");
-	let mut i = 0;
-	while i < 2048 {
-		crate::kprintln!("dumb4");
-		i += 1;
-	}
-}
-
 pub fn test_task2() {
-	exec_fn(0x0, dumb_main4 as u32, 0x1000);
+	unsafe {
+		exec_fn!(dumb_main2 as u32, 4, 0x123456789abcdef as u64);
+	}
 }
 
 #[no_mangle]

@@ -1,5 +1,4 @@
-use crate::memory::{MemoryZone, Stack, Heap};
-use crate::KALLOCATOR;
+use crate::memory::{MemoryZone, Stack};
 use crate::vec::Vec;
 use crate::{VirtAddr, PAGE_WRITABLE, alloc_page};
 use crate::memory::paging::free_pages;
@@ -54,6 +53,32 @@ impl Process {
 //		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
 		self.owner = owner;
 		NEXT_PID += 1;
+	}
+
+	pub unsafe fn remove(&mut self) {
+		let parent: &mut Process = &mut *self.parent;
+		while self.childs.len() > 0 {
+			let res = self.childs.pop();
+			if res.is_none() {
+				todo!();
+			}
+			parent.childs.push(res.unwrap());
+			let len = parent.childs.len();
+			parent.childs[len - 1].parent = self.parent;
+		}
+		let mut i = 0;
+		while i < parent.childs.len() {
+			let ptr: *mut Process = parent.childs[i].as_mut();
+			if ptr == &mut *self {
+				break ;
+			}
+			i += 1;
+		}
+		if i == parent.childs.len() {
+			todo!(); // Problem
+		}
+		parent.childs.remove(i);
+		free_pages(self.stack.offset, self.stack.size / 0x1000);
 	}
 }
 
@@ -112,17 +137,12 @@ impl Task {
 	}
 
 	/* TODO: handle args and setup stack there */
-	pub unsafe fn init(&mut self, addr: VirtAddr, func: VirtAddr, size: usize, flags: u32, page_dir: u32, process: *mut Process) {
+	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32, process: *mut Process) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
 		self.process = process;
-		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 8) as u32;
-		unsafe {
-			core::arch::asm!("mov [{esp} + 4], {func}",
-				esp = in(reg) self.regs.esp,
-				func = in(reg) func);
-		}
+		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
 	}
 }
 
@@ -164,27 +184,12 @@ pub unsafe fn append_task(mut new_task: Task) {
 	crate::sti!();
 }
 
-pub unsafe extern "C" fn print_tasks() {
-	crate::kprintln!("PRINT_TASKS ==>");
-	let mut i = 0;
-	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
-	while prev_task.next_ptr != &mut *RUNNING_TASK {
-		crate::kprintln!("task ptr {}: {:p}", i, &mut *prev_task);
-		crate::kprintln!("task.regs: {:#x?}", prev_task.regs);
-		crate::kprintln!("task.next_ptr: {:#x?}", prev_task.next_ptr);
-		if prev_task.next_ptr.is_null() {
-			return ;
-		}
-		prev_task = &mut *prev_task.next_ptr;
-		i += 1;
-	}
-	crate::kprintln!("task ptr {}: {:p}", i, &mut *prev_task);
-	crate::kprintln!("task.regs: {:#x?}", prev_task.regs);
-	crate::kprintln!("task.next_ptr: {:#x?}", prev_task.next_ptr);
+pub unsafe fn remove_running_process() {
+	let process: &mut Process = &mut *(*RUNNING_TASK).process;
+	process.remove();
 }
 
-
-pub unsafe fn remove_task() -> ! {
+pub unsafe fn remove_running_task() -> ! {
 	let mut prev_task: &mut Task = &mut *RUNNING_TASK;
 	while prev_task.next_ptr != &mut *RUNNING_TASK {
 		prev_task = &mut *prev_task.next_ptr;
@@ -221,56 +226,105 @@ pub unsafe extern "C" fn next_task() {
 	}
 }
 
-pub unsafe fn remove_process() {
-	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-	while process.childs.len() > 0 {
-		let res = process.childs.pop();
-		if res.is_none() {
-			todo!();
-		}
-		let u = res.unwrap();
-		(*process.parent).childs.push(u);
-		let len = (*process.parent).childs.len();
-		(*process.parent).childs[len - 1].parent = process.parent;
-	}
-	let mut i = 0;
-	while i < (*process.parent).childs.len() {
-		let ptr: *mut Process = (*process.parent).childs[i].as_mut();
-		if ptr == process {
-			break ;
-		}
-		i += 1;
-	}
-	if i == (*process.parent).childs.len() {
-		todo!(); // Problem
-	}
-	(*process.parent).childs.remove(i);
-	free_pages(process.stack.offset, process.stack.size / 0x1000);
+#[no_mangle]
+pub unsafe extern "C" fn exit_fn() {
+	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
+	remove_running_process();
+	remove_running_task();
 }
 
-/* TODO: handle args */
+#[naked]
 #[no_mangle]
-pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) -> ! {
-	core::arch::asm!("call {}", in(reg) func);
-	crate::cli!();
-	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
-	remove_process();
-	remove_task();
+pub unsafe extern "C" fn wrapper_fn() {
+	core::arch::asm!("
+	mov eax, [esp]
+	add esp, 4
+	call eax
+	cli
+	jmp exit_fn",
+	options(noreturn));
 	/* Never goes there */
 }
 
-pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {
+pub unsafe extern "C" fn		exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
 	crate::cli!();
-	unsafe {
-		let proc: Process =  Process::new();
-		let parent: &mut Process = &mut *(*RUNNING_TASK).process;
-		let mut childs: &mut Vec<Box<Process>> = &mut parent.childs;
-		childs.push(Box::new(proc));
-		let len = childs.len();
-		let proc_ptr: *mut Process = childs[len - 1].as_mut();
-		(*proc_ptr).init(&mut *parent, 0);
-		let mut other_task: Task = Task::new();
-		other_task.init(addr, func, size, (*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3, proc_ptr);
-		append_task(other_task);
+	let proc: Process =  Process::new();
+	let parent: &mut Process = &mut *(*RUNNING_TASK).process;
+	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
+	childs.push(Box::new(proc));
+	let len = childs.len();
+	let proc_ptr: *mut Process = childs[len - 1].as_mut();
+	(*proc_ptr).init(&mut *parent, 0);
+	let mut other_task: Task = Task::new();
+	other_task.init((*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3, proc_ptr);
+	/* init_fn_task - Can't move to another function ??*/
+	let mut sum = 0;
+	let mut i = 0;
+	while i < args_size.len() {
+		match args_size[i] {
+			2 => sum += 2,
+			4 => sum += 4,
+			8 => sum += 8,
+			_ => todo!()
+		}
+		i += 1;
+	}
+	other_task.regs.esp -= sum as u32;
+	let mut nb = 0;
+	let mut i = 0;
+	while i < args_size.len() {
+		match args_size[i] {
+			2 => {
+				core::arch::asm!("mov [{esp} + {nb}], ax",
+					esp = in(reg) other_task.regs.esp,
+					nb = in(reg) nb,
+					in("ax") args.arg::<u16>());
+				nb += 2;
+			},
+			4 => {
+				core::arch::asm!("mov [{esp} + {nb}], eax",
+					esp = in(reg) other_task.regs.esp,
+					nb = in(reg) nb,
+					in("eax") args.arg::<u32>());
+				nb += 4;
+			},
+			8 => {
+				core::arch::asm!("mov [{esp} + {nb}], eax",
+					esp = in(reg) other_task.regs.esp,
+					nb = in(reg) nb,
+					in("eax") args.arg::<u32>());
+				nb += 4;
+				core::arch::asm!("mov [{esp} + {nb}], eax",
+					esp = in(reg) other_task.regs.esp,
+					nb = in(reg) nb,
+					in("eax") args.arg::<u32>());
+				nb += 4;
+			},
+			_ => todo!()
+		}
+		i += 1;
+	}
+	other_task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) other_task.regs.esp,
+		func = in(reg) func);
+	append_task(other_task);
+}
+
+#[macro_export]
+macro_rules! size_of_args {
+	($vector:expr, $name:expr) => { $vector.push(core::mem::size_of_val(&$name)); };
+	($vector: expr, $x:expr, $($rest:expr),+) => {
+		crate::size_of_args!($vector, $x); crate::size_of_args!($vector, $($rest),+)
 	}
 }
+
+#[macro_export]
+macro_rules! exec_fn {
+	($func:expr, $($rest:expr),+) => {
+		let mut args_size: crate::vec::Vec<usize> = Vec::new();
+		crate::size_of_args!(args_size, $($rest),+);
+		crate::proc::exec_fn($func, &args_size, $($rest),+)
+	}
+}
+
