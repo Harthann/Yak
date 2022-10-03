@@ -123,7 +123,7 @@ kphys: bool) -> MemoryZone {
 			flags: flags,
 			kphys: kphys
 		};
-		stack.offset = init_memory(size, flags, kphys).expect("unable to allocate pages for stack") - (size - 1) as u32;
+		stack.offset = init_memory(size, flags, kphys).expect("unable to allocate pages for stack");
 		stack
 	}
 }

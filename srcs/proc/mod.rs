@@ -50,7 +50,8 @@ impl Process {
 		self.status = Status::Run;
 		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
-		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
+		self.heap = KHEAP;
+//		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
 		self.owner = owner;
 		NEXT_PID += 1;
 	}
