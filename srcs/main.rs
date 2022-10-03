@@ -154,7 +154,7 @@ pub extern "C" fn kinit() {
 
 use proc::{Task, init_tasking};
 
-fn dumb_main(nb: usize) {
+unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
 	let mut i = 0;
 	while i < 2048 {
@@ -162,24 +162,23 @@ fn dumb_main(nb: usize) {
 		i += 1;
 	}
 	if nb > 1 {
-		dumb_main(nb - 1)
+		exec_fn!(dumb_main as u32, nb - 1);
 	}
 }
 
-fn dumb_main2(nb: usize, nb2: u64) {
+unsafe fn dumb_main2(nb: usize, nb2: u64) {
 	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
+	if nb > 1 {
+		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
+	}
 	let mut i = 0;
 	while i < 2048 {
 		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
 		i += 1;
 	}
-	if nb > 1 {
-		dumb_main2(nb - 1, nb2)
-	}
 }
 
 use crate::memory::paging::alloc_page;
-use crate::proc::exec_fn;
 
 use crate::vec::Vec;
 
@@ -190,14 +189,12 @@ pub fn test_task() {
 		exec_fn!(dumb_main as u32, 1);
 	}
 
-	/*
 	let mut i = 0;
 	while i < 10000 {
 		crate::kprintln!("main");
 		i += 1;
 	}
 	crate::kprintln!("MAIN to {}", i);
-	*/
 //	loop {}
 }
 

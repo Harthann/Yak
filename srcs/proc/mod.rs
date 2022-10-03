@@ -227,10 +227,11 @@ pub unsafe extern "C" fn next_task() {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn exit_fn() {
+pub unsafe extern "C" fn exit_fn() -> ! {
 	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
 	remove_running_process();
 	remove_running_task();
+	/* Never goes there */
 }
 
 #[naked]
@@ -258,52 +259,33 @@ pub unsafe extern "C" fn		exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut ar
 	let mut other_task: Task = Task::new();
 	other_task.init((*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3, proc_ptr);
 	/* init_fn_task - Can't move to another function ??*/
-	let mut sum = 0;
-	let mut i = 0;
-	while i < args_size.len() {
-		match args_size[i] {
-			2 => sum += 2,
-			4 => sum += 4,
-			8 => sum += 8,
-			_ => todo!()
-		}
-		i += 1;
-	}
+	let sum: usize = args_size.iter().sum();
 	other_task.regs.esp -= sum as u32;
 	let mut nb = 0;
-	let mut i = 0;
-	while i < args_size.len() {
-		match args_size[i] {
-			2 => {
+	for arg in args_size.iter() {
+		let mut n: usize = *arg;
+		while n > 0 {
+			if arg / 4 > 0 {
+				core::arch::asm!("mov [{esp} + {nb}], eax",
+					esp = in(reg) other_task.regs.esp,
+					nb = in(reg) nb,
+					in("eax") args.arg::<u32>());
+				n -= 4;
+				nb += 4;
+			}
+			else if arg / 2 > 0 {
 				core::arch::asm!("mov [{esp} + {nb}], ax",
 					esp = in(reg) other_task.regs.esp,
 					nb = in(reg) nb,
 					in("ax") args.arg::<u16>());
+				n -= 2;
 				nb += 2;
-			},
-			4 => {
-				core::arch::asm!("mov [{esp} + {nb}], eax",
-					esp = in(reg) other_task.regs.esp,
-					nb = in(reg) nb,
-					in("eax") args.arg::<u32>());
-				nb += 4;
-			},
-			8 => {
-				core::arch::asm!("mov [{esp} + {nb}], eax",
-					esp = in(reg) other_task.regs.esp,
-					nb = in(reg) nb,
-					in("eax") args.arg::<u32>());
-				nb += 4;
-				core::arch::asm!("mov [{esp} + {nb}], eax",
-					esp = in(reg) other_task.regs.esp,
-					nb = in(reg) nb,
-					in("eax") args.arg::<u32>());
-				nb += 4;
-			},
-			_ => todo!()
+			} else {
+				todo!();
+			}
 		}
-		i += 1;
 	}
+	/* call function to wrapper_fn */
 	other_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) other_task.regs.esp,
@@ -324,7 +306,7 @@ macro_rules! exec_fn {
 	($func:expr, $($rest:expr),+) => {
 		let mut args_size: crate::vec::Vec<usize> = Vec::new();
 		crate::size_of_args!(args_size, $($rest),+);
-		crate::proc::exec_fn($func, &args_size, $($rest),+)
+		crate::proc::exec_fn($func, &args_size, $($rest),+);
 	}
 }
 
