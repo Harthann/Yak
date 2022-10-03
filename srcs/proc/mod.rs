@@ -7,6 +7,7 @@ use crate::memory::paging::free_pages;
 type Id = u32;
 
 static mut NEXT_PID: Id = 0;
+static mut MASTER_PROCESS: Process = Process::new();
 
 enum Status {
 	Disable,
@@ -18,14 +19,14 @@ enum Status {
 struct Signal {
 }
 
-struct Process {
+pub struct Process {
 	pid: Id,
 	status: Status,
-	parent: *const Process,
-	childs: Vec<Process>,
+	parent: *mut Process,
+	childs: Vec<Box<Process>>,
 	stack: MemoryZone,
 	heap: MemoryZone,
-	signals: Vec<Signal>, /* TODO: VecDeque ? */
+	signals: Vec<Box<Signal>>, /* TODO: VecDeque ? */
 	owner: Id
 }
 
@@ -34,7 +35,7 @@ impl Process {
 		Self {
 			pid: 0,
 			status: Status::Disable,
-			parent: core::ptr::null(),
+			parent: core::ptr::null_mut(),
 			childs: Vec::new(),
 			stack: MemoryZone::new(),
 			heap: MemoryZone::new(),
@@ -43,16 +44,16 @@ impl Process {
 		}
 	}
 
-	pub unsafe fn init(&mut self, parent: &Process, owner: Id) {
+	/* TODO: next_pid need to check overflow and if other pid is available */
+	pub unsafe fn init(&mut self, parent: *mut Process, owner: Id) {
 		self.pid = NEXT_PID;
 		self.status = Status::Run;
-		self.parent = &*parent;
+		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
 		self.owner = owner;
 		NEXT_PID += 1;
 	}
-	/* TODO: next_pid need to check overflow and if other pid is available */
 }
 
 static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
@@ -94,8 +95,7 @@ impl Registers {
 
 pub struct Task {
 	pub regs: Registers,
-	pub stack_ptr: u32, /* TODO: replace by MemoryZone ? */
-	pub stack_size: usize,
+	pub process: *mut Process,
 	pub next_ptr: *mut Task,
 	pub next: Option<Box<Task>>
 }
@@ -104,21 +104,19 @@ impl Task {
 	pub const fn new() -> Self {
 		Self {
 			regs: Registers::new(),
-			stack_ptr: 0,
-			stack_size: 0,
+			process: core::ptr::null_mut(),
 			next_ptr: core::ptr::null_mut(),
 			next: None
 		}
 	}
 
 	/* TODO: handle args and setup stack there */
-	pub fn init(&mut self, addr: VirtAddr, func: VirtAddr, size: usize, flags: u32, page_dir: u32) {
+	pub unsafe fn init(&mut self, addr: VirtAddr, func: VirtAddr, size: usize, flags: u32, page_dir: u32, process: *mut Process) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
-		self.stack_ptr = addr;
-		self.stack_size = size;
-		self.regs.esp = addr + (size - 8) as u32;
+		self.process = process;
+		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 8) as u32;
 		unsafe {
 			core::arch::asm!("mov [{esp} + 4], {func}",
 				esp = in(reg) self.regs.esp,
@@ -128,6 +126,7 @@ impl Task {
 }
 
 use crate::memory::allocator::Box;
+use crate::{KSTACK, KHEAP};
 
 pub unsafe fn init_tasking(main_task: &mut Task) {
 	core::arch::asm!("mov {}, cr3", out(reg) main_task.regs.cr3);
@@ -139,11 +138,16 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 		todo!();
 	}
 	STACK_TASK_SWITCH = res.unwrap() + 0x1000;
+	MASTER_PROCESS.status = Status::Run;
+	MASTER_PROCESS.stack = KSTACK;
+	MASTER_PROCESS.heap = KHEAP;
+	MASTER_PROCESS.owner = 0;
+	NEXT_PID += 1;
+	main_task.process = &mut MASTER_PROCESS;
 	RUNNING_TASK = &mut *main_task;
 }
 
 pub unsafe fn append_task(mut new_task: Task) {
-	crate::cli!();
 	let mut task: &mut Task = &mut *RUNNING_TASK;
 	if !task.next_ptr.is_null() {
 		while !task.next.is_none() {
@@ -190,7 +194,6 @@ pub unsafe fn remove_task() -> ! {
 	} else {
 		(*prev_task).next_ptr = (*RUNNING_TASK).next_ptr;
 	}
-	free_pages((*RUNNING_TASK).stack_ptr, (*RUNNING_TASK).stack_size / 0x1000);
 	if (*RUNNING_TASK).next.is_none() {
 		(*prev_task).next = None;
 	} else {
@@ -217,20 +220,56 @@ pub unsafe extern "C" fn next_task() {
 	}
 }
 
+pub unsafe fn remove_process() {
+	let process: &mut Process = &mut *(*RUNNING_TASK).process;
+	while process.childs.len() > 0 {
+		let res = process.childs.pop();
+		if res.is_none() {
+			todo!();
+		}
+		let u = res.unwrap();
+		(*process.parent).childs.push(u);
+		let len = (*process.parent).childs.len();
+		(*process.parent).childs[len - 1].parent = process.parent;
+	}
+	let mut i = 0;
+	while i < (*process.parent).childs.len() {
+		let ptr: *mut Process = (*process.parent).childs[i].as_mut();
+		if ptr == process {
+			break ;
+		}
+		i += 1;
+	}
+	if i == (*process.parent).childs.len() {
+		todo!(); // Problem
+	}
+	(*process.parent).childs.remove(i);
+	free_pages(process.stack.offset, process.stack.size / 0x1000);
+}
+
 /* TODO: handle args */
 #[no_mangle]
 pub unsafe extern "C" fn wrapper_fn(func: VirtAddr) -> ! {
 	core::arch::asm!("call {}", in(reg) func);
 	crate::cli!();
 	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
+	remove_process();
 	remove_task();
 	/* Never goes there */
 }
 
 pub fn		exec_fn(addr: VirtAddr, func: VirtAddr, size: usize) {
+	crate::cli!();
 	unsafe {
+		let proc: Process =  Process::new();
+		let parent: &mut Process = &mut *(*RUNNING_TASK).process;
+		let mut childs: &mut Vec<Box<Process>> = &mut parent.childs;
+		childs.push(Box::new(proc));
+		let len = childs.len();
+		let proc_ptr: *mut Process = childs[len - 1].as_mut();
+		(*proc_ptr).init(&mut *parent, 0);
 		let mut other_task: Task = Task::new();
-		other_task.init(addr, func, size, (*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3);
+		other_task.init(addr, func, size, (*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3, proc_ptr);
 		append_task(other_task);
 	}
 }

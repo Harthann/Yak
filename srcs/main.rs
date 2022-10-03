@@ -101,6 +101,10 @@ use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 pub use pic::handlers::JIFFIES;
 
+use crate::memory::MemoryZone;
+
+pub static mut KSTACK: MemoryZone = MemoryZone::new();
+pub static mut KHEAP: MemoryZone = MemoryZone::new();
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -118,8 +122,10 @@ pub extern "C" fn kinit() {
 
 	/* HEAP KERNEL */
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
-	unsafe {init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR)};
+	unsafe {
+		KSTACK = init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
+		KHEAP = init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
+	}
 
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
@@ -154,6 +160,7 @@ fn dumb_main() {
 		crate::kprintln!("dumb1");
 		i += 1;
 	}
+	exec_fn(0x0, dumb_main2 as u32, 0x1000);
 }
 
 fn dumb_main2() {
@@ -163,6 +170,7 @@ fn dumb_main2() {
 		crate::kprintln!("dumb2");
 		i += 1;
 	}
+	exec_fn(0x0, dumb_main3 as u32, 0x1000);
 }
 
 fn dumb_main3() {
@@ -178,32 +186,9 @@ use crate::memory::paging::alloc_page;
 use crate::proc::exec_fn;
 
 pub fn test_task() {
-	let esp: u32;
-	let res = alloc_page(PAGE_WRITABLE);
-	if res.is_ok() {
-		esp = res.unwrap();
-	} else {
-		todo!();
-	}
-	exec_fn(esp, dumb_main as u32, 0x1000);
-
-	let esp: u32;
-	let res = alloc_page(PAGE_WRITABLE);
-	if res.is_ok() {
-		esp = res.unwrap();
-	} else {
-		todo!();
-	}
-	exec_fn(esp, dumb_main2 as u32, 0x1000);
-
-	let esp: u32;
-	let res = alloc_page(PAGE_WRITABLE);
-	if res.is_ok() {
-		esp = res.unwrap();
-	} else {
-		todo!();
-	}
-	exec_fn(esp, dumb_main3 as u32, 0x1000);
+	exec_fn(0x0, dumb_main as u32, 0x1000);
+	exec_fn(0x0, dumb_main2 as u32, 0x1000);
+	exec_fn(0x0, dumb_main3 as u32, 0x1000);
 
 	let mut i = 0;
 	while i < 10000 {
@@ -224,14 +209,7 @@ fn dumb_main4() {
 }
 
 pub fn test_task2() {
-	let esp: u32;
-	let res = alloc_page(PAGE_WRITABLE);
-	if res.is_ok() {
-		esp = res.unwrap();
-	} else {
-		todo!();
-	}
-	exec_fn(esp, dumb_main4 as u32, 0x1000);
+	exec_fn(0x0, dumb_main4 as u32, 0x1000);
 }
 
 #[no_mangle]

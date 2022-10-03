@@ -29,18 +29,20 @@ pub fn init_memory(size: usize, flags: u32, kphys: bool) -> Result<VirtAddr, ()>
 	}
 }
 
-enum TypeZone{
+#[derive(Clone, Copy)]
+pub enum TypeZone{
 	Unassigned,
 	Stack,
 	Heap
 }
 
+#[derive(Clone, Copy)]
 pub struct MemoryZone {
-	offset: VirtAddr,
-	type_zone: TypeZone,
-	size: usize,
-	flags: u32,
-	kphys: bool
+	pub offset: VirtAddr,
+	pub type_zone: TypeZone,
+	pub size: usize,
+	pub flags: u32,
+	pub kphys: bool
 }
 
 impl MemoryZone {
