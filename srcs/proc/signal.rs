@@ -1,4 +1,10 @@
-enum SignalType {
+use crate::memory::allocator::Box;
+
+use crate::proc::Id;
+use crate::proc::process::{Process, MASTER_PROCESS};
+
+#[derive(Copy, Clone)]
+pub enum SignalType {
 	SIGHUP		= 1,
 	SIGINT		= 2,
 	SIGQUIT		= 3,
@@ -33,6 +39,34 @@ enum SignalType {
 	SIGRTMIN	= 32
 }
 
+#[derive(Copy, Clone)]
 pub struct Signal {
-	sigtype: SignalType
+	pub sender: Id,
+	pub sigtype: SignalType
+}
+
+impl Signal {
+	pub const fn new(pid: Id, sigtype: SignalType) -> Self {
+		Self {
+			sender: pid,
+			sigtype: sigtype
+		}
+	}
+
+	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType) {
+		unsafe {
+			let res = MASTER_PROCESS.search_from_pid(pid);
+			if !res.is_ok() {
+				todo!();
+			}
+			let process: &mut Process = res.unwrap();
+			let signal = Self::new(sender_pid, sigtype);
+			process.signals.push(Box::new(signal));
+		}
+	}
+
+	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType) {
+		let signal = Self::new(pid, sigtype);
+		process.signals.push(Box::new(signal));
+	}
 }

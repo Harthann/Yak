@@ -1,21 +1,38 @@
 use crate::interrupts::Registers;
 
-fn sys_exit(status: u32) {
+use crate::proc::Id;
+use crate::proc::process::get_signal_running_process;
+
+extern "C" fn sys_waitpid(pid: Id, wstatus: *mut u32, options: u32) -> Id {
+	crate::kprintln!("waitpid({}, {:?}, {})", pid, wstatus, options);
+	unsafe {
+		let res = get_signal_running_process(pid);
+		if res.is_ok() {
+			crate::kprintln!("it's ok !!!!!!!!!!");
+			return res.unwrap().sender;
+		}
+		crate::kprintln!("not ok lolz");
+	}
+	return -1;
+}
+
+extern "C" fn sys_exit(status: u32) -> ! {
 	unsafe {
 		crate::proc::exit_fn();
 	}
-	/* TODO: signal parent */
 }
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
-pub fn syscall_handler(reg: Registers)
-{
+pub fn syscall_handler(mut reg: Registers) {
 	crate::kprintln!("Syscall: {:#x?}", reg);
 	if reg.eax > 448 {
 		todo!(); // problem
 	}
 	match reg.eax {
 		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx),
+		_ if reg.eax == Syscall::waitpid as u32 => {
+			reg.eax = sys_waitpid(reg.ebx as i32, reg.ecx as *mut u32, reg.edx) as u32
+		},
 		_ => todo!()
 	}
 }

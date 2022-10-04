@@ -205,7 +205,7 @@ pub fn test_task2() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
+//	test_task();
 
 	kprintln!("Hello World of {}!", 42);
 
@@ -215,6 +215,12 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-	test_task2();
+//	test_task2();
+	let mut test: i32 = 0;
+	unsafe{core::arch::asm!("mov ebx, 42
+					mov eax, 7
+					int 0x80
+					mov {}, eax", out(reg) test)};
+	crate::kprintln!("result: {}", test);
 	loop {}
 }

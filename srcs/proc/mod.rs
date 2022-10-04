@@ -9,7 +9,7 @@ pub mod signal;
 use process::{Process, remove_running_process};
 use task::{Task, RUNNING_TASK, STACK_TASK_SWITCH, append_task, remove_running_task};
 
-type Id = u32;
+pub type Id = i32;
 
 #[no_mangle]
 pub unsafe extern "C" fn exit_fn() -> ! {

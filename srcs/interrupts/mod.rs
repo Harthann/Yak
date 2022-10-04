@@ -99,7 +99,7 @@ fn page_fault_handler(reg: Registers) {
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
-pub extern "C" fn exception_handler(reg: Registers) {
+pub extern "C" fn exception_handler(mut reg: Registers) {
 	let int_no: usize = reg.int_no as usize;
 //	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
@@ -113,6 +113,7 @@ pub extern "C" fn exception_handler(reg: Registers) {
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
+//		crate::kprintln!("reg.eax: {}", reg.eax);
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize || int_no > PIC2_IRQ_OFFSET as usize + 7 {
 			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
