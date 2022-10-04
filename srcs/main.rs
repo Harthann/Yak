@@ -14,7 +14,7 @@
 #![allow(incomplete_features)]
 #![no_main]
 
-/*  Custom test framwork    */
+/*  Custom test framework  */
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -205,7 +205,7 @@ pub fn test_task2() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-//	test_task();
+	test_task();
 
 	kprintln!("Hello World of {}!", 42);
 
@@ -217,7 +217,7 @@ pub extern "C" fn kmain() -> ! {
 	kprint!("$> ");
 //	test_task2();
 	let mut test: i32 = 0;
-	unsafe{core::arch::asm!("mov ebx, 42
+	unsafe{core::arch::asm!("mov ebx, -1
 					mov eax, 7
 					int 0x80
 					mov {}, eax", out(reg) test)};

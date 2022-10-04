@@ -87,7 +87,7 @@ PIC1_IRQ_OFFSET,
 PIC2_IRQ_OFFSET
 };
 
-fn page_fault_handler(reg: Registers) {
+fn page_fault_handler(reg: &Registers) {
 	unsafe {
 		let cr2: usize;
 		core::arch::asm!("mov {}, cr2", out(reg) cr2);
@@ -99,7 +99,7 @@ fn page_fault_handler(reg: Registers) {
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
-pub extern "C" fn exception_handler(mut reg: Registers) {
+pub extern "C" fn exception_handler(reg: &mut Registers) {
 	let int_no: usize = reg.int_no as usize;
 //	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
@@ -113,7 +113,6 @@ pub extern "C" fn exception_handler(mut reg: Registers) {
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
-//		crate::kprintln!("reg.eax: {}", reg.eax);
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize || int_no > PIC2_IRQ_OFFSET as usize + 7 {
 			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
@@ -238,7 +237,12 @@ unsafe extern "C" fn isr_common_stub() {
 	mov fs, ax
 	mov gs, ax
 
+	mov eax, esp
+	push eax
+
 	call exception_handler
+
+	pop eax
 
 	pop eax						// reload the original data segment descriptor
 	mov ds, ax
@@ -246,8 +250,8 @@ unsafe extern "C" fn isr_common_stub() {
 	mov fs, ax
 	mov gs, ax
 
-	add esp, 8
 	popa
+	add esp, 8
 	iretd",
 	options(noreturn));
 }

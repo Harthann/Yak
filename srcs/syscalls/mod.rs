@@ -8,11 +8,10 @@ extern "C" fn sys_waitpid(pid: Id, wstatus: *mut u32, options: u32) -> Id {
 	unsafe {
 		let res = get_signal_running_process(pid);
 		if res.is_ok() {
-			crate::kprintln!("it's ok !!!!!!!!!!");
 			return res.unwrap().sender;
 		}
-		crate::kprintln!("not ok lolz");
 	}
+	crate::kprintln!("return -1");
 	return -1;
 }
 
@@ -23,7 +22,7 @@ extern "C" fn sys_exit(status: u32) -> ! {
 }
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
-pub fn syscall_handler(mut reg: Registers) {
+pub fn syscall_handler(reg: &mut Registers) {
 	crate::kprintln!("Syscall: {:#x?}", reg);
 	if reg.eax > 448 {
 		todo!(); // problem
