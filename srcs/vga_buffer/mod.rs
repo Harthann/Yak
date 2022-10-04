@@ -89,7 +89,6 @@ pub struct Writer {
 impl Writer {
 	/*	Write one byte to vga buffer, update CURSOR position	*/
 	pub fn write_byte(&mut self, byte: u8) {
-		crate::cli!();
 	/*	Writing each byte to qemu serial port for external log	*/
 		io::outb(0x3f8, byte);
 		match byte {
@@ -124,7 +123,6 @@ impl Writer {
 				self.screens[self.screen_index].cursor.set_pos(pos.0, pos.1);
 			}
 		}
-		crate::sti!();
 	}
 
 	/*	Move CURSOR one line lower and move all lines if needed */
@@ -185,14 +183,14 @@ impl Writer {
 		}
 	}
 	pub fn change_screen(&mut self, nb: usize) {
-			self.screens[self.screen_index].cursor.disable();
-			self.screen_index = nb;
-			self.copy_buffer(self.screens[self.screen_index].buffer);
-			self.screens[self.screen_index].cursor.update();
-			self.screens[self.screen_index].cursor.enable();
-			if self.get_screen().cursor.get_pos() == (0, 0) {
-				self.write_string("$> ");
-			}
+		self.screens[self.screen_index].cursor.disable();
+		self.screen_index = nb;
+		self.copy_buffer(self.screens[self.screen_index].buffer);
+		self.screens[self.screen_index].cursor.update();
+		self.screens[self.screen_index].cursor.enable();
+		if self.get_screen().cursor.get_pos() == (0, 0) {
+			self.write_string("$> ");
+		}
 	}
 	
 	pub fn get_screen(&mut self) -> &mut Screen {
@@ -207,7 +205,9 @@ impl Writer {
 /*	Tells rust how to use our writer as a format writer */
 impl fmt::Write for Writer {
 	fn write_str(&mut self, s: &str) -> fmt::Result {
+		crate::cli!();
 		self.write_string(s);
+		crate::sti!();
 		Ok(())
 	}
 }
