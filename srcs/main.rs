@@ -177,6 +177,8 @@ unsafe fn dumb_main2(nb: usize, nb2: u64) {
 		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
 		i += 1;
 	}
+	core::arch::asm!("mov eax, 1",
+					"int 0x80"); /* test syscall exit */
 }
 
 pub fn test_task() {

@@ -69,6 +69,9 @@ impl Process {
 	}
 
 	pub unsafe fn remove(&mut self) {
+		if self.parent.is_null() {
+			todo!();
+		}
 		let parent: &mut Process = &mut *self.parent;
 		while self.childs.len() > 0 {
 			let res = self.childs.pop();
