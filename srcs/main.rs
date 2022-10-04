@@ -98,6 +98,8 @@ use crate::memory::paging::PAGE_WRITABLE;
 
 use crate::interrupts::init_idt;
 
+use proc::task::{Task, init_tasking};
+
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 pub use pic::handlers::JIFFIES;
@@ -152,7 +154,6 @@ pub extern "C" fn kinit() {
 	kmain();
 }
 
-use proc::{Task, init_tasking};
 
 unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
@@ -177,10 +178,6 @@ unsafe fn dumb_main2(nb: usize, nb2: u64) {
 		i += 1;
 	}
 }
-
-use crate::memory::paging::alloc_page;
-
-use crate::vec::Vec;
 
 pub fn test_task() {
 	unsafe {
