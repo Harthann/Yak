@@ -89,6 +89,7 @@ pub struct Writer {
 impl Writer {
 	/*	Write one byte to vga buffer, update CURSOR position	*/
 	pub fn write_byte(&mut self, byte: u8) {
+		crate::cli!();
 	/*	Writing each byte to qemu serial port for external log	*/
 		io::outb(0x3f8, byte);
 		match byte {
@@ -123,6 +124,7 @@ impl Writer {
 				self.screens[self.screen_index].cursor.set_pos(pos.0, pos.1);
 			}
 		}
+		crate::sti!();
 	}
 
 	/*	Move CURSOR one line lower and move all lines if needed */
