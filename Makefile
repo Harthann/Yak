@@ -46,7 +46,7 @@ boot:			$(NAME)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
-				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				$(QEMU) -s -S -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log &
 				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c"
 				pkill qemu
 
