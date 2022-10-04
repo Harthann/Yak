@@ -43,6 +43,19 @@ impl Process {
 		}
 	}
 
+	pub fn search_from_pid(&self, pid: Id) -> Result<&Process, ()> {
+		if self.pid == pid {
+			return Ok(self);
+		}
+		for process in self.childs.iter() {
+			let res = process.search_from_pid(pid);
+			if res.is_ok() {
+				return res;
+			}
+		}
+		Err(())
+	}
+
 	/* TODO: next_pid need to check overflow and if other pid is available */
 	pub unsafe fn init(&mut self, parent: *mut Process, owner: Id) {
 		self.pid = NEXT_PID;
