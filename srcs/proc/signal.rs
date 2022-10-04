@@ -3,7 +3,7 @@ use crate::memory::allocator::Box;
 use crate::proc::Id;
 use crate::proc::process::{Process, MASTER_PROCESS};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum SignalType {
 	SIGHUP		= 1,
 	SIGINT		= 2,

@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::KHEAP;
 use crate::vec::Vec;
 use crate::memory::{MemoryZone, Stack};
@@ -11,6 +13,7 @@ use crate::proc::signal::{Signal, SignalType};
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
+#[derive(Debug)]
 pub enum Status {
 	Disable,
 	Run,
@@ -43,6 +46,13 @@ impl Process {
 		}
 	}
 
+	pub fn print_tree(&self) {
+		crate::kprintln!("{}", self);
+		for process in self.childs.iter() {
+			process.print_tree();
+		}
+	}
+
 	pub fn search_from_pid(&mut self, pid: Id) -> Result<&mut Process, ()> {
 		if self.pid == pid {
 			return Ok(self);
@@ -68,7 +78,7 @@ impl Process {
 		NEXT_PID += 1;
 	}
 
-	pub unsafe fn remove(&mut self) {
+	pub unsafe fn zombify(&mut self) {
 		if self.parent.is_null() {
 			todo!();
 		}
@@ -84,7 +94,13 @@ impl Process {
 			parent.childs[len - 1].parent = self.parent;
 		}
 		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
-		/*
+		self.status = Status::Zombie;
+		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD);
+		free_pages(self.stack.offset, self.stack.size / 0x1000);
+	}
+
+	pub unsafe fn remove(&mut self) {
+		let parent: &mut Process = &mut *self.parent;
 		let mut i = 0;
 		while i < parent.childs.len() {
 			let ptr: *mut Process = parent.childs[i].as_mut();
@@ -96,12 +112,7 @@ impl Process {
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
-
 		parent.childs.remove(i);
-		*/
-		self.status = Status::Zombie;
-		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD);
-		free_pages(self.stack.offset, self.stack.size / 0x1000);
 	}
 
 	pub unsafe fn get_signal(&mut self) -> Result<Signal, ()> {
@@ -124,9 +135,19 @@ impl Process {
 	}
 }
 
-pub unsafe fn remove_running_process() {
+impl fmt::Display for Process {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.status)
+	}
+}
+
+pub unsafe fn get_running_process() -> *mut Process {
+	&mut *(*RUNNING_TASK).process
+}
+
+pub unsafe fn zombify_running_process() {
 	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-	process.remove();
+	process.zombify();
 }
 
 pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
@@ -136,4 +157,9 @@ pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
 	} else {
 		process.get_signal_from_pid(pid)
 	}
+}
+
+pub unsafe fn print_all_process() {
+	crate::kprintln!("       PID        OWNER   STATUS");
+	MASTER_PROCESS.print_tree();
 }

@@ -6,7 +6,7 @@ pub mod task;
 pub mod process;
 pub mod signal;
 
-use process::{Process, remove_running_process};
+use process::{Process, zombify_running_process};
 use task::{Task, RUNNING_TASK, STACK_TASK_SWITCH, append_task, remove_running_task};
 
 pub type Id = i32;
@@ -14,7 +14,7 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn exit_fn() -> ! {
 	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
-	remove_running_process();
+	zombify_running_process();
 	remove_running_task();
 	/* Never goes there */
 }

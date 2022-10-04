@@ -5,10 +5,10 @@ use crate::io;
 use crate::string::String;
 use crate::memory::allocator;
 
-const NB_CMDS: usize = 9;
+const NB_CMDS: usize = 10;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown, jiffies];
-const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown", "jiffies"];
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown, jiffies, ps];
+const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown", "jiffies", "ps"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -39,6 +39,10 @@ fn help(_: &Command) {
 
 fn shutdown(_: &Command) {
 	io::outb(0xf4, 0x10);
+}
+
+fn ps(_: &Command) {
+	unsafe{crate::proc::process::print_all_process()};
 }
 
 fn hextou(string: &str) -> Option<usize> {
