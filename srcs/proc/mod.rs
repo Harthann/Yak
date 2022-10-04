@@ -33,7 +33,7 @@ pub unsafe extern "C" fn wrapper_fn() {
 }
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
-	crate::cli!();
+	core::arch::asm!("cli");
 	let proc: Process =  Process::new();
 	let parent: &mut Process = &mut *(*RUNNING_TASK).process;
 	let childs: &mut Vec<Box<Process>> = &mut parent.childs;

@@ -108,7 +108,7 @@ pub unsafe fn append_task(mut new_task: Task) {
 	new_task.next = None;
 	task.next = Some(Box::new(new_task));
 	task.next_ptr = &mut *(task.next.as_mut().unwrap()).as_mut();
-	crate::sti!();
+	core::arch::asm!("sti");
 }
 
 pub unsafe fn remove_running_task() -> ! {
