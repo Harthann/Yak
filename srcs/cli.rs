@@ -231,7 +231,7 @@ impl Command {
 		} else if charcode == '\n' {
 			match self.is_known() {
 				Some(x) => COMMANDS[x](&self),
-				_		=> {if self.command.len() != 0 {kprintln!("Unknown command. Type `help` to list available commands")}},
+				_		=> {if self.command.len() != 0 {kprintln!("Unknown command. Type `help` to list available commands");}},
 			}
 			self.clear();
 			kprint!("$> ");

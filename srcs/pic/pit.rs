@@ -58,7 +58,6 @@ pub const MODE_6:			u8 = MODE_2;
 pub const MODE_7:			u8 = MODE_3;
 
 pub fn set_pit(channel: u8, access: u8, mode: u8, data: u16) {
-	crate::cli!();
 	let port: u16 = match channel {
 		CHANNEL_0	=> CHAN0_DATA.into(),
 		CHANNEL_1	=> CHAN1_DATA.into(),
@@ -71,6 +70,4 @@ pub fn set_pit(channel: u8, access: u8, mode: u8, data: u16) {
 /*	Sending data to commands */
 	outb(port, (data & 0xff) as u8);
 	outb(port, ((data & 0xff00) >> 8) as u8);
-
-	crate::sti!();
 }

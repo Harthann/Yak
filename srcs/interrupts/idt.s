@@ -16,14 +16,16 @@ irq_0:
 	inc eax
 	mov [JIFFIES], eax
 
-	mov dx, 0x20,
+	mov dx, 0x20
 	mov al, 0x20
 	out dx, al
 
 	pop edx
 	pop eax
 
+	pusha
 	call next_task
+	popa
 
 	iretd
 

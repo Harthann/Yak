@@ -1,7 +1,6 @@
 %ifndef IDT_H
 %define IDT_H
 
-extern exception_handler
 extern isr_common_stub
 
 %macro isr_err_stub 1

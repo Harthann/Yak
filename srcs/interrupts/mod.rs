@@ -106,7 +106,7 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
 		match int_no { // TODO: enum exceptions
 			14 => page_fault_handler(reg),
-			_ => crate::kprintln!("{:#x?}", reg)
+			_ => {crate::kprintln!("{:#x?}", reg);}
 		}
 		if int_no != 3 && int_no != 1 { /* TODO: HOW TO GET IF IT'S A TRAP OR NOT */
 			unsafe{core::arch::asm!("hlt")};
@@ -252,6 +252,8 @@ unsafe extern "C" fn isr_common_stub() {
 
 	popa
 	add esp, 8
+
+	sti
 	iretd",
 	options(noreturn));
 }

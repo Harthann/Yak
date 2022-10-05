@@ -5,7 +5,7 @@ use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, get_running_process, get_signal_running_process};
 
 pub extern "C" fn sys_waitpid(pid: Id, wstatus: *mut u32, options: u32) -> Id {
-	crate::kprintln!("waitpid({}, {:?}, {})", pid, wstatus, options);
+//	crate::kprintln!("waitpid({}, {:?}, {})", pid, wstatus, options);
 	unsafe {
 		let res = get_signal_running_process(pid);
 		if res.is_ok() {
@@ -20,7 +20,6 @@ pub extern "C" fn sys_waitpid(pid: Id, wstatus: *mut u32, options: u32) -> Id {
 			return signal.sender;
 		}
 	}
-	crate::kprintln!("return -1");
 	return -1;
 }
 
@@ -32,7 +31,7 @@ pub extern "C" fn sys_exit(status: u32) -> ! {
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
 pub fn syscall_handler(reg: &mut Registers) {
-	crate::kprintln!("Syscall: {:#x?}", reg);
+//	crate::kprintln!("Syscall: {:#x?}", reg); // PRINT MAKE page_fault in handlers
 	if reg.eax > 448 {
 		todo!(); // problem
 	}

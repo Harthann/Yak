@@ -7,7 +7,6 @@ use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 pub static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
 pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
 
-/* switch_case contains `sti` */
 extern "C" {
 	fn switch_task(reg_from: *const Registers, reg_to: *const Registers);
 }
@@ -108,7 +107,6 @@ pub unsafe fn append_task(mut new_task: Task) {
 	new_task.next = None;
 	task.next = Some(Box::new(new_task));
 	task.next_ptr = &mut *(task.next.as_mut().unwrap()).as_mut();
-	core::arch::asm!("sti");
 }
 
 pub unsafe fn remove_running_task() -> ! {
@@ -140,5 +138,7 @@ pub unsafe extern "C" fn next_task() {
 		let last: *const Task = RUNNING_TASK;
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
 		switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
+	} else {
+		core::arch::asm!("sti");
 	}
 }

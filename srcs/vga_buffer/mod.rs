@@ -215,13 +215,17 @@ impl fmt::Write for Writer {
 /* Reimplementation of rust print and println macros */
 #[macro_export]
 macro_rules! kprint {
-	($($arg:tt)*) => ($crate::vga_buffer::_print(format_args!($($arg)*)));
+	($($arg:tt)*) => (
+		$crate::vga_buffer::_print(format_args!($($arg)*));
+	)
 }
 
 #[macro_export]
 macro_rules! kprintln {
-	() => ($crate::print!("\n"));
-	($($arg:tt)*) => ($crate::kprint!("{}\n", format_args!($($arg)*)));
+	() => ($crate::kprint!("\n"));
+	($($arg:tt)*) => (
+		$crate::kprint!("{}\n", format_args!($($arg)*))
+	)
 }
 
 /* Setting our panic handler to our brand new kprintln */
@@ -291,15 +295,19 @@ pub fn hexdump(ptr: *const u8, size: usize)
 
 #[macro_export]
 macro_rules! change_color {
-	($fg:expr, $bg:expr) => (unsafe{crate::vga_buffer::WRITER.chcolor(crate::vga_buffer::color::ColorCode::new($fg, $bg))});
+	($fg:expr, $bg:expr) => (
+		unsafe {
+			$crate::vga_buffer::WRITER.chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
+		}
+	);
 }
 
 #[macro_export]
 macro_rules! clihandle {
-	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)});
+	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)})
 }
 
 #[macro_export]
 macro_rules! screenclear {
-	() => (unsafe {crate::vga_buffer::WRITER.clear()});
+	() => (unsafe {crate::vga_buffer::WRITER.clear()})
 }

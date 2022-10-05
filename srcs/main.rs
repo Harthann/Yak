@@ -112,7 +112,7 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	cli!();
+	crate::cli!();
 //	multiboot::read_tags();
 	/* Init paging and remove identity paging */
 	init_paging();
@@ -138,11 +138,11 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-	sti!();
+	crate::sti!();
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -170,15 +170,15 @@ unsafe fn dumb_main(nb: usize) {
 }
 
 unsafe fn dumb_main2(nb: usize, nb2: u64) {
-	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
-	if nb > 1 {
-		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
-	}
-	let mut i = 0;
-	while i < 2048 {
-		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
-		i += 1;
-	}
+//	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
+//	if nb > 1 {
+//		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
+//	}
+//	let mut i = 0;
+//	while i < 2048 {
+//		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
+//		i += 1;
+//	}
 	loop {}
 }
 
@@ -218,15 +218,15 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-	test_task2();
-	let test: i32;
+//	test_task2();
+//	let test: i32;
 	/* test syscall asm */
-	unsafe{core::arch::asm!("mov ebx, -1
-					mov eax, 7
-					int 0x80
-					mov {}, eax", out(reg) test)};
+//	unsafe{core::arch::asm!("mov ebx, -1
+//					mov eax, 7
+//					int 0x80
+//					mov {}, eax", out(reg) test)};
 	/* test syscall rust */
-	sys_waitpid(-1, core::ptr::null_mut(), 0);
-	crate::kprintln!("result: {}", test);
+//	sys_waitpid(-1, core::ptr::null_mut(), 0);
+//	crate::kprintln!("result: {}", test);
 	loop {}
 }
