@@ -205,9 +205,7 @@ impl Writer {
 /*	Tells rust how to use our writer as a format writer */
 impl fmt::Write for Writer {
 	fn write_str(&mut self, s: &str) -> fmt::Result {
-		crate::cli!();
 		self.write_string(s);
-		crate::sti!();
 		Ok(())
 	}
 }
@@ -216,7 +214,9 @@ impl fmt::Write for Writer {
 #[macro_export]
 macro_rules! kprint {
 	($($arg:tt)*) => (
+		crate::wrappers::_cli();
 		$crate::vga_buffer::_print(format_args!($($arg)*));
+		crate::wrappers::_sti()
 	)
 }
 
@@ -224,7 +224,9 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		$crate::kprint!("{}\n", format_args!($($arg)*))
+		crate::wrappers::_cli();
+		$crate::kprint!("{}\n", format_args!($($arg)*));
+		crate::wrappers::_sti()
 	)
 }
 
@@ -304,7 +306,9 @@ macro_rules! change_color {
 
 #[macro_export]
 macro_rules! clihandle {
-	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)})
+	($arg:expr) => (
+		unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)}
+	)
 }
 
 #[macro_export]

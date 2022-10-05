@@ -27,6 +27,7 @@ irq_0:
 	call next_task
 	popa
 
+	sti
 	iretd
 
 isr_stub_table:

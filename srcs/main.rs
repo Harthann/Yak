@@ -170,15 +170,15 @@ unsafe fn dumb_main(nb: usize) {
 }
 
 unsafe fn dumb_main2(nb: usize, nb2: u64) {
-//	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
-//	if nb > 1 {
-//		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
-//	}
-//	let mut i = 0;
-//	while i < 2048 {
-//		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
-//		i += 1;
-//	}
+	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
+	if nb > 1 {
+		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
+	}
+	let mut i = 0;
+	while i < 2048 {
+		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
+		i += 1;
+	}
 	loop {}
 }
 
@@ -218,15 +218,15 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-//	test_task2();
-//	let test: i32;
+	test_task2();
+	let test: i32;
 	/* test syscall asm */
-//	unsafe{core::arch::asm!("mov ebx, -1
-//					mov eax, 7
-//					int 0x80
-//					mov {}, eax", out(reg) test)};
+	unsafe{core::arch::asm!("mov ebx, -1
+					mov eax, 7
+					int 0x80
+					mov {}, eax", out(reg) test)};
 	/* test syscall rust */
-//	sys_waitpid(-1, core::ptr::null_mut(), 0);
-//	crate::kprintln!("result: {}", test);
+	sys_waitpid(-1, core::ptr::null_mut(), 0);
+	crate::kprintln!("result: {}", test);
 	loop {}
 }

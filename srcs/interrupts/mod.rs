@@ -61,8 +61,8 @@ static mut IDT: IDT = IDT {
 };
 
 
-#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
 pub struct Registers {
 	pub ds:			u32,
 	pub edi:		u32,
@@ -100,6 +100,7 @@ fn page_fault_handler(reg: &Registers) {
 /* TODO: lock mutex before write and int */
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: &mut Registers) {
+	unsafe{crate::wrappers::cli_count = 1}; /* _sti call in isr_common_stub */
 	let int_no: usize = reg.int_no as usize;
 //	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
@@ -121,6 +122,9 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 			crate::pic::handler(reg, int_no);
 		}
 	}
+	let eax = reg.eax;
+	crate::kprintln!("reg.eax ret: {}", eax);
+	unsafe{crate::wrappers::cli_count = 0}; /* sti but wait for it */
 }
 
 pub unsafe fn init_idt() {
@@ -228,23 +232,23 @@ unsafe extern "C" fn isr_common_stub() {
 	core::arch::asm!("
 	pusha
 
-	mov ax, ds					// Lower 16-bits of eax = ds.
-	push eax					// save the data segment descriptor
+	mov ax, ds		// Lower 16-bits of eax = ds.
+	push eax		// save the data segment descriptor
 
-	mov ax, 0x10				// load the kernel data segment descriptor
+	mov ax, 0x10	// load the kernel data segment descriptor
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
 
 	mov eax, esp
-	push eax
+	push eax	// push pointer to regs
 
 	call exception_handler
 
 	pop eax
 
-	pop eax						// reload the original data segment descriptor
+	pop eax		// reload the original data segment descriptor
 	mov ds, ax
 	mov es, ax
 	mov fs, ax

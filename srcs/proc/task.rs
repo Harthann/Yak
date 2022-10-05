@@ -138,7 +138,5 @@ pub unsafe extern "C" fn next_task() {
 		let last: *const Task = RUNNING_TASK;
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
 		switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
-	} else {
-		core::arch::asm!("sti");
 	}
 }
