@@ -99,13 +99,12 @@ pub unsafe fn remove_running_task() -> ! {
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn next_task(regs: &mut Registers) {
+pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
 	(*RUNNING_TASK).regs = *regs;
 	if !(*RUNNING_TASK).next_ptr.is_null() {
-		crate::kprintln!("prev_regs: {:#x?}", regs);
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
-		crate::kprintln!("regs: {:#x?}", &(*RUNNING_TASK).regs);
-		crate::kprintln!("NOT THEEEERRREEEEE");
 	}
 	switch_task(&(*RUNNING_TASK).regs);
+	/* Never goes there */
+	loop {}
 }

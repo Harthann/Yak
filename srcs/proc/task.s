@@ -4,35 +4,36 @@ global switch_task
 
 ; fn switch_task(regs: *const Registers)
 switch_task:
-	mov eax, cr3
-	push eax
+	mov ebp, dword[esp + 4] ; regs
 
-	mov eax, dword[esp + 8] ; regs
+	mov eax, dword[ebp + regs.ds]
+	mov ds, ax
 
-	mov ebx, dword[eax + regs.ebx]
-	mov ecx, dword[eax + regs.ecx]
-	mov edx, dword[eax + regs.edx]
-	mov esi, dword[eax + regs.esi]
-	mov edi, dword[eax + regs.edi]
-	mov ebp, dword[eax + regs.ebp]
-
-	push dword[eax + regs.eflags]
-	popf
-
-	mov esp, dword[eax + regs.esp]
-
-	push eax
-
-	mov eax, dword[eax + regs.cr3] ; cr3
+	mov eax, dword[ebp + regs.cr3] ; cr3
 	mov cr3, eax
 
-	pop eax
-	push eax ; ?????
+	mov eax, ebp
 
-	mov eax, dword[eax + regs.eip] ; eip
-	xchg eax, dword[esp]
+	mov edi, dword[eax + regs.edi]
+	mov esi, dword[eax + regs.esi]
+	mov ebp, dword[eax + regs.ebp]
+	mov esp, dword[eax + regs.esp]
+	mov ebx, dword[eax + regs.ebx]
+	mov edx, dword[eax + regs.edx]
+	mov ecx, dword[eax + regs.ecx]
 
+	cmp dword[eax + regs.int_no], -1 ; if int_no == -1 not the first time of task
+	je .next
+
+	push dword[eax + regs.eip]; jump directly on eip
 	mov eax, dword[eax + regs.eax]
-
 	sti
 	ret
+
+	.next:
+	mov eax, dword[eax + regs.eax]
+
+	add esp, 8; remove int_no & err_code
+
+	sti
+	iretd

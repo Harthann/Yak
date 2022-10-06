@@ -138,10 +138,10 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x0fff);
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 512)};
+	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
 	crate::sti!();
 
 	/*	Function to test and enter usermode */

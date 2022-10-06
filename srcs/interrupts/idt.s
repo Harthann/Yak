@@ -24,11 +24,6 @@ irq_0:
 	mov ax, ds
 	push eax
 
-	pushf
-	mov eax, dword[esp]
-	mov dword[esp + regs.eflags], eax
-	popf
-
 	mov eax, dword[JIFFIES]
 	inc eax
 	mov dword[JIFFIES], eax
@@ -36,8 +31,6 @@ irq_0:
 	mov dx, 0x20
 	mov al, 0x20
 	out dx, al
-
-	add dword[esp + regs.esp], 20; ret
 
 	mov eax, esp
 	push eax
