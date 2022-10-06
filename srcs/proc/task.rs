@@ -6,43 +6,10 @@ use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
 pub static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
 pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
+use crate::interrupts::Registers;
 
 extern "C" {
-	fn switch_task(reg_from: *const Registers, reg_to: *const Registers);
-}
-
-#[repr(C, packed)]
-#[derive(Debug, Clone, Copy)]
-pub struct Registers {
-	pub eax:	u32,
-	pub ebx:	u32,
-	pub ecx:	u32,
-	pub edx:	u32,
-	pub esi:	u32,
-	pub edi:	u32,
-	pub esp:	u32,
-	pub ebp:	u32,
-	pub eip:	u32,
-	pub eflags:	u32,
-	pub cr3:	u32
-}
-
-impl Registers {
-	const fn new() -> Self {
-		Self {
-			eax: 0,
-			ebx: 0,
-			ecx: 0,
-			edx: 0,
-			esi: 0,
-			edi: 0,
-			esp: 0,
-			ebp: 0,
-			eip: 0,
-			eflags: 0,
-			cr3: 0
-		}
-	}
+	fn switch_task(regs: *const Registers);
 }
 
 pub struct Task {
@@ -126,17 +93,19 @@ pub unsafe fn remove_running_task() -> ! {
 		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
 	}
 	RUNNING_TASK = ptr;
-	let regs: Registers = Registers::new();
-	switch_task(&regs, &(*RUNNING_TASK).regs);
+	switch_task(&(*RUNNING_TASK).regs);
 	/* Never goes there */
 	loop {}
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn next_task() {
+pub unsafe extern "C" fn next_task(regs: &mut Registers) {
+	(*RUNNING_TASK).regs = *regs;
 	if !(*RUNNING_TASK).next_ptr.is_null() {
-		let last: *const Task = RUNNING_TASK;
+		crate::kprintln!("prev_regs: {:#x?}", regs);
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
-		switch_task(&(*last).regs, &(*RUNNING_TASK).regs);
+		crate::kprintln!("regs: {:#x?}", &(*RUNNING_TASK).regs);
+		crate::kprintln!("NOT THEEEERRREEEEE");
 	}
+	switch_task(&(*RUNNING_TASK).regs);
 }

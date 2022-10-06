@@ -214,9 +214,7 @@ impl fmt::Write for Writer {
 #[macro_export]
 macro_rules! kprint {
 	($($arg:tt)*) => (
-		crate::wrappers::_cli();
-		$crate::vga_buffer::_print(format_args!($($arg)*));
-		crate::wrappers::_sti()
+		$crate::vga_buffer::_print(format_args!($($arg)*))
 	)
 }
 
@@ -224,9 +222,7 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		crate::wrappers::_cli();
-		$crate::kprint!("{}\n", format_args!($($arg)*));
-		crate::wrappers::_sti()
+		$crate::kprint!("{}\n", format_args!($($arg)*))
 	)
 }
 

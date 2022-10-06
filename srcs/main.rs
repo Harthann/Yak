@@ -138,10 +138,10 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0xffff);
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
+	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 512)};
 	crate::sti!();
 
 	/*	Function to test and enter usermode */
@@ -218,15 +218,15 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-	test_task2();
-	let test: i32;
+//	test_task2();
+//	let test: i32;
 	/* test syscall asm */
-	unsafe{core::arch::asm!("mov ebx, -1
-					mov eax, 7
-					int 0x80
-					mov {}, eax", out(reg) test)};
+//	unsafe{core::arch::asm!("mov ebx, -1
+//					mov eax, 7
+//					int 0x80
+//					mov {}, eax", out(reg) test)};
 	/* test syscall rust */
-	sys_waitpid(-1, core::ptr::null_mut(), 0);
-	crate::kprintln!("result: {}", test);
+//	sys_waitpid(-1, core::ptr::null_mut(), 0);
+//	crate::kprintln!("result: {}", test);
 	loop {}
 }

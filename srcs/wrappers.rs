@@ -1,3 +1,4 @@
+/*
 pub static mut cli_count: usize = 0;
 
 #[no_mangle]
@@ -19,6 +20,7 @@ pub extern "C" fn _sti() {
 		}
 	}
 }
+*/
 
 #[macro_export]
 macro_rules! cli {
