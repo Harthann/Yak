@@ -24,9 +24,8 @@ irq_0:
 	mov ax, ds
 	push eax
 
-	mov eax, dword[JIFFIES]
-	inc eax
-	mov dword[JIFFIES], eax
+	add dword[esp + regs.esp], 20
+	add dword[JIFFIES], 1
 
 	mov dx, 0x20
 	mov al, 0x20
