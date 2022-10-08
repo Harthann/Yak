@@ -57,6 +57,44 @@ pub const MODE_5:			u8 = 0b101	<< 1;
 pub const MODE_6:			u8 = MODE_2;
 pub const MODE_7:			u8 = MODE_3;
 
+/*  System clock frequency */
+pub static mut FREQUENCY:           f64 = 1.0;
+pub static mut RELOAD_VALUE:        u16 = 1;
+/*  Number of ms between each irq0 */
+#[no_mangle]
+pub static mut SYSTEM_FRACTION:     f64 = 1.0;
+#[no_mangle]
+pub static mut TIME_ELAPSED:        f64 = 0.0;
+
+/*
+**  Max frequency = 1193182, Min frequency = 18
+** frequency = 1193182 / reload_value;
+** frequency * reload_value = 1193182
+** reload_value = 1193182 / frequency
+**
+** frequency / 1000 = nb_cycle per ms
+** 1 / nb_cycle = ms between 2 cycle
+** ms correspond to the number of ms between two cycle we need
+*/
+pub fn set_irq0_in_ms(ms: f32) {
+    let mut frequency = 1000.0 / ms;
+
+    if frequency < 18.0 {
+        frequency = 18.0;
+    } else if frequency > 1193182.0 {
+        frequency = 1193182.0;
+    }
+  
+    unsafe {
+        RELOAD_VALUE = (1193182.0 / frequency) as u16;
+        FREQUENCY = 1193182.0 / RELOAD_VALUE as f64;
+        SYSTEM_FRACTION = 1000.0 / FREQUENCY;
+        crate::kprintln!("System frequency set to: {}", FREQUENCY);
+        crate::kprintln!("System fraction set to: {}", SYSTEM_FRACTION);
+	    set_pit(CHANNEL_0, ACC_LOBHIB, MODE_2, RELOAD_VALUE);
+    }
+}
+
 pub fn set_pit(channel: u8, access: u8, mode: u8, data: u16) {
 	let port: u16 = match channel {
 		CHANNEL_0	=> CHAN0_DATA.into(),

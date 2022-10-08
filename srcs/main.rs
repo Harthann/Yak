@@ -9,6 +9,7 @@
 #![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]
+#![feature(core_intrinsics)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -71,6 +72,7 @@ mod proc;
 mod user;
 mod wrappers;
 mod spin;
+//mod math;
 
 #[cfg(test)]
 mod test;
@@ -139,6 +141,7 @@ pub extern "C" fn kinit() {
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
 	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
+    pic::set_irq0_in_ms(0.05);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
@@ -208,7 +211,7 @@ use crate::syscalls::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
+	//test_task();
 
 	kprintln!("Hello World of {}!", 42);
 

@@ -7,6 +7,9 @@ global irq_stub_0
 extern next_task
 
 extern JIFFIES
+extern SYSTEM_FRACTION
+extern TIME_ELAPSED
+
 irq_0:
 	cli
 	push eax

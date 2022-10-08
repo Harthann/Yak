@@ -72,11 +72,18 @@ impl Buffer {
 }
 
 use crate::spin::Mutex;
-pub static mut WRITER: Mutex<Writer> = Mutex::new(Writer {
+//pub static mut WRITER: Mutex<Writer> = Mutex::new(Writer {
+//	screens:		[Screen::new(), Screen::new(), Screen::new()],
+//	screen_index:	0,
+//	vga_buffer:		VGABUFF_OFFSET as _
+//});
+pub static mut WRITER: Writer = Writer {
 	screens:		[Screen::new(), Screen::new(), Screen::new()],
 	screen_index:	0,
 	vga_buffer:		VGABUFF_OFFSET as _
-});
+};
+
+
 
 pub struct Writer {
 	screens:		[Screen; NB_SCREEN],
@@ -233,19 +240,19 @@ macro_rules! kprintln {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black))};
+	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
 	kprintln!("{}", info);
-	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black))};
+	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
 	loop {}
 }
 
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black))};
+	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black))};
+	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
 	io::outb(0xf4, 0x11);
 	loop {}
 }
@@ -253,7 +260,7 @@ fn panic(info: &PanicInfo) -> ! {
 pub fn _print(args: fmt::Arguments) {
 	use core::fmt::Write;
 
-	unsafe{WRITER.lock().write_fmt(args).unwrap()};
+	unsafe{WRITER.write_fmt(args).unwrap()};
 }
 
 #[macro_export]
@@ -298,17 +305,17 @@ pub fn hexdump(ptr: *const u8, size: usize)
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => (
 		unsafe {
-			$crate::vga_buffer::WRITER.lock().chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
+			$crate::vga_buffer::WRITER.chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
 		}
 	);
 }
 
 #[macro_export]
 macro_rules! clihandle {
-	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.lock().get_screen().get_command().handle($arg)})
+	($arg:expr) => (unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)})
 }
 
 #[macro_export]
 macro_rules! screenclear {
-	() => (unsafe {crate::vga_buffer::WRITER.lock().clear()})
+	() => (unsafe {crate::vga_buffer::WRITER.clear()})
 }

@@ -134,6 +134,7 @@ pub unsafe fn remove_running_task() -> ! {
 
 #[no_mangle]
 pub unsafe extern "C" fn next_task() {
+    crate::pic::pit::TIME_ELAPSED += crate::pic::pit::SYSTEM_FRACTION;
 	if !(*RUNNING_TASK).next_ptr.is_null() {
 		let last: *const Task = RUNNING_TASK;
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
