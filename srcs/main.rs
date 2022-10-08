@@ -70,13 +70,13 @@ mod pic;
 mod proc;
 mod user;
 mod wrappers;
+mod spin;
 
 #[cfg(test)]
 mod test;
 
 /*  Modules used function and variable  */
-use memory::paging::{init_paging, page_directory};
-use memory::allocator::linked_list::LinkedListAllocator;
+use memory::paging::{init_paging, page_directory}; use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
 use pic::setup_pic8259;

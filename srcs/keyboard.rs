@@ -123,7 +123,7 @@ pub fn handle_event() -> char {
 	
 	let charcode = keyboard_to_ascii(keycode);
 	if charcode >= '1' && charcode <= ('0' as u8 + NB_SCREEN as u8) as char && getflag!(SpecialKeyFlag::Ctrl) {
-		unsafe{vga_buffer::WRITER.change_screen((charcode as usize - '0' as usize - 1) as usize);}
+		unsafe{vga_buffer::WRITER.lock().change_screen((charcode as usize - '0' as usize - 1) as usize);}
 		return '\0';
 	}
 	else if charcode != '\0' {
