@@ -5,8 +5,8 @@ global isr_stub_table
 global isr_stub_syscall
 global irq_stub_0
 
+extern STACK_TASK_SWITCH
 extern next_task
-
 extern regs
 
 extern JIFFIES
@@ -24,7 +24,6 @@ irq_0:
 	mov ax, ds
 	push eax
 
-	add dword[esp + regs.esp], 20
 	add dword[JIFFIES], 1
 
 	mov dx, 0x20
@@ -32,11 +31,16 @@ irq_0:
 	out dx, al
 
 	mov eax, esp
+
+	; Setup temp task
+	mov esp, STACK_TASK_SWITCH
+	sub esp, 8
+
+	; (regs: &mut Registers)
 	push eax
 
 	call next_task
-
-	; never goes there
+	; Never goes there
 
 isr_stub_table:
 	%assign i 0

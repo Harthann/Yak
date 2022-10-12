@@ -99,6 +99,7 @@ use crate::memory::paging::PAGE_WRITABLE;
 use crate::interrupts::init_idt;
 
 use proc::task::{Task, init_tasking};
+use proc::process::{MASTER_PROCESS, Process};
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
@@ -133,8 +134,11 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
+	/* on the kernel stack */
+	let mut main_process: Process = Process::new();
 	let mut main_task: Task = Task::new();
-	unsafe{init_tasking(&mut main_task)};
+	unsafe{MASTER_PROCESS = &mut main_process};
+	unsafe{init_tasking(&mut main_process, &mut main_task)};
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */

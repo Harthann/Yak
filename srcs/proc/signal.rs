@@ -55,7 +55,7 @@ impl Signal {
 
 	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType) {
 		unsafe {
-			let res = MASTER_PROCESS.search_from_pid(pid);
+			let res = (*MASTER_PROCESS).search_from_pid(pid);
 			if !res.is_ok() {
 				todo!();
 			}

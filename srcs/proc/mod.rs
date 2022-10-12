@@ -33,7 +33,6 @@ pub unsafe extern "C" fn wrapper_fn() {
 }
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
-	crate::cli!();
 	let proc: Process =  Process::new();
 	let parent: &mut Process = &mut *(*RUNNING_TASK).process;
 	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
@@ -76,7 +75,6 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 		esp = in(reg) other_task.regs.esp,
 		func = in(reg) func);
 	append_task(other_task);
-	crate::sti!();
 }
 
 #[macro_export]
@@ -90,8 +88,10 @@ macro_rules! size_of_args {
 #[macro_export]
 macro_rules! exec_fn {
 	($func:expr, $($rest:expr),+) => {
+		crate::cli!();
 		let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
 		crate::size_of_args!(args_size, $($rest),+);
 		crate::proc::exec_fn($func, &args_size, $($rest),+);
+		crate::sti!();
 	}
 }

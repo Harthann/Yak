@@ -22,11 +22,18 @@ switch_task:
 	mov edx, dword[eax + regs.edx]
 	mov ecx, dword[eax + regs.ecx]
 
-	push dword[eax + regs.eflags]
-	popf
+	cmp dword[eax + regs.int_no], -1
+	jne .new_task
 
-	push dword[eax + regs.eip]; jump directly on eip
 	mov eax, dword[eax + regs.eax]
+	add esp, 8 ; int_no and err_code
 
 	sti
-	ret
+	iretd
+
+	.new_task:
+		push dword[eax + regs.eip]; jump directly on eip
+		mov eax, dword[eax + regs.eax]
+
+		sti
+		ret

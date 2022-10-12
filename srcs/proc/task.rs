@@ -5,6 +5,7 @@ use crate::proc::wrapper_fn;
 use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
 pub static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
+#[no_mangle]
 pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
 use crate::interrupts::Registers;
 
@@ -42,7 +43,7 @@ impl Task {
 use crate::memory::allocator::Box;
 use crate::{KSTACK, KHEAP};
 
-pub unsafe fn init_tasking(main_task: &mut Task) {
+pub unsafe fn init_tasking(master_process: &mut Process, main_task: &mut Task) {
 	core::arch::asm!("mov {}, cr3", out(reg) main_task.regs.cr3);
 	core::arch::asm!("pushf",
 					"mov {}, [esp]",
@@ -52,12 +53,13 @@ pub unsafe fn init_tasking(main_task: &mut Task) {
 		todo!();
 	}
 	STACK_TASK_SWITCH = res.unwrap() + 0x1000;
-	MASTER_PROCESS.status = Status::Run;
-	MASTER_PROCESS.stack = KSTACK;
-	MASTER_PROCESS.heap = KHEAP;
-	MASTER_PROCESS.owner = 0;
+	crate::kprintln!("STACK_TASK_SWITCH: {:#x?}", STACK_TASK_SWITCH);
+	master_process.status = Status::Run;
+	master_process.stack = KSTACK;
+	master_process.heap = KHEAP;
+	master_process.owner = 0;
 	NEXT_PID += 1;
-	main_task.process = &mut MASTER_PROCESS;
+	main_task.process = &mut *master_process;
 	RUNNING_TASK = &mut *main_task;
 }
 

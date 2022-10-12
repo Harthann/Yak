@@ -11,7 +11,7 @@ use crate::proc::task::RUNNING_TASK;
 use crate::proc::signal::{Signal, SignalType};
 
 pub static mut NEXT_PID: Id = 0;
-pub static mut MASTER_PROCESS: Process = Process::new();
+pub static mut MASTER_PROCESS: *mut Process = core::ptr::null_mut();
 
 #[derive(Debug)]
 pub enum Status {
@@ -161,5 +161,5 @@ pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
 
 pub unsafe fn print_all_process() {
 	crate::kprintln!("       PID        OWNER   STATUS");
-	MASTER_PROCESS.print_tree();
+	(*MASTER_PROCESS).print_tree();
 }
