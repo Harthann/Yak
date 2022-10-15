@@ -8,6 +8,9 @@ switch_task:
 
 	mov eax, dword[ebp + regs.ds]
 	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
 
 	mov eax, dword[ebp + regs.cr3] ; cr3
 	mov cr3, eax

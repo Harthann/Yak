@@ -247,10 +247,12 @@ fn panic(info: &PanicInfo) -> ! {
 	loop {}
 }
 
-pub fn _print(args: fmt::Arguments) {
-	use core::fmt::Write;
+use core::fmt::Write;
 
+pub fn _print(args: fmt::Arguments) {
+	crate::wrappers::_cli();
 	unsafe{WRITER.write_fmt(args).unwrap()};
+	crate::wrappers::_sti();
 }
 
 #[macro_export]

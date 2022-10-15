@@ -124,6 +124,7 @@ fn page_fault_handler(reg: &Registers) {
 /* TODO: lock mutex before write and int */
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: &mut Registers) {
+	crate::wrappers::_cli();
 	let int_no: usize = reg.int_no as usize;
 //	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
@@ -145,6 +146,7 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 			crate::pic::handler(reg, int_no);
 		}
 	}
+	crate::wrappers::_rst();
 //	let eax = reg.eax;
 //	crate::kprintln!("reg.eax ret: {}", eax);
 }

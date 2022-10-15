@@ -113,7 +113,7 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	crate::cli!();
+	unsafe{crate::cli!()};
 //	multiboot::read_tags();
 	/* Init paging and remove identity paging */
 	init_paging();
@@ -146,7 +146,7 @@ pub extern "C" fn kinit() {
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-	crate::sti!();
+	unsafe{crate::sti!()};
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -163,7 +163,7 @@ unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("dumb{}", nb);
+		crate::kprintln!("dumb{} - {}", nb, crate::wrappers::cli_count);
 		i += 1;
 	}
 	if nb > 1 {
@@ -212,7 +212,7 @@ use crate::syscalls::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
+//	test_task();
 
 	kprintln!("Hello World of {}!", 42);
 

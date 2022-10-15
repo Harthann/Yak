@@ -13,7 +13,7 @@ pub type Id = i32;
 
 #[no_mangle]
 pub unsafe extern "C" fn exit_fn() -> ! {
-	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
+	crate::wrappers::_cli();
 	zombify_running_process();
 	remove_running_task();
 	/* Never goes there */
@@ -27,6 +27,8 @@ pub unsafe extern "C" fn wrapper_fn() {
 	add esp, 4
 	call eax
 	cli
+	mov esp, STACK_TASK_SWITCH
+	sub esp, 256
 	jmp exit_fn",
 	options(noreturn));
 	/* Never goes there */
@@ -88,10 +90,10 @@ macro_rules! size_of_args {
 #[macro_export]
 macro_rules! exec_fn {
 	($func:expr, $($rest:expr),+) => {
-		crate::cli!();
+		crate::wrappers::_cli();
 		let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
 		crate::size_of_args!(args_size, $($rest),+);
 		crate::proc::exec_fn($func, &args_size, $($rest),+);
-		crate::sti!();
+		crate::wrappers::_sti()
 	}
 }

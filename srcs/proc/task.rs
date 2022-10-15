@@ -94,6 +94,7 @@ pub unsafe fn remove_running_task() -> ! {
 	} else {
 		(*prev_task).next = Some((*RUNNING_TASK).next.take().unwrap());
 	}
+	crate::wrappers::_rst();
 	RUNNING_TASK = ptr;
 	switch_task(&(*RUNNING_TASK).regs);
 	/* Never goes there */
@@ -102,10 +103,16 @@ pub unsafe fn remove_running_task() -> ! {
 
 #[no_mangle]
 pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
+	crate::wrappers::_cli();
 	(*RUNNING_TASK).regs = *regs;
+	crate::kprintln!("prev registers {} {:#x?}", crate::wrappers::cli_count, (*RUNNING_TASK).regs);
+	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
 	if !(*RUNNING_TASK).next_ptr.is_null() {
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
 	}
+	crate::kprintln!("next registers {} {:#x?}", crate::wrappers::cli_count, (*RUNNING_TASK).regs);
+	crate::kprintln!("switch_task !");
+	crate::wrappers::_rst();
 	switch_task(&(*RUNNING_TASK).regs);
 	/* Never goes there */
 	loop {}
