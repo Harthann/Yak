@@ -2,7 +2,7 @@ use crate::memory::VirtAddr;
 use crate::memory::paging::{PAGE_WRITABLE, alloc_page};
 
 use crate::proc::wrapper_fn;
-use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
+//use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
 pub static mut RUNNING_TASK: *mut Task = core::ptr::null_mut();
 #[no_mangle]
@@ -13,37 +13,52 @@ extern "C" {
 	fn switch_task(regs: *const Registers);
 }
 
-pub struct Task {
-	pub regs: Registers,
-	pub process: *mut Process,
-	pub next_ptr: *mut Task,
-	pub next: Option<Box<Task>>
+pub struct TaskList {
+	head: TaskLink
 }
 
-impl Task {
+impl TaskList {
+	pub const new() -> Self {
+		Self {head: None}
+	}
+
+	pub fn add(&mut self, flags: u32, page_dir: u32) {
+		let node = TaskNode::new();
+		node.eip = wrapper_fn as VirtAddr;
+	}
+}
+
+type TaskLink = Option<Box<TaskNode>>;
+
+pub struct TaskNode {
+	pub regs: Registers,
+	pub next: TaskLink
+}
+
+impl TaskNode {
 	pub const fn new() -> Self {
-		Self {
+		let new = Self {
 			regs: Registers::new(),
-			process: core::ptr::null_mut(),
-			next_ptr: core::ptr::null_mut(),
 			next: None
-		}
+		};
 	}
 
 	/* TODO: handle args and setup stack there */
-	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32, process: *mut Process) {
+	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32) {//, process: *mut Process) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
-		self.process = process;
-		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
+//		self.process = process;
+//		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
+		self.regs.esp = alloc_page(PAGE_WRITABLE).unwrap() + 0x1000;
+//		: MemoryZone <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 	}
 }
 
 use crate::memory::allocator::Box;
 use crate::{KSTACK, KHEAP};
 
-pub unsafe fn init_tasking(master_process: &mut Process, main_task: &mut Task) {
+pub unsafe fn init_tasking(/*master_process: &mut Process, */main_task: &mut Task) {
 	core::arch::asm!("mov {}, cr3", out(reg) main_task.regs.cr3);
 	core::arch::asm!("pushf",
 					"mov {}, [esp]",
@@ -54,12 +69,12 @@ pub unsafe fn init_tasking(master_process: &mut Process, main_task: &mut Task) {
 	}
 	STACK_TASK_SWITCH = res.unwrap() + 0x1000;
 	crate::kprintln!("STACK_TASK_SWITCH: {:#x?}", STACK_TASK_SWITCH);
-	master_process.status = Status::Run;
-	master_process.stack = KSTACK;
-	master_process.heap = KHEAP;
-	master_process.owner = 0;
+//	master_process.status = Status::Run;
+//	master_process.stack = KSTACK;
+//	master_process.heap = KHEAP;
+//	master_process.owner = 0;
 	NEXT_PID += 1;
-	main_task.process = &mut *master_process;
+//	main_task.process = &mut *master_process;
 	RUNNING_TASK = &mut *main_task;
 }
 
@@ -105,13 +120,13 @@ pub unsafe fn remove_running_task() -> ! {
 pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
 	crate::wrappers::_cli();
 	(*RUNNING_TASK).regs = *regs;
-	crate::kprintln!("prev registers {} {:#x?}", crate::wrappers::cli_count, (*RUNNING_TASK).regs);
-	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
+//	crate::kprintln!("prev registers {} {:#x?}", crate::wrappers::cli_count, (*RUNNING_TASK).regs);
+//	crate::kprintln!("next_ptr: {:#x?}", (*RUNNING_TASK).next_ptr);
 	if !(*RUNNING_TASK).next_ptr.is_null() {
 		RUNNING_TASK = (*RUNNING_TASK).next_ptr;
 	}
-	crate::kprintln!("next registers {} {:#x?}", crate::wrappers::cli_count, (*RUNNING_TASK).regs);
-	crate::kprintln!("switch_task !");
+//	crate::kprintln!("next registers {} {:#x?}", crate::wrappers::cli_count, (*RUNNING_TASK).regs);
+//	crate::kprintln!("switch_task !");
 	crate::wrappers::_rst();
 	switch_task(&(*RUNNING_TASK).regs);
 	/* Never goes there */

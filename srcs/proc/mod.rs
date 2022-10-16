@@ -14,7 +14,7 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn exit_fn() -> ! {
 	crate::wrappers::_cli();
-	zombify_running_process();
+//	zombify_running_process();
 	remove_running_task();
 	/* Never goes there */
 }
@@ -35,15 +35,15 @@ pub unsafe extern "C" fn wrapper_fn() {
 }
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
-	let proc: Process =  Process::new();
-	let parent: &mut Process = &mut *(*RUNNING_TASK).process;
-	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
-	childs.push(Box::new(proc));
-	let len = childs.len();
-	let proc_ptr: *mut Process = childs[len - 1].as_mut();
-	(*proc_ptr).init(&mut *parent, 0);
+//	let proc: Process =  Process::new();
+//	let parent: &mut Process = &mut *(*RUNNING_TASK).process;
+//	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
+//	childs.push(Box::new(proc));
+//	let len = childs.len();
+//	let proc_ptr: *mut Process = childs[len - 1].as_mut();
+//	(*proc_ptr).init(&mut *parent, 0);
 	let mut other_task: Task = Task::new();
-	other_task.init((*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3, proc_ptr);
+	other_task.init((*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3/*, proc_ptr*/);
 	/* init_fn_task - Can't move to another function ??*/
 	let sum: usize = args_size.iter().sum();
 	other_task.regs.esp -= sum as u32;

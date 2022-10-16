@@ -135,14 +135,14 @@ pub extern "C" fn kinit() {
 	reload_tss!();
 
 	/* on the kernel stack */
-	let mut main_process: Process = Process::new();
+//	let mut main_process: Process = Process::new();
 	let mut main_task: Task = Task::new();
-	unsafe{MASTER_PROCESS = &mut main_process};
-	unsafe{init_tasking(&mut main_process, &mut main_task)};
+//	unsafe{MASTER_PROCESS = &mut main_process};
+	unsafe{init_tasking(/*&mut main_process, */&mut main_task)};
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x0fff);
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x000f);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
@@ -212,7 +212,7 @@ use crate::syscalls::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-//	test_task();
+	test_task();
 
 	kprintln!("Hello World of {}!", 42);
 

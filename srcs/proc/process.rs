@@ -142,21 +142,25 @@ impl fmt::Display for Process {
 }
 
 pub unsafe fn get_running_process() -> *mut Process {
-	&mut *(*RUNNING_TASK).process
+	//TODO: remove
+	MASTER_PROCESS
+//	&mut *(*RUNNING_TASK).process
 }
 
 pub unsafe fn zombify_running_process() {
-	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-	process.zombify();
+//	let process: &mut Process = &mut *(*RUNNING_TASK).process;
+//	process.zombify();
 }
 
 pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
-	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-	if pid == -1  {
-		process.get_signal()
-	} else {
-		process.get_signal_from_pid(pid)
-	}
+	//TODO: remove
+	(*MASTER_PROCESS).get_signal()
+//	let process: &mut Process = &mut *(*RUNNING_TASK).process;
+//	if pid == -1  {
+//		process.get_signal()
+//	} else {
+//		process.get_signal_from_pid(pid)
+//	}
 }
 
 pub unsafe fn print_all_process() {
