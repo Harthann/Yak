@@ -33,8 +33,7 @@ irq_0:
 	mov eax, esp
 
 	; Setup temp task
-	mov esp, STACK_TASK_SWITCH
-	sub esp, 8
+	mov esp, dword[STACK_TASK_SWITCH]
 
 	; (regs: &mut Registers)
 	push eax

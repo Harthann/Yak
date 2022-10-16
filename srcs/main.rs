@@ -70,6 +70,7 @@ mod pic;
 mod proc;
 mod user;
 mod wrappers;
+mod utils;
 
 #[cfg(test)]
 mod test;
@@ -134,15 +135,11 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-	/* on the kernel stack */
-//	let mut main_process: Process = Process::new();
-	let mut main_task: Task = Task::new();
-//	unsafe{MASTER_PROCESS = &mut main_process};
-	unsafe{init_tasking(/*&mut main_process, */&mut main_task)};
+	init_tasking();
 
 	setup_pic8259();
-	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x000f);
+	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
@@ -222,7 +219,7 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-//	test_task2();
+	test_task2();
 //	let test: i32;
 	/* test syscall asm */
 //	unsafe{core::arch::asm!("mov ebx, -1

@@ -7,7 +7,6 @@ use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
 
 use crate::proc::Id;
-use crate::proc::task::RUNNING_TASK;
 use crate::proc::signal::{Signal, SignalType};
 
 pub static mut NEXT_PID: Id = 0;
@@ -127,7 +126,7 @@ impl Process {
 		let mut i = 0;
 		while i < self.signals.len() {
 			if self.signals[i].as_mut().sender == pid {
-				return Ok(*self.signals.remove(i).unwrap().as_mut());
+				return Ok(*self.signals.remove(i));
 			}
 			i += 1;
 		}

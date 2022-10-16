@@ -116,11 +116,8 @@ impl String {
 		}
 	}
 
-	pub fn remove(&mut self, idx: usize) -> Option<char> {
-		match self.vec.remove(idx) {
-			Some(x) => Some(x as char),
-			None => None
-		}
+	pub fn remove(&mut self, idx: usize) -> char {
+		self.vec.remove(idx) as char
 	}
 
 	#[inline]
