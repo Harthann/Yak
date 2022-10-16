@@ -55,18 +55,18 @@ impl Signal {
 
 	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType) {
 		unsafe {
-			let res = (*MASTER_PROCESS).search_from_pid(pid);
+			let res = MASTER_PROCESS.search_from_pid(pid);
 			if !res.is_ok() {
 				todo!();
 			}
 			let process: &mut Process = res.unwrap();
 			let signal = Self::new(sender_pid, sigtype);
-			process.signals.push(Box::new(signal));
+			process.signals.push(signal);
 		}
 	}
 
 	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType) {
 		let signal = Self::new(pid, sigtype);
-		process.signals.push(Box::new(signal));
+		process.signals.push(signal);
 	}
 }

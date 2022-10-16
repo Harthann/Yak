@@ -1,4 +1,4 @@
-//use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
+use core::ptr;
 use crate::utils::queue::Queue;
 use crate::interrupts::Registers;
 use crate::proc::wrapper_fn;
@@ -9,21 +9,24 @@ pub static mut TASKLIST: Queue<Task> = Queue::new();
 
 #[derive(Copy, Clone)]
 pub struct Task {
-	pub regs: Registers
+	pub regs: Registers,
+	pub process: *mut Process
 }
 
 impl Task {
 	pub const fn new() -> Self {
 		Self {
-			regs: Registers::new()
+			regs: Registers::new(),
+			process: ptr::null_mut()
 		}
 	}
 
-	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32) {//, process: *mut Process) {
+	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32, process: *mut Process) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
-		self.regs.esp = alloc_page(PAGE_WRITABLE).unwrap() + 0x1000;
+		self.process = process;
+		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
 	}
 }
 
@@ -34,7 +37,7 @@ extern "C" {
 #[no_mangle]
 pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
 
-use crate::memory::allocator::Box;
+use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 use crate::{KSTACK, KHEAP};
 
 pub fn init_tasking() {
@@ -52,6 +55,12 @@ pub fn init_tasking() {
 			todo!();
 		}
 		STACK_TASK_SWITCH = res.unwrap() + 0x1000;
+		MASTER_PROCESS.status = Status::Run;
+		MASTER_PROCESS.stack = KSTACK;
+		MASTER_PROCESS.heap = KHEAP;
+		MASTER_PROCESS.owner = 0;
+		NEXT_PID += 1;
+		task.process = &mut MASTER_PROCESS;
 		TASKLIST.push(task);
 	}
 }
@@ -63,14 +72,12 @@ pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
 	_cli();
 	let mut task = TASKLIST.pop();
 	task.regs = *regs;
-//	crate::kprintln!("prev_regs: {:#x?}", *regs);
 	TASKLIST.push(task);
 	let res = &TASKLIST.peek();
 	if res.is_none() {
 		todo!();
 	}
 	let mut regs = res.unwrap().regs;
-//	crate::kprintln!("new_regs: {:#x?}", regs);
 	_rst();
 	switch_task(&mut regs);
 	/* Never goes there */

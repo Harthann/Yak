@@ -15,6 +15,7 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn exit_fn() -> ! {
 	_cli();
+	zombify_running_process();
 	TASKLIST.pop();
 	let res = &TASKLIST.peek();
 	if res.is_none() {
@@ -42,13 +43,20 @@ pub unsafe extern "C" fn wrapper_fn() {
 }
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
-	let mut new_task: Task = Task::new();
+	let proc: Process =  Process::new();
 	let res = TASKLIST.peek();
 	if res.is_none() {
 		todo!();
 	}
-	let regs = res.unwrap().regs;
-	new_task.init(regs.eflags, regs.cr3);
+	let running_task = res.unwrap();
+	let parent: &mut Process = &mut *running_task.process;
+	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
+	childs.push(Box::new(proc));
+	let len = childs.len();
+	let proc_ptr: *mut Process = childs[len - 1].as_mut();
+	(*proc_ptr).init(&mut *parent, 0);
+	let mut new_task: Task = Task::new();
+	new_task.init(running_task.regs.eflags, running_task.regs.cr3, proc_ptr);
 	/* init_fn_task - Can't move to another function ??*/
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp -= sum as u32;

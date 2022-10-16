@@ -2,15 +2,18 @@ use core::fmt;
 
 use crate::KHEAP;
 use crate::vec::Vec;
+use crate::utils::queue::Queue;
 use crate::memory::{MemoryZone, Stack};
 use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
+
+use crate::proc::task::TASKLIST;
 
 use crate::proc::Id;
 use crate::proc::signal::{Signal, SignalType};
 
 pub static mut NEXT_PID: Id = 0;
-pub static mut MASTER_PROCESS: *mut Process = core::ptr::null_mut();
+pub static mut MASTER_PROCESS: Process = Process::new();
 
 #[derive(Debug)]
 pub enum Status {
@@ -27,7 +30,7 @@ pub struct Process {
 	pub childs: Vec<Box<Process>>,
 	pub stack: MemoryZone,
 	pub heap: MemoryZone,
-	pub signals: Vec<Box<Signal>>, /* TODO: VecDeque ? */
+	pub signals: Vec<Signal>,
 	pub owner: Id
 }
 
@@ -116,7 +119,7 @@ impl Process {
 
 	pub unsafe fn get_signal(&mut self) -> Result<Signal, ()> {
 		if self.signals.len() > 0 {
-			Ok(*self.signals.pop().unwrap().as_mut())
+			Ok(self.signals.pop().unwrap())
 		} else {
 			Err(())
 		}
@@ -125,8 +128,8 @@ impl Process {
 	pub unsafe fn get_signal_from_pid(&mut self, pid: Id) -> Result<Signal, ()> {
 		let mut i = 0;
 		while i < self.signals.len() {
-			if self.signals[i].as_mut().sender == pid {
-				return Ok(*self.signals.remove(i));
+			if self.signals[i].sender == pid {
+				return Ok(self.signals.remove(i));
 			}
 			i += 1;
 		}
@@ -141,28 +144,28 @@ impl fmt::Display for Process {
 }
 
 pub unsafe fn get_running_process() -> *mut Process {
-	//TODO: remove
-	MASTER_PROCESS
-//	&mut *(*RUNNING_TASK).process
+	let res = TASKLIST.peek();
+	if res.is_none() {
+		todo!();
+	}
+	let task = res.unwrap();
+	task.process
 }
 
 pub unsafe fn zombify_running_process() {
-//	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-//	process.zombify();
+	(*get_running_process()).zombify();
 }
 
 pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
-	//TODO: remove
-	(*MASTER_PROCESS).get_signal()
-//	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-//	if pid == -1  {
-//		process.get_signal()
-//	} else {
-//		process.get_signal_from_pid(pid)
-//	}
+	let process = &mut *get_running_process();
+	if pid == -1  {
+		process.get_signal()
+	} else {
+		process.get_signal_from_pid(pid)
+	}
 }
 
 pub unsafe fn print_all_process() {
 	crate::kprintln!("       PID        OWNER   STATUS");
-	(*MASTER_PROCESS).print_tree();
+	MASTER_PROCESS.print_tree();
 }
