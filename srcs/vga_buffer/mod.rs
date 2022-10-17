@@ -222,7 +222,7 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		$crate::kprint!("{}\n", format_args!($($arg)*))
+		$crate::kprint!("{}\n", format_args!($($arg)*));
 	)
 }
 
@@ -250,9 +250,7 @@ fn panic(info: &PanicInfo) -> ! {
 use core::fmt::Write;
 
 pub fn _print(args: fmt::Arguments) {
-	crate::wrappers::_cli();
 	unsafe{WRITER.write_fmt(args).unwrap()};
-	crate::wrappers::_sti();
 }
 
 #[macro_export]

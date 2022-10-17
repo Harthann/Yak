@@ -120,13 +120,14 @@ fn page_fault_handler(reg: &Registers) {
 	crate::kprintln!("{:#x?}", reg);
 }
 
+use crate::wrappers::{_cli, _rst};
+
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: &mut Registers) {
-	crate::wrappers::_cli();
+	_cli();
 	let int_no: usize = reg.int_no as usize;
-//	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
 		match int_no { // TODO: enum exceptions
@@ -146,9 +147,7 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 			crate::pic::handler(reg, int_no);
 		}
 	}
-	crate::wrappers::_rst();
-//	let eax = reg.eax;
-//	crate::kprintln!("reg.eax ret: {}", eax);
+	_rst();
 }
 
 pub unsafe fn init_idt() {

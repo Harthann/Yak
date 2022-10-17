@@ -1,7 +1,7 @@
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
 use crate::VirtAddr;
-use crate::wrappers::{_cli, _rst};
+use crate::wrappers::{_cli, _sti, _rst};
 
 pub mod task;
 pub mod process;
@@ -43,6 +43,7 @@ pub unsafe extern "C" fn wrapper_fn() {
 }
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
+	_cli();
 	let proc: Process =  Process::new();
 	let res = TASKLIST.peek();
 	if res.is_none() {
@@ -90,6 +91,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
 	TASKLIST.push(new_task);
+	_sti();
 }
 
 #[macro_export]
@@ -103,10 +105,8 @@ macro_rules! size_of_args {
 #[macro_export]
 macro_rules! exec_fn {
 	($func:expr, $($rest:expr),+) => {
-		crate::wrappers::_cli();
 		let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
 		crate::size_of_args!(args_size, $($rest),+);
-		crate::proc::exec_fn($func, &args_size, $($rest),+);
-		crate::wrappers::_sti()
+		crate::proc::exec_fn($func, &args_size, $($rest),+)
 	}
 }

@@ -23,9 +23,9 @@ pub extern "C" fn _sti() {
 		core::arch::asm!("
 		sub dword ptr[cli_count], 1
 		cmp dword ptr[cli_count], 0
-		jne 1f
+		jne 2f
 		sti
-		1:
+		2:
 		ret",
 		options(noreturn));
 	}
