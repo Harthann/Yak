@@ -164,6 +164,9 @@ unsafe fn dumb_main(nb: usize) {
 	}
 	if nb > 1 {
 		exec_fn!(dumb_main as u32, nb - 1);
+		let mut status: i32 = 0;
+		let test: i32 = sys_waitpid(-1, &mut status, 0);
+		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 	}
 	core::arch::asm!("mov ebx, 8
 					mov eax, 1",
@@ -191,12 +194,13 @@ pub fn test_task() {
 	}
 
 	let mut i = 0;
-	while i < 6 {
+	while i < 3 {
 		let mut status: i32 = 0;
 		let test: i32 = sys_waitpid(-1, &mut status, 0);
 		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 		i += 1;
 	}
+	/* TEST NOWHANG */
 	let mut status: i32 = 0;
 	let test: i32 = sys_waitpid(-1, &mut status, 0x01);
 	crate::kprintln!("exited process pid: {} - status: {}", test, status);
