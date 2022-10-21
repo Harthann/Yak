@@ -1,7 +1,9 @@
 use crate::interrupts::Registers;
 
+pub mod signal;
 pub mod exit;
 
+use signal::sys_kill;
 use exit::{sys_waitpid, sys_wait4, sys_exit};
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
@@ -14,12 +16,15 @@ pub fn syscall_handler(reg: &mut Registers) {
 		_ if reg.eax == Syscall::waitpid as u32 => {
 			reg.eax = sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32
 		},
+		_ if reg.eax == Syscall::kill as u32 => {
+			reg.eax = sys_kill(reg.ebx as _, reg.ecx as _) as u32
+		},
 		_ if reg.eax == Syscall::wait4 as u32 => {
 			reg.eax = sys_wait4(reg.ebx as _, reg.ecx as _, reg.edx as _, reg.esi as _) as u32
 		},
 		_ => todo!()
 	}
-	/* update reg.eax for syscall return*/
+	/* update reg.eax for syscall return */
 }
 
 #[allow(non_camel_case_types)]

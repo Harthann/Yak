@@ -37,6 +37,44 @@ pub enum SignalType {
 	SIGRTMIN	= 32
 }
 
+pub fn get_signal_type(nb: i32) -> Result<SignalType, ()> {
+	match nb {
+		_ if nb == SignalType::SIGHUP as i32 => Ok(SignalType::SIGHUP),
+		_ if nb == SignalType::SIGINT as i32 => Ok(SignalType::SIGINT),
+		_ if nb == SignalType::SIGQUIT as i32 => Ok(SignalType::SIGQUIT),
+		_ if nb == SignalType::SIGILL as i32 => Ok(SignalType::SIGILL),
+		_ if nb == SignalType::SIGTRAP as i32 => Ok(SignalType::SIGTRAP),
+		_ if nb == SignalType::SIGABRT as i32 => Ok(SignalType::SIGABRT),
+		_ if nb == SignalType::SIGBUS as i32 => Ok(SignalType::SIGBUS),
+		_ if nb == SignalType::SIGFPE as i32 => Ok(SignalType::SIGFPE),
+		_ if nb == SignalType::SIGKILL as i32 => Ok(SignalType::SIGKILL),
+		_ if nb == SignalType::SIGUSR1 as i32 => Ok(SignalType::SIGUSR1),
+		_ if nb == SignalType::SIGSEGV as i32 => Ok(SignalType::SIGSEGV),
+		_ if nb == SignalType::SIGUSR2 as i32 => Ok(SignalType::SIGUSR2),
+		_ if nb == SignalType::SIGPIPE as i32 => Ok(SignalType::SIGPIPE),
+		_ if nb == SignalType::SIGALRM as i32 => Ok(SignalType::SIGALRM),
+		_ if nb == SignalType::SIGTERM as i32 => Ok(SignalType::SIGTERM),
+		_ if nb == SignalType::SIGSTKFLT as i32 => Ok(SignalType::SIGSTKFLT),
+		_ if nb == SignalType::SIGCHLD as i32 => Ok(SignalType::SIGCHLD),
+		_ if nb == SignalType::SIGCONT as i32 => Ok(SignalType::SIGCONT),
+		_ if nb == SignalType::SIGTSTOP as i32 => Ok(SignalType::SIGTSTOP),
+		_ if nb == SignalType::SIGTSTP as i32 => Ok(SignalType::SIGTSTP),
+		_ if nb == SignalType::SIGTTIN as i32 => Ok(SignalType::SIGTTIN),
+		_ if nb == SignalType::SIGTTOU as i32 => Ok(SignalType::SIGTTOU),
+		_ if nb == SignalType::SIGURG as i32 => Ok(SignalType::SIGURG),
+		_ if nb == SignalType::SIGXCPU as i32 => Ok(SignalType::SIGXCPU),
+		_ if nb == SignalType::SIGXFSZ as i32 => Ok(SignalType::SIGXFSZ),
+		_ if nb == SignalType::SIGVTALRM as i32 => Ok(SignalType::SIGVTALRM),
+		_ if nb == SignalType::SIGPROF as i32 => Ok(SignalType::SIGPROF),
+		_ if nb == SignalType::SIGWINCH as i32 => Ok(SignalType::SIGWINCH),
+		_ if nb == SignalType::SIGIO as i32 => Ok(SignalType::SIGIO),
+		_ if nb == SignalType::SIGPWR as i32 => Ok(SignalType::SIGPWR),
+		_ if nb == SignalType::SIGSYS as i32 => Ok(SignalType::SIGSYS),
+		_ if nb == SignalType::SIGRTMIN as i32 => Ok(SignalType::SIGRTMIN),
+		_ => Err(())
+	}
+}
+
 #[derive(Copy, Clone)]
 pub struct Signal {
 	pub sender: Id,
