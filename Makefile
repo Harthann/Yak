@@ -2,7 +2,7 @@ SHELL			=	/bin/bash
 
 export RUSTUP_TOOLCHAIN=nightly
 
-VERSION			=	4
+VERSION			=	5
 
 QEMU			=	qemu-system-i386
 
@@ -46,7 +46,7 @@ boot:			$(NAME)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
-				$(QEMU) -s -S -daemonize -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log
+				$(QEMU) -s -S -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log &
 				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c"
 				pkill qemu
 
@@ -72,14 +72,14 @@ else
 endif
 
 # Link asm file with rust according to the linker script in arch directory
-$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
+$(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE) | $(DIR_GRUB)
 				cp -f $(RUST_KERNEL) iso/boot/$(NAME)
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using xargo
-$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile
+$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
 ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
@@ -112,7 +112,7 @@ endif
 $(BOOTOBJS):	| $(DIR_OBJS)
 $(DIR_OBJS)/%.o: %.s
 	$(NASM) $(ASMFLAGS) -I $(DIR_HEADERS) -o $@ $<
--include $(ASMOBJS:.o=.d)
+-include $(BOOTOBJS:.o=.d)
 
 $(DIR_OBJS):
 				mkdir -p $(DIR_OBJS)

@@ -163,11 +163,11 @@ fn vector_remove() {
 	let mut x: Vec<u32> = vec![0,1,2,3,4,5];
 	let base_len = x.len();
 
-	assert_eq!(x.remove(1), Some(1));
+	assert_eq!(x.remove(1), 1);
 	assert_eq!(x.len(), base_len - 1);
-	assert_eq!(x.remove(3), Some(4));
+	assert_eq!(x.remove(3), 4);
 	assert_eq!(x.len(), base_len - 2);
-	assert_eq!(x.remove(50), None);
+//	assert_eq!(x.remove(50), None); -> panic()
 
 	assert_eq!(x.empty(), false);
 	x.clear();

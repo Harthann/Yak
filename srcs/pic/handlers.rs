@@ -7,8 +7,7 @@ use crate::interrupts::Registers;
 pub static mut JIFFIES: usize = 0;
 
 #[allow(unused)]
-pub fn handler(reg: Registers, int_no: usize) {
-
+pub fn handler(reg: &Registers, int_no: usize) {
 	//if int_no == PIC1_IRQ_TIMER as usize { 
 	//	unsafe{ JIFFIES += 1 };
 	//} else  {
@@ -19,4 +18,3 @@ pub fn handler(reg: Registers, int_no: usize) {
 //	}
 	crate::pic::end_of_interrupts(int_no - PIC1_IRQ_OFFSET as usize);
 }
-

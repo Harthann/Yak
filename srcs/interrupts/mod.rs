@@ -60,26 +60,50 @@ static mut IDT: IDT = IDT {
 	}
 };
 
-
-#[derive(Debug, Copy, Clone)]
 #[repr(C, packed)]
+#[derive(Debug, Copy, Clone)]
 pub struct Registers {
-	ds:			u32,
-	edi:		u32,
-	esi:		u32,
-	ebp:		u32,
-	esp:		u32,
-	ebx:		u32,
-	edx:		u32,
-	ecx:		u32,
-	eax:		u32,
-	int_no:		u32,
-	err_code:	u32,
-	eip:		u32,
-	cs:			u32,
-	eflags:		u32,
-	useresp:	u32,
-	ss:			u32
+	pub ds:			u32,
+	pub cr3:		u32,
+	pub edi:		u32,
+	pub esi:		u32,
+	pub ebp:		u32,
+	pub esp:		u32,
+	pub ebx:		u32,
+	pub edx:		u32,
+	pub ecx:		u32,
+	pub eax:		u32,
+	pub int_no:		u32,
+	pub err_code:	u32,
+	pub eip:		u32,
+	pub cs:			u32,
+	pub eflags:		u32,
+	pub useresp:	u32,
+	pub ss:			u32
+}
+
+impl Registers {
+	pub const fn new() -> Self {
+		Self {
+			ds:			0,
+			cr3:		0,
+			edi:		0,
+			esi:		0,
+			ebp:		0,
+			esp:		0,
+			ebx:		0,
+			edx:		0,
+			ecx:		0,
+			eax:		0,
+			int_no:		0,
+			err_code:	0,
+			eip:		0,
+			cs:			0,
+			eflags:		0,
+			useresp:	0,
+			ss:			0
+		}
+	}
 }
 
 use crate::pic::{
@@ -87,7 +111,7 @@ PIC1_IRQ_OFFSET,
 PIC2_IRQ_OFFSET
 };
 
-fn page_fault_handler(reg: Registers) {
+fn page_fault_handler(reg: &Registers) {
 	unsafe {
 		let cr2: usize;
 		core::arch::asm!("mov {}, cr2", out(reg) cr2);
@@ -96,17 +120,19 @@ fn page_fault_handler(reg: Registers) {
 	crate::kprintln!("{:#x?}", reg);
 }
 
+use crate::wrappers::{_cli, _rst};
+
 /* [https://wiki.osdev.org/Interrupts_tutorial]*/
 /* TODO: lock mutex before write and int */
 #[no_mangle]
-pub extern "C" fn exception_handler(reg: Registers) {
+pub extern "C" fn exception_handler(reg: &mut Registers) {
+	_cli();
 	let int_no: usize = reg.int_no as usize;
-//	crate::kprintln!("{int_no}");
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
 		match int_no { // TODO: enum exceptions
 			14 => page_fault_handler(reg),
-			_ => crate::kprintln!("{:#x?}", reg)
+			_ => {crate::kprintln!("{:#x?}", reg);}
 		}
 		if int_no != 3 && int_no != 1 { /* TODO: HOW TO GET IF IT'S A TRAP OR NOT */
 			unsafe{core::arch::asm!("hlt")};
@@ -121,6 +147,7 @@ pub extern "C" fn exception_handler(reg: Registers) {
 			crate::pic::handler(reg, int_no);
 		}
 	}
+	_rst();
 }
 
 pub unsafe fn init_idt() {
@@ -228,25 +255,38 @@ unsafe extern "C" fn isr_common_stub() {
 	core::arch::asm!("
 	pusha
 
-	mov ax, ds					// Lower 16-bits of eax = ds.
-	push eax					// save the data segment descriptor
+	mov eax, cr3
+	push eax
 
-	mov ax, 0x10				// load the kernel data segment descriptor
+	xor eax, eax
+	mov ax, ds		// Lower 16-bits of eax = ds.
+	push eax		// save the data segment descriptor
+
+	mov ax, 0x10	// load the kernel data segment descriptor
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
+
+	mov eax, esp
+	push eax	// push pointer to regs
 
 	call exception_handler
 
-	pop eax						// reload the original data segment descriptor
+	pop eax
+
+	pop eax		// reload the original data segment descriptor
 	mov ds, ax
 	mov es, ax
 	mov fs, ax
 	mov gs, ax
 
-	add esp, 8
+	pop eax
+
 	popa
+	add esp, 8
+
+	sti
 	iretd",
 	options(noreturn));
 }
