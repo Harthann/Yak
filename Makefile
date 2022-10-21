@@ -72,14 +72,14 @@ else
 endif
 
 # Link asm file with rust according to the linker script in arch directory
-$(DIR_ISO)/boot/$(NAME):		$(BOOTOBJS) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE)| $(DIR_GRUB)
+$(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE) | $(DIR_GRUB)
 				cp -f $(RUST_KERNEL) iso/boot/$(NAME)
 
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using xargo
-$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile
+$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
 ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
@@ -112,7 +112,7 @@ endif
 $(BOOTOBJS):	| $(DIR_OBJS)
 $(DIR_OBJS)/%.o: %.s
 	$(NASM) $(ASMFLAGS) -I $(DIR_HEADERS) -o $@ $<
--include $(ASMOBJS:.o=.d)
+-include $(BOOTOBJS:.o=.d)
 
 $(DIR_OBJS):
 				mkdir -p $(DIR_OBJS)

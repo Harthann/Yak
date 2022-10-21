@@ -2,6 +2,9 @@ use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid, get_running_process, get_signal_running_process};
 
+const WNOHANG: u32 = 0x01;
+const WUNTRACED: u32 = 0x02;
+
 type Time = usize;
 
 #[repr(C, packed)]
@@ -34,10 +37,7 @@ pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *
 	0
 }
 
-const WNOHANG: u32 = 0x01;
-const WUNTRACED: u32 = 0x02;
-
-/* TODO: handle status (in signal too) */
+/* TODO: handle status (as flags) (in signal too) */
 pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
 		while options & WNOHANG == 0 {
