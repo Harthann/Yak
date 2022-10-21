@@ -99,8 +99,7 @@ use crate::memory::paging::PAGE_WRITABLE;
 
 use crate::interrupts::init_idt;
 
-use proc::task::{Task, init_tasking};
-use proc::process::{MASTER_PROCESS, Process};
+use proc::task::{init_tasking};
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
@@ -205,7 +204,7 @@ pub fn test_task2() {
 	}
 }
 
-use crate::syscalls::sys_waitpid;
+use crate::syscalls::process::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {

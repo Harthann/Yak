@@ -1,5 +1,3 @@
-use crate::memory::allocator::Box;
-
 use crate::proc::Id;
 use crate::proc::process::{Process, MASTER_PROCESS};
 

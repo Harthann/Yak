@@ -8,7 +8,7 @@ pub mod process;
 pub mod signal;
 
 use process::{Process, zombify_running_process};
-use task::{Task, TASKLIST, STACK_TASK_SWITCH, switch_task};
+use task::{Task, TASKLIST, switch_task};
 
 pub type Id = i32;
 

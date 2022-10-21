@@ -2,7 +2,6 @@ use core::fmt;
 
 use crate::KHEAP;
 use crate::vec::Vec;
-use crate::utils::queue::Queue;
 use crate::memory::{MemoryZone, Stack};
 use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
@@ -15,6 +14,8 @@ use crate::proc::signal::{Signal, SignalType};
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
+pub type Pid = Id;
+
 #[derive(Debug)]
 pub enum Status {
 	Disable,
@@ -24,7 +25,7 @@ pub enum Status {
 }
 
 pub struct Process {
-	pub pid: Id,
+	pub pid: Pid,
 	pub status: Status,
 	pub parent: *mut Process,
 	pub childs: Vec<Box<Process>>,
