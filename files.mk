@@ -19,7 +19,8 @@ RUST_SRCS		=	main.rs \
 					process.rs \
 					task.rs \
 					signal.rs \
-					queue.rs
+					queue.rs \
+					exit.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 

@@ -13,9 +13,9 @@ use task::{Task, TASKLIST, switch_task};
 pub type Id = i32;
 
 #[no_mangle]
-pub unsafe extern "C" fn exit_fn() -> ! {
+pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	zombify_running_process();
+	zombify_running_process(status);
 	TASKLIST.pop();
 	let res = &TASKLIST.peek();
 	if res.is_none() {
@@ -37,7 +37,8 @@ pub unsafe extern "C" fn wrapper_fn() {
 	cli
 	mov esp, STACK_TASK_SWITCH
 	sub esp, 256
-	jmp exit_fn",
+	push eax
+	call _exit",
 	options(noreturn));
 	/* Never goes there */
 }

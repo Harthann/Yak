@@ -40,31 +40,32 @@ pub enum SignalType {
 #[derive(Copy, Clone)]
 pub struct Signal {
 	pub sender: Id,
-	pub sigtype: SignalType
+	pub sigtype: SignalType,
+	pub status: i32
 }
 
 impl Signal {
-	pub const fn new(pid: Id, sigtype: SignalType) -> Self {
+	pub const fn new(pid: Id, sigtype: SignalType, status: i32) -> Self {
 		Self {
 			sender: pid,
-			sigtype: sigtype
+			sigtype: sigtype,
+			status: status
 		}
 	}
 
-	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType) {
+	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType, status: i32) {
 		unsafe {
 			let res = MASTER_PROCESS.search_from_pid(pid);
 			if !res.is_ok() {
 				todo!();
 			}
 			let process: &mut Process = res.unwrap();
-			let signal = Self::new(sender_pid, sigtype);
-			process.signals.push(signal);
+			Self::send_to_process(process, pid, sigtype, status);
 		}
 	}
 
-	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType) {
-		let signal = Self::new(pid, sigtype);
+	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType, status: i32) {
+		let signal = Self::new(pid, sigtype, status);
 		process.signals.push(signal);
 	}
 }

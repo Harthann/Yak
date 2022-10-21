@@ -1,8 +1,8 @@
 use crate::interrupts::Registers;
 
-pub mod process;
+pub mod exit;
 
-use process::{sys_waitpid, sys_wait4, sys_exit};
+use exit::{sys_waitpid, sys_wait4, sys_exit};
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
 pub fn syscall_handler(reg: &mut Registers) {
@@ -10,7 +10,7 @@ pub fn syscall_handler(reg: &mut Registers) {
 		todo!(); // problem
 	}
 	match reg.eax {
-		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx),
+		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx as _),
 		_ if reg.eax == Syscall::waitpid as u32 => {
 			reg.eax = sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32
 		},

@@ -81,7 +81,7 @@ impl Process {
 		NEXT_PID += 1;
 	}
 
-	pub unsafe fn zombify(&mut self) {
+	pub unsafe fn zombify(&mut self, status: i32) {
 		if self.parent.is_null() {
 			todo!();
 		}
@@ -98,7 +98,7 @@ impl Process {
 		}
 		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
 		self.status = Status::Zombie;
-		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD);
+		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, status);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 	}
 
@@ -153,8 +153,8 @@ pub unsafe fn get_running_process() -> *mut Process {
 	task.process
 }
 
-pub unsafe fn zombify_running_process() {
-	(*get_running_process()).zombify();
+pub unsafe fn zombify_running_process(status: i32) {
+	(*get_running_process()).zombify(status);
 }
 
 pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {

@@ -165,7 +165,8 @@ unsafe fn dumb_main(nb: usize) {
 	if nb > 1 {
 		exec_fn!(dumb_main as u32, nb - 1);
 	}
-	core::arch::asm!("mov eax, 1",
+	core::arch::asm!("mov ebx, 8
+					mov eax, 1",
 					"int 0x80"); /* test syscall exit */
 }
 
@@ -204,7 +205,7 @@ pub fn test_task2() {
 	}
 }
 
-use crate::syscalls::process::sys_waitpid;
+use crate::syscalls::exit::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
@@ -218,15 +219,11 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-	test_task2();
-	let test: i32;
-	/* test syscall asm */
-	unsafe{core::arch::asm!("mov ebx, -1
-					mov eax, 7
-					int 0x80
-					mov {}, eax", out(reg) test)};
+//	test_task2();
 	/* test syscall rust */
-	sys_waitpid(-1, core::ptr::null_mut(), 0);
-	crate::kprintln!("result: {}", test);
+	let test: i32;
+	let mut status: i32 = 0;
+	test = sys_waitpid(-1, &mut status, 0);
+	crate::kprintln!("exited process pid: {} - status: {}", test, status);
 	loop {}
 }

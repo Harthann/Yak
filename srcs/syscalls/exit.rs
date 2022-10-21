@@ -1,3 +1,4 @@
+use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid, get_running_process, get_signal_running_process};
 
@@ -29,11 +30,11 @@ pub struct RUsage {
 	ru_nivcsw: usize // Number of times an involuntary context switch took place
 }
 
-pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut u32, options: u32, rusage: *mut RUsage) -> Pid {
+pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
 	0
 }
 
-pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut u32, options: u32) -> Pid {
+pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	crate::kprintln!("waitpid({}, {:?}, {})", pid, wstatus, options);
 	unsafe {
 		let res = get_signal_running_process(pid);
@@ -45,8 +46,8 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut u32, options: u32) -> Pid 
 					let process: &mut Process = res.unwrap();
 					process.remove();
 				}
+				*wstatus = signal.status;
 			}
-			crate::kprintln!("return {}", signal.sender);
 			return signal.sender;
 		}
 	}
@@ -54,8 +55,9 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut u32, options: u32) -> Pid 
 	return -1;
 }
 
-pub extern "C" fn sys_exit(status: u32) -> ! {
+pub extern "C" fn sys_exit(status: i32) -> ! {
 	unsafe {
-		crate::proc::exit_fn();
+		_exit(status);
 	}
+	/* Never goes there */
 }
