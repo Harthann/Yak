@@ -33,19 +33,19 @@ pub struct Tracker {
 	freed_bytes:		usize
 }
 
-static mut TRACKER: Tracker = Tracker {
-	allocation: 0,
-	allocated_bytes: 0,
-	freed: 0,
-	freed_bytes: 0
-};
+impl Tracker {
+	pub const fn new() -> Self {
+		Self {
+			allocation: 0,
+			allocated_bytes: 0,
+			freed: 0,
+			freed_bytes: 0
+		}
+	}
+}
 
-static mut KTRACKER: Tracker = Tracker {
-	allocation: 0,
-	allocated_bytes: 0,
-	freed: 0,
-	freed_bytes: 0
-};
+static mut TRACKER: Tracker = Tracker::new();
+static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
 	unsafe {
@@ -135,6 +135,12 @@ pub extern "C" fn kinit() {
 	reload_tss!();
 
 	init_tasking();
+
+	/* init tracker after init first process */
+	unsafe {
+		KTRACKER = Tracker::new();
+		TRACKER = Tracker::new();
+	}
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
