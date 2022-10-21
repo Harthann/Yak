@@ -34,24 +34,28 @@ pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *
 	0
 }
 
+const WNOHANG: u32 = 0x01;
+const WUNTRACED: u32 = 0x02;
+
+/* TODO: handle status (in signal too) */
 pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
-	crate::kprintln!("waitpid({}, {:?}, {})", pid, wstatus, options);
 	unsafe {
-		let res = get_signal_running_process(pid);
-		if res.is_ok() {
-			let signal: Signal = res.unwrap();
-			if signal.sigtype == SignalType::SIGCHLD {
-				let res = (*get_running_process()).search_from_pid(signal.sender);
-				if res.is_ok() {
-					let process: &mut Process = res.unwrap();
-					process.remove();
+		while options & WNOHANG == 0 {
+			let res = get_signal_running_process(pid);
+			if res.is_ok() {
+				let signal: Signal = res.unwrap();
+				if signal.sigtype == SignalType::SIGCHLD {
+					let res = (*get_running_process()).search_from_pid(signal.sender);
+					if res.is_ok() {
+						let process: &mut Process = res.unwrap();
+						process.remove();
+					}
+					*wstatus = signal.status;
 				}
-				*wstatus = signal.status;
+				return signal.sender;
 			}
-			return signal.sender;
 		}
 	}
-	crate::kprintln!("return -1");
 	return -1;
 }
 

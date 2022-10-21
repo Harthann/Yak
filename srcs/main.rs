@@ -159,7 +159,7 @@ unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("dumb{}", nb);
+//		crate::kprintln!("dumb{}", nb);
 		i += 1;
 	}
 	if nb > 1 {
@@ -191,11 +191,15 @@ pub fn test_task() {
 	}
 
 	let mut i = 0;
-	while i < 10000 {
-		crate::kprintln!("main !");
+	while i < 6 {
+		let mut status: i32 = 0;
+		let test: i32 = sys_waitpid(-1, &mut status, 0);
+		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 		i += 1;
 	}
-	crate::kprintln!("MAIN to {}", i);
+	let mut status: i32 = 0;
+	let test: i32 = sys_waitpid(-1, &mut status, 0x01);
+	crate::kprintln!("exited process pid: {} - status: {}", test, status);
 //	loop {}
 }
 
@@ -220,10 +224,5 @@ pub extern "C" fn kmain() -> ! {
 
 	kprint!("$> ");
 //	test_task2();
-	/* test syscall rust */
-	let test: i32;
-	let mut status: i32 = 0;
-	test = sys_waitpid(-1, &mut status, 0);
-	crate::kprintln!("exited process pid: {} - status: {}", test, status);
 	loop {}
 }
