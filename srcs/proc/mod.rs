@@ -7,7 +7,7 @@ pub mod task;
 pub mod process;
 pub mod signal;
 
-use process::{Process, zombify_running_process};
+use process::{Process, Pid, zombify_running_process};
 use task::{Task, TASKLIST, switch_task};
 
 pub type Id = i32;
@@ -43,7 +43,7 @@ pub unsafe extern "C" fn wrapper_fn() {
 	/* Never goes there */
 }
 
-pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
+pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) -> Pid {
 	_cli();
 	let proc: Process =  Process::new();
 	let res = TASKLIST.peek();
@@ -93,6 +93,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 		func = in(reg) func);
 	TASKLIST.push(new_task);
 	_sti();
+	(*proc_ptr).pid
 }
 
 #[macro_export]
@@ -106,8 +107,10 @@ macro_rules! size_of_args {
 #[macro_export]
 macro_rules! exec_fn {
 	($func:expr, $($rest:expr),+) => {
-		let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
-		crate::size_of_args!(args_size, $($rest),+);
-		crate::proc::exec_fn($func, &args_size, $($rest),+)
+		{
+			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			crate::size_of_args!(args_size, $($rest),+);
+			crate::proc::exec_fn($func, &args_size, $($rest),+)
+		}
 	}
 }

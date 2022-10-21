@@ -154,18 +154,22 @@ pub extern "C" fn kinit() {
 	kmain();
 }
 
+use crate::proc::process::Pid;
 
 unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
+	let mut pid: Pid = -1;
+	if nb > 1 {
+		pid = exec_fn!(dumb_main as u32, nb - 1);
+	}
 	let mut i = 0;
 	while i < 2048 {
 //		crate::kprintln!("dumb{}", nb);
 		i += 1;
 	}
 	if nb > 1 {
-		exec_fn!(dumb_main as u32, nb - 1);
 		let mut status: i32 = 0;
-		let test: i32 = sys_waitpid(-1, &mut status, 0);
+		let test: i32 = sys_waitpid(pid, &mut status, 0);
 		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 	}
 	core::arch::asm!("mov ebx, 8
