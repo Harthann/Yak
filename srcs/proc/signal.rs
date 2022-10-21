@@ -60,7 +60,7 @@ impl Signal {
 				todo!();
 			}
 			let process: &mut Process = res.unwrap();
-			Self::send_to_process(process, pid, sigtype, status);
+			Self::send_to_process(process, sender_pid, sigtype, status);
 		}
 	}
 
