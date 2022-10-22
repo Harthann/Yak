@@ -1,6 +1,5 @@
 FROM rustlang/rust:nightly-slim
 
-RUN cargo install xargo
 RUN rustup component add rust-src
 
 RUN echo -e '#!/bin/bash\nld -m elf_i386 $@' > /usr/bin/i386-elf-ld

@@ -8,15 +8,13 @@ QEMU			=	qemu-system-i386
 
 HOST			=	$(shell uname)
 
-TARGER_ARCH 	=	i386
+TARGET_ARCH 	=	i386
 
 GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
 LIBBOOT			=	libboot.a
-
-XARGO_FLAGS		=	$(release) --target $(TARGER_ARCH)-kfs
 
 DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
@@ -58,7 +56,7 @@ release:
 
 test: $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
-				xargo test $(XARGO_FLAGS) -- $(NAME)
+				cargo test -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
@@ -78,27 +76,27 @@ $(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE) | $(DIR_GRUB)
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
-# Build libkernel using xargo
+# Build libkernel using cargo
 $(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
-ifeq ($(or $(shell which xargo), $(shell which i386-elf-ar) ),)
+ifeq ($(or $(shell which cargo), $(shell which i386-elf-ar) ),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && xargo build $(XARGO_FLAGS)'
+				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && cargo build'
 else
 				i386-elf-ar rc libboot.a $(BOOTOBJS)
-				xargo build $(XARGO_FLAGS)
+				cargo build
 endif
 
 # Check if the rust can compile without actually compiling it
 check: $(KERNELSRCS)
-ifeq ($(shell which xargo),)
+ifeq ($(shell which cargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check $(XARGO_FLAGS)
+				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) check
 else
-				xargo check $(XARGO_FLAGS)
+				cargo check
 endif
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
