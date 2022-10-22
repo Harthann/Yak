@@ -1,7 +1,5 @@
 SHELL			=	/bin/bash
 
-export RUSTUP_TOOLCHAIN=nightly
-
 VERSION			=	5
 
 QEMU			=	qemu-system-i386
@@ -40,7 +38,6 @@ NAME			?=	kfs_$(VERSION)
 all:			$(NAME)
 
 boot:			$(NAME)
-				echo $(MAKEFILE_PATH)
 				$(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> qemu.log
 
 # This rule will run qemu with flags to wait gdb to connect to it
