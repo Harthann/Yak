@@ -10,12 +10,8 @@ name='kernel'
 path='srcs/main.rs'
 test = true
 
-[profile.dev]
-panic = "abort"
-
 [profile.release]
 opt-level = "z"
-panic = "abort"
 
 #	Dependencies
 [dependencies]
