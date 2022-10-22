@@ -10,6 +10,9 @@ name='kernel'
 path='srcs/main.rs'
 test = true
 
+[profile.dev]
+opt-level = 1
+
 [profile.release]
 opt-level = "z"
 
