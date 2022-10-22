@@ -54,8 +54,7 @@ release:
 		RUST_KERNEL=target/i386-kfs/release/kernel \
 		NAME=kfs
 
-test: $(BOOTOBJS) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
-				i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
+test:			$(LIBBOOT) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				cargo test -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
@@ -69,23 +68,32 @@ else
 				grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO)
 endif
 
+$(LIBBOOT):		$(BOOTOBJS)
+ifeq ($(shell which i386-elf-ar),)
+ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
+	docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
+endif
+	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar $(LIBBOOT) $(BOOTOBJS)'
+else
+	i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
+endif
+
 # Link asm file with rust according to the linker script in arch directory
-$(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE) | $(DIR_GRUB)
-				cp -f $(RUST_KERNEL) iso/boot/$(NAME)
+$(DIR_ISO)/boot/$(NAME):	$(LIBBOOT) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE) | $(DIR_GRUB)
+	cp -f $(RUST_KERNEL) iso/boot/$(NAME)
 
 $(DIR_GRUB):
-				mkdir -p $(DIR_GRUB)
+	mkdir -p $(DIR_GRUB)
 
 # Build libkernel using cargo
 $(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
-ifeq ($(or $(shell which cargo), $(shell which i386-elf-ar) ),)
+ifeq ($(shell which cargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
-				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
+	docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar libboot.a $(BOOTOBJS) && cargo build'
+	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo build'
 else
-				i386-elf-ar rc libboot.a $(BOOTOBJS)
-				cargo build
+	cargo build
 endif
 
 # Check if the rust can compile without actually compiling it

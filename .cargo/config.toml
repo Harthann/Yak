@@ -5,8 +5,5 @@ target = "i386-kfs.json"
 build-std-features = ["compiler-builtins-mem"]
 build-std = ["core", "compiler_builtins"]
 
-[i386-kfs]
-rustflags = ["-C", "link-arg=-Tlink.x"]
-
 [target.'cfg(target_os = "none")']
 runner = "./test_runner.sh"
