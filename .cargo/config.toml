@@ -1,5 +1,5 @@
 [build]
-target = "i386-kfs.json"
+target = "arch/x86/i386.json"
 
 [unstable]
 build-std-features = ["compiler-builtins-mem"]

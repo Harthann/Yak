@@ -1,12 +1,17 @@
 SHELL			=	/bin/bash
 
+ifeq ($(BUILD),release)
+NAME			=	kfs
+ARGS_CARGO		=	--release
+endif
+
 VERSION			=	5
 
 QEMU			=	qemu-system-i386
 
 HOST			=	$(shell uname)
 
-TARGET_ARCH 	=	i386
+TARGET_ARCH 	=	x86
 
 GRUB_CFG		=	grub.cfg
 
@@ -18,7 +23,7 @@ DOCKER_DIR		=	docker
 DOCKER_GRUB		=	grub-linker
 DOCKER_RUST		=	rust-compiler
 
-DIR_ARCH		=	arch/i386
+DIR_ARCH		=	arch/$(TARGET_ARCH)
 DIR_CONFIG		=	config
 DIR_HEADERS		=	includes
 DIR_SRCS		=	srcs
@@ -32,7 +37,8 @@ DIR_GRUB		=	$(DIR_ISO)/boot/grub
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
 include files.mk
 
-RUST_KERNEL 	?=	target/i386-kfs/debug/kernel
+BUILD			?=	debug
+RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
 
 all:			$(NAME)
@@ -45,12 +51,6 @@ debug:			$(NAME)
 				$(QEMU) -s -S -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log &
 				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c"
 				pkill qemu
-
-release:
-	make clean all \
-		release=--release \
-		RUST_KERNEL=target/i386-kfs/release/kernel \
-		NAME=kfs
 
 test:			$(LIBBOOT) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				cargo test -- $(NAME)
@@ -89,9 +89,9 @@ ifeq ($(shell which cargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 	docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo build'
+	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo build $(ARGS_CARGO)'
 else
-	cargo build
+	cargo build $(ARGS_CARGO)
 endif
 
 # Check if the rust can compile without actually compiling it
