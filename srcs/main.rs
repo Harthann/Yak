@@ -214,7 +214,6 @@ pub fn test_task() {
 	let mut status: i32 = 0;
 	let test: i32 = sys_waitpid(-1, &mut status, 0x01);
 	crate::kprintln!("exited process pid: {} - status: {}", test, status);
-//	loop {}
 }
 
 pub fn test_task2() {
