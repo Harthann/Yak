@@ -1,5 +1,6 @@
 use crate::proc::Id;
 use crate::proc::process::{Process, MASTER_PROCESS};
+use crate::errno::ErrNo;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum SignalType {
@@ -37,7 +38,7 @@ pub enum SignalType {
 	SIGRTMIN	= 32
 }
 
-pub fn get_signal_type(nb: i32) -> Result<SignalType, ()> {
+pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
 	match nb {
 		_ if nb == SignalType::SIGHUP as i32 => Ok(SignalType::SIGHUP),
 		_ if nb == SignalType::SIGINT as i32 => Ok(SignalType::SIGINT),
@@ -71,11 +72,11 @@ pub fn get_signal_type(nb: i32) -> Result<SignalType, ()> {
 		_ if nb == SignalType::SIGPWR as i32 => Ok(SignalType::SIGPWR),
 		_ if nb == SignalType::SIGSYS as i32 => Ok(SignalType::SIGSYS),
 		_ if nb == SignalType::SIGRTMIN as i32 => Ok(SignalType::SIGRTMIN),
-		_ => Err(())
+		_ => Err(ErrNo::EINVAL)
 	}
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Signal {
 	pub sender: Id,
 	pub sigtype: SignalType,
@@ -91,15 +92,12 @@ impl Signal {
 		}
 	}
 
-	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType, status: i32) {
+	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType, status: i32) -> Result<Id, ErrNo>{
 		unsafe {
-			let res = MASTER_PROCESS.search_from_pid(pid);
-			if !res.is_ok() {
-				todo!();
-			}
-			let process: &mut Process = res.unwrap();
+			let process: &mut Process = MASTER_PROCESS.search_from_pid(pid)?;
 			Self::send_to_process(process, sender_pid, sigtype, status);
 		}
+		Ok(pid)
 	}
 
 	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType, status: i32) {

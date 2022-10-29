@@ -71,6 +71,7 @@ mod proc;
 mod user;
 mod wrappers;
 mod utils;
+mod errno;
 
 #[cfg(test)]
 mod test;

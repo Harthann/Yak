@@ -2,6 +2,8 @@ use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid, get_running_process, get_signal_running_process};
 
+use crate::errno::ErrNo;
+
 const WNOHANG: u32 = 0x01;
 const WUNTRACED: u32 = 0x02;
 
@@ -38,9 +40,10 @@ pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *
 }
 
 /* TODO: handle status (as flags) (in signal too) */
+/* TODO: EINTR */
 pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
-		while options & WNOHANG == 0 {
+		loop {
 			let res = get_signal_running_process(pid);
 			if res.is_ok() {
 				let signal: Signal = res.unwrap();
@@ -50,13 +53,19 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 						let process: &mut Process = res.unwrap();
 						process.remove();
 					}
-					*wstatus = signal.status;
+					if !wstatus.is_null() {
+						*wstatus = signal.status; // TODO
+					}
 				}
 				return signal.sender;
+			} else if res == Err(ErrNo::ESRCH) {
+				return -(ErrNo::ECHILD as i32);
+			}
+			if options & WNOHANG != 0 {
+				return 0;
 			}
 		}
 	}
-	return -1;
 }
 
 pub extern "C" fn sys_exit(status: i32) -> ! {
