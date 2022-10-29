@@ -163,6 +163,9 @@ pub extern "C" fn kinit() {
 
 use crate::proc::process::Pid;
 
+use crate::syscalls::exit::sys_waitpid;
+use crate::syscalls::signal::sys_kill;
+
 unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
 	let mut pid: Pid = -1;
@@ -178,6 +181,9 @@ unsafe fn dumb_main(nb: usize) {
 		let mut status: i32 = 0;
 		let test: i32 = sys_waitpid(pid, &mut status, 0);
 		crate::kprintln!("exited process pid: {} - status: {}", test, status);
+	}
+	if nb == 3 {
+		loop {}
 	}
 	core::arch::asm!("mov ebx, 8
 					mov eax, 1",
@@ -205,16 +211,28 @@ pub fn test_task() {
 	}
 
 	let mut i = 0;
-	while i < 3 {
+	while i < 2 {
 		let mut status: i32 = 0;
 		let test: i32 = sys_waitpid(-1, &mut status, 0);
 		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 		i += 1;
 	}
-	/* TEST NOWHANG */
+	/* TEST NO PID */
 	let mut status: i32 = 0;
-	let test: i32 = sys_waitpid(-1, &mut status, 0x01);
+	let test: i32 = sys_waitpid(123, &mut status, 0x01);
 	crate::kprintln!("exited process pid: {} - status: {}", test, status);
+	/* TEST NO PROCESS */
+	let test: i32 = sys_kill(123, 17);
+	crate::kprintln!("kill no process pid: {}", test);
+	/* TEST NO SIGNAL TYPE */
+	let test: i32 = sys_kill(1, 2000);
+	crate::kprintln!("kill no signal type: {}", test);
+	/* TEST KILL */
+	let test: i32 = sys_kill(1, 17);
+	crate::kprintln!("killed {} with {}: {}", 1, 17, test);
+	/* TEST KILL SIGILL*/
+	let test: i32 = sys_kill(1, 9);
+	crate::kprintln!("killed {} with {}: {}", 1, 9, test);
 //	loop {}
 }
 
@@ -224,7 +242,6 @@ pub fn test_task2() {
 	}
 }
 
-use crate::syscalls::exit::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {

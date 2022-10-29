@@ -2,7 +2,7 @@ use crate::proc::Id;
 use crate::proc::process::{Process, MASTER_PROCESS};
 use crate::errno::ErrNo;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum SignalType {
 	SIGHUP		= 1,
 	SIGINT		= 2,
