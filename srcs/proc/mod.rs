@@ -111,6 +111,12 @@ macro_rules! size_of_args {
 
 #[macro_export]
 macro_rules! exec_fn {
+	($func:expr) => {
+		{
+			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			crate::proc::exec_fn($func, &args_size)
+		}
+	};
 	($func:expr, $($rest:expr),+) => {
 		{
 			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
