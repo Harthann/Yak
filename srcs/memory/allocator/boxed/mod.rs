@@ -84,7 +84,7 @@ impl<T, A: Allocator> Box<T, A> {
 	}
 
 	pub fn write(mut boxed: Self, value: T) -> Box<T, A> {
-		*boxed = value;
+		unsafe{ boxed.ptr.as_ptr().write(value); }
 		boxed
 	}
 }
@@ -127,5 +127,3 @@ impl<T: fmt::Display, A: Allocator> fmt::Display for  Box<T, A> {
 		write!(f, "{:p} -> {}", self.ptr.as_ptr(), **self)
 	}
 }
-
-

@@ -50,7 +50,6 @@ pub unsafe extern "C" fn wrapper_fn() {
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) -> Pid {
 	_cli();
-	let proc: Process =  Process::new();
 	let res = TASKLIST.peek();
 	if res.is_none() {
 		todo!();
@@ -58,7 +57,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	let running_task = res.unwrap();
 	let parent: &mut Process = &mut *running_task.process;
 	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
-	childs.push(Box::new(proc));
+	childs.push(Box::new(Process::new()));
 	let len = childs.len();
 	let proc_ptr: *mut Process = childs[len - 1].as_mut();
 	(*proc_ptr).init(&mut *parent, 0);

@@ -48,7 +48,8 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 			if res.is_ok() {
 				let signal: Signal = res.unwrap();
 				if signal.sigtype == SignalType::SIGCHLD {
-					let res = (*get_running_process()).search_from_pid(signal.sender);
+					let process_ptr = get_running_process();
+					let res = (*process_ptr).search_from_pid(signal.sender);
 					if res.is_ok() {
 						let process: &mut Process = res.unwrap();
 						process.remove();
