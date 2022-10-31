@@ -57,8 +57,8 @@ pub fn init_tasking() {
 		}
 		STACK_TASK_SWITCH = res.unwrap() + 0x1000;
 		MASTER_PROCESS.state = Status::Run;
-		MASTER_PROCESS.childs = Vec::with_capacity(1);
-		MASTER_PROCESS.signals = Vec::with_capacity(1);
+		MASTER_PROCESS.childs = Vec::with_capacity(8);
+		MASTER_PROCESS.signals = Vec::with_capacity(8);
 		MASTER_PROCESS.stack = KSTACK;
 		MASTER_PROCESS.heap = KHEAP;
 		MASTER_PROCESS.owner = 0;

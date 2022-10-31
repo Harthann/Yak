@@ -170,7 +170,7 @@ unsafe fn dumb_main(nb: usize) {
 	kprintln!("dumbmain{}!!!", nb);
 	let mut pid: Pid = -1;
 	if nb > 1 {
-		pid = exec_fn!(dumb_main as u32, nb - 1);
+		pid = exec_fn!(dumb_main, nb - 1);
 	}
 	let mut i = 0;
 	while i < 2048 {
@@ -196,9 +196,9 @@ unsafe fn dumb_main(nb: usize) {
 
 pub fn test_task() {
 	unsafe {
-		exec_fn!(dumb_main as u32, 3);
-		exec_fn!(dumb_main as u32, 2);
-		exec_fn!(dumb_main as u32, 1);
+		exec_fn!(dumb_main, 3);
+		exec_fn!(dumb_main, 2);
+		exec_fn!(dumb_main, 1);
 	}
 
 	let mut i = 0;

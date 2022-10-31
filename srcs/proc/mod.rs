@@ -113,14 +113,14 @@ macro_rules! exec_fn {
 	($func:expr) => {
 		{
 			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
-			crate::proc::exec_fn($func, &args_size)
+			crate::proc::exec_fn($func as u32, &args_size)
 		}
 	};
 	($func:expr, $($rest:expr),+) => {
 		{
 			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
 			crate::size_of_args!(args_size, $($rest),+);
-			crate::proc::exec_fn($func, &args_size, $($rest),+)
+			crate::proc::exec_fn($func as u32, &args_size, $($rest),+)
 		}
 	}
 }
