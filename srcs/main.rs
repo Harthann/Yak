@@ -167,7 +167,7 @@ use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_kill;
 
 unsafe fn dumb_main(nb: usize) {
-	crate::kprintln!("dumbmain{}!!!", nb);
+	kprintln!("dumbmain{}!!!", nb);
 	let mut pid: Pid = -1;
 	if nb > 1 {
 		pid = exec_fn!(dumb_main as u32, nb - 1);
@@ -178,9 +178,13 @@ unsafe fn dumb_main(nb: usize) {
 		i += 1;
 	}
 	if nb > 1 {
-		let mut status: i32 = 0;
-		let test: i32 = sys_waitpid(pid, &mut status, 0);
-		crate::kprintln!("exited process pid: {} - status: {}", test, status);
+		let mut wstatus: i32 = 0;
+		let test: i32 = sys_waitpid(pid, &mut wstatus, 0);
+		if __WIFEXITED!(wstatus) {
+			kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+		} else {
+			kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+		}
 	}
 	if nb == 3 {
 		loop {}
@@ -188,19 +192,6 @@ unsafe fn dumb_main(nb: usize) {
 	core::arch::asm!("mov ebx, 8
 					mov eax, 1",
 					"int 0x80"); /* test syscall exit */
-}
-
-unsafe fn dumb_main2(nb: usize, nb2: u64) {
-	crate::kprintln!("not_dumbmain{} - {:#x?}!!!", nb, nb2);
-	if nb > 1 {
-		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
-	}
-	let mut i = 0;
-	while i < 2048 {
-		crate::kprintln!("not_dumb{} - {:#x?}", nb, nb2);
-		i += 1;
-	}
-	loop {}
 }
 
 pub fn test_task() {
@@ -212,36 +203,42 @@ pub fn test_task() {
 
 	let mut i = 0;
 	while i < 2 {
-		let mut status: i32 = 0;
-		let test: i32 = sys_waitpid(-1, &mut status, 0);
-		crate::kprintln!("exited process pid: {} - status: {}", test, status);
+		let mut wstatus: i32 = 0;
+		let test: i32 = sys_waitpid(-1, &mut wstatus, 0);
+		if __WIFEXITED!(wstatus) {
+			kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+		} else {
+			kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+		}
 		i += 1;
 	}
 	/* TEST NO PID */
-	let mut status: i32 = 0;
-	let test: i32 = sys_waitpid(123, &mut status, 0x01);
-	crate::kprintln!("exited process pid: {} - status: {}", test, status);
+	let mut wstatus: i32 = 0;
+	let test: i32 = sys_waitpid(123, &mut wstatus, 0x01);
+	if test < 0 {
+		kprintln!("no such pid - waitpid: {}", test);
+	}
 	/* TEST NO PROCESS */
 	let test: i32 = sys_kill(123, 17);
-	crate::kprintln!("kill no process pid: {}", test);
+	kprintln!("kill no process pid: {}", test);
 	/* TEST NO SIGNAL TYPE */
 	let test: i32 = sys_kill(1, 2000);
-	crate::kprintln!("kill no signal type: {}", test);
+	kprintln!("kill no signal type: {}", test);
 	/* TEST KILL */
 	let test: i32 = sys_kill(1, 17);
-	crate::kprintln!("killed {} with {}: {}", 1, 17, test);
+	kprintln!("killed {} with {}: {}", 1, 17, test);
 	/* TEST KILL SIGILL*/
 	let test: i32 = sys_kill(1, 9);
-	crate::kprintln!("killed {} with {}: {}", 1, 9, test);
+	kprintln!("killed {} with {}: {}", 1, 9, test);
+	let mut wstatus: i32 = 0;
+	let test: i32 = sys_waitpid(1, &mut wstatus, 0x01);
+	if __WIFEXITED!(wstatus) {
+		kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+	} else {
+		kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+	}
 //	loop {}
 }
-
-pub fn test_task2() {
-	unsafe {
-		exec_fn!(dumb_main2 as u32, 4, 0x123456789abcdef as u64);
-	}
-}
-
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {

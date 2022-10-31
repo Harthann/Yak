@@ -54,7 +54,7 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 						process.remove();
 					}
 					if !wstatus.is_null() {
-						*wstatus = signal.status; // TODO
+						*wstatus = signal.wstatus; // TODO
 					}
 				}
 				return signal.sender;
@@ -68,9 +68,88 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 	}
 }
 
+use crate::__W_EXITCODE;
+
 pub extern "C" fn sys_exit(status: i32) -> ! {
 	unsafe {
-		_exit(status);
+		_exit(__W_EXITCODE!(status, 0));
 	}
 	/* Never goes there */
+}
+
+/* Macros to get status values */
+
+#[macro_export]
+macro_rules! __WEXITSTATUS {
+	($status: expr) => (
+		(($status & 0xff00) >> 8)
+	);
+}
+
+#[macro_export]
+macro_rules! __WTERMSIG {
+	($status: expr) => (
+		(($status) & 0x7f)
+	);
+}
+
+#[macro_export]
+macro_rules! __WSTOPSIG {
+	($status: expr) => (
+		$crate::__WEXITSTATUS!($status)
+	);
+}
+
+#[macro_export]
+macro_rules! __WIFEXITED {
+	($status: expr) => (
+		($crate::__WTERMSIG!($status) == 0)
+	);
+}
+
+#[macro_export]
+macro_rules! __WIFSIGNALED {
+	($status: expr) => (
+		((((($status & 0x7f) + 1) >> 1) > 0) & 0xff) // signed char
+	);
+}
+
+#[macro_export]
+macro_rules! __WIFSTOPPED {
+	($status: expr) => (
+		(($status & 0xff) == 0x7f)
+	);
+}
+
+const __WCONTINUED: usize = 0xffff;
+const __WCOREFLAG: usize = 0x80;
+
+#[macro_export]
+macro_rules! __WIFCONTINUED {
+	($status: expr) => (
+		($status == __W_CONTINUED)
+	);
+}
+
+#[macro_export]
+macro_rules! __WCOREDUMP {
+	($status: expr) => (
+		($status & __WCOREFLAG)
+	);
+}
+
+/* Macros to set status values */
+
+#[macro_export]
+macro_rules! __W_EXITCODE {
+	($ret: expr, $sig: expr) => (
+		(($ret << 8) | $sig)
+	);
+}
+
+#[macro_export]
+macro_rules! __W_STOPCODE {
+	($sig: expr) => (
+		(($sig << 8) | 0x7f)
+	);
 }

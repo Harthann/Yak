@@ -80,28 +80,28 @@ pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
 pub struct Signal {
 	pub sender: Id,
 	pub sigtype: SignalType,
-	pub status: i32
+	pub wstatus: i32
 }
 
 impl Signal {
-	pub const fn new(pid: Id, sigtype: SignalType, status: i32) -> Self {
+	pub const fn new(pid: Id, sigtype: SignalType, wstatus: i32) -> Self {
 		Self {
 			sender: pid,
 			sigtype: sigtype,
-			status: status
+			wstatus: wstatus
 		}
 	}
 
-	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType, status: i32) -> Result<Id, ErrNo>{
+	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType, wstatus: i32) -> Result<Id, ErrNo>{
 		unsafe {
 			let process: &mut Process = MASTER_PROCESS.search_from_pid(pid)?;
-			Self::send_to_process(process, sender_pid, sigtype, status);
+			Self::send_to_process(process, sender_pid, sigtype, wstatus);
 		}
 		Ok(pid)
 	}
 
-	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType, status: i32) {
-		let signal = Self::new(pid, sigtype, status);
+	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType, wstatus: i32) {
+		let signal = Self::new(pid, sigtype, wstatus);
 		process.signals.push(signal);
 	}
 }

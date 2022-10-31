@@ -28,7 +28,7 @@ pub enum Status {
 
 pub struct Process {
 	pub pid: Pid,
-	pub status: Status,
+	pub state: Status,
 	pub parent: *mut Process,
 	pub childs: Vec<Box<Process>>,
 	pub stack: MemoryZone,
@@ -41,7 +41,7 @@ impl Process {
 	pub const fn new() -> Self {
 		Self {
 			pid: 0,
-			status: Status::Disable,
+			state: Status::Disable,
 			parent: core::ptr::null_mut(),
 			childs: Vec::new(),
 			stack: MemoryZone::new(),
@@ -74,7 +74,7 @@ impl Process {
 	/* TODO: next_pid need to check overflow and if other pid is available */
 	pub unsafe fn init(&mut self, parent: *mut Process, owner: Id) {
 		self.pid = NEXT_PID;
-		self.status = Status::Run;
+		self.state = Status::Run;
 		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 		self.heap = KHEAP;
@@ -83,7 +83,7 @@ impl Process {
 		NEXT_PID += 1;
 	}
 
-	pub unsafe fn zombify(&mut self, status: i32) -> Result<Id, ErrNo> {
+	pub unsafe fn zombify(&mut self, wstatus: i32) -> Result<Id, ErrNo> {
 		if self.parent.is_null() {
 			todo!();
 		}
@@ -99,8 +99,8 @@ impl Process {
 			parent.childs[len - 1].parent = self.parent;
 		}
 		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
-		self.status = Status::Zombie;
-		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, status);
+		self.state = Status::Zombie;
+		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 		Ok(self.pid)
 	}
@@ -144,7 +144,7 @@ impl Process {
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.status)
+		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.state)
 	}
 }
 

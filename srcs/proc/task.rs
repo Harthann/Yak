@@ -55,7 +55,7 @@ pub fn init_tasking() {
 			todo!();
 		}
 		STACK_TASK_SWITCH = res.unwrap() + 0x1000;
-		MASTER_PROCESS.status = Status::Run;
+		MASTER_PROCESS.state = Status::Run;
 		MASTER_PROCESS.stack = KSTACK;
 		MASTER_PROCESS.heap = KHEAP;
 		MASTER_PROCESS.owner = 0;

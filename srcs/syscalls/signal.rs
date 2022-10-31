@@ -3,6 +3,8 @@ use crate::proc::task::remove_task_from_process;
 use crate::proc::signal::{Signal, SignalType, get_signal_type};
 use crate::wrappers::{_cli, _sti};
 
+use crate::__W_STOPCODE;
+
 pub extern "C" fn sys_kill(pid: Pid, signal: i32) -> i32 {
 	if pid > 0 { /* Send to a specific process */
 		unsafe {
@@ -20,7 +22,7 @@ pub extern "C" fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				let process: &mut Process = res.unwrap();
 				_cli();
 				remove_task_from_process(process);
-				process.zombify(0); // TODO: setup status
+				process.zombify(__W_STOPCODE!(signal_type as i32));
 				_sti();
 				return pid;
 			} else {
