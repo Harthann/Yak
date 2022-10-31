@@ -1,4 +1,5 @@
 use crate::proc::process::{MASTER_PROCESS, Process, Pid, get_running_process};
+use crate::proc::task::remove_task_from_process;
 use crate::proc::signal::{Signal, SignalType, get_signal_type};
 use crate::wrappers::{_cli, _sti};
 
@@ -18,8 +19,8 @@ pub extern "C" fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				}
 				let process: &mut Process = res.unwrap();
 				_cli();
-				process.zombify(0); /* TODO: setup status */
-				// TODO: Remove task etc..
+				remove_task_from_process(process);
+				process.zombify(0); // TODO: setup status
 				_sti();
 				return pid;
 			} else {

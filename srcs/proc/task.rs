@@ -65,10 +65,25 @@ pub fn init_tasking() {
 	}
 }
 
+pub unsafe fn remove_task_from_process(process: &mut Process) {
+	let process_ptr: *mut Process= &mut *process;
+	let len = TASKLIST.len();
+	let mut i = 0;
+	while i < len {
+		let task: &Task = TASKLIST.peek().unwrap();
+		if task.process != process_ptr {
+			TASKLIST.push(TASKLIST.pop());
+		} else {
+			TASKLIST.pop();
+		}
+		i += 1;
+	}
+}
+
 use crate::wrappers::{_cli, _rst};
 
 #[no_mangle]
-pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
+pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
 	_cli();
 	let mut task = TASKLIST.pop();
 	task.regs = *regs;
