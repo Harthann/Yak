@@ -51,6 +51,14 @@ impl Process {
 		}
 	}
 
+	pub fn get_nb_process(&self) -> usize {
+		let mut ret: usize = 1;
+		for process in self.childs.iter() {
+			ret += process.get_nb_process()
+		}
+		ret
+	}
+
 	pub fn print_tree(&self) {
 		crate::kprintln!("{}", self);
 		for process in self.childs.iter() {
@@ -178,4 +186,8 @@ pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ErrNo> {
 pub unsafe fn print_all_process() {
 	crate::kprintln!("       PID        OWNER   STATUS");
 	MASTER_PROCESS.print_tree();
+}
+
+pub unsafe fn get_nb_process() -> usize{
+	MASTER_PROCESS.get_nb_process()
 }

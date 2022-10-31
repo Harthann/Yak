@@ -7,15 +7,20 @@ pub mod task;
 pub mod process;
 pub mod signal;
 
+#[cfg(test)]
+pub mod test;
+
 use process::{Process, Pid, zombify_running_process};
 use task::{Task, TASKLIST, switch_task};
+
+use crate::__W_EXITCODE;
 
 pub type Id = i32;
 
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	zombify_running_process(status);
+	zombify_running_process(__W_EXITCODE!(status as i32, 0));
 	TASKLIST.pop();
 	let res = &TASKLIST.peek();
 	if res.is_none() {

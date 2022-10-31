@@ -4,8 +4,8 @@ use core::ops;
 use crate::GLOBAL_ALIGN;
 use crate::memory::allocator::{Allocator,AllocError,/*Global,*/KGlobal};
 
-#[cfg(test)]
-pub mod test;
+//#[cfg(test)]
+//pub mod test;
 
 #[derive(Debug, Clone)]
 pub struct Vec<T, A: Allocator = KGlobal> {

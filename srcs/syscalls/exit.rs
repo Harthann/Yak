@@ -68,11 +68,9 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 	}
 }
 
-use crate::__W_EXITCODE;
-
 pub extern "C" fn sys_exit(status: i32) -> ! {
 	unsafe {
-		_exit(__W_EXITCODE!(status, 0));
+		_exit(status);
 	}
 	/* Never goes there */
 }

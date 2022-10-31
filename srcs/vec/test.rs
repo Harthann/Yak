@@ -1,7 +1,6 @@
 use crate::print_fn;
 use crate::vec::Vec;
 
-
 #[test_case]
 fn vector_basics() {
 	print_fn!();
