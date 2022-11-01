@@ -100,3 +100,25 @@ fn test_subprocess() {
 		assert_eq!(get_nb_process(), 1);
 	}
 }
+
+fn create_multiple_subprocess(nb: usize) {
+	for i in 1..nb - 1 {
+		unsafe{exec_fn!(create_multiple_subprocess, i)};
+	}
+	for _i in 1..nb - 1 {
+		let res = sys_waitpid(-1, core::ptr::null_mut(), 0);
+		assert!(res > 0);
+	}
+}
+
+#[test_case]
+fn test_multiple_subprocess() {
+	print_fn!();
+	unsafe {
+		assert_eq!(get_nb_process(), 1);
+		let pid = exec_fn!(create_multiple_subprocess, 4);
+		let res = sys_waitpid(pid, core::ptr::null_mut(), 0);
+		assert_eq!(res, pid);
+		assert_eq!(get_nb_process(), 1);
+	}
+}

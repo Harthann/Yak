@@ -187,6 +187,6 @@ pub unsafe fn print_all_process() {
 	MASTER_PROCESS.print_tree();
 }
 
-pub unsafe fn get_nb_process() -> usize{
+pub unsafe fn get_nb_process() -> usize {
 	MASTER_PROCESS.get_nb_process()
 }
