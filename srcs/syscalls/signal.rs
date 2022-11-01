@@ -5,6 +5,12 @@ use crate::wrappers::{_cli, _sti};
 
 use crate::__W_STOPCODE;
 
+type SigHandler = extern "C" fn (i32);
+
+pub extern "C" fn sys_signal(signal: i32, handler: SigHandler) -> SigHandler {
+	handler
+}
+
 pub extern "C" fn sys_kill(pid: Pid, signal: i32) -> i32 {
 	if pid > 0 { /* Send to a specific process */
 		unsafe {
