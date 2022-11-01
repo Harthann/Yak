@@ -9,7 +9,7 @@ use crate::memory::allocator::Box;
 use crate::proc::task::TASKLIST;
 
 use crate::proc::Id;
-use crate::proc::signal::{Signal, SignalType};
+use crate::proc::signal::{Signal, SignalType, SignalHandler};
 
 use crate::errno::ErrNo;
 
@@ -34,6 +34,7 @@ pub struct Process {
 	pub stack: MemoryZone,
 	pub heap: MemoryZone,
 	pub signals: Vec<Signal>,
+	pub signal_handlers: Vec<SignalHandler>,
 	pub owner: Id
 }
 

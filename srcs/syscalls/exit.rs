@@ -43,6 +43,7 @@ pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *
 /* TODO: EINTR */
 pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
+		/* TODO: set task status interruptible */
 		loop {
 			let res = get_signal_running_process(pid);
 			if res.is_ok() {

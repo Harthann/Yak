@@ -8,9 +8,23 @@ use crate::memory::paging::{PAGE_WRITABLE, alloc_page};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
+pub type SigHandler = extern "C" fn (i32);
+
+pub struct SignalHandler {
+	signal: u32,
+	handler: SigHandler
+}
+
+enum Status {
+	Running,
+	Uninterruptible,
+	interruptible
+}
+
 #[derive(Copy, Clone)]
 pub struct Task {
 	pub regs: Registers,
+	pub status: Status,
 	pub process: *mut Process
 }
 
@@ -18,6 +32,7 @@ impl Task {
 	pub const fn new() -> Self {
 		Self {
 			regs: Registers::new(),
+			status: Status::Running,
 			process: ptr::null_mut()
 		}
 	}
@@ -84,6 +99,61 @@ pub unsafe fn remove_task_from_process(process: &mut Process) {
 }
 
 use crate::wrappers::{_cli, _rst};
+use crate::proc::signal::SignalType;
+
+#[naked]
+#[no_mangle]
+pub unsafe extern "C" fn wrapper_handler() {
+	core::arch::asm!("
+	mov eax, [esp]
+	add esp, 4
+	call eax
+	cli
+	jmp _end_handler",
+	options(noreturn));
+	/* Never goes there */
+}
+
+fn _end_handler() {
+	
+}
+
+fn handle_signal(task: &mut Task, handler: SigHandler) {
+	task.regs.esp -= core::mem::size_of<Task>();
+	(task.regs.esp as *mut Registers).write(task.regs);
+	task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) task.regs.esp,
+		func = in(reg) handler);
+	task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) task.regs.esp,
+		func = in(reg) handler);
+	task.regs.eip = wrapper_handler;
+	_rst();
+	switch_task(&mut regs);
+}
+
+fn do_signal(task: &mut Task) {
+	let process = (*task.process);
+	let len = process.signals.len();
+	for i in 0..len {
+		if task.status != SignalType::Uninterruptible &&
+process.signals[i].sigtype == SignalType::SIGKILL {
+			todo!(); /* sys_kill remove task etc.. ? */
+		} else if task.status == SignalType::Running {
+			process.signals[i].sigtype as u32;
+
+			let signal = process.signals.remove(i);
+			for handler in process.signal_handlers {
+				if handler.signal == signal.sigtype as u32 {
+					task.status = SignalType::Interruptible;
+					handle_signal(task, handler);
+				}
+			}
+		}
+	}
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
@@ -95,9 +165,13 @@ pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
 	if res.is_none() {
 		todo!();
 	}
-	let mut regs = res.unwrap().regs;
+	let task = res.unwrap();
+	let mut regs = task.regs;
+	/* TODO: IF SIGNAL JUMP ? */
+	if ((*task.process).signals.len() > 0) {
+		do_signal(task);
+	}
 	_rst();
 	switch_task(&mut regs);
 	/* Never goes there */
 	loop {}
-}

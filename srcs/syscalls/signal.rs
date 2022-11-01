@@ -1,11 +1,9 @@
 use crate::proc::process::{MASTER_PROCESS, Process, Pid, get_running_process};
 use crate::proc::task::remove_task_from_process;
-use crate::proc::signal::{Signal, SignalType, get_signal_type};
+use crate::proc::signal::{Signal, SignalType, SigHandler, get_signal_type};
 use crate::wrappers::{_cli, _sti};
 
 use crate::__W_STOPCODE;
-
-type SigHandler = extern "C" fn (i32);
 
 pub extern "C" fn sys_signal(signal: i32, handler: SigHandler) -> SigHandler {
 	handler
