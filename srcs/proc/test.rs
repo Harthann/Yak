@@ -81,3 +81,22 @@ fn test_simple_multiple_process() {
 		}
 	}
 }
+
+fn create_subprocess(nb: usize) {
+	if nb > 0 {
+		unsafe{exec_fn!(create_subprocess, nb - 1)};
+		sys_waitpid(-1, core::ptr::null_mut(), 0);
+	}
+}
+
+#[test_case]
+fn test_subprocess() {
+	print_fn!();
+	unsafe {
+		assert_eq!(get_nb_process(), 1);
+		let pid = exec_fn!(create_subprocess, 1);
+		let res = sys_waitpid(pid, core::ptr::null_mut(), 0);
+		assert_eq!(res, pid);
+		assert_eq!(get_nb_process(), 1);
+	}
+}

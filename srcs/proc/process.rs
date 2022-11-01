@@ -91,7 +91,7 @@ impl Process {
 		NEXT_PID += 1;
 	}
 
-	pub unsafe fn zombify(&mut self, wstatus: i32) -> Result<Id, ErrNo> {
+	pub unsafe fn zombify(&mut self, wstatus: i32) {
 		if self.parent.is_null() {
 			todo!();
 		}
@@ -110,7 +110,6 @@ impl Process {
 		self.state = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
-		Ok(self.pid)
 	}
 
 	pub unsafe fn remove(&mut self) {
