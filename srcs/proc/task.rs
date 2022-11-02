@@ -19,7 +19,7 @@ pub enum TaskStatus {
 #[derive(Copy, Clone)]
 pub struct Task {
 	pub regs: Registers,
-	pub status: TaskStatus,
+	pub state: TaskStatus,
 	pub process: *mut Process
 }
 
@@ -27,7 +27,7 @@ impl Task {
 	pub const fn new() -> Self {
 		Self {
 			regs: Registers::new(),
-			status: TaskStatus::Running,
+			state: TaskStatus::Running,
 			process: ptr::null_mut()
 		}
 	}
@@ -153,10 +153,10 @@ unsafe fn do_signal(task: &mut Task) {
 	crate::kprintln!("len: {}", len);
 	for i in 0..len {
 		crate::kprintln!("bop");
-		if task.status != TaskStatus::Uninterruptible &&
+		if task.state != TaskStatus::Uninterruptible &&
 process.signals[i].sigtype == SignalType::SIGKILL {
 			todo!(); /* sys_kill remove task etc.. ? */
-		} else if task.status == TaskStatus::Running {
+		} else if task.state == TaskStatus::Running {
 
 			crate::kprintln!("sigtype: {}", process.signals[i].sigtype as u32);
 			for handler in process.signal_handlers.iter_mut() {
@@ -164,10 +164,13 @@ process.signals[i].sigtype == SignalType::SIGKILL {
 				if handler.signal == process.signals[i].sigtype as u32 {
 					crate::kprintln!("removed");
 					process.signals.remove(i);
-					task.status = TaskStatus::Interruptible;
+					task.state = TaskStatus::Interruptible;
 					handle_signal(task, handler);
 				}
 			}
+		} else if task.state == TaskStatus::Interruptible &&
+process.signals[i].sigtype == SignalType::SIGCHLD {
+			task.state = TaskStatus::Running;
 		}
 	}
 }
@@ -175,22 +178,25 @@ process.signals[i].sigtype == SignalType::SIGKILL {
 #[no_mangle]
 pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
 	_cli();
-//	crate::kprintln!("next_task()");
-	let mut task = TASKLIST.pop();
-	task.regs = *regs;
-	TASKLIST.push(task);
-	let res = TASKLIST.peek();
-	if res.is_none() {
-		todo!();
+	let mut old_task: Task = TASKLIST.pop();
+	old_task.regs = *regs;
+	TASKLIST.push(old_task);
+	loop {
+		let res = TASKLIST.peek();
+		if res.is_none() {
+			todo!();
+		}
+		let new_task: &mut Task = &mut res.unwrap();
+		/* TODO: IF SIGNAL JUMP ? */
+		if (*new_task.process).signals.len() > 0 {
+			crate::kprintln!("do_signal()");
+			do_signal(new_task);
+		}
+		if new_task.state == TaskStatus::Running {
+			_rst();
+			switch_task(&new_task.regs);
+		}
+		let skipped_task: Task = TASKLIST.pop();
+		TASKLIST.push(skipped_task);
 	}
-	let mut task: Task = res.unwrap();
-	/* TODO: IF SIGNAL JUMP ? */
-	if (*task.process).signals.len() > 0 {
-		crate::kprintln!("do_signal()");
-		do_signal(&mut task);
-	}
-	_rst();
-	switch_task(&mut task.regs);
-	/* Never goes there */
-	loop {}
 }
