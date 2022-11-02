@@ -2,6 +2,13 @@ use crate::proc::Id;
 use crate::proc::process::{Process, MASTER_PROCESS};
 use crate::errno::ErrNo;
 
+pub type SigHandler = extern "C" fn (i32);
+
+pub struct SignalHandler {
+	pub signal: u32,
+	pub handler: SigHandler
+}
+
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum SignalType {
 	SIGHUP		= 1,

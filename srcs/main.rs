@@ -189,9 +189,10 @@ unsafe fn dumb_main(nb: usize) {
 	if nb == 3 {
 		loop {}
 	}
-	core::arch::asm!("mov ebx, 8
-					mov eax, 1",
-					"int 0x80"); /* test syscall exit */
+	// TODO: fix syscalls
+//	core::arch::asm!("mov ebx, 8
+//					mov eax, 1",
+//					"int 0x80"); /* test syscall exit */
 }
 
 pub fn test_task() {

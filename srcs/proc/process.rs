@@ -48,6 +48,7 @@ impl Process {
 			stack: MemoryZone::new(),
 			heap: MemoryZone::new(),
 			signals: Vec::new(),
+			signal_handlers: Vec::new(),
 			owner: 0
 		}
 	}

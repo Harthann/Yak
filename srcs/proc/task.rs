@@ -5,26 +5,21 @@ use crate::interrupts::Registers;
 use crate::proc::wrapper_fn;
 use crate::memory::VirtAddr;
 use crate::memory::paging::{PAGE_WRITABLE, alloc_page};
+use crate::proc::signal::{SignalHandler};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
-pub type SigHandler = extern "C" fn (i32);
-
-pub struct SignalHandler {
-	signal: u32,
-	handler: SigHandler
-}
-
-enum Status {
+#[derive(Copy, Clone, PartialEq)]
+pub enum TaskStatus {
 	Running,
 	Uninterruptible,
-	interruptible
+	Interruptible
 }
 
 #[derive(Copy, Clone)]
 pub struct Task {
 	pub regs: Registers,
-	pub status: Status,
+	pub status: TaskStatus,
 	pub process: *mut Process
 }
 
@@ -32,7 +27,7 @@ impl Task {
 	pub const fn new() -> Self {
 		Self {
 			regs: Registers::new(),
-			status: Status::Running,
+			status: TaskStatus::Running,
 			process: ptr::null_mut()
 		}
 	}
@@ -88,7 +83,11 @@ pub unsafe fn remove_task_from_process(process: &mut Process) {
 	let len = TASKLIST.len();
 	let mut i = 0;
 	while i < len {
-		let task: &Task = TASKLIST.peek().unwrap();
+		let res = TASKLIST.peek();
+		if res.is_none() {
+			todo!();
+		}
+		let task: Task = res.unwrap();
 		if task.process != process_ptr {
 			TASKLIST.push(TASKLIST.pop());
 		} else {
@@ -108,46 +107,64 @@ pub unsafe extern "C" fn wrapper_handler() {
 	mov eax, [esp]
 	add esp, 4
 	call eax
+	sub esp, 4
 	cli
 	jmp _end_handler",
 	options(noreturn));
 	/* Never goes there */
 }
 
-fn _end_handler() {
-	
+#[no_mangle]
+unsafe extern "C" fn _end_handler() {
+	crate::kprintln!("end_handler");
+	let res = TASKLIST.peek();
+	if res.is_none() {
+		todo!();
+	}
+	let mut task: Task = res.unwrap();
+	_cli();
+	task.regs.esp += core::mem::size_of::<Task>() as u32;
+	let regs: &mut Registers = &mut *(task.regs.esp as *mut _);
+	task.regs = *regs;
+	_rst();
+	switch_task(&mut task.regs);
 }
 
-fn handle_signal(task: &mut Task, handler: SigHandler) {
-	task.regs.esp -= core::mem::size_of<Task>();
+unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
+	crate::kprintln!("handle_signal()");
+	task.regs.esp -= core::mem::size_of::<Task>() as u32;
 	(task.regs.esp as *mut Registers).write(task.regs);
 	task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) task.regs.esp,
-		func = in(reg) handler);
+		func = in(reg) handler.signal);
 	task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) task.regs.esp,
-		func = in(reg) handler);
-	task.regs.eip = wrapper_handler;
+		func = in(reg) handler.handler);
+	task.regs.eip = wrapper_handler as u32;
 	_rst();
-	switch_task(&mut regs);
+	switch_task(&mut task.regs);
 }
 
-fn do_signal(task: &mut Task) {
-	let process = (*task.process);
+unsafe fn do_signal(task: &mut Task) {
+	let process = &mut *task.process;
 	let len = process.signals.len();
+	crate::kprintln!("len: {}", len);
 	for i in 0..len {
-		if task.status != SignalType::Uninterruptible &&
+		crate::kprintln!("bop");
+		if task.status != TaskStatus::Uninterruptible &&
 process.signals[i].sigtype == SignalType::SIGKILL {
 			todo!(); /* sys_kill remove task etc.. ? */
-		} else if task.status == SignalType::Running {
-			process.signals[i].sigtype as u32;
+		} else if task.status == TaskStatus::Running {
 
-			let signal = process.signals.remove(i);
-			for handler in process.signal_handlers {
-				if handler.signal == signal.sigtype as u32 {
-					task.status = SignalType::Interruptible;
+			crate::kprintln!("sigtype: {}", process.signals[i].sigtype as u32);
+			for handler in process.signal_handlers.iter_mut() {
+				crate::kprintln!("handler.signal: {}", handler.signal);
+				if handler.signal == process.signals[i].sigtype as u32 {
+					crate::kprintln!("removed");
+					process.signals.remove(i);
+					task.status = TaskStatus::Interruptible;
 					handle_signal(task, handler);
 				}
 			}
@@ -158,20 +175,22 @@ process.signals[i].sigtype == SignalType::SIGKILL {
 #[no_mangle]
 pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
 	_cli();
+//	crate::kprintln!("next_task()");
 	let mut task = TASKLIST.pop();
 	task.regs = *regs;
 	TASKLIST.push(task);
-	let res = &TASKLIST.peek();
+	let res = TASKLIST.peek();
 	if res.is_none() {
 		todo!();
 	}
-	let task = res.unwrap();
-	let mut regs = task.regs;
+	let mut task: Task = res.unwrap();
 	/* TODO: IF SIGNAL JUMP ? */
-	if ((*task.process).signals.len() > 0) {
-		do_signal(task);
+	if (*task.process).signals.len() > 0 {
+		crate::kprintln!("do_signal()");
+		do_signal(&mut task);
 	}
 	_rst();
-	switch_task(&mut regs);
+	switch_task(&mut task.regs);
 	/* Never goes there */
 	loop {}
+}
