@@ -1,6 +1,7 @@
 use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid, get_running_process, get_signal_running_process};
+use crate::proc::task::{TASKLIST, Task, TaskStatus};
 
 use crate::errno::ErrNo;
 
@@ -35,37 +36,53 @@ pub struct RUsage {
 	ru_nivcsw: usize // Number of times an involuntary context switch took place
 }
 
+extern "C" {
+	pub fn save_and_next_task();
+}
+
 pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
 	0
 }
 
-/* TODO: handle status (as flags) (in signal too) */
 /* TODO: EINTR */
 pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
-		/* TODO: Setup TaskStatus INTERRUPTIBLE */
-		/* TODO: set task status interruptible */
+		crate::wrappers::_cli();
 		loop {
-			let res = get_signal_running_process(pid);
+			let res = get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
 				let signal: Signal = res.unwrap();
-				if signal.sigtype == SignalType::SIGCHLD {
-					let process_ptr = get_running_process();
-					let res = (*process_ptr).search_from_pid(signal.sender);
-					if res.is_ok() {
-						let process: &mut Process = res.unwrap();
-						process.remove();
-					}
-					if !wstatus.is_null() {
-						*wstatus = signal.wstatus; // TODO
-					}
+				let process_ptr = get_running_process();
+				let res = (*process_ptr).search_from_pid(signal.sender);
+				if res.is_ok() {
+					let process: &mut Process = res.unwrap();
+					process.remove();
 				}
+				if !wstatus.is_null() {
+					*wstatus = signal.wstatus; // TODO
+				}
+				crate::wrappers::_sti();
 				return signal.sender;
 			} else if res == Err(ErrNo::ESRCH) {
+				crate::wrappers::_sti();
 				return -(ErrNo::ECHILD as i32);
 			}
 			if options & WNOHANG != 0 {
+				crate::wrappers::_sti();
 				return 0;
+			} else {
+				let res = TASKLIST.front_mut();
+				if res.is_none() {
+					todo!();
+				}
+				let task: &mut Task = res.unwrap();
+				task.state = TaskStatus::Interruptible;
+				let save = crate::wrappers::cli_count;
+				crate::wrappers::cli_count = 0;
+				crate::kprintln!("save_and_next_task()");
+				save_and_next_task();
+				crate::cli!();
+				crate::wrappers::cli_count = save;
 			}
 		}
 	}

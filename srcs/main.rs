@@ -145,7 +145,7 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
+	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x0fff);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};

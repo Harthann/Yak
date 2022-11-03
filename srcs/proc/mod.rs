@@ -22,12 +22,13 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
 	zombify_running_process(__W_EXITCODE!(status as i32, 0));
 	TASKLIST.pop();
-	let res = &TASKLIST.peek();
+	let res = TASKLIST.front();
 	if res.is_none() {
 		todo!();
 	}
+	crate::kprintln!("_exit");
 	_rst();
-	switch_task(&res.as_ref().unwrap().regs);
+	switch_task(&res.unwrap().regs);
 	/* Never goes there */
 	loop {}
 }

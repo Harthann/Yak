@@ -130,19 +130,22 @@ impl Process {
 		parent.childs.remove(i);
 	}
 
-	pub unsafe fn get_signal(&mut self) -> Result<Signal, ErrNo> {
-		if self.signals.len() > 0 {
-			Ok(self.signals.pop().unwrap())
-		} else {
-			Err(ErrNo::EAGAIN)
+	pub unsafe fn get_signal(&mut self, signal: SignalType) -> Result<Signal, ErrNo> {
+		let mut i = 0;
+		while i < self.signals.len() {
+			if self.signals[i].sigtype == signal {
+				return Ok(self.signals.remove(i));
+			}
+			i += 1;
 		}
+		Err(ErrNo::EAGAIN)
 	}
 
-	pub unsafe fn get_signal_from_pid(&mut self, pid: Id) -> Result<Signal, ErrNo> {
+	pub unsafe fn get_signal_from_pid(&mut self, pid: Id, signal: SignalType) -> Result<Signal, ErrNo> {
 		MASTER_PROCESS.search_from_pid(pid)?; /* Return ErrNo::ESRCH if doesn't exist */
 		let mut i = 0;
 		while i < self.signals.len() {
-			if self.signals[i].sender == pid {
+			if self.signals[i].sender == pid && self.signals[i].sigtype == signal {
 				return Ok(self.signals.remove(i));
 			}
 			i += 1;
@@ -170,12 +173,12 @@ pub unsafe fn zombify_running_process(status: i32) {
 	(*get_running_process()).zombify(status);
 }
 
-pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ErrNo> {
+pub unsafe fn get_signal_running_process(pid: Id, signal: SignalType) -> Result<Signal, ErrNo> {
 	let process = &mut *get_running_process();
 	if pid == -1  {
-		process.get_signal()
+		process.get_signal(signal)
 	} else if pid > 0 {
-		process.get_signal_from_pid(pid)
+		process.get_signal_from_pid(pid, signal)
 	} else if pid == 0 {
 		todo!();
 	}

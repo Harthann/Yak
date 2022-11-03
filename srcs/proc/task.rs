@@ -117,15 +117,16 @@ pub unsafe extern "C" fn wrapper_handler() {
 #[no_mangle]
 unsafe extern "C" fn _end_handler() {
 	crate::kprintln!("end_handler");
-	let res = TASKLIST.peek();
+	let res = TASKLIST.front_mut();
 	if res.is_none() {
 		todo!();
 	}
-	let mut task: Task = res.unwrap();
+	let task: &mut Task = res.unwrap();
 	_cli();
 	task.regs.esp += core::mem::size_of::<Task>() as u32;
 	let regs: &mut Registers = &mut *(task.regs.esp as *mut _);
 	task.regs = *regs;
+	crate::kprintln!("lol");
 	_rst();
 	switch_task(&mut task.regs);
 }
@@ -143,6 +144,7 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 		esp = in(reg) task.regs.esp,
 		func = in(reg) handler.handler);
 	task.regs.eip = wrapper_handler as u32;
+	crate::kprintln!("mdr");
 	_rst();
 	switch_task(&mut task.regs);
 }
@@ -150,19 +152,18 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 unsafe fn do_signal(task: &mut Task) {
 	let process = &mut *task.process;
 	let len = process.signals.len();
-	crate::kprintln!("len: {}", len);
+//	crate::kprintln!("len: {}", len);
 	for i in 0..len {
-		crate::kprintln!("bop");
+//		crate::kprintln!("bop");
 		if task.state != TaskStatus::Uninterruptible &&
 process.signals[i].sigtype == SignalType::SIGKILL {
 			todo!(); /* sys_kill remove task etc.. ? */
 		} else if task.state == TaskStatus::Running {
 
-			crate::kprintln!("sigtype: {}", process.signals[i].sigtype as u32);
+//			crate::kprintln!("sigtype: {}", process.signals[i].sigtype as u32);
 			for handler in process.signal_handlers.iter_mut() {
-				crate::kprintln!("handler.signal: {}", handler.signal);
+//				crate::kprintln!("handler.signal: {}", handler.signal);
 				if handler.signal == process.signals[i].sigtype as u32 {
-					crate::kprintln!("removed");
 					process.signals.remove(i);
 					task.state = TaskStatus::Interruptible;
 					handle_signal(task, handler);
@@ -171,28 +172,30 @@ process.signals[i].sigtype == SignalType::SIGKILL {
 		} else if task.state == TaskStatus::Interruptible &&
 process.signals[i].sigtype == SignalType::SIGCHLD {
 			task.state = TaskStatus::Running;
+			task.regs.eip += 1; /* skip hlt instr */
 		}
 	}
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
+pub unsafe extern "C" fn next_task(regs: &Registers) -> ! {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
+//	crate::kprintln!("regs: {:#x?}", regs);
 	TASKLIST.push(old_task);
 	loop {
-		let res = TASKLIST.peek();
+		let res = TASKLIST.front_mut();
 		if res.is_none() {
 			todo!();
 		}
-		let new_task: &mut Task = &mut res.unwrap();
+		let new_task: &mut Task = res.unwrap();
 		/* TODO: IF SIGNAL JUMP ? */
 		if (*new_task.process).signals.len() > 0 {
-			crate::kprintln!("do_signal()");
 			do_signal(new_task);
 		}
 		if new_task.state == TaskStatus::Running {
+			crate::kprintln!("to: {:#x?}", regs);
 			_rst();
 			switch_task(&new_task.regs);
 		}
