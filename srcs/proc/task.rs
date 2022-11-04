@@ -9,7 +9,7 @@ use crate::proc::signal::{SignalHandler};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TaskStatus {
 	Running,
 	Uninterruptible,
@@ -42,7 +42,7 @@ impl Task {
 }
 
 extern "C" {
-	pub fn switch_task(regs: *const Registers);
+	pub fn switch_task(regs: *const Registers) -> ! ;
 }
 
 #[no_mangle]
@@ -152,17 +152,13 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 unsafe fn do_signal(task: &mut Task) {
 	let process = &mut *task.process;
 	let len = process.signals.len();
-//	crate::kprintln!("len: {}", len);
 	for i in 0..len {
-//		crate::kprintln!("bop");
 		if task.state != TaskStatus::Uninterruptible &&
 process.signals[i].sigtype == SignalType::SIGKILL {
 			todo!(); /* sys_kill remove task etc.. ? */
 		} else if task.state == TaskStatus::Running {
 
-//			crate::kprintln!("sigtype: {}", process.signals[i].sigtype as u32);
 			for handler in process.signal_handlers.iter_mut() {
-//				crate::kprintln!("handler.signal: {}", handler.signal);
 				if handler.signal == process.signals[i].sigtype as u32 {
 					process.signals.remove(i);
 					task.state = TaskStatus::Interruptible;
@@ -172,18 +168,22 @@ process.signals[i].sigtype == SignalType::SIGKILL {
 		} else if task.state == TaskStatus::Interruptible &&
 process.signals[i].sigtype == SignalType::SIGCHLD {
 			task.state = TaskStatus::Running;
-			task.regs.eip += 1; /* skip hlt instr */
 		}
 	}
 }
 
 #[no_mangle]
-pub unsafe extern "C" fn next_task(regs: &Registers) -> ! {
+pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
-//	crate::kprintln!("regs: {:#x?}", regs);
 	TASKLIST.push(old_task);
+	_rst();
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn schedule_task() -> ! {
+	_cli();
 	loop {
 		let res = TASKLIST.front_mut();
 		if res.is_none() {
@@ -195,7 +195,6 @@ pub unsafe extern "C" fn next_task(regs: &Registers) -> ! {
 			do_signal(new_task);
 		}
 		if new_task.state == TaskStatus::Running {
-			crate::kprintln!("to: {:#x?}", regs);
 			_rst();
 			switch_task(&new_task.regs);
 		}

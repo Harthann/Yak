@@ -37,7 +37,7 @@ pub struct RUsage {
 }
 
 extern "C" {
-	pub fn save_and_next_task();
+	pub fn next_task();
 }
 
 pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
@@ -51,6 +51,10 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 		loop {
 			let res = get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
+				let other_res = TASKLIST.front_mut();
+				if other_res.is_none() {
+					todo!();
+				}
 				let signal: Signal = res.unwrap();
 				let process_ptr = get_running_process();
 				let res = (*process_ptr).search_from_pid(signal.sender);
@@ -79,9 +83,9 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 				task.state = TaskStatus::Interruptible;
 				let save = crate::wrappers::cli_count;
 				crate::wrappers::cli_count = 0;
-				crate::kprintln!("save_and_next_task()");
-				save_and_next_task();
-				crate::cli!();
+				crate::sti!();
+				crate::hlt!(); // wait for scheduler
+				crate::cli!(); // unblocked here
 				crate::wrappers::cli_count = save;
 			}
 		}

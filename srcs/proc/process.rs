@@ -161,7 +161,7 @@ impl fmt::Display for Process {
 }
 
 pub unsafe fn get_running_process() -> *mut Process {
-	let res = TASKLIST.peek();
+	let res = TASKLIST.front_mut();
 	if res.is_none() {
 		todo!();
 	}

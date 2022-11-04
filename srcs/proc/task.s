@@ -2,10 +2,11 @@
 
 global irq_0
 global switch_task
-global save_and_next_task
+global next_task
 
 extern STACK_TASK_SWITCH
-extern next_task
+extern save_task
+extern schedule_task
 
 extern JIFFIES
 
@@ -14,6 +15,9 @@ irq_0:
 	push 0; err_code
 	push -1; int_no
 
+	jmp swap_task
+
+swap_task:
 	pusha
 
 	mov eax, cr3
@@ -36,34 +40,11 @@ irq_0:
 
 	; (regs: &mut Registers)
 	push eax
+	call save_task
+	pop eax
 
-	call next_task
+	call schedule_task
 	; Never goes there
-
-; fn save_and_next_task()
-save_and_next_task:
-	cli
-
-	sub esp, 20
-
-	push eax
-	xor eax, eax
-
-	mov ax, ss
-	mov dword[esp + 20], eax ; ss
-	mov ax, sp
-	mov dword[esp + 16], eax ; useresp
-	pushfd
-	pop eax
-	mov dword[esp + 12], eax ; eflags
-	mov ax, cs
-	mov dword[esp + 8], eax ; cs
-	mov eax, dword[esp + 24]
-	mov dword[esp + 4], eax ; eip
-
-	pop eax
-
-	jmp irq_0
 
 ; fn switch_task(regs: *const Registers)
 switch_task:

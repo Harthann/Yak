@@ -10,8 +10,8 @@ pub mod signal;
 #[cfg(test)]
 pub mod test;
 
-use process::{Process, Pid, zombify_running_process};
-use task::{Task, TASKLIST, switch_task};
+use process::{Process, Pid};
+use task::{Task, TASKLIST, schedule_task};
 
 use crate::__W_EXITCODE;
 
@@ -20,17 +20,11 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	zombify_running_process(__W_EXITCODE!(status as i32, 0));
-	TASKLIST.pop();
-	let res = TASKLIST.front();
-	if res.is_none() {
-		todo!();
-	}
-	crate::kprintln!("_exit");
+	let task: Task = TASKLIST.pop();
+	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
-	switch_task(&res.unwrap().regs);
+	schedule_task();
 	/* Never goes there */
-	loop {}
 }
 
 #[naked]
