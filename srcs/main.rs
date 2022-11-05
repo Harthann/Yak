@@ -168,7 +168,7 @@ use crate::syscalls::signal::{sys_signal, sys_kill};
 
 #[no_mangle]
 extern "C" fn handler(nb: i32) {
-	kprintln!("in handler");
+	kprintln!("in handler: {}", nb);
 	unsafe {core::arch::asm!("mov ebx, 8
 								mov eax, 1
 								int 0x80");}
@@ -180,9 +180,9 @@ unsafe fn dumb_main(nb: usize) {
 	if nb > 1 {
 		pid = exec_fn!(dumb_main, nb - 1);
 	}
+	sys_signal(2, handler);
 	let mut i = 0;
 	while i < 2048 {
-//		crate::kprintln!("dumb{}", nb);
 		i += 1;
 	}
 	if nb > 1 {
@@ -197,17 +197,10 @@ unsafe fn dumb_main(nb: usize) {
 		} else {
 			kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
 		}
-	} else {
-		sys_signal(2, handler);
-		loop {}
 	}
 	if nb == 3 {
 		loop {}
 	}
-	// TODO: fix syscalls
-//	core::arch::asm!("mov ebx, 8
-//					mov eax, 1",
-//					"int 0x80"); /* test syscall exit */
 }
 
 pub fn test_task() {
@@ -225,9 +218,9 @@ pub fn test_task() {
 		let test: i32 = sys_waitpid(pids[i], &mut wstatus, 0);
 		crate::kprintln!("end wait: {}", pids[i]);
 		if __WIFEXITED!(wstatus) {
-			kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+			kprintln!("main exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
 		} else {
-			kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+			kprintln!("main exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
 		}
 		i += 1;
 	}

@@ -134,6 +134,7 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 	task.regs.esp -= core::mem::size_of::<Task>() as u32;
 	(task.regs.esp as *mut Registers).write(task.regs);
 	task.regs.int_no = 0; /* Reset int_no to return to new func (TODO: DO THIS BETTER) */
+	/* Setup args (int signal) and handler call */
 	task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], eax",
 		esp = in(reg) task.regs.esp,
