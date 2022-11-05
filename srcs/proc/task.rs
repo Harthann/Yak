@@ -11,9 +11,9 @@ pub static mut TASKLIST: Queue<Task> = Queue::new();
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TaskStatus {
-	Running,
-	Uninterruptible,
-	Interruptible
+	Running, // Normal state
+	Uninterruptible, // In signal handler, could not be signaled again
+	Interruptible // Waiting for changing state (wait4 - waitpid)
 }
 
 #[derive(Copy, Clone)]
@@ -107,7 +107,6 @@ pub unsafe extern "C" fn wrapper_handler() {
 	mov eax, [esp]
 	add esp, 4
 	call eax
-	sub esp, 4
 	cli
 	jmp _end_handler",
 	options(noreturn));
@@ -116,35 +115,34 @@ pub unsafe extern "C" fn wrapper_handler() {
 
 #[no_mangle]
 unsafe extern "C" fn _end_handler() {
-	crate::kprintln!("end_handler");
+	_cli();
 	let res = TASKLIST.front_mut();
 	if res.is_none() {
 		todo!();
 	}
 	let task: &mut Task = res.unwrap();
-	_cli();
-	task.regs.esp += core::mem::size_of::<Task>() as u32;
+	task.regs.esp += 8;
 	let regs: &mut Registers = &mut *(task.regs.esp as *mut _);
 	task.regs = *regs;
-	crate::kprintln!("lol");
+	task.regs.esp += core::mem::size_of::<Task>() as u32;
+	task.state = TaskStatus::Running;
 	_rst();
 	switch_task(&mut task.regs);
 }
 
 unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
-	crate::kprintln!("handle_signal()");
 	task.regs.esp -= core::mem::size_of::<Task>() as u32;
 	(task.regs.esp as *mut Registers).write(task.regs);
+	task.regs.int_no = 0; /* Reset int_no to return to new func (TODO: DO THIS BETTER) */
 	task.regs.esp -= 4;
-	core::arch::asm!("mov [{esp}], {func}",
+	core::arch::asm!("mov [{esp}], eax",
 		esp = in(reg) task.regs.esp,
-		func = in(reg) handler.signal);
+		in("eax") handler.signal);
 	task.regs.esp -= 4;
-	core::arch::asm!("mov [{esp}], {func}",
+	core::arch::asm!("mov [{esp}], eax",
 		esp = in(reg) task.regs.esp,
-		func = in(reg) handler.handler);
+		in("eax") handler.handler);
 	task.regs.eip = wrapper_handler as u32;
-	crate::kprintln!("mdr");
 	_rst();
 	switch_task(&mut task.regs);
 }
@@ -157,11 +155,10 @@ unsafe fn do_signal(task: &mut Task) {
 process.signals[i].sigtype == SignalType::SIGKILL {
 			todo!(); /* sys_kill remove task etc.. ? */
 		} else if task.state == TaskStatus::Running {
-
 			for handler in process.signal_handlers.iter_mut() {
-				if handler.signal == process.signals[i].sigtype as u32 {
+				if handler.signal == process.signals[i].sigtype as i32 {
 					process.signals.remove(i);
-					task.state = TaskStatus::Interruptible;
+					task.state = TaskStatus::Uninterruptible;
 					handle_signal(task, handler);
 				}
 			}
@@ -194,7 +191,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		if (*new_task.process).signals.len() > 0 {
 			do_signal(new_task);
 		}
-		if new_task.state == TaskStatus::Running {
+		if new_task.state != TaskStatus::Interruptible {
 			_rst();
 			switch_task(&new_task.regs);
 		}

@@ -164,7 +164,15 @@ pub extern "C" fn kinit() {
 use crate::proc::process::Pid;
 
 use crate::syscalls::exit::sys_waitpid;
-use crate::syscalls::signal::sys_kill;
+use crate::syscalls::signal::{sys_signal, sys_kill};
+
+#[no_mangle]
+extern "C" fn handler(nb: i32) {
+	kprintln!("in handler");
+	unsafe {core::arch::asm!("mov ebx, 8
+								mov eax, 1
+								int 0x80");}
+}
 
 unsafe fn dumb_main(nb: usize) {
 	kprintln!("dumbmain{}!!!", nb);
@@ -178,6 +186,10 @@ unsafe fn dumb_main(nb: usize) {
 		i += 1;
 	}
 	if nb > 1 {
+		let test: i32 = sys_kill(pid, 2);
+		if test < 0 {
+			kprintln!("kill: {}: no such pid: {}", test, pid);
+		}
 		let mut wstatus: i32 = 0;
 		let test: i32 = sys_waitpid(pid, &mut wstatus, 0);
 		if __WIFEXITED!(wstatus) {
@@ -185,6 +197,9 @@ unsafe fn dumb_main(nb: usize) {
 		} else {
 			kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
 		}
+	} else {
+		sys_signal(2, handler);
+		loop {}
 	}
 	if nb == 3 {
 		loop {}

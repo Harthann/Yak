@@ -1,11 +1,28 @@
 use crate::proc::process::{MASTER_PROCESS, Process, Pid, get_running_process};
 use crate::proc::task::remove_task_from_process;
-use crate::proc::signal::{Signal, SignalType, SigHandler, get_signal_type};
+use crate::proc::signal::{Signal, SignalType, SignalHandler, SigHandlerFn, get_signal_type};
 use crate::wrappers::{_cli, _sti};
+
+use crate::vec::Vec;
 
 use crate::__W_STOPCODE;
 
-pub extern "C" fn sys_signal(signal: i32, handler: SigHandler) -> SigHandler {
+pub extern "C" fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
+	unsafe {
+		/* TODO: check signal validity */
+		/* TODO: Use map/hashmap instead */
+		let handlers: &mut Vec<SignalHandler> = &mut (*get_running_process()).signal_handlers;
+		for i in 0..handlers.len() {
+			if handlers[i].signal == signal {
+				handlers.remove(i);
+				break ;
+			}
+		}
+		handlers.push(SignalHandler{
+			signal: signal,
+			handler: handler
+		});
+	}
 	handler
 }
 
