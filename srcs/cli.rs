@@ -22,6 +22,7 @@ fn jiffies(_: &Command) {
 
 fn time(_: &Command) {
     unsafe {
+        crate::pic::pit::TIME_ELAPSED = crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
         let second = (crate::pic::pit::TIME_ELAPSED / 1000.0) as u64;
         let ms = ((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
         crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
