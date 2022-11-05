@@ -218,9 +218,9 @@ impl<T, A: Allocator> Vec<T,A> {
 		}
 	}
 
-	pub fn remove(&mut self, index: usize) -> Option<T> {
+	pub fn remove(&mut self, index: usize) -> T {
 		if self.len < index {
-			None
+			panic!();
 		} else {
 			unsafe{
 				let erased = core::ptr::read(self.as_ptr().add(index));
@@ -228,7 +228,7 @@ impl<T, A: Allocator> Vec<T,A> {
 								self.as_mut_ptr().add(index),
 								self.len() - index);
 				self.len -= 1;
-				Some(erased)
+				erased
 			}
 		}
 	}

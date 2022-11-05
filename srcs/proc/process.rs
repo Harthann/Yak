@@ -6,12 +6,15 @@ use crate::memory::{MemoryZone, Stack};
 use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
 
+use crate::proc::task::TASKLIST;
+
 use crate::proc::Id;
-use crate::proc::task::RUNNING_TASK;
 use crate::proc::signal::{Signal, SignalType};
 
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
+
+pub type Pid = Id;
 
 #[derive(Debug)]
 pub enum Status {
@@ -22,13 +25,13 @@ pub enum Status {
 }
 
 pub struct Process {
-	pub pid: Id,
+	pub pid: Pid,
 	pub status: Status,
 	pub parent: *mut Process,
 	pub childs: Vec<Box<Process>>,
 	pub stack: MemoryZone,
 	pub heap: MemoryZone,
-	pub signals: Vec<Box<Signal>>, /* TODO: VecDeque ? */
+	pub signals: Vec<Signal>,
 	pub owner: Id
 }
 
@@ -78,7 +81,7 @@ impl Process {
 		NEXT_PID += 1;
 	}
 
-	pub unsafe fn zombify(&mut self) {
+	pub unsafe fn zombify(&mut self, status: i32) {
 		if self.parent.is_null() {
 			todo!();
 		}
@@ -95,7 +98,7 @@ impl Process {
 		}
 		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
 		self.status = Status::Zombie;
-		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD);
+		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, status);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 	}
 
@@ -117,7 +120,7 @@ impl Process {
 
 	pub unsafe fn get_signal(&mut self) -> Result<Signal, ()> {
 		if self.signals.len() > 0 {
-			Ok(*self.signals.pop().unwrap().as_mut())
+			Ok(self.signals.pop().unwrap())
 		} else {
 			Err(())
 		}
@@ -126,8 +129,8 @@ impl Process {
 	pub unsafe fn get_signal_from_pid(&mut self, pid: Id) -> Result<Signal, ()> {
 		let mut i = 0;
 		while i < self.signals.len() {
-			if self.signals[i].as_mut().sender == pid {
-				return Ok(*self.signals.remove(i).unwrap().as_mut());
+			if self.signals[i].sender == pid {
+				return Ok(self.signals.remove(i));
 			}
 			i += 1;
 		}
@@ -142,16 +145,20 @@ impl fmt::Display for Process {
 }
 
 pub unsafe fn get_running_process() -> *mut Process {
-	&mut *(*RUNNING_TASK).process
+	let res = TASKLIST.peek();
+	if res.is_none() {
+		todo!();
+	}
+	let task = res.unwrap();
+	task.process
 }
 
-pub unsafe fn zombify_running_process() {
-	let process: &mut Process = &mut *(*RUNNING_TASK).process;
-	process.zombify();
+pub unsafe fn zombify_running_process(status: i32) {
+	(*get_running_process()).zombify(status);
 }
 
 pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
-	let process: &mut Process = &mut *(*RUNNING_TASK).process;
+	let process = &mut *get_running_process();
 	if pid == -1  {
 		process.get_signal()
 	} else {

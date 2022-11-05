@@ -5,6 +5,6 @@ fn main() {
 	println!("cargo:rerun-if-changed=libboot.a");
 
 	// Adding the linker script
-	println!("cargo:rustc-link-arg=-Tarch/i386/linker.ld");
-	println!("cargo:rerun-if-changed=arch/i386/linker.ld");
+	println!("cargo:rustc-link-arg=-Tarch/x86/linker.ld");
+	println!("cargo:rerun-if-changed=arch/x86/linker.ld");
 }

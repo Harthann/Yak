@@ -1,5 +1,6 @@
 use crate::io;
 use crate::vga_buffer::color::Color;
+use crate::KTRACKER;
 
 #[cfg(test)]
 #[macro_export]
@@ -27,8 +28,8 @@ macro_rules! print_fn {
 
 pub fn leaks() -> bool {
 	unsafe {
-		crate::KTRACKER.allocation != crate::KTRACKER.freed ||
-		crate::KTRACKER.allocated_bytes != crate::KTRACKER.freed_bytes
+		KTRACKER.allocation != KTRACKER.freed ||
+		KTRACKER.allocated_bytes != KTRACKER.freed_bytes
 	}
 }
 

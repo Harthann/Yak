@@ -1,3 +1,9 @@
-[target.'cfg(target_os = "none")']
-runner = "./test_runner.sh"
+[build]
+target = "arch/x86/i386.json"
 
+[unstable]
+build-std-features = ["compiler-builtins-mem"]
+build-std = ["core", "compiler_builtins"]
+
+[target.'cfg(target_os = "none")']
+runner = "./tests/test_kernel.sh"

@@ -1,22 +1,30 @@
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
 use crate::VirtAddr;
+use crate::wrappers::{_cli, _sti, _rst};
 
 pub mod task;
 pub mod process;
 pub mod signal;
 
-use process::{Process, zombify_running_process};
-use task::{Task, RUNNING_TASK, STACK_TASK_SWITCH, append_task, remove_running_task};
+use process::{Process, Pid, zombify_running_process};
+use task::{Task, TASKLIST, switch_task};
 
 pub type Id = i32;
 
 #[no_mangle]
-pub unsafe extern "C" fn exit_fn() -> ! {
-	core::arch::asm!("mov esp, {}", in(reg) (STACK_TASK_SWITCH - 256));
-	zombify_running_process();
-	remove_running_task();
+pub unsafe extern "C" fn _exit(status: i32) -> ! {
+	_cli();
+	zombify_running_process(status);
+	TASKLIST.pop();
+	let res = &TASKLIST.peek();
+	if res.is_none() {
+		todo!();
+	}
+	_rst();
+	switch_task(&res.as_ref().unwrap().regs);
 	/* Never goes there */
+	loop {}
 }
 
 #[naked]
@@ -27,32 +35,40 @@ pub unsafe extern "C" fn wrapper_fn() {
 	add esp, 4
 	call eax
 	cli
-	jmp exit_fn",
+	mov esp, STACK_TASK_SWITCH
+	sub esp, 256
+	push eax
+	call _exit",
 	options(noreturn));
 	/* Never goes there */
 }
 
-pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) {
-	crate::cli!();
+pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) -> Pid {
+	_cli();
 	let proc: Process =  Process::new();
-	let parent: &mut Process = &mut *(*RUNNING_TASK).process;
+	let res = TASKLIST.peek();
+	if res.is_none() {
+		todo!();
+	}
+	let running_task = res.unwrap();
+	let parent: &mut Process = &mut *running_task.process;
 	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
 	childs.push(Box::new(proc));
 	let len = childs.len();
 	let proc_ptr: *mut Process = childs[len - 1].as_mut();
 	(*proc_ptr).init(&mut *parent, 0);
-	let mut other_task: Task = Task::new();
-	other_task.init((*RUNNING_TASK).regs.eflags, (*RUNNING_TASK).regs.cr3, proc_ptr);
+	let mut new_task: Task = Task::new();
+	new_task.init(running_task.regs.eflags, running_task.regs.cr3, proc_ptr);
 	/* init_fn_task - Can't move to another function ??*/
 	let sum: usize = args_size.iter().sum();
-	other_task.regs.esp -= sum as u32;
+	new_task.regs.esp -= sum as u32;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;
 		while n > 0 {
 			if arg / 4 > 0 {
 				core::arch::asm!("mov [{esp} + {nb}], eax",
-					esp = in(reg) other_task.regs.esp,
+					esp = in(reg) new_task.regs.esp,
 					nb = in(reg) nb,
 					in("eax") args.arg::<u32>());
 				n -= 4;
@@ -60,7 +76,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 			}
 			else if arg / 2 > 0 {
 				core::arch::asm!("mov [{esp} + {nb}], ax",
-					esp = in(reg) other_task.regs.esp,
+					esp = in(reg) new_task.regs.esp,
 					nb = in(reg) nb,
 					in("ax") args.arg::<u16>());
 				n -= 2;
@@ -71,12 +87,13 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 		}
 	}
 	/* call function to wrapper_fn */
-	other_task.regs.esp -= 4;
+	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
-		esp = in(reg) other_task.regs.esp,
+		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
-	append_task(other_task);
-	crate::sti!();
+	TASKLIST.push(new_task);
+	_sti();
+	(*proc_ptr).pid
 }
 
 #[macro_export]
@@ -90,8 +107,10 @@ macro_rules! size_of_args {
 #[macro_export]
 macro_rules! exec_fn {
 	($func:expr, $($rest:expr),+) => {
-		let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
-		crate::size_of_args!(args_size, $($rest),+);
-		crate::proc::exec_fn($func, &args_size, $($rest),+);
+		{
+			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			crate::size_of_args!(args_size, $($rest),+);
+			crate::proc::exec_fn($func, &args_size, $($rest),+)
+		}
 	}
 }

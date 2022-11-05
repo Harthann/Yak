@@ -1,47 +1,30 @@
 use crate::interrupts::Registers;
 
-use crate::proc::Id;
-use crate::proc::signal::{Signal, SignalType};
-use crate::proc::process::{Process, get_running_process, get_signal_running_process};
+pub mod signal;
+pub mod exit;
 
-pub extern "C" fn sys_waitpid(pid: Id, wstatus: *mut u32, options: u32) -> Id {
-//	crate::kprintln!("waitpid({}, {:?}, {})", pid, wstatus, options);
-	unsafe {
-		let res = get_signal_running_process(pid);
-		if res.is_ok() {
-			let signal: Signal = res.unwrap();
-			if signal.sigtype == SignalType::SIGCHLD {
-				let res = (*get_running_process()).search_from_pid(signal.sender);
-				if res.is_ok() {
-					let process: &mut Process = res.unwrap();
-					process.remove();
-				}
-			}
-			return signal.sender;
-		}
-	}
-	return -1;
-}
-
-pub extern "C" fn sys_exit(status: u32) -> ! {
-	unsafe {
-		crate::proc::exit_fn();
-	}
-}
+use signal::sys_kill;
+use exit::{sys_waitpid, sys_wait4, sys_exit};
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
 pub fn syscall_handler(reg: &mut Registers) {
-//	crate::kprintln!("Syscall: {:#x?}", reg); // PRINT MAKE page_fault in handlers
 	if reg.eax > 448 {
 		todo!(); // problem
 	}
 	match reg.eax {
-		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx),
+		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx as _),
 		_ if reg.eax == Syscall::waitpid as u32 => {
-			reg.eax = sys_waitpid(reg.ebx as Id, reg.ecx as *mut u32, reg.edx) as u32
+			reg.eax = sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32
+		},
+		_ if reg.eax == Syscall::kill as u32 => {
+			reg.eax = sys_kill(reg.ebx as _, reg.ecx as _) as u32
+		},
+		_ if reg.eax == Syscall::wait4 as u32 => {
+			reg.eax = sys_wait4(reg.ebx as _, reg.ecx as _, reg.edx as _, reg.esi as _) as u32
 		},
 		_ => todo!()
 	}
+	/* update reg.eax for syscall return */
 }
 
 #[allow(non_camel_case_types)]

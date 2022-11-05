@@ -34,19 +34,19 @@ pub struct Tracker {
 	freed_bytes:		usize
 }
 
-static mut TRACKER: Tracker = Tracker {
-	allocation: 0,
-	allocated_bytes: 0,
-	freed: 0,
-	freed_bytes: 0
-};
+impl Tracker {
+	pub const fn new() -> Self {
+		Self {
+			allocation: 0,
+			allocated_bytes: 0,
+			freed: 0,
+			freed_bytes: 0
+		}
+	}
+}
 
-static mut KTRACKER: Tracker = Tracker {
-	allocation: 0,
-	allocated_bytes: 0,
-	freed: 0,
-	freed_bytes: 0
-};
+static mut TRACKER: Tracker = Tracker::new();
+static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
 	unsafe {
@@ -73,6 +73,7 @@ mod user;
 mod wrappers;
 mod spin;
 //mod math;
+mod utils;
 
 #[cfg(test)]
 mod test;
@@ -100,7 +101,7 @@ use crate::memory::paging::PAGE_WRITABLE;
 
 use crate::interrupts::init_idt;
 
-use proc::task::{Task, init_tasking};
+use proc::task::{init_tasking};
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
@@ -114,7 +115,7 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	crate::cli!();
+	unsafe{crate::cli!()};
 //	multiboot::read_tags();
 	/* Init paging and remove identity paging */
 	init_paging();
@@ -135,17 +136,22 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-	let mut main_task: Task = Task::new();
-	unsafe{init_tasking(&mut main_task)};
+	init_tasking();
+
+	/* init tracker after init first process */
+	unsafe {
+		KTRACKER = Tracker::new();
+		TRACKER = Tracker::new();
+	}
 
 	setup_pic8259();
-	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to cause pagefault */
+	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
 	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
     pic::set_irq0_in_ms(0.15);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-	crate::sti!();
+	unsafe{crate::sti!()};
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -157,31 +163,39 @@ pub extern "C" fn kinit() {
 	kmain();
 }
 
+use crate::proc::process::Pid;
 
 unsafe fn dumb_main(nb: usize) {
 	crate::kprintln!("dumbmain{}!!!", nb);
+	let mut pid: Pid = -1;
+	if nb > 1 {
+		pid = exec_fn!(dumb_main as u32, nb - 1);
+	}
 	let mut i = 0;
 	while i < 2048 {
-		crate::kprintln!("dumb{}", nb);
+//		crate::kprintln!("dumb{}", nb);
 		i += 1;
 	}
 	if nb > 1 {
-		exec_fn!(dumb_main as u32, nb - 1);
+		let mut status: i32 = 0;
+		let test: i32 = sys_waitpid(pid, &mut status, 0);
+		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 	}
-	core::arch::asm!("mov eax, 1",
+	core::arch::asm!("mov ebx, 8
+					mov eax, 1",
 					"int 0x80"); /* test syscall exit */
 }
 
 unsafe fn dumb_main2(nb: usize, nb2: u64) {
-//	crate::kprintln!("dumbmain{} - {:#x?}!!!", nb, nb2);
-//	if nb > 1 {
-//		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
-//	}
-//	let mut i = 0;
-//	while i < 2048 {
-//		crate::kprintln!("dumb{} - {:#x?}", nb, nb2);
-//		i += 1;
-//	}
+	crate::kprintln!("not_dumbmain{} - {:#x?}!!!", nb, nb2);
+	if nb > 1 {
+		exec_fn!(dumb_main2 as u32, nb - 1, nb2);
+	}
+	let mut i = 0;
+	while i < 2048 {
+		crate::kprintln!("not_dumb{} - {:#x?}", nb, nb2);
+		i += 1;
+	}
 	loop {}
 }
 
@@ -193,11 +207,16 @@ pub fn test_task() {
 	}
 
 	let mut i = 0;
-	while i < 10000 {
-		crate::kprintln!("main");
+	while i < 3 {
+		let mut status: i32 = 0;
+		let test: i32 = sys_waitpid(-1, &mut status, 0);
+		crate::kprintln!("exited process pid: {} - status: {}", test, status);
 		i += 1;
 	}
-	crate::kprintln!("MAIN to {}", i);
+	/* TEST NOWHANG */
+	let mut status: i32 = 0;
+	let test: i32 = sys_waitpid(-1, &mut status, 0x01);
+	crate::kprintln!("exited process pid: {} - status: {}", test, status);
 //	loop {}
 }
 
@@ -207,7 +226,7 @@ pub fn test_task2() {
 	}
 }
 
-use crate::syscalls::sys_waitpid;
+use crate::syscalls::exit::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
@@ -222,14 +241,5 @@ pub extern "C" fn kmain() -> ! {
 
 	kprint!("$> ");
 //	test_task2();
-//	let test: i32;
-	/* test syscall asm */
-//	unsafe{core::arch::asm!("mov ebx, -1
-//					mov eax, 7
-//					int 0x80
-//					mov {}, eax", out(reg) test)};
-	/* test syscall rust */
-//	sys_waitpid(-1, core::ptr::null_mut(), 0);
-//	crate::kprintln!("result: {}", test);
 	loop {}
 }
