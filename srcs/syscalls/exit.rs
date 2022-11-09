@@ -40,12 +40,12 @@ extern "C" {
 	pub fn next_task();
 }
 
-pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
+pub fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
 	0
 }
 
 /* TODO: EINTR */
-pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
+pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
 		crate::wrappers::_cli();
 		loop {
@@ -92,7 +92,7 @@ pub extern "C" fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid 
 	}
 }
 
-pub extern "C" fn sys_exit(status: i32) -> ! {
+pub fn sys_exit(status: i32) -> ! {
 	unsafe {
 		_exit(status);
 	}

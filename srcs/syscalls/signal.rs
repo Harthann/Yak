@@ -7,7 +7,7 @@ use crate::vec::Vec;
 
 use crate::__W_STOPCODE;
 
-pub extern "C" fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
+pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	unsafe {
 		/* TODO: check signal validity */
 		/* TODO: Use map/hashmap instead */
@@ -26,7 +26,7 @@ pub extern "C" fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn
 	handler
 }
 
-pub extern "C" fn sys_kill(pid: Pid, signal: i32) -> i32 {
+pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 	if pid > 0 { /* Send to a specific process */
 		unsafe {
 			let sender_pid = (*get_running_process()).pid;

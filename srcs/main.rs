@@ -166,8 +166,7 @@ use crate::proc::process::Pid;
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::{sys_signal, sys_kill};
 
-#[no_mangle]
-extern "C" fn handler(nb: i32) {
+fn handler(nb: i32) {
 	kprintln!("in handler: {}", nb);
 	unsafe {core::arch::asm!("mov ebx, 8
 								mov eax, 1

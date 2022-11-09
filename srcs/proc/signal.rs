@@ -2,7 +2,7 @@ use crate::proc::Id;
 use crate::proc::process::{Process, MASTER_PROCESS};
 use crate::errno::ErrNo;
 
-pub type SigHandlerFn = extern "C" fn (i32);
+pub type SigHandlerFn = fn (i32);
 
 pub struct SignalHandler {
 	pub signal: i32,
