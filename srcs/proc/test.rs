@@ -144,7 +144,7 @@ fn test_sigkill() {
 	}
 }
 
-fn handler(sig_no: i32) {
+fn handler(_sig_no: i32) {
 	unsafe{
 		core::arch::asm!("mov ebx, 8",
 					"mov eax, 1",
@@ -158,7 +158,7 @@ fn sub_fn() {
 }
 
 #[test_case]
-fn test_signal() {
+fn test_simple_signal() {
 	print_fn!();
 	unsafe {
 		assert_eq!(get_nb_process(), 1);
@@ -169,6 +169,43 @@ fn test_signal() {
 		sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(__WIFEXITED!(wstatus), true);
 		assert_eq!(__WEXITSTATUS!(wstatus), 8);
+		assert_eq!(get_nb_process(), 1);
+	}
+}
+
+fn handler2(sig_no: i32) {
+	assert_eq!(sig_no, 8);
+}
+
+fn sub_fn2() {
+	sys_signal(8, handler2);
+	loop {}
+}
+
+fn sub_test() -> i32 {
+	unsafe {
+		let pid = exec_fn!(sub_fn2);
+		let mut wstatus: i32 = 0;
+		assert_eq!(get_nb_process(), 3);
+		sys_kill(pid, 8);
+		sys_kill(pid, 8);
+		sys_kill(pid, 8);
+		sys_kill(pid, 9);
+		sys_waitpid(pid, &mut wstatus, 0);
+		42
+	}
+}
+
+#[test_case]
+fn test_signal_subprocess() {
+	print_fn!();
+	unsafe {
+		assert_eq!(get_nb_process(), 1);
+		let pid = exec_fn!(sub_test);
+		let mut wstatus: i32 = 0;
+		sys_waitpid(pid, &mut wstatus, 0);
+		assert_eq!(__WIFEXITED!(wstatus), true);
+		assert_eq!(__WEXITSTATUS!(wstatus), 42);
 		assert_eq!(get_nb_process(), 1);
 	}
 }
