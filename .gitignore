@@ -5,6 +5,7 @@
 kfs*
 *.bin
 iso/
+target/
 
 # Added by cargo
 
