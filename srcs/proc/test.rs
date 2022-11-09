@@ -3,7 +3,7 @@ use crate::proc::process::get_nb_process;
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::{sys_signal, sys_kill};
 
-use crate::{__WIFEXITED, __WEXITSTATUS};
+use crate::{__WIFEXITED, __WEXITSTATUS, __WIFSIGNALED};
 
 pub fn simple_exec() -> usize {
 	2
@@ -120,6 +120,26 @@ fn test_multiple_subprocess() {
 		let pid = exec_fn!(create_multiple_subprocess, 4);
 		let res = sys_waitpid(pid, core::ptr::null_mut(), 0);
 		assert_eq!(res, pid);
+		assert_eq!(get_nb_process(), 1);
+	}
+}
+
+fn to_kill() {
+	loop {}
+}
+
+#[test_case]
+fn test_sigkill() {
+	print_fn!();
+	unsafe {
+		assert_eq!(get_nb_process(), 1);
+		let pid = exec_fn!(sub_fn);
+		let mut wstatus: i32 = 0;
+		assert_eq!(get_nb_process(), 2);
+		sys_kill(pid, 9);
+		sys_waitpid(pid, &mut wstatus, 0);
+		assert_eq!(__WIFSIGNALED!(wstatus), true);
+		assert_eq!(__WEXITSTATUS!(wstatus), 9);
 		assert_eq!(get_nb_process(), 1);
 	}
 }

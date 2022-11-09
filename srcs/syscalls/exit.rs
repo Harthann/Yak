@@ -132,7 +132,7 @@ macro_rules! __WIFEXITED {
 #[macro_export]
 macro_rules! __WIFSIGNALED {
 	($status: expr) => (
-		((((($status & 0x7f) + 1) >> 1) > 0) & 0xff) // signed char
+		(((($status & 0x7f) + 1) >> 1) > 0)
 	);
 }
 
