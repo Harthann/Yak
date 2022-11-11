@@ -24,7 +24,8 @@ RUST_SRCS		=	main.rs \
 					$(SYSCALL_SRCS)
 
 SYSCALL_SRCS	=	exit.rs \
-					signal.rs
+					signal.rs \
+					timer.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 INCLUDES	=		boot.h \

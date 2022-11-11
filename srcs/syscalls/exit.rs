@@ -1,6 +1,6 @@
 use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
-use crate::proc::process::{Process, Pid, get_running_process, get_signal_running_process};
+use crate::proc::process::{Process, Pid};
 use crate::proc::task::{TASKLIST, Task, TaskStatus};
 
 use crate::errno::ErrNo;
@@ -49,14 +49,14 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
 		crate::wrappers::_cli();
 		loop {
-			let res = get_signal_running_process(pid, SignalType::SIGCHLD);
+			let res = Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
 				let other_res = TASKLIST.front_mut();
 				if other_res.is_none() {
 					todo!();
 				}
 				let signal: Signal = res.unwrap();
-				let process_ptr = get_running_process();
+				let process_ptr = Process::get_running_process();
 				let res = (*process_ptr).search_from_pid(signal.sender);
 				if res.is_ok() {
 					let process: &mut Process = res.unwrap();

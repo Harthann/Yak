@@ -4,6 +4,7 @@ use crate::{kprint, kprintln, hexdump, screenclear};
 use crate::io;
 use crate::string::String;
 use crate::memory::allocator;
+use crate::proc::process::Process;
 
 const NB_CMDS: usize = 10;
 
@@ -42,7 +43,7 @@ fn shutdown(_: &Command) {
 }
 
 fn ps(_: &Command) {
-	unsafe{crate::proc::process::print_all_process()};
+	unsafe{Process::print_all_process()};
 }
 
 fn hextou(string: &str) -> Option<usize> {

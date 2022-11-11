@@ -100,7 +100,7 @@ use crate::memory::paging::PAGE_WRITABLE;
 
 use crate::interrupts::init_idt;
 
-use proc::task::{init_tasking};
+use proc::task::{Task};
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
@@ -135,7 +135,7 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-	init_tasking();
+	Task::init_tasking();
 
 	/* init tracker after init first process */
 	unsafe {

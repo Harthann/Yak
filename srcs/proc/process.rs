@@ -53,10 +53,11 @@ impl Process {
 		}
 	}
 
-	pub fn get_nb_process(&self) -> usize {
-		let mut ret: usize = 1;
+	pub fn get_nb_subprocess(&self) -> usize {
+		let mut ret: usize = 0;
 		for process in self.childs.iter() {
-			ret += process.get_nb_process()
+			ret += 1;
+			ret += process.get_nb_subprocess()
 		}
 		ret
 	}
@@ -152,46 +153,42 @@ impl Process {
 		}
 		Err(ErrNo::EAGAIN)
 	}
+
+	pub unsafe fn get_running_process() -> *mut Self {
+		let res = TASKLIST.front_mut();
+		if res.is_none() {
+			todo!();
+		}
+		let task = res.unwrap();
+		task.process
+	}
+
+	pub unsafe fn get_signal_running_process(pid: Id, signal: SignalType) -> Result<Signal, ErrNo> {
+		let process = &mut *(Process::get_running_process());
+		if pid == -1  {
+			process.get_signal(signal)
+		} else if pid > 0 {
+			process.get_signal_from_pid(pid, signal)
+		} else if pid == 0 {
+			todo!();
+		}
+		else {
+			todo!();
+		}
+	}
+
+	pub unsafe fn get_nb_process() -> usize {
+		MASTER_PROCESS.get_nb_subprocess() + 1
+	}
+
+	pub unsafe fn print_all_process() {
+		crate::kprintln!("       PID        OWNER   STATUS");
+		MASTER_PROCESS.print_tree();
+	}
 }
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.state)
 	}
-}
-
-pub unsafe fn get_running_process() -> *mut Process {
-	let res = TASKLIST.front_mut();
-	if res.is_none() {
-		todo!();
-	}
-	let task = res.unwrap();
-	task.process
-}
-
-pub unsafe fn zombify_running_process(status: i32) {
-	(*get_running_process()).zombify(status);
-}
-
-pub unsafe fn get_signal_running_process(pid: Id, signal: SignalType) -> Result<Signal, ErrNo> {
-	let process = &mut *get_running_process();
-	if pid == -1  {
-		process.get_signal(signal)
-	} else if pid > 0 {
-		process.get_signal_from_pid(pid, signal)
-	} else if pid == 0 {
-		todo!();
-	}
-	else {
-		todo!();
-	}
-}
-
-pub unsafe fn print_all_process() {
-	crate::kprintln!("       PID        OWNER   STATUS");
-	MASTER_PROCESS.print_tree();
-}
-
-pub unsafe fn get_nb_process() -> usize {
-	MASTER_PROCESS.get_nb_process()
 }

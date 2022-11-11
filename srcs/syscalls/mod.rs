@@ -2,9 +2,11 @@ use crate::interrupts::Registers;
 
 pub mod signal;
 pub mod exit;
+pub mod timer;
 
 use signal::{sys_kill, sys_signal};
 use exit::{sys_exit, sys_waitpid, sys_wait4};
+use timer::{sys_getpid, sys_getuid, sys_getppid};
 
 // Parameters order: ebx, ecx, edx, esi, edi, ebp
 pub fn syscall_handler(reg: &mut Registers) {
@@ -16,11 +18,20 @@ pub fn syscall_handler(reg: &mut Registers) {
 		_ if reg.eax == Syscall::waitpid as u32 => {
 			reg.eax = sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32
 		},
+		_ if reg.eax == Syscall::getpid as u32 => {
+			reg.eax = sys_getpid() as u32
+		},
+		_ if reg.eax == Syscall::getuid as u32 => {
+			reg.eax = sys_getuid() as u32
+		},
 		_ if reg.eax == Syscall::kill as u32 => {
 			reg.eax = sys_kill(reg.ebx as _, reg.ecx as _) as u32
 		},
 		_ if reg.eax == Syscall::signal as u32 => {
 			reg.eax = sys_signal(reg.ebx as _, unsafe{core::mem::transmute(reg.ecx as *const ())}) as u32
+		},
+		_ if reg.eax == Syscall::getppid as u32 => {
+			reg.eax = sys_getppid() as u32
 		},
 		_ if reg.eax == Syscall::wait4 as u32 => {
 			reg.eax = sys_wait4(reg.ebx as _, reg.ecx as _, reg.edx as _, reg.esi as _) as u32

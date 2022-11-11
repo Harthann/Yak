@@ -1,13 +1,25 @@
 use core::ptr;
+
+use crate::{KSTACK, KHEAP};
+use crate::wrappers::{_cli, _rst};
 use crate::vec::Vec;
 use crate::utils::queue::Queue;
 use crate::interrupts::Registers;
-use crate::proc::wrapper_fn;
 use crate::memory::VirtAddr;
 use crate::memory::paging::{PAGE_WRITABLE, alloc_page};
-use crate::proc::signal::{SignalHandler};
+use crate::proc::wrapper_fn;
+use crate::proc::signal::{SignalHandler, SignalType};
+use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
+
+
+#[no_mangle]
+pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
 pub static mut TASKLIST: Queue<Task> = Queue::new();
+
+extern "C" {
+	pub fn switch_task(regs: *const Registers) -> ! ;
+}
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TaskStatus {
@@ -32,77 +44,64 @@ impl Task {
 		}
 	}
 
-	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32, process: *mut Process) {
+	pub unsafe fn init(&mut self, flags: u32, page_dir: u32, process: *mut Process) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
 		self.process = process;
 		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
 	}
-}
 
-extern "C" {
-	pub fn switch_task(regs: *const Registers) -> ! ;
-}
-
-#[no_mangle]
-pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
-
-use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
-use crate::{KSTACK, KHEAP};
-
-pub fn init_tasking() {
-	let mut task = Task::new();
-	unsafe {
-		core::arch::asm!("
-		mov {cr3}, cr3
-		pushf
-		mov {eflags}, [esp]
-		popf",
-		cr3 = out(reg) task.regs.cr3,
-		eflags = out(reg) task.regs.eflags);
-		let res = alloc_page(PAGE_WRITABLE);
-		if !res.is_ok() {
-			todo!();
+	pub fn init_tasking() {
+		let mut task = Task::new();
+		unsafe {
+			core::arch::asm!("
+			mov {cr3}, cr3
+			pushf
+			mov {eflags}, [esp]
+			popf",
+			cr3 = out(reg) task.regs.cr3,
+			eflags = out(reg) task.regs.eflags);
+			let res = alloc_page(PAGE_WRITABLE);
+			if !res.is_ok() {
+				todo!();
+			}
+			STACK_TASK_SWITCH = res.unwrap() + 0x1000;
+			MASTER_PROCESS.state = Status::Run;
+			MASTER_PROCESS.childs = Vec::with_capacity(8);
+			MASTER_PROCESS.signals = Vec::with_capacity(8);
+			MASTER_PROCESS.stack = KSTACK;
+			MASTER_PROCESS.heap = KHEAP;
+			MASTER_PROCESS.owner = 0;
+			NEXT_PID += 1;
+			task.process = &mut MASTER_PROCESS;
+			TASKLIST.push(task);
 		}
-		STACK_TASK_SWITCH = res.unwrap() + 0x1000;
-		MASTER_PROCESS.state = Status::Run;
-		MASTER_PROCESS.childs = Vec::with_capacity(8);
-		MASTER_PROCESS.signals = Vec::with_capacity(8);
-		MASTER_PROCESS.stack = KSTACK;
-		MASTER_PROCESS.heap = KHEAP;
-		MASTER_PROCESS.owner = 0;
-		NEXT_PID += 1;
-		task.process = &mut MASTER_PROCESS;
-		TASKLIST.push(task);
+	}
+
+	pub unsafe fn remove_task_from_process(process: &mut Process) {
+		let process_ptr: *mut Process= &mut *process;
+		let len = TASKLIST.len();
+		let mut i = 0;
+		while i < len {
+			let res = TASKLIST.peek();
+			if res.is_none() {
+				todo!();
+			}
+			let task: Task = res.unwrap();
+			if task.process != process_ptr {
+				TASKLIST.push(TASKLIST.pop());
+			} else {
+				TASKLIST.pop();
+			}
+			i += 1;
+		}
 	}
 }
-
-pub unsafe fn remove_task_from_process(process: &mut Process) {
-	let process_ptr: *mut Process= &mut *process;
-	let len = TASKLIST.len();
-	let mut i = 0;
-	while i < len {
-		let res = TASKLIST.peek();
-		if res.is_none() {
-			todo!();
-		}
-		let task: Task = res.unwrap();
-		if task.process != process_ptr {
-			TASKLIST.push(TASKLIST.pop());
-		} else {
-			TASKLIST.pop();
-		}
-		i += 1;
-	}
-}
-
-use crate::wrappers::{_cli, _rst};
-use crate::proc::signal::SignalType;
 
 #[naked]
 #[no_mangle]
-pub unsafe extern "C" fn wrapper_handler() {
+unsafe extern "C" fn wrapper_handler() {
 	core::arch::asm!("
 	mov eax, [esp]
 	add esp, 4
@@ -114,7 +113,7 @@ pub unsafe extern "C" fn wrapper_handler() {
 }
 
 #[no_mangle]
-unsafe extern "C" fn _end_handler() {
+unsafe fn _end_handler() {
 	_cli();
 	let res = TASKLIST.front_mut();
 	if res.is_none() {
