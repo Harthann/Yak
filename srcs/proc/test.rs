@@ -2,6 +2,7 @@ use crate::{print_fn, exec_fn};
 use crate::proc::process::Process;
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::{sys_signal, sys_kill};
+use crate::syscalls::timer::{sys_getpid, sys_getppid};
 
 use crate::{__WIFEXITED, __WEXITSTATUS, __WIFSIGNALED};
 
@@ -182,18 +183,16 @@ fn sub_fn2() {
 	loop {}
 }
 
-fn sub_test() -> i32 {
-	unsafe {
-		let pid = exec_fn!(sub_fn2);
-		let mut wstatus: i32 = 0;
-		assert_eq!(Process::get_nb_process(), 3);
-		sys_kill(pid, 8);
-		sys_kill(pid, 8);
-		sys_kill(pid, 8);
-		sys_kill(pid, 9);
-		sys_waitpid(pid, &mut wstatus, 0);
-		42
-	}
+unsafe fn sub_test() -> i32 {
+	let pid = exec_fn!(sub_fn2);
+	let mut wstatus: i32 = 0;
+	assert_eq!(Process::get_nb_process(), 3);
+	sys_kill(pid, 8);
+	sys_kill(pid, 8);
+	sys_kill(pid, 8);
+	sys_kill(pid, 9);
+	sys_waitpid(pid, &mut wstatus, 0);
+	42
 }
 
 #[test_case]
@@ -207,5 +206,31 @@ fn test_signal_subprocess() {
 		assert_eq!(__WIFEXITED!(wstatus), true);
 		assert_eq!(__WEXITSTATUS!(wstatus), 42);
 		assert_eq!(Process::get_nb_process(), 1);
+	}
+}
+
+fn subsub_test_pid(ppid: i32) -> i32 {
+	let pid: i32 = sys_getpid();
+	assert_eq!(sys_getppid(), ppid);
+	assert_eq!(pid, ppid + 1);
+	pid
+}
+
+unsafe fn sub_test_pid() {
+	let child_pid: i32 = exec_fn!(subsub_test_pid, sys_getpid());
+	let mut wstatus: i32 = 0;
+	sys_waitpid(child_pid, &mut wstatus, 0);
+	assert_eq!(__WIFEXITED!(wstatus), true);
+	assert_eq!(__WEXITSTATUS!(wstatus), child_pid);
+}
+
+#[test_case]
+fn test_pid () {
+	print_fn!();
+	unsafe {
+		assert_eq!(sys_getpid(), 0);
+		assert_eq!(sys_getppid(), -1);
+		exec_fn!(sub_test_pid);
+		sys_waitpid(-1, core::ptr::null_mut(), 0);
 	}
 }
