@@ -137,7 +137,12 @@ fn test_sigkill() {
 		let pid = exec_fn!(sub_fn);
 		let mut wstatus: i32 = 0;
 		assert_eq!(Process::get_nb_process(), 2);
-		sys_kill(pid, 9);
+		let res: i32 = sys_kill(666, 0); /* Check for pid presence */
+		assert_ne!(res, 0); // TODO: Check for errcode
+		let res: i32 = sys_kill(pid, 0); /* Check for pid presence */
+		assert_eq!(res, 0);
+		let res: i32 = sys_kill(pid, 9); /* SIGKILL */
+		assert_eq!(res, 0);
 		sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(__WIFSIGNALED!(wstatus), true);
 		assert_eq!(__WEXITSTATUS!(wstatus), 9);
@@ -166,7 +171,8 @@ fn test_simple_signal() {
 		let pid = exec_fn!(sub_fn);
 		let mut wstatus: i32 = 0;
 		assert_eq!(Process::get_nb_process(), 2);
-		sys_kill(pid, 8);
+		let res: i32 = sys_kill(pid, 8);
+		assert_eq!(res, 0);
 		sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(__WIFEXITED!(wstatus), true);
 		assert_eq!(__WEXITSTATUS!(wstatus), 8);
@@ -190,7 +196,8 @@ unsafe fn sub_test() -> i32 {
 	sys_kill(pid, 8);
 	sys_kill(pid, 8);
 	sys_kill(pid, 8);
-	sys_kill(pid, 9);
+	let res: i32 = sys_kill(pid, 9);
+	assert_eq!(res, 0);
 	sys_waitpid(pid, &mut wstatus, 0);
 	42
 }
