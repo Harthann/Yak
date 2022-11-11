@@ -12,11 +12,16 @@ QEMU			=	qemu-system-i386
 HOST			=	$(shell uname)
 
 TARGET_ARCH 	=	x86
+TOOLCHAIN_ARCH	=	i386
 
 GRUB_CFG		=	grub.cfg
 
 NASM			=	nasm
 ASMFLAGS		=	-felf32 -MP -MD ${basename $@}.d
+
+AR				=	$(TOOLCHAIN_ARCH)-elf-ar
+ARFLAGS			=	rc
+
 LIBBOOT			=	libboot.a
 
 DOCKER_DIR		=	docker
@@ -67,13 +72,13 @@ else
 endif
 
 $(LIBBOOT):		$(BOOTOBJS)
-ifeq ($(shell which i386-elf-ar),)
+ifeq ($(shell which $(AR)),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 	docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)'
+	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) '$(AR) $(ARFLAGS) $(LIBBOOT) $(BOOTOBJS)'
 else
-	i386-elf-ar rc $(LIBBOOT) $(BOOTOBJS)
+	$(AR) $(ARFLAGS) $(LIBBOOT) $(BOOTOBJS)
 endif
 
 # Link asm file with rust according to the linker script in arch directory
