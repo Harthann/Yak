@@ -43,6 +43,9 @@ NAME			?=	kfs_$(VERSION)
 
 all:			$(NAME)
 
+doc:
+				cargo doc $(ARGS_CARGO) --open
+
 boot:			$(NAME)
 				$(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display curses 2> qemu.log
 
