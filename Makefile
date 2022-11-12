@@ -25,8 +25,7 @@ ARFLAGS			=	rc
 LIBBOOT			=	libboot.a
 
 DOCKER_DIR		=	docker
-DOCKER_GRUB		=	grub-linker
-DOCKER_RUST		=	rust-compiler
+DOCKER			=	kfs/toolchain
 
 DIR_ARCH		=	arch/$(TARGET_ARCH)
 DIR_CONFIG		=	config
@@ -46,38 +45,46 @@ BUILD			?=	debug
 RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
 
-ifneq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which $(AR)), $(shell which cargo)),)
-ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
-BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST) >&2)
+################################################################################
+# Prepare Docker toolchain if there is no local toolchain
+################################################################################
+ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which $(AR)), $(shell which cargo)),)
+ifeq ($(shell docker images -q ${DOCKER} 2> /dev/null),)
+BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -t $(DOCKER) >&2)
 endif
-BUILD_PREFIX	= docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) '
+BUILD_PREFIX	= docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER) '
 BUILD_SUFFIX	= '
 endif
+
+################################################################################
+# Prepare Docker env if there is no qemu
+################################################################################
+ifeq ($(and $(shell which $(QEMU))),)
+ifeq ($(shell docker images -q ${DOCKER} 2> /dev/null),)
+BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -t $(DOCKER) >&2)
+endif
+RUN_PREFIX	= docker run --rm -it -v $(MAKEFILE_PATH):/root:Z $(DOCKER) '
+RUN_SUFFIX	= '
+endif
+################################################################################
 
 all:			$(NAME)
 
 boot:			$(NAME)
-				$(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display curses 2> qemu.log
+				$(RUN_PREFIX) $(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display curses 2> qemu.log $(RUN_SUFFIX)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
-				$(QEMU) -s -S -drive format=raw,file=$(NAME) -serial file:$(MAKEFILE_PATH)kernel.log &
-				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c"
-				pkill qemu
+				$(RUN_PREFIX) $(QEMU) -s -S -drive format=raw,file=$(NAME) -serial file:kernel.log &\
+				gdb $(DIR_ISO)/boot/$(NAME) -ex "target remote localhost:1234" -ex "break kinit" -ex "c";\
+				pkill qemu $(RUN_SUFFIX)
 
 test:			$(LIBBOOT) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				cargo test $(ARGS_CARGO) -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
-ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat) ),) 
-ifeq ($(shell docker images -q ${DOCKER_GRUB} 2> /dev/null),)
-				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_GRUB).dockerfile -t $(DOCKER_GRUB)
-endif
-				docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_GRUB) -o $(NAME) $(DIR_ISO)
-else
-				grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO)
-endif
+				$(BUILD_PREFIX) grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO) $(BUILD_SUFFIX)
 
 $(LIBBOOT):		$(BOOTOBJS)
 				$(BUILD_PREFIX) $(AR) $(ARFLAGS) $(LIBBOOT) $(BOOTOBJS) $(BUILD_SUFFIX)
@@ -107,7 +114,7 @@ endif
 
 $(BOOTOBJS):	| $(DIR_OBJS)
 $(DIR_OBJS)/%.o: %.s
-	$(NASM) $(ASMFLAGS) -I $(DIR_HEADERS) -o $@ $<
+				$(BUILD_PREFIX) $(NASM) $(ASMFLAGS) -I $(DIR_HEADERS) -o $@ $< $(BUILD_SUFFIX)
 -include $(BOOTOBJS:.o=.d)
 
 $(DIR_OBJS):
