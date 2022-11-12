@@ -53,7 +53,7 @@ debug:			$(NAME)
 				pkill qemu
 
 test:			$(LIBBOOT) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
-				cargo test -- $(NAME)
+				cargo test $(ARGS_CARGO) -- $(NAME)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
@@ -100,9 +100,9 @@ ifeq ($(shell which cargo),)
 ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
 				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
 endif
-				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo check'
+				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo check $(ARGS_CARGO)'
 else
-				cargo check
+				cargo check $(ARGS_CARGO)
 endif
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
