@@ -1,3 +1,5 @@
+//! Setup interrupts and exception handler
+
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;

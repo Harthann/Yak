@@ -1,3 +1,5 @@
+//! Syscall handler and all implemented syscalls
+
 use crate::interrupts::Registers;
 
 pub mod signal;
