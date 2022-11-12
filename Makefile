@@ -46,6 +46,14 @@ BUILD			?=	debug
 RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
 
+ifneq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which $(AR)), $(shell which cargo)),)
+ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
+BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST) >&2)
+endif
+BUILD_PREFIX	= docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) '
+BUILD_SUFFIX	= '
+endif
+
 all:			$(NAME)
 
 boot:			$(NAME)
@@ -72,43 +80,22 @@ else
 endif
 
 $(LIBBOOT):		$(BOOTOBJS)
-ifeq ($(shell which $(AR)),)
-ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
-	docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
-endif
-	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) '$(AR) $(ARFLAGS) $(LIBBOOT) $(BOOTOBJS)'
-else
-	$(AR) $(ARFLAGS) $(LIBBOOT) $(BOOTOBJS)
-endif
+				$(BUILD_PREFIX) $(AR) $(ARFLAGS) $(LIBBOOT) $(BOOTOBJS) $(BUILD_SUFFIX)
 
 # Link asm file with rust according to the linker script in arch directory
 $(DIR_ISO)/boot/$(NAME):	$(LIBBOOT) $(RUST_KERNEL) $(DIR_ARCH)/$(LINKERFILE) | $(DIR_GRUB)
-	cp -f $(RUST_KERNEL) iso/boot/$(NAME)
+							cp -f $(RUST_KERNEL) iso/boot/$(NAME)
 
 $(DIR_GRUB):
-	mkdir -p $(DIR_GRUB)
+				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using cargo
 $(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
-ifeq ($(shell which cargo),)
-ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
-	docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
-endif
-	docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo build $(ARGS_CARGO)'
-else
-	cargo build $(ARGS_CARGO)
-endif
+				$(BUILD_PREFIX) cargo build $(ARGS_CARGO) $(BUILD_SUFFIX)
 
 # Check if the rust can compile without actually compiling it
-check: $(KERNELSRCS)
-ifeq ($(shell which cargo),)
-ifeq ($(shell docker images -q ${DOCKER_RUST} 2> /dev/null),)
-				docker build $(DOCKER_DIR) -f $(DOCKER_DIR)/$(DOCKER_RUST).dockerfile -t $(DOCKER_RUST)
-endif
-				docker run -t --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_RUST) 'cargo check $(ARGS_CARGO)'
-else
-				cargo check $(ARGS_CARGO)
-endif
+check:			$(KERNELSRCS)
+				$(BUILD_PREFIX) cargo check $(ARGS_CARGO) $(BUILD_SUFFIX)
 
 $(DIR_GRUB)/$(GRUB_CFG): $(DIR_CONFIG)/$(GRUB_CFG)
 				cp -f $(DIR_CONFIG)/$(GRUB_CFG) $(DIR_GRUB)
