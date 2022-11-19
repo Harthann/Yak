@@ -1,0 +1,28 @@
+name: Deploy documentation to gh-pages
+
+on:
+  push:
+    branches: [ dev ]
+
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Install cross-compiling toolchain
+        run: ./config/setup_env.sh && echo "$HOME/.local/bin" >> $GITHUB_PATH
+      - name: Generate documentation
+        run: cargo doc --no-deps
+      - name: Create index.html
+        run: echo "<meta http-equiv=\"refresh\" content=\"0; url=kernel\">" > target/i386/doc/index.html
+      - name: Deploy documentation
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: target/i386/doc
