@@ -33,7 +33,7 @@ jobs:
       - name: Install cross-compiling toolchain
         run: ./config/setup_env.sh && echo "$HOME/.local/bin" >> $GITHUB_PATH
       - name: Generate doc
-        run: ./.github/workflows/setup-doc.sh
+        run: ./.github/workflows/generate-doc-pages.sh
       - name: Setup Pages
         uses: actions/configure-pages@v2
       - name: Upload artifact
