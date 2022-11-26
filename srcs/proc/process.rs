@@ -1,8 +1,7 @@
 use core::fmt;
 
-use crate::KHEAP;
 use crate::vec::Vec;
-use crate::memory::{MemoryZone, Stack};
+use crate::memory::{MemoryZone, Stack, Heap};
 use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
 
@@ -88,8 +87,8 @@ impl Process {
 		self.state = Status::Run;
 		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
-		self.heap = KHEAP;
-//		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
+		self.heap = <MemoryZone as Heap>::init_no_allocator(0x1000, PAGE_WRITABLE, false);
+//		self.heap = KHEAP;
 		self.owner = owner;
 		NEXT_PID += 1;
 	}
@@ -113,6 +112,7 @@ impl Process {
 		self.state = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
+		free_pages(self.heap.offset, self.heap.size / 0x1000);
 	}
 
 	pub unsafe fn remove(&mut self) {
