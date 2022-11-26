@@ -1,17 +1,17 @@
 [package]
-name = "alloc"
+name = "adder"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name="alloc"
+name="adder"
 path="src/lib.rs"
 
-[[example]]
-name="test"
+[features]
+default = ["std"]
+std = []
+cross-compiled = []
 
-[[example]]
-name="foo"
 #
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

@@ -18,3 +18,4 @@ opt-level = "z"
 
 #	Dependencies
 [dependencies]
+adder = {path = "crates/adder", features = ["cross-compiled"]}

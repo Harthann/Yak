@@ -1,7 +1,0 @@
-[build]
-target="x86_64-unknown-linux-gnu"
-
-[profile.release]
-target="../../arch/x86/i386.json"
-
-

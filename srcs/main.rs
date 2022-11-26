@@ -72,6 +72,8 @@ mod user;
 mod wrappers;
 mod utils;
 
+extern crate adder;
+
 #[cfg(test)]
 mod test;
 
@@ -229,6 +231,7 @@ pub extern "C" fn kmain() -> ! {
 	test_task();
 
 	kprintln!("Hello World of {}!", 42);
+	kprintln!("Hello World of {}!", adder::add(2,2));
 
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from("Press Ctrl-2 to navigate to the second workspace");
