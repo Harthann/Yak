@@ -8,8 +8,7 @@ name="adder"
 path="src/lib.rs"
 
 [features]
-default = ["std"]
-std = []
+default = []
 cross-compiled = []
 
 #
