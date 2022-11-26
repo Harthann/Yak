@@ -1,4 +1,4 @@
-//  This module aim to parse mutliboot specification
+//!  This module aim to parse mutliboot specification
 
 use crate::{kprintln};
 use crate::memory::{PhysAddr};

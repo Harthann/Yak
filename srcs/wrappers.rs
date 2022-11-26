@@ -1,3 +1,5 @@
+//! Wrappers for cli, sti and hlt asm instructions
+
 #[no_mangle]
 pub static mut cli_count: usize = 0;
 

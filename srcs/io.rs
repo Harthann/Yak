@@ -1,3 +1,5 @@
+//! Wrappers for in and out asm instructions
+
 use core::arch::asm;
 
 #[allow(dead_code)]
