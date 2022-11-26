@@ -1,0 +1,365 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/pic/mod.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" type="text/css" href="../../../normalize.css"><link rel="stylesheet" type="text/css" href="../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" type="text/css" href="../../../ayu.css" disabled><link rel="stylesheet" type="text/css" href="../../../dark.css" disabled><link rel="stylesheet" type="text/css" href="../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../storage.js"></script><script defer src="../../../source-script.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../main.js"></script><noscript><link rel="stylesheet" href="../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../kernel/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
+        </a><h2 class="location"></h2>
+    </nav>
+    <nav class="sidebar"><a class="sidebar-logo" href="../../../kernel/index.html"><div class="logo-container"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></div>
+        </a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../kernel/index.html"><img class="rust-logo" src="../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1">
+                                <a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../wheel.svg"></a></div>
+                        </div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="line-numbers"><span id="1">1</span>
+<span id="2">2</span>
+<span id="3">3</span>
+<span id="4">4</span>
+<span id="5">5</span>
+<span id="6">6</span>
+<span id="7">7</span>
+<span id="8">8</span>
+<span id="9">9</span>
+<span id="10">10</span>
+<span id="11">11</span>
+<span id="12">12</span>
+<span id="13">13</span>
+<span id="14">14</span>
+<span id="15">15</span>
+<span id="16">16</span>
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
+<span id="33">33</span>
+<span id="34">34</span>
+<span id="35">35</span>
+<span id="36">36</span>
+<span id="37">37</span>
+<span id="38">38</span>
+<span id="39">39</span>
+<span id="40">40</span>
+<span id="41">41</span>
+<span id="42">42</span>
+<span id="43">43</span>
+<span id="44">44</span>
+<span id="45">45</span>
+<span id="46">46</span>
+<span id="47">47</span>
+<span id="48">48</span>
+<span id="49">49</span>
+<span id="50">50</span>
+<span id="51">51</span>
+<span id="52">52</span>
+<span id="53">53</span>
+<span id="54">54</span>
+<span id="55">55</span>
+<span id="56">56</span>
+<span id="57">57</span>
+<span id="58">58</span>
+<span id="59">59</span>
+<span id="60">60</span>
+<span id="61">61</span>
+<span id="62">62</span>
+<span id="63">63</span>
+<span id="64">64</span>
+<span id="65">65</span>
+<span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
+<span id="83">83</span>
+<span id="84">84</span>
+<span id="85">85</span>
+<span id="86">86</span>
+<span id="87">87</span>
+<span id="88">88</span>
+<span id="89">89</span>
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+</pre><pre class="rust"><code><span class="doccomment">//! Setup Programmable Interrupt Controller</span>
+
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::io</span>::{<span class="ident">inb</span>, <span class="ident">outb</span>, <span class="ident">io_wait</span>};
+
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">handlers</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pit</span>;
+
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pit::set_pit</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">handlers</span>::{<span class="ident">handler</span>, <span class="ident">JIFFIES</span>};
+<span class="comment">/* References: [https://wiki.osdev.org/8259_PIC] */</span>
+
+<span class="comment">/*
+**	PIC2 Interrupt		BIT	 ____________		PIC1 Interrupt		BIT	 ____________
+** Real Time Clock --&gt;	[0]	|			 |   Timer -------------&gt;	[0]	|			 |
+** ACPI -------------&gt;	[1]	|            |   Keyboard-----------&gt;	[1]	|            |      _____
+** Available --------&gt;	[2]	| Secondary  |----------------------&gt;	[2]	| Primary    |     |     |
+** Available --------&gt;	[3]	| Interrupt  |   Serial Port 2 -----&gt;	[3]	| Interrupt  |---&gt; | CPU |
+** Mouse ------------&gt;	[4]	| Controller |   Serial Port 1 -----&gt;	[4]	| Controller |     |_____|
+** Co-Processor -----&gt;	[5]	|            |   Parallel Port 2/3 -&gt;	[5]	|            |
+** Primary ATA ------&gt;	[6]	|            |   Floppy disk -------&gt;	[6]	|            |
+** Secondary ATA ----&gt;	[7]	|____________|   Parallel Port 1----&gt;	[7]	|____________|
+*/</span>
+
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Pic1</span> {
+	<span class="ident">Timer</span>			<span class="op">=</span> <span class="number">0x01</span>,	<span class="comment">// 0b0000 0001</span>
+	<span class="ident">Keyboard</span>		<span class="op">=</span> <span class="number">0x02</span>,	<span class="comment">// 0b0000 0010</span>
+	<span class="ident">Slave</span>			<span class="op">=</span> <span class="number">0x04</span>,	<span class="comment">// 0b0000 0100</span>
+	<span class="ident">Serial1</span>			<span class="op">=</span> <span class="number">0x08</span>,	<span class="comment">// 0b0000 1000</span>
+	<span class="ident">Serial2</span>			<span class="op">=</span> <span class="number">0x10</span>,	<span class="comment">// 0b0001 0000</span>
+	<span class="ident">ParallelPort23</span>	<span class="op">=</span> <span class="number">0x20</span>,	<span class="comment">// 0b0010 0000</span>
+	<span class="ident">FloppyDisk</span>		<span class="op">=</span> <span class="number">0x40</span>,	<span class="comment">// 0b0100 0000</span>
+	<span class="ident">ParallelPort1</span>	<span class="op">=</span> <span class="number">0x80</span>,	<span class="comment">// 0b1000 0000</span>
+}
+
+<span class="attribute">#[<span class="ident">repr</span>(<span class="ident">u8</span>)]</span>
+<span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Pic2</span> {
+	<span class="ident">RealTimeClock</span>	<span class="op">=</span> <span class="number">0x01</span>,	<span class="comment">// 0b0000 0001</span>
+	<span class="ident">ACPI</span>			<span class="op">=</span> <span class="number">0x02</span>,	<span class="comment">// 0b0000 0010</span>
+	<span class="ident">Available0</span>		<span class="op">=</span> <span class="number">0x04</span>,	<span class="comment">// 0b0000 0100</span>
+	<span class="ident">Available1</span>		<span class="op">=</span> <span class="number">0x08</span>,	<span class="comment">// 0b0000 1000</span>
+	<span class="ident">Mouse</span>			<span class="op">=</span> <span class="number">0x10</span>,	<span class="comment">// 0b0001 0000</span>
+	<span class="ident">CoProcessor</span>		<span class="op">=</span> <span class="number">0x20</span>,	<span class="comment">// 0b0010 0000</span>
+	<span class="ident">PrimaryATA</span>		<span class="op">=</span> <span class="number">0x40</span>,	<span class="comment">// 0b0100 0000</span>
+	<span class="ident">SecondaryATA</span>	<span class="op">=</span> <span class="number">0x80</span>,	<span class="comment">// 0b1000 0000</span>
+}
+
+<span class="kw">const</span> <span class="ident">PIC1</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">0x20</span>; <span class="comment">/* io base addr for master PIC */</span>
+<span class="kw">const</span> <span class="ident">PIC2</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">0xa0</span>; <span class="comment">/* io base addr for slave PIC */</span>
+<span class="kw">const</span> <span class="ident">PIC1_CMD</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">PIC1</span>;
+<span class="kw">const</span> <span class="ident">PIC1_DATA</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">PIC1</span> <span class="op">+</span> <span class="number">1</span>;
+<span class="kw">const</span> <span class="ident">PIC2_CMD</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">PIC2</span>;
+<span class="kw">const</span> <span class="ident">PIC2_DATA</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="ident">PIC2</span> <span class="op">+</span> <span class="number">1</span>;
+
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_OFFSET</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="number">0x20</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_TIMER</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_KEYBOARD</span>:	<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">1</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_SLAVE</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">2</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_SERIAL1</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">3</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_SERIAL2</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">4</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_PARA23</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">5</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_FLOPPY</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">6</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC1_IRQ_PARA1</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC1_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">7</span>;
+
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_OFFSET</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="number">0x28</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_CLOCK</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_ACPI</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">1</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_AVAILABLE0</span>:	<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">2</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_AVAILABLE1</span>:	<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">3</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_MOUSE</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">4</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_COPROC</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">5</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_PRIMATA</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">6</span>;
+<span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PIC2_IRQ_SECATA</span>:		<span class="ident">u8</span> <span class="op">=</span> <span class="ident">PIC2_IRQ_OFFSET</span> <span class="op">+</span> <span class="number">7</span>;
+
+
+<span class="kw">const</span> <span class="ident">PIC_EOI</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x20</span>; <span class="comment">/* End of Interrupts command code */</span>
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">end_of_interrupts</span>(<span class="ident">irq</span>: <span class="ident">usize</span>) {
+	<span class="kw">if</span> <span class="ident">irq</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">8</span> { <span class="comment">/* Slave interrupt request */</span>
+		<span class="ident">outb</span>(<span class="ident">PIC2_CMD</span>, <span class="ident">PIC_EOI</span>);
+	}
+	<span class="ident">outb</span>(<span class="ident">PIC1_CMD</span>, <span class="ident">PIC_EOI</span>);
+}
+
+<span class="kw">const</span> <span class="ident">ICW1_ICW4</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x01</span>;			<span class="comment">/* ICW4 (not needed) */</span>
+<span class="kw">const</span> <span class="ident">ICW1_SINGLE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x02</span>;		<span class="comment">/* Single (cascade) mode */</span>
+<span class="kw">const</span> <span class="ident">ICW1_INTERVAL4</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x04</span>;	<span class="comment">/* Call address interval 4 (8) */</span>
+<span class="kw">const</span> <span class="ident">ICW1_LEVEL</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x08</span>;		<span class="comment">/* Level triggered (edge) mode */</span>
+<span class="kw">const</span> <span class="ident">ICW1_INIT</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x10</span>;			<span class="comment">/* Initiliazation - required! */</span>
+
+<span class="kw">const</span> <span class="ident">ICW4_8086</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x01</span>;			<span class="comment">/* 8086/88 (MCS-80/85) mode */</span>
+<span class="kw">const</span> <span class="ident">ICW4_AUTO</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x02</span>;			<span class="comment">/* Auto (normal EOI) */</span>
+<span class="kw">const</span> <span class="ident">ICW4_BUF_SLAVE</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x08</span>;	<span class="comment">/* Buffered mode/slave */</span>
+<span class="kw">const</span> <span class="ident">ICW4_BUF_MASTER</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x0c</span>;	<span class="comment">/* Buffered mode/master */</span>
+<span class="kw">const</span> <span class="ident">ICW4_SFNM</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x10</span>;			<span class="comment">/* Special fully nested (not) */</span>
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pic_remap</span>(<span class="ident">offset1</span>: <span class="ident">u8</span>, <span class="ident">offset2</span>: <span class="ident">u8</span>) {
+	<span class="comment">/* save masks */</span>
+	<span class="kw">let</span> <span class="ident">a1</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="ident">inb</span>(<span class="ident">PIC1_DATA</span>);
+	<span class="kw">let</span> <span class="ident">a2</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="ident">inb</span>(<span class="ident">PIC2_DATA</span>);
+
+<span class="comment">/*	Init Control Word 1, tell to pic we start init process */</span>
+	<span class="ident">outb</span>(<span class="ident">PIC1_CMD</span>, <span class="ident">ICW1_INIT</span> <span class="op">|</span> <span class="ident">ICW1_ICW4</span>);
+	<span class="ident">io_wait</span>();
+	<span class="ident">outb</span>(<span class="ident">PIC2_CMD</span>, <span class="ident">ICW1_INIT</span> <span class="op">|</span> <span class="ident">ICW1_ICW4</span>);
+	<span class="ident">io_wait</span>();
+
+<span class="comment">/*	Init Control Word 2, tell to pic offset of interrupt */</span>
+	<span class="ident">outb</span>(<span class="ident">PIC1_DATA</span>, <span class="ident">offset1</span>);
+	<span class="ident">io_wait</span>();
+	<span class="ident">outb</span>(<span class="ident">PIC2_DATA</span>, <span class="ident">offset2</span>);
+	<span class="ident">io_wait</span>();
+
+<span class="comment">/*	Init Control Word 3, tell to pic who&#39;s master/slave */</span>
+	<span class="ident">outb</span>(<span class="ident">PIC1_DATA</span>, <span class="number">4</span>);
+	<span class="ident">io_wait</span>();
+	<span class="ident">outb</span>(<span class="ident">PIC2_DATA</span>, <span class="number">2</span>);
+	<span class="ident">io_wait</span>();
+
+<span class="comment">/*	Init Control Word 4, tell to pic we use mode 8086 */</span>
+	<span class="ident">outb</span>(<span class="ident">PIC1_DATA</span>, <span class="ident">ICW4_8086</span>);
+	<span class="ident">io_wait</span>();
+	<span class="ident">outb</span>(<span class="ident">PIC2_DATA</span>, <span class="ident">ICW4_8086</span>);
+	<span class="ident">io_wait</span>();
+
+	<span class="comment">/* restore masks */</span>
+	<span class="ident">outb</span>(<span class="ident">PIC1_DATA</span>, <span class="ident">a1</span>);
+	<span class="ident">outb</span>(<span class="ident">PIC2_DATA</span>, <span class="ident">a2</span>);
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">irq_set_mask</span>(<span class="kw-2">mut</span> <span class="ident">irq</span>: <span class="ident">usize</span>)
+{
+	<span class="kw">let</span> <span class="ident">port</span>: <span class="ident">u16</span>;
+	<span class="kw">let</span> <span class="ident">value</span>: <span class="ident">u8</span>;
+
+	<span class="kw">if</span> <span class="ident">irq</span> <span class="op">&lt;</span> <span class="number">8</span> {
+		<span class="ident">port</span> <span class="op">=</span> <span class="ident">PIC1_DATA</span>;
+	} <span class="kw">else</span> {
+		<span class="ident">port</span> <span class="op">=</span> <span class="ident">PIC2_DATA</span>;
+		<span class="ident">irq</span> <span class="op">-</span><span class="op">=</span> <span class="number">8</span>;
+	}
+	<span class="ident">value</span> <span class="op">=</span> <span class="ident">inb</span>(<span class="ident">port</span>) <span class="op">|</span> (<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="ident">irq</span>);
+	<span class="ident">outb</span>(<span class="ident">port</span>, <span class="ident">value</span>);
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">irq_clear_mask</span>(<span class="kw-2">mut</span> <span class="ident">irq</span>: <span class="ident">usize</span>)
+{
+	<span class="kw">let</span> <span class="ident">port</span>: <span class="ident">u16</span>;
+	<span class="kw">let</span> <span class="ident">value</span>: <span class="ident">u8</span>;
+
+	<span class="kw">if</span> <span class="ident">irq</span> <span class="op">&lt;</span> <span class="number">8</span> {
+		<span class="ident">port</span> <span class="op">=</span> <span class="ident">PIC1_DATA</span>;
+	} <span class="kw">else</span> {
+		<span class="ident">port</span> <span class="op">=</span> <span class="ident">PIC2_DATA</span>;
+		<span class="ident">irq</span> <span class="op">-</span><span class="op">=</span> <span class="number">8</span>;
+	}
+	<span class="ident">value</span> <span class="op">=</span> <span class="ident">inb</span>(<span class="ident">port</span>) <span class="op">&amp;</span> <span class="op">!</span>(<span class="number">1</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="ident">irq</span>);
+	<span class="ident">outb</span>(<span class="ident">port</span>, <span class="ident">value</span>);
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">pic_init_masks</span>()
+{
+<span class="comment">/* To activate specific irqs */</span>
+	<span class="kw">let</span> <span class="ident">pic1mask</span>: <span class="ident">u8</span> <span class="op">=</span>	<span class="ident">Pic1::Timer</span> <span class="kw">as</span> <span class="ident">u8</span> <span class="op">|</span>
+						<span class="ident">Pic1::Keyboard</span> <span class="kw">as</span> <span class="ident">u8</span> <span class="op">|</span>
+						<span class="ident">Pic1::Slave</span> <span class="kw">as</span> <span class="ident">u8</span>;
+
+	<span class="kw">let</span> <span class="ident">pic2mask</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="ident">Pic2::RealTimeClock</span> <span class="kw">as</span> <span class="ident">u8</span>;
+
+<span class="comment">/* We need the bit to be 0 to activate */</span>
+	<span class="ident">outb</span>(<span class="ident">PIC1_DATA</span>, <span class="number">0xff</span> <span class="op">^</span> <span class="ident">pic1mask</span>);
+	<span class="ident">outb</span>(<span class="ident">PIC2_DATA</span>, <span class="number">0xff</span> <span class="op">^</span> <span class="ident">pic2mask</span>);
+}
+
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">setup_pic8259</span>() {
+	<span class="ident">pic_init_masks</span>();
+	<span class="ident">pic_remap</span>(<span class="ident">PIC1_IRQ_OFFSET</span>, <span class="ident">PIC2_IRQ_OFFSET</span>);
+}
+</code></pre></div>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>
+</body></html>

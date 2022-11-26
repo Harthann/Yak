@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["PAGE_USER",""],["PAGE_WRITABLE",""]],"fn":[["alloc_page",""],["alloc_pages",""],["alloc_pages_at_addr",""],["free_page",""],["free_pages",""],["init_paging",""],["kalloc_pages",""],["kalloc_pages_at_addr",""],["print_pdentry",""]],"mod":[["bitmap",""],["page_directory",""],["page_table",""]],"static":[["page_directory",""]]};

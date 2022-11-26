@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["align_down",""],["align_up",""]],"mod":[["boxed",""],["bump",""],["global",""],["kglobal",""],["linked_list",""]],"struct":[["AllocError",""]],"trait":[["Allocator",""],["AllocatorInit",""]]};

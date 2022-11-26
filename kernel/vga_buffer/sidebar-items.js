@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["BUFFER_HEIGHT",""],["BUFFER_WIDTH",""],["NB_SCREEN",""],["VGABUFF_OFFSET",""]],"fn":[["_print",""],["hexdump",""],["panic",""]],"mod":[["color",""],["cursor",""]],"static":[["WRITER",""]],"struct":[["Buffer",""],["Screen",""],["ScreenChar",""],["Writer",""]]};

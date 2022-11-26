@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["kernel"] = [{"text":"impl Write for <a class=\"struct\" href=\"kernel/string/struct.String.html\" title=\"struct kernel::string::String\">String</a>","synthetic":false,"types":["kernel::string::String"]},{"text":"impl Write for <a class=\"struct\" href=\"kernel/vga_buffer/struct.Writer.html\" title=\"struct kernel::vga_buffer::Writer\">Writer</a>","synthetic":false,"types":["kernel::vga_buffer::Writer"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

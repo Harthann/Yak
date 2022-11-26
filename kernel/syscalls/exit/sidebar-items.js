@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["WNOHANG",""],["WUNTRACED",""]],"fn":[["sys_exit",""],["sys_wait4",""],["sys_waitpid",""]],"struct":[["RUsage",""],["Timeval",""]],"type":[["Time",""]]};

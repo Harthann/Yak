@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["KEYMAP_FR",""],["KEYMAP_US",""],["PRESSED",""],["RELEASED",""]],"enum":[["SpecialKeyFlag",""]],"fn":[["handle_event",""],["keyboard_event",""],["keyboard_to_ascii",""]],"macro":[["getflag",""],["setflag",""],["unsetflag",""]],"static":[["KEYMAP",""],["SPECIAL_KEYS",""]],"struct":[["Keymap",""],["SpecialKeys",""]]};

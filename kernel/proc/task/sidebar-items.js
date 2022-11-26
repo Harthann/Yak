@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":[["init_tasking",""],["next_task",""],["switch_task",""]],"static":[["STACK_TASK_SWITCH",""],["TASKLIST",""]],"struct":[["Task",""]]};

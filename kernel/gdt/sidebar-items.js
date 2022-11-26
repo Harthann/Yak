@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["KERNEL_BASE",""]],"fn":[["gdt_desc",""],["gdt_start",""],["get_segment",""],["print_gdt",""],["set_segment",""],["update_gdtr",""]],"mod":[["tss",""]],"struct":[["GDTR",""],["SegmentDescriptor",""]]};
