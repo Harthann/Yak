@@ -1,0 +1,2077 @@
+   Compiling allocator v0.1.0 (/mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator)
+error: expected identifier, found `#`
+ --> src/boxed/test.rs:4:1
+  |
+4 | #[test]
+  | ^ expected identifier
+
+error[E0773]: attempted to define built-in macro more than once
+    --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:1321:5
+     |
+1321 | /     macro_rules! cfg {
+1322 | |         ($($cfg:tt)*) => {
+1323 | |             /* compiler built-in */
+1324 | |         };
+1325 | |     }
+     | |_____^
+     |
+note: previously defined here
+    --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/macros/mod.rs:1321:5
+     |
+1321 | /     macro_rules! cfg {
+1322 | |         ($($cfg:tt)*) => {
+1323 | |             /* compiler built-in */
+1324 | |         };
+1325 | |     }
+     | |_____^
+
+error[E0432]: unresolved import `crate::ALLOCATOR`
+  --> src/global.rs:10:5
+   |
+10 | use crate::ALLOCATOR;
+   |     ^^^^^^^---------
+   |     |      |
+   |     |      help: a similar name exists in the module: `Allocator`
+   |     no `ALLOCATOR` in the root
+
+error[E0432]: unresolved import `crate::KALLOCATOR`
+  --> src/kglobal.rs:10:5
+   |
+10 | use crate::KALLOCATOR;
+   |     ^^^^^^^^^^^^^^^^^ no `KALLOCATOR` in the root
+
+error[E0425]: cannot find value `TRACKER` in the crate root
+  --> src/global.rs:25:10
+   |
+25 |         crate::TRACKER.allocation += 1;
+   |                ^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `TRACKER` in the crate root
+  --> src/global.rs:26:10
+   |
+26 |         crate::TRACKER.allocated_bytes += layout.size();
+   |                ^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `TRACKER` in the crate root
+  --> src/global.rs:41:9
+   |
+41 |     crate::TRACKER.freed += 1;
+   |            ^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `TRACKER` in the crate root
+  --> src/global.rs:42:9
+   |
+42 |     crate::TRACKER.freed_bytes += layout.size();
+   |            ^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `KTRACKER` in the crate root
+  --> src/kglobal.rs:26:10
+   |
+26 |         crate::KTRACKER.allocation += 1;
+   |                ^^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `KTRACKER` in the crate root
+  --> src/kglobal.rs:27:10
+   |
+27 |         crate::KTRACKER.allocated_bytes += layout.size();
+   |                ^^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `KTRACKER` in the crate root
+  --> src/kglobal.rs:43:9
+   |
+43 |     crate::KTRACKER.freed += 1;
+   |            ^^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find value `KTRACKER` in the crate root
+  --> src/kglobal.rs:44:9
+   |
+44 |     crate::KTRACKER.freed_bytes += layout.size();
+   |            ^^^^^^^^ not found in the crate root
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sized`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `unsize`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `structural_peq`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `structural_teq`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `copy`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `clone`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sync`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `discriminant_kind`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `discriminant_type`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `pointee_trait`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `metadata_type`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `dyn_metadata`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `freeze`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `drop`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `destruct`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `coerce_unsized`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `dispatch_from_dyn`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `add`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sub`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `mul`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `div`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `rem`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `neg`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `not`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitxor`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitand`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitor`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sized`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shl`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `unsize`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shr`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `structural_peq`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `add_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `structural_teq`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sub_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `copy`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `mul_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `clone`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `div_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sync`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `rem_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `discriminant_kind`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitxor_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `discriminant_type`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitand_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `pointee_trait`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitor_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `metadata_type`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shl_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shr_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `dyn_metadata`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `freeze`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `index`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `drop`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `index_mut`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `destruct`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `unsafe_cell`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `coerce_unsized`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `va_list`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `dispatch_from_dyn`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `deref`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `add`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `deref_mut`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sub`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `deref_target`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `receiver`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `mul`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `div`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `rem`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `neg`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `not`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn_mut`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitxor`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn_once`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitand`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn_once_output`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitor`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `future_trait`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shl`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `generator_state`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shr`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `generator`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `add_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `generator_return`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `unpin`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `sub_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `pin`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `mul_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `eq`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `div_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `partial_ord`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `rem_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitxor_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_fmt`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitand_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_display`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `bitor_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `const_panic_fmt`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shl_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_bounds_check`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `shr_assign`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `index`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_info`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_location`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `index_mut`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `unsafe_cell`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_no_unwind`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `va_list`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `drop_in_place`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `deref`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `alloc_layout`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `deref_mut`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `const_eval_select`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `const_eval_select_ct`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `phantom_data`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `deref_target`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `manually_drop`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `receiver`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `maybe_uninit`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `align_offset`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn_mut`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Try`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn_once`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `fn_once_output`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `slice_len_fn`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `future_trait`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_residual`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `generator_state`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_output`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `generator`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `branch`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `generator_return`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_yeet`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `unpin`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Ready`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `pin`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Pending`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `eq`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_generator`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `partial_ord`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `get_context`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `poll`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_fmt`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_display`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Some`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `const_panic_fmt`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `None`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_bounds_check`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Ok`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_info`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Err`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_location`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Continue`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `panic_no_unwind`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Break`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `into_future`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `drop_in_place`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `into_iter`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `alloc_layout`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `next`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `const_eval_select`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `new_unchecked`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `const_eval_select_ct`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeFrom`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `phantom_data`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `manually_drop`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeFull`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `maybe_uninit`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeInclusive`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `align_offset`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `range_inclusive_new`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Try`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Range`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `slice_len_fn`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeToInclusive`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_residual`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeTo`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rmeta
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_output`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `branch`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_yeet`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Ready`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Pending`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from_generator`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `get_context`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `poll`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `from`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Some`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `None`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Ok`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Err`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Continue`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Break`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `into_future`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `into_iter`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `next`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `new_unchecked`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeFrom`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeFull`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeInclusive`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `range_inclusive_new`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `Range`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeToInclusive`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+error: duplicate lang item in crate `core` (which `allocator` depends on): `RangeTo`.
+  |
+  = note: the lang item is first defined in crate `core` (which `std` depends on)
+  = note: first definition in `core` loaded from /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libcore-0e3656b1fda5fd7b.rlib
+  = note: second definition in `core` loaded from /mnt/nfs/homes/nieyraud/Documents/kfs/crates/allocator/target/x86_64-unknown-linux-gnu/debug/deps/libcore-41204fc306891e91.rlib
+
+warning: default bound relaxed for a type parameter, but this does nothing because the given bound is not a default; only `?Sized` is supported
+  --> src/boxed/mod.rs:19:16
+   |
+19 | pub struct Box<T: ?Sized, A: Allocator = KGlobal> {
+   |                ^
+
+warning: default bound relaxed for a type parameter, but this does nothing because the given bound is not a default; only `?Sized` is supported
+   --> src/boxed/mod.rs:107:6
+    |
+107 | impl<T: ?Sized, A: Allocator> Drop for Box<T, A> {
+    |      ^
+
+warning: default bound relaxed for a type parameter, but this does nothing because the given bound is not a default; only `?Sized` is supported
+   --> src/boxed/mod.rs:113:6
+    |
+113 | impl<T: ?Sized, A: Allocator> AsMut<T> for Box<T,A> {
+    |      ^
+
+warning: default bound relaxed for a type parameter, but this does nothing because the given bound is not a default; only `?Sized` is supported
+   --> src/boxed/mod.rs:119:6
+    |
+119 | impl<T: ?Sized, A: Allocator> AsRef<T> for Box<T,A> {
+    |      ^
+
+error[E0277]: the size for values of type `u32` cannot be known at compilation time
+   --> src/linked_list.rs:81:6
+    |
+81  |         -> Result<VirtAddr, ()> {
+    |            ^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `u32`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/linked_list.rs:81:6
+    |
+81  |         -> Result<VirtAddr, ()> {
+    |            ^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `(&'static mut ListNode, u32)` cannot be known at compilation time
+   --> src/linked_list.rs:96:6
+    |
+96  |         -> Option<(&'static mut ListNode, VirtAddr)> {
+    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `(&'static mut ListNode, u32)`
+note: required by a bound in `std::option::Option`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:518:17
+    |
+518 | pub enum Option<T> {
+    |                 ^ required by this bound in `std::option::Option`
+
+error[E0277]: the size for values of type `boxed::Box<T>` cannot be known at compilation time
+   --> src/boxed/mod.rs:31:25
+    |
+31  |     pub fn try_new(x:T) -> Result<Box<T, KGlobal>, AllocError> {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `boxed::Box<T>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/boxed/mod.rs:31:25
+    |
+31  |     pub fn try_new(x:T) -> Result<Box<T, KGlobal>, AllocError> {
+    |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `boxed::Box<T>` cannot be known at compilation time
+   --> src/boxed/mod.rs:39:26
+    |
+39  |     pub fn ktry_new(x:T) -> Result<Box<T, KGlobal>, AllocError> {
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `boxed::Box<T>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/boxed/mod.rs:39:26
+    |
+39  |     pub fn ktry_new(x:T) -> Result<Box<T, KGlobal>, AllocError> {
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `boxed::Box<T, A>` cannot be known at compilation time
+   --> src/boxed/mod.rs:58:38
+    |
+58  |     pub fn try_new_in(x:T, alloc: A) -> Result<Self, AllocError> {
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `boxed::Box<T, A>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/boxed/mod.rs:58:38
+    |
+58  |     pub fn try_new_in(x:T, alloc: A) -> Result<Self, AllocError> {
+    |                                         ^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `boxed::Box<T, A>` cannot be known at compilation time
+   --> src/boxed/mod.rs:63:40
+    |
+63  |     pub fn try_new_uninit_in(alloc: A) -> Result<Self, AllocError> {
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `boxed::Box<T, A>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/boxed/mod.rs:63:40
+    |
+63  |     pub fn try_new_uninit_in(alloc: A) -> Result<Self, AllocError> {
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/global.rs:58:60
+    |
+58  |     pub fn alloc_impl(&self, layout: Layout, zeroed: bool) -> Result<NonNull<u8>, AllocError> {
+    |                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/global.rs:58:60
+    |
+58  |     pub fn alloc_impl(&self, layout: Layout, zeroed: bool) -> Result<NonNull<u8>, AllocError> {
+    |                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/global.rs:77:40
+    |
+77  |     fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/global.rs:77:40
+    |
+77  |     fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/global.rs:82:47
+    |
+82  |     fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/global.rs:82:47
+    |
+82  |     fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/global.rs:92:77
+    |
+92  |     fn realloc(&self, ptr: NonNull<u8>, oldlayout: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError> {
+    |                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/global.rs:92:77
+    |
+92  |     fn realloc(&self, ptr: NonNull<u8>, oldlayout: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError> {
+    |                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/kglobal.rs:61:60
+    |
+61  |     pub fn alloc_impl(&self, layout: Layout, zeroed: bool) -> Result<NonNull<u8>, AllocError> {
+    |                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/kglobal.rs:61:60
+    |
+61  |     pub fn alloc_impl(&self, layout: Layout, zeroed: bool) -> Result<NonNull<u8>, AllocError> {
+    |                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/kglobal.rs:80:40
+    |
+80  |     fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/kglobal.rs:80:40
+    |
+80  |     fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/kglobal.rs:85:47
+    |
+85  |     fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/kglobal.rs:85:47
+    |
+85  |     fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError> {
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/kglobal.rs:95:77
+    |
+95  |     fn realloc(&self, ptr: NonNull<u8>, oldlayout: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError> {
+    |                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/kglobal.rs:95:77
+    |
+95  |     fn realloc(&self, ptr: NonNull<u8>, oldlayout: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError> {
+    |                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/lib.rs:31:40
+    |
+31  |     fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/lib.rs:31:40
+    |
+31  |     fn allocate(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
+    |                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/lib.rs:33:47
+    |
+33  |     fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/lib.rs:33:47
+    |
+33  |     fn allocate_zeroed(&self, layout: Layout) -> Result<NonNull<u8>, AllocError>;
+    |                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `core::ptr::NonNull<u8>` cannot be known at compilation time
+   --> src/lib.rs:34:71
+    |
+34  |     fn realloc(&self, ptr: NonNull<u8>, old: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError>;
+    |                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `core::ptr::NonNull<u8>`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/lib.rs:34:71
+    |
+34  |     fn realloc(&self, ptr: NonNull<u8>, old: Layout, new_size: usize) -> Result<NonNull<u8>, AllocError>;
+    |                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+
+error[E0277]: the size for values of type `&'static mut ListNode` cannot be known at compilation time
+   --> src/linked_list.rs:43:8
+    |
+43  |     next: Option<&'static mut ListNode>
+    |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `&'static mut ListNode`
+note: required by a bound in `std::option::Option`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/option.rs:518:17
+    |
+518 | pub enum Option<T> {
+    |                 ^ required by this bound in `std::option::Option`
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/linked_list.rs:40:10
+    |
+40  | #[derive(Debug)]
+    |          ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `std::fmt::Error` cannot be known at compilation time
+   --> src/linked_list.rs:40:10
+    |
+40  | #[derive(Debug)]
+    |          ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `std::fmt::Error`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/bump.rs:44:10
+    |
+44  | #[derive(Debug)]
+    |          ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `std::fmt::Error` cannot be known at compilation time
+   --> src/bump.rs:44:10
+    |
+44  | #[derive(Debug)]
+    |          ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `std::fmt::Error`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/boxed/mod.rs:18:10
+    |
+18  | #[derive(Debug, Clone)]
+    |          ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `std::fmt::Error` cannot be known at compilation time
+   --> src/boxed/mod.rs:18:10
+    |
+18  | #[derive(Debug, Clone)]
+    |          ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `std::fmt::Error`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `boxed::Box<T, A>` cannot be known at compilation time
+   --> src/boxed/mod.rs:18:17
+    |
+18  | #[derive(Debug, Clone)]
+    |                 ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `boxed::Box<T, A>`
+note: required by a bound in `std::clone::Clone`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:110:18
+    |
+110 | pub trait Clone: Sized {
+    |                  ^^^^^ required by this bound in `std::clone::Clone`
+    = note: this error originates in the derive macro `Clone` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `global::Global` cannot be known at compilation time
+   --> src/global.rs:13:10
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |          ^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `global::Global`
+note: required by a bound in `std::marker::Copy`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/marker.rs:382:17
+    |
+382 | pub trait Copy: Clone {
+    |                 ^^^^^ required by this bound in `std::marker::Copy`
+    = note: this error originates in the derive macro `Copy` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `global::Global` cannot be known at compilation time
+   --> src/global.rs:13:16
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |                ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `global::Global`
+note: required by a bound in `std::clone::Clone`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:110:18
+    |
+110 | pub trait Clone: Sized {
+    |                  ^^^^^ required by this bound in `std::clone::Clone`
+    = note: this error originates in the derive macro `Clone` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/global.rs:13:23
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |                       ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `std::fmt::Error` cannot be known at compilation time
+   --> src/global.rs:13:23
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |                       ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `std::fmt::Error`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `KGlobal` cannot be known at compilation time
+   --> src/kglobal.rs:13:10
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |          ^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `KGlobal`
+note: required by a bound in `std::marker::Copy`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/marker.rs:382:17
+    |
+382 | pub trait Copy: Clone {
+    |                 ^^^^^ required by this bound in `std::marker::Copy`
+    = note: this error originates in the derive macro `Copy` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `KGlobal` cannot be known at compilation time
+   --> src/kglobal.rs:13:16
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |                ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `KGlobal`
+note: required by a bound in `std::clone::Clone`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:110:18
+    |
+110 | pub trait Clone: Sized {
+    |                  ^^^^^ required by this bound in `std::clone::Clone`
+    = note: this error originates in the derive macro `Clone` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/kglobal.rs:13:23
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |                       ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `std::fmt::Error` cannot be known at compilation time
+   --> src/kglobal.rs:13:23
+    |
+13  | #[derive(Copy, Clone, Debug)]
+    |                       ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `std::fmt::Error`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/lib.rs:38:10
+    |
+38  | #[derive(Copy, Clone, Debug, PartialEq)]
+    |          ^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::marker::Copy`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/marker.rs:382:17
+    |
+382 | pub trait Copy: Clone {
+    |                 ^^^^^ required by this bound in `std::marker::Copy`
+    = note: this error originates in the derive macro `Copy` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `AllocError` cannot be known at compilation time
+   --> src/lib.rs:38:16
+    |
+38  | #[derive(Copy, Clone, Debug, PartialEq)]
+    |                ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `AllocError`
+note: required by a bound in `std::clone::Clone`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/clone.rs:110:18
+    |
+110 | pub trait Clone: Sized {
+    |                  ^^^^^ required by this bound in `std::clone::Clone`
+    = note: this error originates in the derive macro `Clone` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `()` cannot be known at compilation time
+   --> src/lib.rs:38:23
+    |
+38  | #[derive(Copy, Clone, Debug, PartialEq)]
+    |                       ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `()`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:17
+    |
+504 | pub enum Result<T, E> {
+    |                 ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+error[E0277]: the size for values of type `std::fmt::Error` cannot be known at compilation time
+   --> src/lib.rs:38:23
+    |
+38  | #[derive(Copy, Clone, Debug, PartialEq)]
+    |                       ^^^^^ doesn't have a size known at compile-time
+    |
+    = help: the trait `std::marker::Sized` is not implemented for `std::fmt::Error`
+note: required by a bound in `std::result::Result`
+   --> /sgoinfre/goinfre/Perso/nieyraud/.rustup/toolchains/nightly-2022-06-27-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core/src/result.rs:504:20
+    |
+504 | pub enum Result<T, E> {
+    |                    ^ required by this bound in `std::result::Result`
+    = note: this error originates in the derive macro `Debug` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+Some errors have detailed explanations: E0277, E0425, E0432, E0773.
+For more information about an error, try `rustc --explain E0277`.
+warning: `allocator` (lib) generated 4 warnings
+error: could not compile `allocator` due to 168 previous errors; 4 warnings emitted
+warning: build failed, waiting for other jobs to finish...
+warning: `allocator` (lib test) generated 4 warnings (4 duplicates)
+error: could not compile `allocator` due to 169 previous errors; 4 warnings emitted

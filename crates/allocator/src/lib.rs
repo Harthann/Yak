@@ -1,3 +1,5 @@
+#![cfg_attr(feature = "cross-compiled", no_std)]
+
 pub mod linked_list;
 pub mod bump;
 
@@ -16,7 +18,8 @@ Layout
 };
 use core::ptr::NonNull;
 
-use crate::memory::VirtAddr;
+pub type VirtAddr = u32;
+//use crate::memory::VirtAddr;
 
 /*	Trait definitions to inialize a global allocator */
 pub trait AllocatorInit: GlobalAlloc {

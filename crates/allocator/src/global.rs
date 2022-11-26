@@ -3,7 +3,7 @@ GlobalAlloc,
 Layout
 };
 use core::ptr::NonNull;
-use crate::memory::allocator::{
+use super::{
 Allocator,
 AllocError
 };

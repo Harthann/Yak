@@ -1,9 +1,9 @@
-use crate::memory::allocator::boxed::Box;
-use crate::print_fn;
+use super::allocator::boxed::Box;
+use crate:://print_fn;
 
-#[test_case]
+#[test]
 fn box_basic_allocation() {
-	print_fn!();
+	//print_fn!();
 	let x = Box::new(5);
 	assert_eq!(*x, 5);
 	let y = Box::new(10);
@@ -12,9 +12,9 @@ fn box_basic_allocation() {
 	assert_eq!(z.is_ok(), true);
 }
 
-#[test_case]
+#[test]
 fn box_test_diff_ptr() {
-	print_fn!();
+	//print_fn!();
 	let x = Box::new(0 as usize);
 	let y = Box::new(0 as usize);
 	let ptr_x = (x.as_ref() as *const _) as u32;
@@ -22,9 +22,9 @@ fn box_test_diff_ptr() {
 	assert_ne!(ptr_x, ptr_y);
 }
 
-#[test_case]
+#[test]
 fn box_free_test() {
-	print_fn!();
+	//print_fn!();
 	let ptr: u32;
 	{
 		let x = Box::new(5);
@@ -34,9 +34,9 @@ fn box_free_test() {
 	assert_eq!(ptr, (x.as_ref() as *const _) as u32);
 }
 
-#[test_case]
+#[test]
 fn box_test_mut_ref() {
-	print_fn!();
+	//print_fn!();
 	let mut x = Box::new(5);
 	assert_eq!(*x, 5);
 	let y = x.as_mut();
@@ -44,16 +44,16 @@ fn box_test_mut_ref() {
 	assert_eq!(*x, 10);
 }
 
-#[test_case]
+#[test]
 fn box_test_array() {
-	print_fn!();
+	//print_fn!();
 	let x = Box::new([5; 10]);
 	assert_eq!(*x, [5; 10]);
 }
 
-#[test_case]
+#[test]
 fn box_test_write() {
-	print_fn!();
+	//print_fn!();
 	let mut x = Box::new(5);
 	assert_eq!(*x, 5);
 	x = Box::write(x, 10);

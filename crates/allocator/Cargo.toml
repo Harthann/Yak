@@ -1,0 +1,17 @@
+[package]
+name = "allocator"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name="allocator"
+path="src/lib.rs"
+
+[features]
+default = []
+cross-compiled = []
+
+#
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]

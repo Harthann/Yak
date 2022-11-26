@@ -1,5 +1,5 @@
 use crate::vec::Vec;
-use crate::memory::allocator::AllocError;
+use super::allocator::AllocError;
 use core::{str,ops,fmt};
 
 #[cfg(test)]

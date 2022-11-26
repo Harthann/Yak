@@ -1,6 +1,6 @@
-use crate::memory::VirtAddr;
+use super::VirtAddr;
 use core::alloc::{Layout, GlobalAlloc};
-use crate::memory::allocator::{AllocatorInit, align_up};
+use super::{AllocatorInit, align_up};
 
 impl AllocatorInit for LinkedListAllocator {
 	unsafe fn init(&mut self, heap_start: VirtAddr, heap_size: usize) {

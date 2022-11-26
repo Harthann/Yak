@@ -3,12 +3,13 @@ GlobalAlloc,
 Layout
 };
 use core::ptr::NonNull;
-use crate::memory::allocator::{
+use super::{
 Allocator,
 AllocError
 };
-use crate::KALLOCATOR;
 
+static mut BUMP_ALLOC: BumpAllocator = BumpAllocator::new();
+static mut LINKED_LIST_ALLOC: LinkedListAllocator = LinkedListAllocator::new();
 /* Struct to wrap allocation */
 #[derive(Copy, Clone, Debug)]
 pub struct KGlobal;
@@ -27,7 +28,6 @@ unsafe fn alloc(layout: Layout) -> *mut u8 {
 		crate::KTRACKER.allocated_bytes += layout.size();
 	}
 	ptr
-
 }
 
 #[inline]

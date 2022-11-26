@@ -2,7 +2,7 @@ use core::ptr::NonNull;
 use core::alloc::Layout;
 use core::ops;
 use crate::GLOBAL_ALIGN;
-use crate::memory::allocator::{Allocator,AllocError,/*Global,*/KGlobal};
+use super::allocator::{Allocator,AllocError,/*Global,*/KGlobal};
 
 #[cfg(test)]
 pub mod test;
