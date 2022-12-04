@@ -173,7 +173,7 @@ fn handler(nb: i32) {
 								int 0x80");}
 }
 
-unsafe fn dumb_main(nb: usize) {
+unsafe fn dumb_main(nb: usize) -> u32 {
 	kprintln!("dumbmain{}!!!", nb);
 	let mut pid: Pid = -1;
 	if nb > 1 {
@@ -200,6 +200,7 @@ unsafe fn dumb_main(nb: usize) {
 	if nb == 3 {
 		loop {}
 	}
+	42
 }
 
 pub fn test_task() {

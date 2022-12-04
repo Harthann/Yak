@@ -7,7 +7,7 @@ pub mod timer;
 pub mod process;
 
 use exit::{sys_exit, sys_waitpid, sys_wait4};
-use process::{fork};
+use process::{sys_fork};
 use mmap::{sys_mmap, sys_munmap};
 use signal::{sys_kill, sys_signal};
 use timer::{sys_getpid, sys_getuid, sys_getppid};
