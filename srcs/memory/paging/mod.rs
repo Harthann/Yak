@@ -13,8 +13,10 @@ extern "C" {
 use page_directory::PageDirectory;
 use page_table::PageTable;
 
-pub const PAGE_WRITABLE: u32 = 0b10;
+pub const PAGE_GLOBAL: u32 = 0b100000000;
 pub const PAGE_USER: u32 = 0b100;
+pub const PAGE_WRITABLE: u32 = 0b10;
+pub const PAGE_PRESENT: u32 = 0b1;
 
 /*
 	Initiliaze the paging:
@@ -36,21 +38,23 @@ pub fn init_paging() {
 		let handler_pt_paddr: PhysAddr = pd_paddr + (1023 + 1) * 0x1000;
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
-		init_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
-		init_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
+		init_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		init_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		crate::refresh_tlb!();
 
+		/* Setup handler page table */
 		let kernel_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 768) as *mut _);
 		let mut handler_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1023) as *mut _);
 		kernel_page_tab.init();
-		handler_page_tab.set_entry(0, init_pt_paddr | PAGE_WRITABLE | 1);
-		handler_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
-		handler_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
-		page_directory.set_entry(0, 2);
-		page_directory.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
-		page_directory.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
+		handler_page_tab.set_entry(0, init_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		handler_page_tab.set_entry(768, kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
+		handler_page_tab.set_entry(1023, handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
+		page_directory.set_entry(0, 0);
+		page_directory.set_entry(768, kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
+		page_directory.set_entry(1023, handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
 		crate::refresh_tlb!();
 
+		/* Remove init page */
 		init_page_tab = page_directory.get_page_table(0);
 		handler_page_tab = page_directory.get_page_table(1023);
 		init_page_tab.clear();

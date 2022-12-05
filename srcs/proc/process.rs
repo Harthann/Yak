@@ -1,4 +1,5 @@
 use core::fmt;
+use core::ptr::copy_nonoverlapping;
 
 use crate::vec::Vec;
 use crate::memory::{MemoryZone, Stack, Heap};
@@ -86,14 +87,22 @@ impl Process {
 		self.pid = NEXT_PID;
 		self.state = Status::Run;
 		self.parent = parent;
-		self.stack = <MemoryZone as Stack>::init((*parent).stack.size, (*parent).stack.flags, (*parent).stack.kphys);
-		core::ptr::copy_nonoverlapping(
+		self.stack = <MemoryZone as Stack>::init(
+			(*parent).stack.size,
+			(*parent).stack.flags,
+			(*parent).stack.kphys
+		);
+		copy_nonoverlapping(
 			(*parent).stack.offset as *mut u8,
 			self.stack.offset as *mut u8,
 			self.stack.size
 		);
-		self.heap = <MemoryZone as Heap>::init_no_allocator((*parent).heap.size, (*parent).heap.flags, (*parent).heap.kphys);
-		core::ptr::copy_nonoverlapping(
+		self.heap = <MemoryZone as Heap>::init_no_allocator(
+			(*parent).heap.size,
+			(*parent).heap.flags,
+			(*parent).heap.kphys
+		);
+		copy_nonoverlapping(
 			(*parent).heap.offset as *mut u8,
 			self.heap.offset as *mut u8,
 			self.heap.size

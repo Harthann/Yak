@@ -5,7 +5,7 @@ use crate::get_vaddr;
 use crate::memory::{VirtAddr, PhysAddr};
 use crate::memory::paging::{page_directory, PageTable, bitmap};
 
-use crate::PAGE_WRITABLE;
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
 
 #[repr(transparent)]
 pub struct PageDirectory {
@@ -13,6 +13,15 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
+	pub fn new() -> *mut Self {
+		unsafe {
+			let res = page_directory.get_page_frame(PAGE_WRITABLE);
+			if !res.is_ok() {
+				todo!();
+			}
+			(res.unwrap() as *mut _)
+		}
+	}
 
 	pub fn set_entry(&mut self, index: usize, value: u32) {
 		self.entries[index] = value.into();
@@ -53,7 +62,7 @@ impl PageDirectory {
 		if nb == 0 {
 			return Err(());
 		}
-		while i < 1023 && available != nb { /* 1023 reserved for page_table def */
+		while i < 1024 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -94,7 +103,7 @@ impl PageDirectory {
 		if nb == 0 {
 			return Err(());
 		}
-		while i < 1023 && available != nb { /* 1023 reserved for page_table def */
+		while i < 1024 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -127,7 +136,7 @@ impl PageDirectory {
 		let paddr = bitmap::physmap_as_mut().get_page()?;
 		let mut i: usize = 0;
 
-		while i < 1023 { /* 1023 reserved for page_table def */
+		while i < 1024 {
 			if self.entries[i].get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
 				if res.is_ok() {
@@ -183,11 +192,11 @@ impl PageDirectory {
 			let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
 			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
-			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | 1);
+			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 			crate::refresh_tlb!();
 			let new: &mut PageTable = page_directory.get_page_table(index);
 			new.clear();
-			self.entries[index] = (pt_paddr | flags | 1).into();
+			self.entries[index] = (pt_paddr | flags | PAGE_PRESENT).into();
 			crate::refresh_tlb!();
 			Ok(index)
 		}

@@ -1,6 +1,7 @@
 use crate::proc::task::TASKLIST;
 
 use crate::syscalls::syscall_handler;
+use crate::memory::paging::page_directory;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
 const IDT_SIZE: usize = 48;
@@ -257,46 +258,4 @@ impl InterruptDescriptor {
 	pub fn get_p(&self) -> u8 {
 		(self.type_attr & 0b10000000) >> 7
 	}
-}
-
-#[naked]
-#[no_mangle]
-unsafe extern "C" fn isr_common_stub() {
-	core::arch::asm!("
-	pusha
-
-	mov eax, cr3
-	push eax
-
-	xor eax, eax
-	mov ax, ds		// Lower 16-bits of eax = ds.
-	push eax		// save the data segment descriptor
-
-	mov ax, 0x10	// load the kernel data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
-	mov eax, esp
-	push eax	// push pointer to regs
-
-	call exception_handler
-
-	pop eax
-
-	pop eax		// reload the original data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
-	pop eax
-
-	popa
-	add esp, 8
-
-	sti
-	iretd",
-	options(noreturn));
 }
