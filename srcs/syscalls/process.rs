@@ -1,5 +1,5 @@
 use crate::proc::process::{Process, Pid};
-use crate::proc::task::TASKLIST;
+use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
@@ -17,7 +17,10 @@ pub fn sys_fork() -> Pid {
 		let len = childs.len();
 		let proc_ptr: *mut Process = childs[len - 1].as_mut();
 		(*proc_ptr).init(&mut *parent);
+		let mut new_task: Task = Task::new();
+		new_task.regs = running_task.regs;
+		new_task.process = proc_ptr;
+		TASKLIST.push(new_task);
+		(*proc_ptr).pid
 	}
-//	parent.
-	0
 }

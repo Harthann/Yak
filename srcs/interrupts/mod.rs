@@ -1,3 +1,5 @@
+use crate::proc::task::TASKLIST;
+
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
@@ -127,6 +129,14 @@ use crate::wrappers::{_cli, _rst};
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: &mut Registers) {
 	_cli();
+	unsafe {
+		let res = TASKLIST.peek();
+		if res.is_none() {
+			todo!();
+		}
+		let mut task = res.unwrap();
+		task.regs = *reg;
+	}
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);

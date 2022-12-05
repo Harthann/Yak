@@ -57,7 +57,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	let proc_ptr: *mut Process = childs[len - 1].as_mut();
 	(*proc_ptr).init(&mut *parent);
 	let mut new_task: Task = Task::new();
-	new_task.init(running_task.regs.eflags, running_task.regs.cr3, proc_ptr);
+	new_task.init(running_task.regs, proc_ptr);
 	/* init_fn_task - Can't move to another function ??*/
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp -= sum as u32;
