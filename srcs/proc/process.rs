@@ -3,7 +3,7 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::vec::Vec;
 use crate::memory::{MemoryZone, Stack, Heap};
-use crate::memory::paging::{PAGE_WRITABLE, free_pages};
+use crate::memory::paging::{free_pages};
 use crate::memory::allocator::Box;
 
 use crate::proc::task::Task;
@@ -172,12 +172,12 @@ impl Process {
 		Err(ErrNo::EAGAIN)
 	}
 
-	pub unsafe fn get_running_process() -> *mut Self {
-		Task::get_running_task().process
+	pub fn get_running_process() -> &'static mut Self {
+		unsafe {&mut *Task::get_running_task().process}
 	}
 
 	pub unsafe fn get_signal_running_process(pid: Id, signal: SignalType) -> Result<Signal, ErrNo> {
-		let process = &mut *(Process::get_running_process());
+		let process: &mut Process = Process::get_running_process();
 		if pid == -1  {
 			process.get_signal(signal)
 		} else if pid > 0 {

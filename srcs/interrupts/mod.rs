@@ -1,7 +1,6 @@
 use crate::proc::task::TASKLIST;
 
 use crate::syscalls::syscall_handler;
-use crate::memory::paging::page_directory;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
 const IDT_SIZE: usize = 48;

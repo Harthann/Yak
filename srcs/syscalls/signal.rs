@@ -8,21 +8,19 @@ use crate::vec::Vec;
 use crate::__W_STOPCODE;
 
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
-	unsafe {
-		/* TODO: check signal validity */
-		/* TODO: Use map/hashmap instead */
-		let handlers: &mut Vec<SignalHandler> = &mut (*Process::get_running_process()).signal_handlers;
-		for i in 0..handlers.len() {
-			if handlers[i].signal == signal {
-				handlers.remove(i);
-				break ;
-			}
+	/* TODO: check signal validity */
+	/* TODO: Use map/hashmap instead */
+	let handlers: &mut Vec<SignalHandler> = &mut Process::get_running_process().signal_handlers;
+	for i in 0..handlers.len() {
+		if handlers[i].signal == signal {
+			handlers.remove(i);
+			break ;
 		}
-		handlers.push(SignalHandler{
-			signal: signal,
-			handler: handler
-		});
 	}
+	handlers.push(SignalHandler{
+		signal: signal,
+		handler: handler
+	});
 	handler
 }
 
@@ -38,7 +36,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 			if signal == 0 {
 				return 0; /* kill check for pid presence if signal is 0 */
 			}
-			let sender_pid = (*Process::get_running_process()).pid;
+			let sender_pid = Process::get_running_process().pid;
 			let res = get_signal_type(signal);
 			if res.is_err() {
 				return -(res.err().unwrap() as i32)

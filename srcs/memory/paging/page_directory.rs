@@ -19,7 +19,7 @@ impl PageDirectory {
 			if !res.is_ok() {
 				todo!();
 			}
-			(res.unwrap() as *mut _)
+			res.unwrap() as *mut _
 		}
 	}
 

@@ -1,7 +1,7 @@
 use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid};
-use crate::proc::task::{TASKLIST, Task, TaskStatus};
+use crate::proc::task::{Task, TaskStatus};
 
 use crate::errno::ErrNo;
 
@@ -52,8 +52,8 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 			let res = Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
 				let signal: Signal = res.unwrap();
-				let process_ptr = Process::get_running_process();
-				let res = (*process_ptr).search_from_pid(signal.sender);
+				let parent_process: &mut Process = Process::get_running_process();
+				let res = parent_process.search_from_pid(signal.sender);
 				if res.is_ok() {
 					let process: &mut Process = res.unwrap();
 					process.remove();
