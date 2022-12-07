@@ -27,6 +27,7 @@ pub fn sys_fork() -> Pid {
 		page_dir.set_entry(0x08000000 >> 22, get_paddr!(process.heap.offset));
 
 		new_task.regs.cr3 = (page_dir as *mut _) as u32;
+		new_task.regs.eax = 0; // New forked process return 0
 
 		TASKLIST.push(new_task);
 		process.pid
