@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Update
+      run: sudo apt-get update -y
     - name: Install cross-compiling toolchain
       run: ./config/setup_env.sh && echo "$HOME/.local/bin" >> $GITHUB_PATH
     - name: Testing

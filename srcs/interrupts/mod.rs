@@ -1,5 +1,6 @@
-use crate::proc::task::TASKLIST;
+//! Setup interrupts and exception handler
 
+use crate::proc::task::TASKLIST;
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;

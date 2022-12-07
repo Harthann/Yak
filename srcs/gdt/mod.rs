@@ -1,3 +1,5 @@
+//! GDT and TSS setup/helpers
+
 use core::fmt;
 use crate::kprintln;
 pub mod tss;

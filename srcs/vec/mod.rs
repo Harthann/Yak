@@ -1,3 +1,5 @@
+//! Vector implementation
+
 use core::ptr::NonNull;
 use core::alloc::Layout;
 use core::ops;

@@ -1,3 +1,5 @@
+//! Allocator, Box and Pagination
+
 pub mod allocator;
 pub mod paging;
 

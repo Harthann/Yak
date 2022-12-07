@@ -1,3 +1,5 @@
+//! Keyboard handler and key mapping
+
 use crate::kprint;
 use crate::io;
 use crate::vga_buffer;
