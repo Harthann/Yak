@@ -13,13 +13,13 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
-	pub fn new() -> *mut Self {
+	pub fn new() -> &'static mut Self {
 		unsafe {
 			let res = page_directory.get_page_frame(PAGE_WRITABLE);
 			if !res.is_ok() {
 				todo!();
 			}
-			res.unwrap() as *mut _
+			&mut *(res.unwrap() as *mut _)
 		}
 	}
 

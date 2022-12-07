@@ -45,19 +45,15 @@ pub unsafe extern "C" fn wrapper_fn() {
 
 pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) -> Pid {
 	_cli();
-	let res = TASKLIST.peek();
-	if res.is_none() {
-		todo!();
-	}
-	let running_task = res.unwrap();
-	let parent: &mut Process = &mut *running_task.process;
-	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
-	childs.push(Box::new(Process::new()));
-	let len = childs.len();
-	let proc_ptr: *mut Process = childs[len - 1].as_mut();
-	(*proc_ptr).init(&mut *parent);
+	let running_task: &mut Task = Task::get_running_task();
+	let parent: &mut Process = Process::get_running_process();
+	let mut process = Process::new();
+	process.init(parent);
+	parent.childs.push(Box::new(process));
+	let len = parent.childs.len();
+	let process: &mut Process = parent.childs[len - 1].as_mut();
 	let mut new_task: Task = Task::new();
-	new_task.init(running_task.regs, proc_ptr);
+	new_task.init(running_task.regs, process);
 	/* init_fn_task - Can't move to another function ??*/
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp -= sum as u32;
@@ -92,7 +88,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 		func = in(reg) func);
 	TASKLIST.push(new_task);
 	_sti();
-	(*proc_ptr).pid
+	process.pid
 }
 
 #[macro_export]

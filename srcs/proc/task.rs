@@ -44,12 +44,12 @@ impl Task {
 		}
 	}
 
-	pub unsafe fn init(&mut self, regs: Registers, process: *mut Process) {
+	pub unsafe fn init(&mut self, regs: Registers, process: &mut Process) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = regs.eflags;
 		self.regs.cr3 = regs.cr3;
-		self.process = process;
-		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
+		self.process = process as *mut _;
+		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
 	}
 
 	pub fn init_tasking() {

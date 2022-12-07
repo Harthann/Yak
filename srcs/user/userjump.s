@@ -21,4 +21,4 @@ jump_usermode:
 userfunc:
 	mov eax, 5
 	int 0x80
-userfunc_end:	
+userfunc_end:

@@ -83,10 +83,10 @@ impl Process {
 	}
 
 	/* TODO: next_pid need to check overflow and if other pid is available */
-	pub unsafe fn init(&mut self, parent: *mut Process) {
+	pub unsafe fn init(&mut self, parent: &mut Process) {
 		self.pid = NEXT_PID;
 		self.state = Status::Run;
-		self.parent = parent;
+		self.parent = &mut *parent;
 		self.stack = <MemoryZone as Stack>::init(
 			(*parent).stack.size,
 			(*parent).stack.flags,
@@ -107,7 +107,7 @@ impl Process {
 			self.heap.offset as *mut u8,
 			self.heap.size
 		);
-		self.owner = (*parent).owner;
+		self.owner = parent.owner;
 		NEXT_PID += 1;
 	}
 
