@@ -50,8 +50,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	let mut process = Process::new();
 	process.init(parent);
 	parent.childs.push(Box::new(process));
-	let len = parent.childs.len();
-	let process: &mut Process = parent.childs[len - 1].as_mut();
+	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
 	new_task.init(running_task.regs, process);
 	/* init_fn_task - Can't move to another function ??*/

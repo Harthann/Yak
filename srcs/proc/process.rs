@@ -86,7 +86,7 @@ impl Process {
 	pub unsafe fn init(&mut self, parent: &mut Process) {
 		self.pid = NEXT_PID;
 		self.state = Status::Run;
-		self.parent = &mut *parent;
+		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(
 			(*parent).stack.size,
 			(*parent).stack.flags,
