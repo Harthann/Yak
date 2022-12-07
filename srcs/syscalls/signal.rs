@@ -3,9 +3,9 @@ use crate::proc::task::Task;
 use crate::proc::signal::{Signal, SignalType, SignalHandler, SigHandlerFn, get_signal_type};
 use crate::wrappers::{_cli, _sti};
 
-use crate::vec::Vec;
+use crate::syscalls::exit::{__W_STOPCODE};
 
-use crate::__W_STOPCODE;
+use crate::vec::Vec;
 
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	/* TODO: check signal validity */

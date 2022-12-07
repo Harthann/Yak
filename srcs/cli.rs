@@ -2,11 +2,12 @@
 
 use core::arch::asm;
 
-use crate::{kprint, kprintln, hexdump, screenclear};
+use crate::{kprint, kprintln};
 use crate::io;
 use crate::string::String;
 use crate::memory::allocator;
 use crate::proc::process::Process;
+use crate::vga_buffer::{screenclear, hexdump};
 
 const NB_CMDS: usize = 10;
 
@@ -104,7 +105,7 @@ fn hexdump_parser(command: &Command) {
 			count += 1;
 		}
 	}
-	hexdump!(args[0] as *const u8, args[1]);
+	hexdump(args[0] as *const u8, args[1]);
 }
 
 use crate::keyboard::{KEYMAP, KEYMAP_US, KEYMAP_FR};

@@ -2,6 +2,7 @@
 
 use crate::interrupts::Registers;
 
+#[macro_use]
 pub mod exit;
 pub mod mmap;
 pub mod signal;

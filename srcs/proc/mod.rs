@@ -15,7 +15,7 @@ pub mod test;
 use process::{Process, Pid};
 use task::{Task, TASKLIST, schedule_task};
 
-use crate::__W_EXITCODE;
+use crate::syscalls::exit::{__W_EXITCODE};
 
 pub type Id = i32;
 

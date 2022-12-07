@@ -44,23 +44,22 @@ pub extern "C" fn _rst() {
 	}
 }
 
-#[macro_export]
 macro_rules! cli {
 	() => {
 		core::arch::asm!("cli")
 	}
 }
 
-#[macro_export]
 macro_rules! sti {
 	() => {
 		core::arch::asm!("sti")
 	}
 }
 
-#[macro_export]
 macro_rules! hlt {
 	() => {
 		core::arch::asm!("hlt")
 	}
 }
+
+pub (crate) use {cli, sti, hlt};

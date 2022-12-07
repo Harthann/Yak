@@ -6,9 +6,11 @@ use crate::memory::paging::page_directory::PageDirectory;
 
 use crate::memory::allocator::Box;
 
-use crate::get_paddr;
-
 pub fn sys_fork() -> Pid {
+	//! Create a new process from the calling process,
+	//! copy stack, heap and registers
+	//!
+	//! Heap contains the prg and the heap allocated
 	unsafe {
 		let running_task: &mut Task = Task::get_running_task();
 		let parent: &mut Process = Process::get_running_process();

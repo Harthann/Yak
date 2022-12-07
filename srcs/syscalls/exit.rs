@@ -3,6 +3,8 @@ use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid};
 use crate::proc::task::{Task, TaskStatus};
 
+use crate::wrappers::{_cli, _sti, cli_count, cli, sti, hlt};
+
 use crate::errno::ErrNo;
 
 const WNOHANG: u32 = 0x01;
@@ -47,7 +49,7 @@ pub fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage)
 /* TODO: EINTR */
 pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
-		crate::wrappers::_cli();
+		_cli();
 		loop {
 			let res = Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
@@ -61,24 +63,24 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				if !wstatus.is_null() {
 					*wstatus = signal.wstatus; // TODO
 				}
-				crate::wrappers::_sti();
+				_sti();
 				return signal.sender;
 			} else if res == Err(ErrNo::ESRCH) {
-				crate::wrappers::_sti();
+				_sti();
 				return -(ErrNo::ECHILD as i32);
 			}
 			if options & WNOHANG != 0 {
-				crate::wrappers::_sti();
+				_sti();
 				return 0;
 			} else {
 				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
-				let save = crate::wrappers::cli_count;
-				crate::wrappers::cli_count = 0;
-				crate::sti!();
-				crate::hlt!(); // wait for scheduler
-				crate::cli!(); // unblocked here
-				crate::wrappers::cli_count = save;
+				let save = cli_count;
+				cli_count = 0;
+				sti!();
+				hlt!(); // wait for scheduler
+				cli!(); // unblocked here
+				cli_count = save;
 			}
 		}
 	}
@@ -93,42 +95,36 @@ pub fn sys_exit(status: i32) -> ! {
 
 /* Macros to get status values */
 
-#[macro_export]
 macro_rules! __WEXITSTATUS {
 	($status: expr) => (
 		(($status & 0xff00) >> 8)
 	);
 }
 
-#[macro_export]
 macro_rules! __WTERMSIG {
 	($status: expr) => (
 		(($status) & 0x7f)
 	);
 }
 
-#[macro_export]
 macro_rules! __WSTOPSIG {
 	($status: expr) => (
-		$crate::__WEXITSTATUS!($status)
+		$crate::syscalls::exit::__WEXITSTATUS!($status)
 	);
 }
 
-#[macro_export]
 macro_rules! __WIFEXITED {
 	($status: expr) => (
-		($crate::__WTERMSIG!($status) == 0)
+		($crate::syscalls::exit::__WTERMSIG!($status) == 0)
 	);
 }
 
-#[macro_export]
 macro_rules! __WIFSIGNALED {
 	($status: expr) => (
 		(((($status & 0x7f) + 1) >> 1) > 0)
 	);
 }
 
-#[macro_export]
 macro_rules! __WIFSTOPPED {
 	($status: expr) => (
 		(($status & 0xff) == 0x7f)
@@ -138,14 +134,12 @@ macro_rules! __WIFSTOPPED {
 const __WCONTINUED: usize = 0xffff;
 const __WCOREFLAG: usize = 0x80;
 
-#[macro_export]
 macro_rules! __WIFCONTINUED {
 	($status: expr) => (
 		($status == __W_CONTINUED)
 	);
 }
 
-#[macro_export]
 macro_rules! __WCOREDUMP {
 	($status: expr) => (
 		($status & __WCOREFLAG)
@@ -154,16 +148,18 @@ macro_rules! __WCOREDUMP {
 
 /* Macros to set status values */
 
-#[macro_export]
 macro_rules! __W_EXITCODE {
 	($ret: expr, $sig: expr) => (
 		(($ret << 8) | $sig)
 	);
 }
 
-#[macro_export]
 macro_rules! __W_STOPCODE {
 	($sig: expr) => (
 		(($sig << 8) | 0x7f)
 	);
 }
+
+pub (crate) use {__WEXITSTATUS, __WTERMSIG, __WSTOPSIG, __WIFEXITED,
+	__WIFSIGNALED, __WIFSTOPPED, __WIFCONTINUED, __WCOREDUMP, __W_EXITCODE,
+	__W_STOPCODE};

@@ -1,6 +1,7 @@
 //! Allocator, Box and Pagination
 
 pub mod allocator;
+#[macro_use]
 pub mod paging;
 
 use crate::memory::allocator::AllocatorInit;

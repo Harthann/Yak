@@ -60,17 +60,20 @@ pub fn memory_state() {
 mod cli;
 mod gdt;
 mod keyboard;
+#[macro_use]
 mod memory;
 mod multiboot;
 mod vec;
 mod string;
 mod interrupts;
+#[macro_use]
 mod syscalls;
 mod io;
 mod vga_buffer;
 mod pic;
 mod proc;
 mod user;
+#[macro_use]
 mod wrappers;
 mod utils;
 mod errno;
@@ -116,7 +119,7 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	unsafe{crate::cli!()};
+	unsafe{cli!()};
 //	multiboot::read_tags();
 	/* Init paging and remove identity paging */
 	init_paging();
@@ -150,8 +153,10 @@ pub extern "C" fn kinit() {
 	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x0fff);
 
 	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-	unsafe{crate::sti!()};
+	unsafe {
+		core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256);
+		sti!();
+	}
 
 	/*	Function to test and enter usermode */
 //	user::test_user_page();
@@ -266,10 +271,10 @@ pub extern "C" fn kmain() -> ! {
 
 	kprintln!("Hello World of {}!", 42);
 
-	change_color!(Color::Red, Color::White);
+	vga_buffer::change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from("Press Ctrl-2 to navigate to the second workspace");
 	kprintln!("{}", workspace_msg);
-	change_color!(Color::White, Color::Black);
+	vga_buffer::change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
 //	test_task2();

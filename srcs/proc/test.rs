@@ -4,8 +4,6 @@ use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::{sys_signal, sys_kill};
 use crate::syscalls::timer::{sys_getpid, sys_getppid};
 
-use crate::{__WIFEXITED, __WEXITSTATUS, __WIFSIGNALED};
-
 pub fn simple_exec() -> usize {
 	2
 }

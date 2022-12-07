@@ -1,11 +1,11 @@
 use core::fmt;
 
-use crate::get_vaddr;
 
 use crate::memory::{VirtAddr, PhysAddr};
 use crate::memory::paging::{page_directory, PageTable, bitmap};
 
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT, refresh_tlb};
+use crate::memory::paging::{get_vaddr, get_paddr};
 
 #[repr(transparent)]
 pub struct PageDirectory {
@@ -193,11 +193,11 @@ impl PageDirectory {
 			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
 			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
 			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
-			crate::refresh_tlb!();
+			refresh_tlb!();
 			let new: &mut PageTable = page_directory.get_page_table(index);
 			new.clear();
 			self.entries[index] = (pt_paddr | flags | PAGE_PRESENT).into();
-			crate::refresh_tlb!();
+			refresh_tlb!();
 			Ok(index)
 		}
 	}
@@ -280,7 +280,7 @@ impl PageDirectory {
 			if vaddr & 0xfff != 0 {
 				return ; /* Not aligned */
 			}
-			let paddr: PhysAddr = crate::get_paddr!(vaddr);
+			let paddr: PhysAddr = get_paddr!(vaddr);
 			let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
 			let i: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
@@ -308,7 +308,7 @@ impl PageDirectory {
 				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
 				self.entries[index] = (0x00000002 as u32).into();
-				crate::refresh_tlb!();
+				refresh_tlb!();
 				return Ok(());
 			} else {
 				return Err(());

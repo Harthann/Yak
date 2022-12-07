@@ -40,11 +40,11 @@ pub fn init_paging() {
 		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		init_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
-		crate::refresh_tlb!();
+		refresh_tlb!();
 
 		/* Setup handler page table */
-		let kernel_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 768) as *mut _);
-		let mut handler_page_tab: &mut PageTable = &mut *(crate::get_vaddr!(0, 1023) as *mut _);
+		let kernel_page_tab: &mut PageTable = &mut *(get_vaddr!(0, 768) as *mut _);
+		let mut handler_page_tab: &mut PageTable = &mut *(get_vaddr!(0, 1023) as *mut _);
 		kernel_page_tab.init();
 		handler_page_tab.set_entry(0, init_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		handler_page_tab.set_entry(768, kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
@@ -52,14 +52,14 @@ pub fn init_paging() {
 		page_directory.set_entry(0, 0);
 		page_directory.set_entry(768, kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
 		page_directory.set_entry(1023, handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT);
-		crate::refresh_tlb!();
+		refresh_tlb!();
 
 		/* Remove init page */
 		init_page_tab = page_directory.get_page_table(0);
 		handler_page_tab = page_directory.get_page_table(1023);
 		init_page_tab.clear();
 		handler_page_tab.set_entry(0, 0);
-		crate::refresh_tlb!();
+		refresh_tlb!();
 	}
 }
 
@@ -101,7 +101,6 @@ pub fn free_page(vaddr: VirtAddr) {
 	unsafe{page_directory.remove_page_frame(vaddr)};
 }
 
-#[macro_export]
 macro_rules! get_paddr {
 	($vaddr:expr) =>
 		(
@@ -109,19 +108,16 @@ macro_rules! get_paddr {
 		);
 }
 
-#[macro_export]
 macro_rules! get_vaddr {
 	($pd_index:expr, $pt_index:expr) =>
 		(((($pd_index as usize) << 22) | (($pt_index as usize) << 12)) as crate::memory::VirtAddr);
 }
 
-#[macro_export]
 macro_rules! refresh_tlb {
 	() => (core::arch::asm!("mov eax, cr3",
 		"mov cr3, eax"));
 }
 
-#[macro_export]
 macro_rules! enable_paging {
 	($page_directory:expr) => (core::arch::asm!("mov eax, {p}",
 		"mov cr3, eax",
@@ -131,9 +127,10 @@ macro_rules! enable_paging {
 		p = in(reg) (&$page_directory as *const _) as usize););
 }
 
-#[macro_export]
 macro_rules! disable_paging {
 	() => (core::arch::asm!("mov ebx, cr0",
 		"and ebx, ~(1 << 31)",
 		"mov cr0, ebx"));
 }
+
+pub (crate) use {get_vaddr, get_paddr, refresh_tlb, enable_paging, disable_paging};

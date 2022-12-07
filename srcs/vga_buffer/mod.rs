@@ -254,11 +254,6 @@ pub fn _print(args: fmt::Arguments) {
 	unsafe{WRITER.write_fmt(args).unwrap()};
 }
 
-#[macro_export]
-macro_rules! hexdump {
-	($ptr:expr, $size:expr) => ($crate::vga_buffer::hexdump($ptr, $size));
-}
-
 pub fn hexdump(ptr: *const u8, size: usize)
 {
 	let mut i: usize = 0;
@@ -292,7 +287,6 @@ pub fn hexdump(ptr: *const u8, size: usize)
 	}
 }
 
-#[macro_export]
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => (
 		unsafe {
@@ -301,14 +295,14 @@ macro_rules! change_color {
 	);
 }
 
-#[macro_export]
 macro_rules! clihandle {
 	($arg:expr) => (
-		unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)}
+		unsafe {$crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)}
 	)
 }
 
-#[macro_export]
 macro_rules! screenclear {
-	() => (unsafe {crate::vga_buffer::WRITER.clear()})
+	() => (unsafe {$crate::vga_buffer::WRITER.clear()})
 }
+
+pub (crate) use {change_color, clihandle, screenclear};
