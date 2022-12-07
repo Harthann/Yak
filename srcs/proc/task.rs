@@ -84,11 +84,7 @@ impl Task {
 		let len = TASKLIST.len();
 		let mut i = 0;
 		while i < len {
-			let res = TASKLIST.peek();
-			if res.is_none() {
-				todo!();
-			}
-			let task: Task = res.unwrap();
+			let task: &mut Task = Task::get_running_task();
 			if task.process != process_ptr {
 				TASKLIST.push(TASKLIST.pop());
 			} else {
@@ -96,6 +92,14 @@ impl Task {
 			}
 			i += 1;
 		}
+	}
+
+	pub unsafe fn get_running_task() -> &'static mut Task {
+		let res = TASKLIST.front_mut();
+		if res.is_none() {
+			todo!();
+		}
+		&mut *res.unwrap()
 	}
 }
 
@@ -115,11 +119,7 @@ unsafe extern "C" fn wrapper_handler() {
 #[no_mangle]
 unsafe fn _end_handler() {
 	_cli();
-	let res = TASKLIST.front_mut();
-	if res.is_none() {
-		todo!();
-	}
-	let task: &mut Task = res.unwrap();
+	let task: &mut Task = Task::get_running_task();
 	task.regs.esp += 8;
 	let regs: &mut Registers = &mut *(task.regs.esp as *mut _);
 	task.regs = *regs;
@@ -182,11 +182,7 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
 	loop {
-		let res = TASKLIST.front_mut();
-		if res.is_none() {
-			todo!();
-		}
-		let new_task: &mut Task = res.unwrap();
+		let new_task: &mut Task = Task::get_running_task();
 		/* TODO: IF SIGNAL JUMP ? */
 		if (*new_task.process).signals.len() > 0 {
 			do_signal(new_task);

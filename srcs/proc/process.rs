@@ -6,7 +6,7 @@ use crate::memory::{MemoryZone, Stack, Heap};
 use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
 
-use crate::proc::task::TASKLIST;
+use crate::proc::task::Task;
 
 use crate::proc::Id;
 use crate::proc::signal::{Signal, SignalType, SignalHandler};
@@ -173,12 +173,7 @@ impl Process {
 	}
 
 	pub unsafe fn get_running_process() -> *mut Self {
-		let res = TASKLIST.front_mut();
-		if res.is_none() {
-			todo!();
-		}
-		let task = res.unwrap();
-		task.process
+		Task::get_running_task().process
 	}
 
 	pub unsafe fn get_signal_running_process(pid: Id, signal: SignalType) -> Result<Signal, ErrNo> {

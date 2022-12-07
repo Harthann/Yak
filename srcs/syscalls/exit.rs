@@ -51,10 +51,6 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 		loop {
 			let res = Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
-				let other_res = TASKLIST.front_mut();
-				if other_res.is_none() {
-					todo!();
-				}
 				let signal: Signal = res.unwrap();
 				let process_ptr = Process::get_running_process();
 				let res = (*process_ptr).search_from_pid(signal.sender);
@@ -75,11 +71,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				crate::wrappers::_sti();
 				return 0;
 			} else {
-				let res = TASKLIST.front_mut();
-				if res.is_none() {
-					todo!();
-				}
-				let task: &mut Task = res.unwrap();
+				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
 				let save = crate::wrappers::cli_count;
 				crate::wrappers::cli_count = 0;
