@@ -1,3 +1,4 @@
+%include "boot.h"
 %include "idt.h"
 %include "task.h"
 
@@ -23,7 +24,7 @@ isr_common_stub:
 	mov eax, cr3
 	push eax
 
-	mov eax, page_directory - 0xc0000000
+	mov eax, page_directory - KERNEL_BASE
 	mov cr3, eax
 
 	xor eax, eax
