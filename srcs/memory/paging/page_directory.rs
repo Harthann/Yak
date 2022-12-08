@@ -62,7 +62,7 @@ impl PageDirectory {
 		if nb == 0 {
 			return Err(());
 		}
-		while i < 1024 && available != nb {
+		while i < 1023 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -103,7 +103,7 @@ impl PageDirectory {
 		if nb == 0 {
 			return Err(());
 		}
-		while i < 1024 && available != nb {
+		while i < 1023 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -136,7 +136,7 @@ impl PageDirectory {
 		let paddr = bitmap::physmap_as_mut().get_page()?;
 		let mut i: usize = 0;
 
-		while i < 1024 {
+		while i < 1023 {
 			if self.entries[i].get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
 				if res.is_ok() {

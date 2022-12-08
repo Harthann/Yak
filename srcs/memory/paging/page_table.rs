@@ -14,6 +14,16 @@ pub struct PageTable {
 }
 
 impl PageTable {
+	pub fn new() -> &'static mut Self {
+		unsafe {
+			let res = page_directory.get_page_frame(PAGE_WRITABLE);
+			if !res.is_ok() {
+				todo!();
+			}
+			&mut *(res.unwrap() as *mut _)
+		}
+	}
+
 	pub fn init(&mut self) {
 		let mut i: usize = 0;
 

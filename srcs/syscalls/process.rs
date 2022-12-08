@@ -3,6 +3,9 @@ use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory;
 use crate::memory::paging::page_directory::PageDirectory;
+use crate::memory::paging::page_table::PageTable;
+
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER, PAGE_PRESENT};
 
 use crate::memory::allocator::Box;
 
@@ -25,8 +28,34 @@ pub fn sys_fork() -> Pid {
 		new_task.process = process;
 
 		let page_dir: &mut PageDirectory = PageDirectory::new();
-		page_dir.set_entry(0xb0000000 >> 22, get_paddr!(process.stack.offset));
-		page_dir.set_entry(0x08000000 >> 22, get_paddr!(process.heap.offset));
+		let handler_page_tab: &mut PageTable = PageTable::new();
+		// Reference page table
+		handler_page_tab.set_entry(
+			0x0800000 >> 22,
+			get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		handler_page_tab.set_entry(
+			0xb000000 >> 22,
+			get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		handler_page_tab.set_entry(
+			1023,
+			get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		// Setup heap + prg
+		page_dir.set_entry(
+			0x08000000 >> 22,
+			get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		// Setup stack
+		page_dir.set_entry( 
+			0xb0000000 >> 22,
+			get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		page_dir.set_entry(
+			1023,
+			get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
+		);
 
 		new_task.regs.cr3 = (page_dir as *mut _) as u32;
 		new_task.regs.eax = 0; // New forked process return 0
