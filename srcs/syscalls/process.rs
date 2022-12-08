@@ -14,6 +14,7 @@ pub fn sys_fork() -> Pid {
 	unsafe {
 		let running_task: &mut Task = Task::get_running_task();
 		let parent: &mut Process = Process::get_running_process();
+
 		let mut process: Process = Process::new();
 		process.init(parent);
 		parent.childs.push(Box::new(process));

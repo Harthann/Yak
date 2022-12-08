@@ -49,6 +49,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let parent: &mut Process = Process::get_running_process();
+
 	let mut process = Process::new();
 	process.init(parent);
 	parent.childs.push(Box::new(process));

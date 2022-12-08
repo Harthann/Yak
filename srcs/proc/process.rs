@@ -88,22 +88,22 @@ impl Process {
 		self.state = Status::Run;
 		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(
-			(*parent).stack.size,
-			(*parent).stack.flags,
-			(*parent).stack.kphys
+			parent.stack.size,
+			parent.stack.flags,
+			parent.stack.kphys
 		);
 		copy_nonoverlapping(
-			(*parent).stack.offset as *mut u8,
+			parent.stack.offset as *mut u8,
 			self.stack.offset as *mut u8,
 			self.stack.size
 		);
 		self.heap = <MemoryZone as Heap>::init_no_allocator(
-			(*parent).heap.size,
-			(*parent).heap.flags,
-			(*parent).heap.kphys
+			parent.heap.size,
+			parent.heap.flags,
+			parent.heap.kphys
 		);
 		copy_nonoverlapping(
-			(*parent).heap.offset as *mut u8,
+			parent.heap.offset as *mut u8,
 			self.heap.offset as *mut u8,
 			self.heap.size
 		);
