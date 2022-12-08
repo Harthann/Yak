@@ -133,14 +133,14 @@ pub extern "C" fn kinit() {
 	/* HEAP KERNEL */
 	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
 	unsafe {
-		KSTACK = init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
+		KSTACK = init_stack(kstack_addr, 0x1000, PAGE_WRITABLE, false);
 		KHEAP = init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
 	}
 
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-	Task::init_tasking();
+	Task::init_multitasking();
 
 	/* init tracker after init first process */
 	unsafe {

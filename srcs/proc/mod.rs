@@ -58,7 +58,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	new_task.init(running_task.regs, process);
 	/* init_fn_task - Can't move to another function ??*/
 	let sum: usize = args_size.iter().sum();
-	new_task.regs.esp -= sum as u32;
+	new_task.regs.esp = (process.stack.offset + process.stack.size as u32) - sum as u32;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;

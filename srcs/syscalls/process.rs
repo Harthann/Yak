@@ -17,6 +17,7 @@ pub fn sys_fork() -> Pid {
 
 		let mut process: Process = Process::new();
 		process.init(parent);
+		process.copy_mem(parent);
 		parent.childs.push(Box::new(process));
 		let process: &mut Process = parent.childs.last_mut().unwrap();
 		let mut new_task: Task = Task::new();

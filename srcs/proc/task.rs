@@ -52,7 +52,7 @@ impl Task {
 		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
 	}
 
-	pub fn init_tasking() {
+	pub fn init_multitasking() {
 		let mut task = Task::new();
 		unsafe {
 			core::arch::asm!("

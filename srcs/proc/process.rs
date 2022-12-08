@@ -87,11 +87,20 @@ impl Process {
 		self.pid = NEXT_PID;
 		self.state = Status::Run;
 		self.parent = parent;
+		self.owner = parent.owner;
+		self.setup_stack(parent);
+		NEXT_PID += 1;
+	}
+
+	fn setup_stack(&mut self, parent: &mut Process) {
 		self.stack = <MemoryZone as Stack>::init(
 			parent.stack.size,
 			parent.stack.flags,
 			parent.stack.kphys
 		);
+	}
+
+	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
 		copy_nonoverlapping(
 			parent.stack.offset as *mut u8,
 			self.stack.offset as *mut u8,
@@ -107,8 +116,6 @@ impl Process {
 			self.heap.offset as *mut u8,
 			self.heap.size
 		);
-		self.owner = parent.owner;
-		NEXT_PID += 1;
 	}
 
 	pub unsafe fn zombify(&mut self, wstatus: i32) {
