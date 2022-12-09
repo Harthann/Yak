@@ -136,7 +136,6 @@ pub extern "C" fn kinit() {
 		KSTACK = init_stack(kstack_addr, 0x1000, PAGE_WRITABLE, false);
 		KHEAP = init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
 	}
-
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
@@ -267,7 +266,8 @@ pub fn test_task() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
+//	test_task();
+	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 

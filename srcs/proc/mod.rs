@@ -37,8 +37,7 @@ pub unsafe extern "C" fn wrapper_fn() {
 	add esp, 4
 	call eax
 	cli
-	mov esp, STACK_TASK_SWITCH
-	sub esp, 256
+	mov esp, [STACK_TASK_SWITCH]
 	push eax
 	call _exit",
 	options(noreturn));

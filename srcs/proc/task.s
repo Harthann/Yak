@@ -48,12 +48,10 @@ swap_task:
 
 ; fn switch_task(regs: *const Registers)
 switch_task:
-	mov ebp, dword[esp + 4] ; regs
+	mov eax, dword[esp + 4] ; regs
 
-	mov eax, dword[ebp + regs.cr3] ; cr3
-	mov cr3, eax
-
-	mov eax, ebp
+	mov ebp, dword[eax + regs.cr3] ; cr3
+	mov cr3, ebp
 
 	mov edi, dword[eax + regs.edi]
 	mov esi, dword[eax + regs.esi]

@@ -6,8 +6,8 @@ jump_usermode:; jump_usermode(func: VirtAddr)
 	mov ebx, dword[esp + 4]
 	mov ax, (5 * 8) | 3 ; ring 3 data with bottom 2 bits set for ring 3
 	mov ds, ax
-	mov es, ax 
-	mov fs, ax 
+	mov es, ax
+	mov fs, ax
 	mov gs, ax ; SS is handled by iret
 
 	; set up the stack frame iret expects
