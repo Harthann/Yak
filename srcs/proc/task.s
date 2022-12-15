@@ -4,7 +4,6 @@ global irq_0
 global switch_task
 global next_task
 
-extern STACK_TASK_SWITCH
 extern save_task
 extern schedule_task
 
@@ -34,9 +33,6 @@ swap_task:
 	out dx, al
 
 	mov eax, esp
-
-	; Setup temp stack
-	mov esp, dword[STACK_TASK_SWITCH]
 
 	; (regs: &mut Registers)
 	push eax

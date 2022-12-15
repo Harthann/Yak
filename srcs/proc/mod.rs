@@ -2,7 +2,7 @@
 
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
-use crate::VirtAddr;
+use crate::{KSTACK_ADDR, VirtAddr};
 use crate::wrappers::{_cli, _sti, _rst};
 
 pub mod task;
@@ -36,10 +36,9 @@ pub unsafe extern "C" fn wrapper_fn() {
 	mov eax, [esp]
 	add esp, 4
 	call eax
-	cli
-	mov esp, [STACK_TASK_SWITCH]
-	push eax
-	call _exit",
+	mov edi, eax
+	mov eax, 1 // exit
+	int 0x80",
 	options(noreturn));
 	/* Never goes there */
 }
@@ -51,6 +50,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 
 	let mut process = Process::new();
 	process.init(parent);
+	process.setup_kernel_stack(0x1000, parent.stack.flags, parent.stack.kphys);
 	process.setup_stack(0x1000, parent.stack.flags, parent.stack.kphys);
 	parent.childs.push(Box::new(process));
 	let process: &mut Process = parent.childs.last_mut().unwrap();

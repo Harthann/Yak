@@ -9,6 +9,7 @@
 #![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]
+#![feature(asm_const)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -111,10 +112,8 @@ use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 pub use pic::handlers::JIFFIES;
 
-use crate::memory::MemoryZone;
-
-pub static mut KSTACK: MemoryZone = MemoryZone::new();
-pub static mut KHEAP: MemoryZone = MemoryZone::new();
+const STACK_ADDR: VirtAddr = 0xffbfffff;
+const KSTACK_ADDR: VirtAddr = 0xbfffffff;
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -130,16 +129,10 @@ pub extern "C" fn kinit() {
 		init_idt();
 	}
 
-	/* HEAP KERNEL */
-	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	unsafe {
-		KSTACK = init_stack(kstack_addr, 0x1000, PAGE_WRITABLE, false);
-		KHEAP = init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
-	}
-	gdt::tss::init_tss(kstack_addr);
-	reload_tss!();
+	Task::init_multitasking(STACK_ADDR, heap as u32, KSTACK_ADDR);
 
-	Task::init_multitasking();
+	gdt::tss::init_tss(KSTACK_ADDR);
+	reload_tss!();
 
 	/* init tracker after init first process */
 	unsafe {
@@ -153,7 +146,7 @@ pub extern "C" fn kinit() {
 
 	/* Reserve some spaces to push things before main */
 	unsafe {
-		core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256);
+		core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256);
 		sti!();
 	}
 
@@ -266,8 +259,8 @@ pub fn test_task() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-//	test_task();
-	crate::user::test_user_page();
+	test_task();
+//	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 

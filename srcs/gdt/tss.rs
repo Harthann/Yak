@@ -72,10 +72,9 @@ pub struct Tss {
 
 pub static mut TSS: Tss = Tss::new();
 
-
-pub fn init_tss(kstack: u32) {
+pub fn init_tss(stack_addr: u32) {
 	unsafe {
-		TSS.esp0 = kstack as u32;
+		TSS.esp0 = stack_addr;
 		TSS.ss0 = 0x18;
 		TSS.iopb = core::mem::size_of::<Tss>() as u16;
 /*	Page directory entry for virt addr */

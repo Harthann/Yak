@@ -33,6 +33,7 @@ pub struct Process {
 	pub childs: Vec<Box<Process>>,
 	pub stack: MemoryZone,
 	pub heap: MemoryZone,
+	pub kernel_stack: MemoryZone,
 	pub signals: Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
 	pub owner: Id
@@ -47,6 +48,7 @@ impl Process {
 			childs: Vec::new(),
 			stack: MemoryZone::new(),
 			heap: MemoryZone::new(),
+			kernel_stack: MemoryZone::new(),
 			signals: Vec::new(),
 			signal_handlers: Vec::new(),
 			owner: 0
@@ -107,6 +109,14 @@ impl Process {
 		);
 	}
 
+	pub fn setup_kernel_stack(&mut self, size: usize, flags: u32, kphys: bool) {
+		self.kernel_stack = <MemoryZone as Stack>::init(
+			size,
+			flags,
+			kphys
+		);
+	}
+
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
 		copy_nonoverlapping(
 			parent.stack.offset as *mut u8,
@@ -138,6 +148,9 @@ impl Process {
 		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
 		self.state = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
+//		TODO: don't work ?
+		crate::kprintln!("offset: {:#x?}", self.stack.offset);
+		crate::kprintln!("size: {:#x?}", self.stack.size);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 		free_pages(self.heap.offset, self.heap.size / 0x1000);
 	}

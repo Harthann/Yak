@@ -10,7 +10,6 @@ global isr_common_stub
 extern irq_0
 extern page_directory
 extern exception_handler
-extern STACK_TASK_SWITCH
 
 isr_stub_table:
 	%assign i 0

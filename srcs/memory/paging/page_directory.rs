@@ -28,7 +28,7 @@ impl PageDirectory {
 	}
 
 	pub fn kget_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
-		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 		
 		if self.entries[pd_index].get_present() == 0 {
@@ -39,7 +39,7 @@ impl PageDirectory {
 	}
 
 	pub fn get_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
-		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 		
 		if self.entries[pd_index].get_present() == 0 {
@@ -281,7 +281,7 @@ impl PageDirectory {
 				return ; /* Not aligned */
 			}
 			let paddr: PhysAddr = get_paddr!(vaddr);
-			let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+			let pd_index: usize = (vaddr >> 22) as usize;
 			let i: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
 			page_table.set_entry(i, 0);

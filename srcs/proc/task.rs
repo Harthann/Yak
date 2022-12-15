@@ -1,18 +1,18 @@
 use core::ptr;
 
-use crate::{KSTACK, KHEAP};
 use crate::wrappers::{_cli, _rst};
 use crate::vec::Vec;
 use crate::utils::queue::Queue;
 use crate::interrupts::Registers;
-use crate::memory::VirtAddr;
-use crate::memory::paging::{PAGE_WRITABLE, alloc_page};
+use crate::memory::{init_heap, init_stack, VirtAddr};
+use crate::memory::paging::{alloc_page, page_directory};
 use crate::proc::wrapper_fn;
 use crate::proc::signal::{SignalHandler, SignalType};
 use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
-#[no_mangle]
-pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
+use crate::{KSTACK_ADDR, KALLOCATOR};
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER, PAGE_PRESENT};
+
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
 extern "C" {
@@ -50,7 +50,7 @@ impl Task {
 		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
 	}
 
-	pub fn init_multitasking() {
+	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr, kstack_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
 			core::arch::asm!("
@@ -60,16 +60,12 @@ impl Task {
 			popf",
 			cr3 = out(reg) task.regs.cr3,
 			eflags = out(reg) task.regs.eflags);
-			let res = alloc_page(PAGE_WRITABLE);
-			if !res.is_ok() {
-				todo!();
-			}
-			STACK_TASK_SWITCH = res.unwrap() + 0x1000;
 			MASTER_PROCESS.state = Status::Run;
+			MASTER_PROCESS.stack = init_stack(stack_addr, 0x1000, PAGE_WRITABLE, false);
+			MASTER_PROCESS.heap = init_heap(heap_addr, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
+			MASTER_PROCESS.kernel_stack = init_stack(kstack_addr - 0x1000, 0x1000, PAGE_WRITABLE, false); /* Don't setup the kstack on same place to avoid remove */
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
-			MASTER_PROCESS.stack = KSTACK;
-			MASTER_PROCESS.heap = KHEAP;
 			MASTER_PROCESS.owner = 0;
 			NEXT_PID += 1;
 			task.process = &mut MASTER_PROCESS;
@@ -108,14 +104,17 @@ unsafe extern "C" fn wrapper_handler() {
 	mov eax, [esp]
 	add esp, 4
 	call eax
+	mov esp, {}
 	cli
 	jmp _end_handler",
+	const KSTACK_ADDR,
 	options(noreturn));
 	/* Never goes there */
 }
 
 #[no_mangle]
 unsafe fn _end_handler() {
+	crate::kprintln!("end_handler");
 	_cli();
 	let task: &mut Task = Task::get_running_task();
 	task.regs.esp += 8;
@@ -123,11 +122,13 @@ unsafe fn _end_handler() {
 	task.regs = *regs;
 	task.regs.esp += core::mem::size_of::<Task>() as u32;
 	task.state = TaskStatus::Running;
+	page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(Process::get_running_process().kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
 	_rst();
-	switch_task(&mut task.regs);
+	switch_task(&task.regs);
 }
 
 unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
+	crate::kprintln!("handle_signal");
 	task.regs.esp -= core::mem::size_of::<Task>() as u32;
 	(task.regs.esp as *mut Registers).write(task.regs);
 	task.regs.int_no = 0; /* Reset int_no to return to new func (TODO: DO THIS BETTER) */
@@ -141,8 +142,9 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 		esp = in(reg) task.regs.esp,
 		in("eax") handler.handler);
 	task.regs.eip = wrapper_handler as u32;
+	page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(Process::get_running_process().kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
 	_rst();
-	switch_task(&mut task.regs);
+	switch_task(&task.regs);
 }
 
 unsafe fn do_signal(task: &mut Task) {
@@ -179,6 +181,7 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
+	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		/* TODO: IF SIGNAL JUMP ? */
@@ -187,6 +190,9 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			_rst();
+			crate::kprintln!("paddr: {:#x?}", get_paddr!(Process::get_running_process().kernel_stack.offset));
+			page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(Process::get_running_process().kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
+			crate::kprintln!("KSTACK_ADDR {}", page_directory.get_page_table(KSTACK_ADDR as usize >> 22).entries[(KSTACK_ADDR as usize & 0x3ff000) >> 12]);
 			let regs: Registers = new_task.regs; /* Put registers into the stack */
 			switch_task(&regs);
 			/* never goes there */
