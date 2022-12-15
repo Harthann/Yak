@@ -88,15 +88,22 @@ impl Process {
 		self.state = Status::Run;
 		self.parent = parent;
 		self.owner = parent.owner;
-		self.setup_stack(parent);
 		NEXT_PID += 1;
 	}
 
-	fn setup_stack(&mut self, parent: &mut Process) {
+	pub fn setup_stack(&mut self, size: usize, flags: u32, kphys: bool) {
 		self.stack = <MemoryZone as Stack>::init(
-			parent.stack.size,
-			parent.stack.flags,
-			parent.stack.kphys
+			size,
+			flags,
+			kphys
+		);
+	}
+
+	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
+		self.heap = <MemoryZone as Heap>::init_no_allocator(
+			size,
+			flags,
+			kphys
 		);
 	}
 
@@ -105,11 +112,6 @@ impl Process {
 			parent.stack.offset as *mut u8,
 			self.stack.offset as *mut u8,
 			self.stack.size
-		);
-		self.heap = <MemoryZone as Heap>::init_no_allocator(
-			parent.heap.size,
-			parent.heap.flags,
-			parent.heap.kphys
 		);
 		copy_nonoverlapping(
 			parent.heap.offset as *mut u8,

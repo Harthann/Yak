@@ -11,8 +11,6 @@ use crate::proc::wrapper_fn;
 use crate::proc::signal::{SignalHandler, SignalType};
 use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
-
-
 #[no_mangle]
 pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
 pub static mut TASKLIST: Queue<Task> = Queue::new();

@@ -51,6 +51,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 
 	let mut process = Process::new();
 	process.init(parent);
+	process.setup_stack(0x1000, parent.stack.flags, parent.stack.kphys);
 	parent.childs.push(Box::new(process));
 	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();

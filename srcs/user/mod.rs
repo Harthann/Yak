@@ -32,11 +32,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	let mut process: Process = Process::new();
 	process.init(parent);
-	process.heap = <MemoryZone as Heap>::init_no_allocator(
-		size - size % 0x1000 + 0x1000,
-		PAGE_WRITABLE | PAGE_USER,
-		false
-	);
+	process.setup_stack(0x1000, PAGE_WRITABLE | PAGE_USER, false);
+	process.setup_heap((size - (size % 0x1000)) + 0x1000, PAGE_WRITABLE | PAGE_USER, false);
 	copy_nonoverlapping(
 		func as *mut u8,
 		process.heap.offset as *mut u8,
@@ -54,26 +51,45 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 	let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
 
+	let mut i = 0;
+	while i < 1024 {
+		crate::kprintln!("PAGE {} - {}", i, page_directory.entries[i]);
+		i += 1;
+	}
+
 	let page_dir: &mut PageDirectory = PageDirectory::new();
 	let handler_page_tab: &mut PageTable = PageTable::new();
+	let process_heap: &mut PageTable = PageTable::new();
+	let process_stack: &mut PageTable = PageTable::new();
 	crate::kprintln!("STACK_TASK_SWITCH: {:#x?}", STACK_TASK_SWITCH);
+	crate::kprintln!("kernel_pt_paddr: {:#x?}", kernel_pt_paddr);
+	process_heap.set_entry(
+		0,
+		get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+	process_stack.set_entry(
+		0,
+		get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
 	// Reference page table
 	handler_page_tab.set_entry(
 		0x0800000 >> 22,
-		get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT
 	);
 	handler_page_tab.set_entry(
 		0xb000000 >> 22,
-		get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT
 	);
 	handler_page_tab.set_entry(
 		768,
 		kernel_pt_paddr | PAGE_PRESENT
 	);
+	/* // STACK_TASK_SWITCH INDEX == 768
 	handler_page_tab.set_entry(
 		STACK_TASK_SWITCH as usize >> 22,
 		get_paddr!(STACK_TASK_SWITCH) | PAGE_PRESENT
 	);
+	*/
 	handler_page_tab.set_entry(
 		1023,
 		get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
@@ -81,21 +97,23 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	// Setup heap + prg
 	page_dir.set_entry(
 		0x08000000 >> 22,
-		get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT
 	);
 	// Setup stack
 	page_dir.set_entry( 
 		0xb0000000 >> 22,
-		get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT
+		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT
 	);
-	page_dir.set_entry( 
+	page_dir.set_entry(
 		768,
 		kernel_pt_paddr | PAGE_PRESENT
 	);
+	/* // STACK_TASK_SWITCH INDEX == 768
 	page_dir.set_entry(
 		STACK_TASK_SWITCH as usize >> 22,
 		get_paddr!(STACK_TASK_SWITCH) | PAGE_PRESENT
 	);
+	*/
 	page_dir.set_entry(
 		1023,
 		get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
