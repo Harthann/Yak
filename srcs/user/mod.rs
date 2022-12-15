@@ -63,6 +63,56 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	let process_stack: &mut PageTable = PageTable::new();
 	crate::kprintln!("STACK_TASK_SWITCH: {:#x?}", STACK_TASK_SWITCH);
 	crate::kprintln!("kernel_pt_paddr: {:#x?}", kernel_pt_paddr);
+	// Reference page table
+	handler_page_tab.set_entry(
+		0x0800000 >> 22,
+		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+	handler_page_tab.set_entry(
+		0xb000000 >> 22,
+		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+	handler_page_tab.set_entry(
+		768,
+		kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
+	);
+	/* // STACK_TASK_SWITCH INDEX == 768
+	handler_page_tab.set_entry(
+		STACK_TASK_SWITCH as usize >> 22,
+		get_paddr!(STACK_TASK_SWITCH) | PAGE_PRESENT
+	);
+	*/
+	handler_page_tab.set_entry(
+		1023,
+		get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+
+	// Setup heap + prg
+	page_dir.set_entry(
+		0x08000000 >> 22,
+		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+	// Setup stack
+	page_dir.set_entry( 
+		0xb0000000 >> 22,
+		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+	page_dir.set_entry(
+		768,
+		kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
+	);
+	/* // STACK_TASK_SWITCH INDEX == 768
+	page_dir.set_entry(
+		STACK_TASK_SWITCH as usize >> 22,
+		get_paddr!(STACK_TASK_SWITCH) | PAGE_PRESENT
+	);
+	*/
+	page_dir.set_entry(
+		1023,
+		get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+	);
+
+	// Setup stack and heap
 	process_heap.set_entry(
 		0,
 		get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
@@ -70,53 +120,6 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	process_stack.set_entry(
 		0,
 		get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
-	);
-	// Reference page table
-	handler_page_tab.set_entry(
-		0x0800000 >> 22,
-		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT
-	);
-	handler_page_tab.set_entry(
-		0xb000000 >> 22,
-		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT
-	);
-	handler_page_tab.set_entry(
-		768,
-		kernel_pt_paddr | PAGE_PRESENT
-	);
-	/* // STACK_TASK_SWITCH INDEX == 768
-	handler_page_tab.set_entry(
-		STACK_TASK_SWITCH as usize >> 22,
-		get_paddr!(STACK_TASK_SWITCH) | PAGE_PRESENT
-	);
-	*/
-	handler_page_tab.set_entry(
-		1023,
-		get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
-	);
-	// Setup heap + prg
-	page_dir.set_entry(
-		0x08000000 >> 22,
-		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT
-	);
-	// Setup stack
-	page_dir.set_entry( 
-		0xb0000000 >> 22,
-		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT
-	);
-	page_dir.set_entry(
-		768,
-		kernel_pt_paddr | PAGE_PRESENT
-	);
-	/* // STACK_TASK_SWITCH INDEX == 768
-	page_dir.set_entry(
-		STACK_TASK_SWITCH as usize >> 22,
-		get_paddr!(STACK_TASK_SWITCH) | PAGE_PRESENT
-	);
-	*/
-	page_dir.set_entry(
-		1023,
-		get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
 	);
 
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
@@ -129,6 +132,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) jump_usermode);
+	new_task.regs.esp = (0xb0000000 + process.stack.size as u32) - 8;
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid

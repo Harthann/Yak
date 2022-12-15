@@ -10,6 +10,7 @@ global isr_common_stub
 extern irq_0
 extern page_directory
 extern exception_handler
+extern STACK_TASK_SWITCH
 
 isr_stub_table:
 	%assign i 0
@@ -24,12 +25,12 @@ isr_common_stub:
 	mov eax, cr3
 	push eax
 
-	mov eax, page_directory - KERNEL_BASE
-	mov cr3, eax
-
 	xor eax, eax
 	mov ax, ds      ; Lower 16-bits of eax = ds.
 	push eax        ; save the data segment descriptor
+
+	mov eax, page_directory - KERNEL_BASE
+	mov cr3, eax
 
 	mov ax, 0x10    ; load the kernel data segment descriptor
 	mov ds, ax

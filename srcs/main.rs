@@ -266,8 +266,8 @@ pub fn test_task() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
-//	crate::user::test_user_page();
+//	test_task();
+	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 

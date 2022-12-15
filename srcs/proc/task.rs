@@ -187,7 +187,9 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			_rst();
-			switch_task(&new_task.regs);
+			let regs: Registers = new_task.regs; /* Put registers into the stack */
+			switch_task(&regs);
+			/* never goes there */
 		}
 		let skipped_task: Task = TASKLIST.pop();
 		TASKLIST.push(skipped_task);

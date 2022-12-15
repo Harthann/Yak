@@ -35,7 +35,7 @@ swap_task:
 
 	mov eax, esp
 
-	; Setup temp task
+	; Setup temp stack
 	mov esp, dword[STACK_TASK_SWITCH]
 
 	; (regs: &mut Registers)
