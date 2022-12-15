@@ -1,9 +1,11 @@
+%include "boot.h"
 %include "task.h"
 
 global irq_0
 global switch_task
 global next_task
 
+extern page_directory
 extern save_task
 extern schedule_task
 
@@ -27,6 +29,9 @@ swap_task:
 	push eax
 
 	add dword[JIFFIES], 1
+
+	mov eax, page_directory - KERNEL_BASE
+	mov cr3, eax
 
 	mov dx, 0x20
 	mov al, 0x20

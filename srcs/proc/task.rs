@@ -190,8 +190,9 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			_rst();
-			crate::kprintln!("paddr: {:#x?}", get_paddr!(Process::get_running_process().kernel_stack.offset));
-			page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(Process::get_running_process().kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
+			crate::kprintln!("prout: {:#x?}", (*new_task.process).kernel_stack.offset);
+			crate::kprintln!("paddr: {:#x?}", get_paddr!((*new_task.process).kernel_stack.offset));
+			page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!((*new_task.process).kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
 			crate::kprintln!("KSTACK_ADDR {}", page_directory.get_page_table(KSTACK_ADDR as usize >> 22).entries[(KSTACK_ADDR as usize & 0x3ff000) >> 12]);
 			let regs: Registers = new_task.regs; /* Put registers into the stack */
 			switch_task(&regs);
