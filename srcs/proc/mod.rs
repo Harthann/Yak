@@ -12,7 +12,7 @@ pub mod signal;
 #[cfg(test)]
 pub mod test;
 
-use process::{Process, Pid};
+use process::{Process, Pid, MASTER_PROCESS};
 use task::{Task, TASKLIST, schedule_task};
 
 use crate::syscalls::exit::{__W_EXITCODE};

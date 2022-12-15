@@ -1,11 +1,13 @@
 use crate::proc::_exit;
 use crate::proc::signal::{Signal, SignalType};
-use crate::proc::process::{Process, Pid};
+use crate::proc::process::{Process, Pid, MASTER_PROCESS};
 use crate::proc::task::{Task, TaskStatus};
 
 use crate::wrappers::{_cli, _sti, cli_count, cli, sti, hlt};
 
 use crate::errno::ErrNo;
+use crate::KSTACK_ADDR;
+use crate::memory::paging::{page_directory, PAGE_WRITABLE, PAGE_PRESENT};
 
 const WNOHANG: u32 = 0x01;
 const WUNTRACED: u32 = 0x02;
@@ -88,9 +90,17 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 
 pub fn sys_exit(status: i32) -> ! {
 	unsafe {
-		_exit(status);
+		page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(MASTER_PROCESS.kernel_stack.offset) | PAGE_WRITABLE | PAGE_PRESENT);
+		core::arch::asm!(
+		"mov eax, {status}",
+		"mov esp, {kstack}",
+		"push eax",
+		"call _exit",
+		status = in(reg) status,
+		kstack = const KSTACK_ADDR);
+		/* Never goes there */
+		loop {}
 	}
-	/* Never goes there */
 }
 
 /* Macros to get status values */
