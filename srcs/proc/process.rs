@@ -99,8 +99,6 @@ impl Process {
 			flags,
 			kphys
 		);
-		crate::kprintln!("setup_stack: {:#x?}", self.stack.offset);
-		unsafe{crate::kprintln!("paddr: {:#x?}", get_paddr!(self.stack.offset))};
 	}
 
 	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
@@ -109,8 +107,6 @@ impl Process {
 			flags,
 			kphys
 		);
-		crate::kprintln!("setup_heap: {:#x?}", self.heap.offset);
-		unsafe{crate::kprintln!("paddr: {:#x?}", get_paddr!(self.heap.offset))};
 	}
 
 	pub fn setup_kernel_stack(&mut self, size: usize, flags: u32, kphys: bool) {
@@ -119,8 +115,6 @@ impl Process {
 			flags,
 			kphys
 		);
-		crate::kprintln!("setup_kernel_stack: {:#x?}", self.kernel_stack.offset);
-		unsafe{crate::kprintln!("paddr: {:#x?}", get_paddr!(self.kernel_stack.offset))};
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
@@ -154,9 +148,6 @@ impl Process {
 		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
 		self.state = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
-//		TODO: don't work ?
-		crate::kprintln!("offset: {:#x?}", self.stack.offset);
-		crate::kprintln!("size: {:#x?}", self.stack.size);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 		free_pages(self.heap.offset, self.heap.size / 0x1000);
 		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);

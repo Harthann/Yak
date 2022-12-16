@@ -5,13 +5,13 @@ use crate::vec::Vec;
 use crate::utils::queue::Queue;
 use crate::interrupts::Registers;
 use crate::memory::{init_heap, init_stack, VirtAddr};
-use crate::memory::paging::{alloc_page, page_directory};
-use crate::proc::wrapper_fn;
+use crate::memory::paging::{alloc_page};
+use crate::proc::{wrapper_fn, change_kernel_stack};
 use crate::proc::signal::{SignalHandler, SignalType};
 use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
 use crate::{KSTACK_ADDR, KALLOCATOR};
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER, PAGE_PRESENT};
+use crate::memory::paging::{PAGE_WRITABLE};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
@@ -64,6 +64,8 @@ impl Task {
 			MASTER_PROCESS.stack = init_stack(stack_addr, 0x1000, PAGE_WRITABLE, false);
 			MASTER_PROCESS.heap = init_heap(heap_addr, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
 			MASTER_PROCESS.kernel_stack = init_stack(kstack_addr - 0x1000, 0x1000, PAGE_WRITABLE, false); /* Don't setup the kstack on same place to avoid remove */
+
+			change_kernel_stack(MASTER_PROCESS.kernel_stack.offset);
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
 			MASTER_PROCESS.owner = 0;
@@ -122,13 +124,12 @@ unsafe fn _end_handler() {
 	task.regs = *regs;
 	task.regs.esp += core::mem::size_of::<Task>() as u32;
 	task.state = TaskStatus::Running;
-	page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(Process::get_running_process().kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
+	change_kernel_stack(Process::get_running_process().kernel_stack.offset);
 	_rst();
 	switch_task(&task.regs);
 }
 
 unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
-	crate::kprintln!("handle_signal");
 	task.regs.esp -= core::mem::size_of::<Task>() as u32;
 	(task.regs.esp as *mut Registers).write(task.regs);
 	task.regs.int_no = 0; /* Reset int_no to return to new func (TODO: DO THIS BETTER) */
@@ -142,7 +143,7 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 		esp = in(reg) task.regs.esp,
 		in("eax") handler.handler);
 	task.regs.eip = wrapper_handler as u32;
-	page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(Process::get_running_process().kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
+	change_kernel_stack(Process::get_running_process().kernel_stack.offset);
 	_rst();
 	switch_task(&task.regs);
 }
@@ -181,7 +182,6 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
-	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		/* TODO: IF SIGNAL JUMP ? */
@@ -189,11 +189,9 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
+			let process: &mut Process = Process::get_running_process();
 			_rst();
-			crate::kprintln!("prout: {:#x?}", (*new_task.process).kernel_stack.offset);
-			crate::kprintln!("paddr: {:#x?}", get_paddr!((*new_task.process).kernel_stack.offset));
-			page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!((*new_task.process).kernel_stack.offset) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
-			crate::kprintln!("KSTACK_ADDR {}", page_directory.get_page_table(KSTACK_ADDR as usize >> 22).entries[(KSTACK_ADDR as usize & 0x3ff000) >> 12]);
+			change_kernel_stack(process.kernel_stack.offset);
 			let regs: Registers = new_task.regs; /* Put registers into the stack */
 			switch_task(&regs);
 			/* never goes there */

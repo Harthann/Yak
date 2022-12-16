@@ -29,8 +29,13 @@ isr_common_stub:
 	push eax        ; save the data segment descriptor
 
 	mov eax, page_directory - KERNEL_BASE
+	mov ebx, cr3
+	cmp eax, ebx
+	je .kernel_ds ; if cr3 is kernel don't swap
+
 	mov cr3, eax
 
+	.kernel_ds:
 	mov ax, 0x10    ; load the kernel data segment descriptor
 	mov ds, ax
 	mov es, ax
