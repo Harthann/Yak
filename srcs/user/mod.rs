@@ -96,7 +96,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	);
 	page_dir.set_entry(
 		768,
-		kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
+		kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	page_dir.set_entry(
 		KSTACK_ADDR as usize >> 22,
@@ -126,8 +126,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
-		func = in(reg) func);
-	new_task.regs.esp = USER_STACK_ADDR - 4;
+		func = in(reg) USER_HEAP_ADDR);
+	new_task.regs.esp = USER_STACK_ADDR - 7;
 	crate::kprintln!("USER_STACK_ADDR: {:#x?}", USER_STACK_ADDR);
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	TASKLIST.push(new_task);
