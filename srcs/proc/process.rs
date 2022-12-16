@@ -99,6 +99,7 @@ impl Process {
 			flags,
 			kphys
 		);
+		crate::kprintln!("process stack: {:#x?}", self.stack.offset);
 	}
 
 	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
@@ -115,6 +116,7 @@ impl Process {
 			flags,
 			kphys
 		);
+		crate::kprintln!("process kernel_stack: {:#x?}", self.kernel_stack.offset);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {

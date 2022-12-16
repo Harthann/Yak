@@ -112,8 +112,7 @@ use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 //use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 pub use pic::handlers::JIFFIES;
 
-const STACK_ADDR: VirtAddr = 0xffbfffff;
-const KSTACK_ADDR: VirtAddr = 0xbfffffff;
+const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 
 /*  Kernel initialisation   */
 #[no_mangle]
@@ -129,7 +128,7 @@ pub extern "C" fn kinit() {
 		init_idt();
 	}
 
-	Task::init_multitasking(STACK_ADDR, heap as u32, KSTACK_ADDR);
+	Task::init_multitasking(KSTACK_ADDR, heap as u32);
 
 	gdt::tss::init_tss(KSTACK_ADDR);
 	reload_tss!();
@@ -146,7 +145,7 @@ pub extern "C" fn kinit() {
 
 	/* Reserve some spaces to push things before main */
 	unsafe {
-		core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256);
+		core::arch::asm!("mov esp, {}", in(reg) KSTACK_ADDR - 256);
 		sti!();
 	}
 
@@ -259,8 +258,8 @@ pub fn test_task() {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
-//	crate::user::test_user_page();
+//	test_task();
+	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 

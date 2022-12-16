@@ -77,7 +77,7 @@ pub fn init_tss(stack_addr: u32) {
 		TSS.esp0 = stack_addr;
 		TSS.ss0 = 0x18;
 		TSS.iopb = core::mem::size_of::<Tss>() as u16;
-/*	Page directory entry for virt addr */
+		/* Page directory entry for virt addr */
 		crate::gdt::set_segment(7, (&TSS as *const Tss) as u32, TSS.iopb as u32, 0x40, 0x89);
 	}
 }

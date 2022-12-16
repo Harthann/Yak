@@ -13,6 +13,8 @@ use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 use crate::{KSTACK_ADDR, KALLOCATOR};
 use crate::memory::paging::{PAGE_WRITABLE};
 
+use crate::reload_tss;
+
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
 extern "C" {
@@ -50,7 +52,7 @@ impl Task {
 		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
 	}
 
-	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr, kstack_addr: VirtAddr) {
+	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
 			core::arch::asm!("
@@ -61,11 +63,9 @@ impl Task {
 			cr3 = out(reg) task.regs.cr3,
 			eflags = out(reg) task.regs.eflags);
 			MASTER_PROCESS.state = Status::Run;
-			MASTER_PROCESS.stack = init_stack(stack_addr, 0x1000, PAGE_WRITABLE, false);
+			MASTER_PROCESS.stack = init_stack(stack_addr - 0x1000, 0x1000, PAGE_WRITABLE, false);
 			MASTER_PROCESS.heap = init_heap(heap_addr, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
-			MASTER_PROCESS.kernel_stack = init_stack(kstack_addr - 0x1000, 0x1000, PAGE_WRITABLE, false); /* Don't setup the kstack on same place to avoid remove */
-
-			change_kernel_stack(MASTER_PROCESS.kernel_stack.offset);
+			change_kernel_stack(MASTER_PROCESS.stack.offset);
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
 			MASTER_PROCESS.owner = 0;
@@ -116,7 +116,6 @@ unsafe extern "C" fn wrapper_handler() {
 
 #[no_mangle]
 unsafe fn _end_handler() {
-	crate::kprintln!("end_handler");
 	_cli();
 	let task: &mut Task = Task::get_running_task();
 	task.regs.esp += 8;
@@ -126,6 +125,7 @@ unsafe fn _end_handler() {
 	task.state = TaskStatus::Running;
 	change_kernel_stack(Process::get_running_process().kernel_stack.offset);
 	_rst();
+	crate::kprintln!("end_handler");
 	switch_task(&task.regs);
 }
 
@@ -145,6 +145,7 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 	task.regs.eip = wrapper_handler as u32;
 	change_kernel_stack(Process::get_running_process().kernel_stack.offset);
 	_rst();
+	crate::kprintln!("handle_signal");
 	switch_task(&task.regs);
 }
 
@@ -191,8 +192,19 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		if new_task.state != TaskStatus::Interruptible {
 			let process: &mut Process = Process::get_running_process();
 			_rst();
+			core::ptr::copy(
+				(KSTACK_ADDR - 0xfff) as *const u8,
+				process.kernel_stack.offset as *mut u8,
+				0x1000
+			);
 			change_kernel_stack(process.kernel_stack.offset);
-			let regs: Registers = new_task.regs; /* Put registers into the stack */
+			refresh_tlb!();
+//			TODO NOT WORKING
+//			/* Reload tss to get the new kernel stack */
+//			reload_tss!();
+			crate::kprintln!("new_regs: {:#x?}", new_task.regs);
+			/* Put registers into the stack */
+			let regs: Registers = new_task.regs;
 			switch_task(&regs);
 			/* never goes there */
 		}

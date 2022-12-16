@@ -132,13 +132,13 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 	_cli();
 	unsafe {
 		let res = TASKLIST.peek();
-		if res.is_none() {
-			todo!();
+		if res.is_some() {
+			let mut task = res.unwrap();
+			task.regs = *reg;
 		}
-		let mut task = res.unwrap();
-		task.regs = *reg;
 	}
 	let int_no: usize = reg.int_no as usize;
+	crate::kprintln!("int_no: {}", int_no);
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
 		match int_no { // TODO: enum exceptions

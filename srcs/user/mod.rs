@@ -27,6 +27,9 @@ extern "C" {
 	fn userfunc_end();
 }
 
+const USER_HEAP_ADDR: VirtAddr = 0x0800000;
+const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
+
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
@@ -46,38 +49,35 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
-//	new_task.regs = running_task.regs;
-	crate::kprintln!("{:#x?}", running_task.regs);
 
 	new_task.process = process;
 
 	let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 	let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
 
-	let mut i = 0;
-	while i < 1024 {
-		crate::kprintln!("PAGE {} - {}", i, page_directory.entries[i]);
-		i += 1;
-	}
-
 	//TODO: free those when process ends ?
 	let page_dir: &mut PageDirectory = PageDirectory::new();
 	let handler_page_tab: &mut PageTable = PageTable::new();
 	let process_heap: &mut PageTable = PageTable::new();
 	let process_stack: &mut PageTable = PageTable::new();
+	let process_kernel_stack: &mut PageTable = PageTable::new();
 	crate::kprintln!("kernel_pt_paddr: {:#x?}", kernel_pt_paddr);
 	// Reference page table
 	handler_page_tab.set_entry(
-		0x0800000 >> 22,
+		USER_HEAP_ADDR as usize >> 22,
 		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	handler_page_tab.set_entry(
-		0xbfc00000 >> 22,
+		USER_STACK_ADDR as usize >> 22,
 		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	handler_page_tab.set_entry(
 		768,
 		kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
+	);
+	handler_page_tab.set_entry(
+		KSTACK_ADDR as usize >> 22,
+		get_paddr!(process_kernel_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	handler_page_tab.set_entry(
 		1023,
@@ -86,17 +86,21 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	// Setup heap + prg
 	page_dir.set_entry(
-		0x08000000 >> 22,
+		USER_HEAP_ADDR as usize >> 22,
 		get_paddr!(process_heap as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	// Setup stack
 	page_dir.set_entry( 
-		0xbfc00000 >> 22,
+		USER_STACK_ADDR as usize >> 22,
 		get_paddr!(process_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	page_dir.set_entry(
 		768,
 		kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
+	);
+	page_dir.set_entry(
+		KSTACK_ADDR as usize >> 22,
+		get_paddr!(process_kernel_stack as *const _) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	page_dir.set_entry(
 		1023,
@@ -105,15 +109,15 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	// Setup stack and heap
 	process_heap.set_entry(
-		0,
+		(USER_HEAP_ADDR as usize & 0x3ff000) >> 12,
 		get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 	process_stack.set_entry(
-		0,
+		(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
 		get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
-	process_stack.set_entry(
-		1023,
+	process_kernel_stack.set_entry(
+		(KSTACK_ADDR as usize & 0x3ff000) >> 12,
 		get_paddr!(process.kernel_stack.offset) | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 	);
 
@@ -123,11 +127,9 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
-	new_task.regs.esp -= 4;
-	core::arch::asm!("mov [{esp}], {func}",
-		esp = in(reg) new_task.regs.esp,
-		func = in(reg) jump_usermode);
-	new_task.regs.esp = KSTACK_ADDR - 8;
+	new_task.regs.esp = USER_STACK_ADDR - 4;
+	crate::kprintln!("USER_STACK_ADDR: {:#x?}", USER_STACK_ADDR);
+	new_task.regs.eip = jump_usermode as VirtAddr;
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid

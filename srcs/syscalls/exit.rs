@@ -1,4 +1,4 @@
-use crate::proc::_exit;
+use crate::proc::{_exit, change_kernel_stack};
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid, MASTER_PROCESS};
 use crate::proc::task::{Task, TaskStatus};
@@ -90,7 +90,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 
 pub fn sys_exit(status: i32) -> ! {
 	unsafe {
-		page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(MASTER_PROCESS.kernel_stack.offset) | PAGE_WRITABLE | PAGE_PRESENT);
+		change_kernel_stack(MASTER_PROCESS.stack.offset);
 		core::arch::asm!(
 		"mov eax, {status}",
 		"mov esp, {kstack}",
