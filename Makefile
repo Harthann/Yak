@@ -83,7 +83,7 @@ debug:			$(NAME)
 				pkill qemu $(RUN_SUFFIX)
 
 test:			$(LIBBOOT) $(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
-				cargo test $(ARGS_CARGO) -- $(NAME)
+				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
