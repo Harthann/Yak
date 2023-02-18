@@ -10,6 +10,9 @@ extern next_task
 extern regs
 
 extern JIFFIES
+extern SYSTEM_FRACTION
+extern TIME_ELAPSED
+
 irq_0:
 	cli
 	push 0; err_code

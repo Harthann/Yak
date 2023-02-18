@@ -4,8 +4,8 @@ use crate::io::{inb, outb, io_wait};
 
 pub mod handlers;
 pub mod pit;
+pub use pit::{set_pit, set_irq0_in_ms};
 
-pub use pit::set_pit;
 pub use handlers::{handler, JIFFIES};
 /* References: [https://wiki.osdev.org/8259_PIC] */
 

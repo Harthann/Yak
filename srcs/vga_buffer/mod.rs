@@ -54,6 +54,9 @@ const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
 pub const NB_SCREEN: usize = 3;
+pub static mut SCREENS: Mutex<[Screen; NB_SCREEN],true> = Mutex::new([Screen::new(), Screen::new(), Screen::new()]);
+//static mut SCREENGUARD: Mutex<&[Screen; NB_SCREEN], true> = Mutex::new(&SCREENS);
+//static mut SCREENS: Mutex<[Screen; NB_SCREEN], true> = Mutex([Screen::new(); NB_SCREEN]);
 
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
@@ -72,15 +75,23 @@ impl Buffer {
 	}
 }
 
-pub static mut WRITER: Writer = Writer {
-	screens:		[Screen::new(), Screen::new(), Screen::new()],
+use crate::spin::Mutex;
+pub static mut WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
+//	screens:		[Screen::new(), Screen::new(), Screen::new()],
 	screen_index:	0,
+    cursor: Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
 	vga_buffer:		VGABUFF_OFFSET as _
-};
+});
+//pub static mut WRITER: Writer = Writer {
+//	screens:		[Screen::new(), Screen::new(), Screen::new()],
+//	screen_index:	0,
+//	vga_buffer:		VGABUFF_OFFSET as _
+//};
 
 pub struct Writer {
-	screens:		[Screen; NB_SCREEN],
+//	screens:		[Screen; NB_SCREEN],
 	screen_index:	usize,
+    cursor:         Cursor,
 	vga_buffer:		*mut Buffer
 }
 
@@ -96,11 +107,14 @@ impl Writer {
 			b'\n' => self.new_line(),
 			byte => {
 				let mut code = byte;
-				let mut pos: (usize, usize) = self.screens[self.screen_index].cursor.get_pos();
+				let mut pos: (usize, usize) = self.cursor.get_pos();
+                //unsafe{ SCREENS.lock()[self.screen_index].cursor.get_pos()};
 				if byte == 0x08
 				{
-					if self.get_screen().get_command().len() == 0
-						{return ;}
+					//unsafe {
+                    //    if SCREENS.lock()[self.screen_index].get_command().len() == 0
+					//	    {return ;}
+                    //}
 					if pos.0 != 0 {
 						pos.0 -= 1;
 					} else if pos.1 != 0{
@@ -111,36 +125,42 @@ impl Writer {
 				}
 				else if pos.0 >= BUFFER_WIDTH {
 						self.new_line();
-						pos = self.screens[self.screen_index].cursor.get_pos();
+						//unsafe { pos = SCREENS.lock()[self.screen_index].cursor.get_pos() };
 				}
 				let screenchar = ScreenChar {
 					ascii_code: code,
-					color_code: self.screens[self.screen_index].cursor.get_color_code(),
+                    color_code: self.cursor.get_color_code(),
+					//color_code: unsafe{ SCREENS.lock()[self.screen_index].cursor.get_color_code() },
 				};
 				unsafe{(*self.vga_buffer).chars[pos.1][pos.0] = screenchar};
-				self.screens[self.screen_index].buffer.chars[pos.1][pos.0] = screenchar;
+				//unsafe{ SCREENS.lock()[self.screen_index].buffer.chars[pos.1][pos.0] = screenchar };
 				if byte != 0x08
 					{pos.0 += 1;}
-				self.screens[self.screen_index].cursor.set_pos(pos.0, pos.1);
+                self.cursor.set_pos(pos.0, pos.1);
+				//unsafe{ SCREENS.lock()[self.screen_index].cursor.set_pos(pos.0, pos.1) };
 			}
 		}
 	}
 
 	/*	Move CURSOR one line lower and move all lines if needed */
 	fn new_line(&mut self) {
-		let pos: (usize, usize) = self.screens[self.screen_index].cursor.get_pos();
+		let pos: (usize, usize) =  self.cursor.get_pos();
+            //unsafe{ SCREENS.lock()[self.screen_index].cursor.get_pos() };
 		let mut y = pos.1;
 		if pos.1 != BUFFER_HEIGHT - 1 {
 			y += 1;
 		}
 		else {
 			for row in 1..BUFFER_HEIGHT {
-				unsafe{(*self.vga_buffer).chars[row - 1] = (*self.vga_buffer).chars[row]};
-				self.screens[self.screen_index].buffer.chars[row - 1] = self.screens[self.screen_index].buffer.chars[row];
+				unsafe{
+                    (*self.vga_buffer).chars[row - 1] = (*self.vga_buffer).chars[row];
+				    //unsafe{ SCREENS.lock()[self.screen_index].buffer.chars[row - 1] = SCREENS.lock()[self.screen_index].buffer.chars[row] };
+                }
 			}
 			self.clear_row(BUFFER_HEIGHT -1);
 		}
-		self.screens[self.screen_index].cursor.set_pos(0, y);
+        self.cursor.set_pos(0, y);
+		//unsafe { SCREENS.lock()[self.screen_index].cursor.set_pos(0, y) };
 	}
 
 	/*		Simply replace all row by spaces to visualy clear it */
@@ -149,21 +169,23 @@ impl Writer {
 			let screenchar = ScreenChar {
 				ascii_code: 0x20,
 				color_code: ColorCode::new(Color::White, Color::Black)
-//self.screens[self.screen_index].cursor.get_color_code()
+//              SCREENS.lock()[self.screen_index].cursor.get_color_code()
 			};
 			unsafe{(*self.vga_buffer).chars[row][i] = screenchar};
-			self.screens[self.screen_index].buffer.chars[row][i] = screenchar;
+			//unsafe{ SCREENS.lock()[self.screen_index].buffer.chars[row][i] = screenchar };
 		}
 	}
 
 	pub fn clear(&mut self) {
-		self.screens[self.screen_index].reset();
-		self.copy_buffer(self.screens[self.screen_index].buffer);
+        todo!();
+		//unsafe{ SCREENS.lock()[self.screen_index].reset() };
+		//unsafe{ self.copy_buffer(SCREENS.lock()[self.screen_index].buffer) };
 	}
 
 	/*	Write string to vga using write_byte functions if printable, else print a square */
 	pub fn write_string(&mut self, s: &str) {
-		self.screens[self.screen_index].cursor.disable();
+		//unsafe{ SCREENS.lock()[self.screen_index].cursor.disable() };
+        self.cursor.disable();
 		for byte in s.bytes() {
 			match byte {
 			// printable ASCII byte or newline
@@ -172,8 +194,10 @@ impl Writer {
 				_ => self.write_byte(0xfe),
 			}
 		}
-		self.screens[self.screen_index].cursor.update();
-		self.screens[self.screen_index].cursor.enable();
+        self.cursor.update();
+        self.cursor.enable();
+		//unsafe{ SCREENS.lock()[self.screen_index].cursor.update() };
+		//unsafe{ SCREENS.lock()[self.screen_index].cursor.enable() };
 	}
 
 	pub fn copy_buffer(&mut self, buffer: Buffer) {
@@ -184,22 +208,33 @@ impl Writer {
 		}
 	}
 	pub fn change_screen(&mut self, nb: usize) {
-		self.screens[self.screen_index].cursor.disable();
+		//unsafe{ SCREENS.lock()[self.screen_index].cursor.disable() };
+        // Should copy vga to current buffer index
+        self.cursor.disable();
 		self.screen_index = nb;
-		self.copy_buffer(self.screens[self.screen_index].buffer);
-		self.screens[self.screen_index].cursor.update();
-		self.screens[self.screen_index].cursor.enable();
-		if self.get_screen().cursor.get_pos() == (0, 0) {
-			self.write_string("$> ");
+        unsafe {
+		    self.copy_buffer(SCREENS.lock()[self.screen_index].buffer);
+            self.cursor.update();
+            self.cursor.enable();
+		    //SCREENS.lock()[self.screen_index].cursor.update();
+		    //SCREENS.lock()[self.screen_index].cursor.enable();
+        }
+		unsafe {
+            //if SCREENS.lock()[self.screen_index].cursor.get_pos() == (0, 0) {
+            if self.cursor.get_pos() == (0, 0) {
+			    self.write_string("$> ");
+            }
 		}
 	}
 	
-	pub fn get_screen(&mut self) -> &mut Screen {
-		&mut self.screens[self.screen_index]
+	pub fn get_screen(&mut self) -> usize {
+        self.screen_index
+		//unsafe{ & mut SCREENS.lock()[self.screen_index] }
 	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
-		self.screens[self.screen_index].cursor.set_color_code(new_color);
+		//unsafe{ SCREENS.lock()[self.screen_index].cursor.set_color_code(new_color) };
+        self.cursor.set_color_code(new_color);
 	}
 }
 
@@ -231,19 +266,19 @@ macro_rules! kprintln {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
+	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black))};
 	kprintln!("{}", info);
-	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
+	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black))};
 	loop {}
 }
 
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe{WRITER.chcolor(ColorCode::new(Color::Red, Color::Black))};
+	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black))};
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe{WRITER.chcolor(ColorCode::new(Color::White, Color::Black))};
+	unsafe{WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black))};
 	io::outb(0xf4, 0x11);
 	loop {}
 }
@@ -251,7 +286,7 @@ fn panic(info: &PanicInfo) -> ! {
 use core::fmt::Write;
 
 pub fn _print(args: fmt::Arguments) {
-	unsafe{WRITER.write_fmt(args).unwrap()};
+	unsafe{WRITER.lock().write_fmt(args).unwrap()};
 }
 
 #[macro_export]
@@ -296,7 +331,7 @@ pub fn hexdump(ptr: *const u8, size: usize)
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => (
 		unsafe {
-			$crate::vga_buffer::WRITER.chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
+			$crate::vga_buffer::WRITER.lock().chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
 		}
 	);
 }
@@ -304,11 +339,14 @@ macro_rules! change_color {
 #[macro_export]
 macro_rules! clihandle {
 	($arg:expr) => (
-		unsafe {crate::vga_buffer::WRITER.get_screen().get_command().handle($arg)}
+		unsafe {
+            let screen_number = crate::vga_buffer::WRITER.lock().get_screen();
+            crate::vga_buffer::SCREENS.lock()[screen_number].get_command().handle($arg);
+        }
 	)
 }
 
 #[macro_export]
 macro_rules! screenclear {
-	() => (unsafe {crate::vga_buffer::WRITER.clear()})
+	() => (unsafe {crate::vga_buffer::WRITER.lock().clear()})
 }

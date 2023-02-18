@@ -9,6 +9,7 @@
 #![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]
+#![feature(core_intrinsics)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -72,14 +73,15 @@ mod pic;
 mod proc;
 mod user;
 mod wrappers;
+mod spin;
+//mod math;
 mod utils;
 
 #[cfg(test)]
 mod test;
 
 /*  Modules used function and variable  */
-use memory::paging::{init_paging, page_directory};
-use memory::allocator::linked_list::LinkedListAllocator;
+use memory::paging::{init_paging, page_directory}; use memory::allocator::linked_list::LinkedListAllocator;
 use vga_buffer::color::Color;
 use cli::Command;
 use pic::setup_pic8259;
@@ -147,6 +149,7 @@ pub extern "C" fn kinit() {
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
 	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
+    pic::set_irq0_in_ms(0.15);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
@@ -229,7 +232,7 @@ use crate::syscalls::exit::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	test_task();
+	//test_task();
 
 	kprintln!("Hello World of {}!", 42);
 
