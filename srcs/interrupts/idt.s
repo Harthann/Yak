@@ -12,37 +12,7 @@ extern regs
 extern JIFFIES
 extern SYSTEM_FRACTION
 extern TIME_ELAPSED
-
-irq_0:
-	cli
-	push 0; err_code
-	push -1; int_no
-
-	pusha
-
-	mov eax, cr3
-	push eax
-
-	xor eax, eax
-	mov ax, ds
-	push eax
-
-	add dword[JIFFIES], 1
-
-	mov dx, 0x20
-	mov al, 0x20
-	out dx, al
-
-	mov eax, esp
-
-	; Setup temp task
-	mov esp, dword[STACK_TASK_SWITCH]
-
-	; (regs: &mut Registers)
-	push eax
-
-	call next_task
-	; Never goes there
+extern irq_0
 
 isr_stub_table:
 	%assign i 0
