@@ -2,6 +2,7 @@ use crate::pic::{
     PIC1_IRQ_OFFSET,
 };
 use crate::interrupts::Registers;
+use crate::pic::end_of_interrupts;
 
 #[no_mangle]
 pub static mut JIFFIES: usize = 0;
@@ -17,14 +18,22 @@ pub fn handler(reg: &Registers, int_no: usize) {
 
 #[naked]
 #[no_mangle]
-unsafe extern "C" fn irq_0() {
+unsafe fn irq_0() {
     #[cfg(not(feature = "multitasking"))]
     core::arch::asm!("
-        cli
+		cli
+
         add dword ptr[JIFFIES], 1
-        sti
+        // call end_of_interrupt(0);
+
+        push 0
+        call end_of_interrupts
+        add esp, 4
+
+		sti
         iretd
-    ", options(noreturn));
+    ",
+    options(noreturn));
 
     #[cfg(feature = "multitasking")]
     core::arch::asm!("
@@ -47,9 +56,9 @@ unsafe extern "C" fn irq_0() {
 
     add dword ptr[JIFFIES], 1
 
-    mov dx, 0x20
-    mov al, 0x20
-    out dx, al
+    push 0
+    call end_of_interrupts
+    add esp, 4
 
     mov eax, esp
 
