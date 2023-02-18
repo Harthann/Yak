@@ -18,3 +18,11 @@ opt-level = "z"
 
 #	Dependencies
 [dependencies]
+
+[features]
+# You can add feature by naming them in default
+# These feature need to be declare
+default = []
+
+# Declare feature multitasking, depends on nothing
+multitasking = []
