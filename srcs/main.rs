@@ -74,7 +74,6 @@ mod proc;
 mod user;
 mod wrappers;
 mod spin;
-//mod math;
 mod utils;
 
 #[cfg(test)]
@@ -106,7 +105,7 @@ use crate::interrupts::init_idt;
 use proc::task::{init_tasking};
 
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
-//use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
+
 pub use pic::handlers::JIFFIES;
 
 use crate::memory::MemoryZone;
@@ -118,9 +117,10 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 #[no_mangle]
 pub extern "C" fn kinit() {
 	unsafe{crate::cli!()};
-//	multiboot::read_tags();
+
 	/* Init paging and remove identity paging */
 	init_paging();
+
 	/* Update gdtr with higher half kernel gdt addr */
 	unsafe {
 		update_gdtr();
@@ -138,7 +138,8 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-	init_tasking();
+    #[cfg(feature = "multitasking")]
+    init_tasking();
 
 	/* init tracker after init first process */
 	unsafe {
@@ -156,7 +157,6 @@ pub extern "C" fn kinit() {
 	unsafe{crate::sti!()};
 
 	/*	Function to test and enter usermode */
-//	user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
@@ -232,7 +232,6 @@ use crate::syscalls::exit::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	//test_task();
 
 	kprintln!("Hello World of {}!", 42);
 
@@ -242,6 +241,7 @@ pub extern "C" fn kmain() -> ! {
 	change_color!(Color::White, Color::Black);
 
 	kprint!("$> ");
-//	test_task2();
-	loop {}
+	loop {
+
+    }
 }
