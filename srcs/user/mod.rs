@@ -1,12 +1,10 @@
+//! Testing user space code
+
 use crate::memory::paging as mem;
 use crate::memory::paging::{
 PAGE_WRITABLE,
 PAGE_USER
 };
-
-/*
-** This module aim to test user space code
-*/
 
 extern "C" {
 	fn jump_usermode();

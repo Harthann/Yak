@@ -1,4 +1,5 @@
-/*  Crate import */
+//! Handler for vga buffer
+
 use core::fmt;
 use core::panic::PanicInfo;
 use crate::io;

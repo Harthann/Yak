@@ -20,6 +20,8 @@
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+//! 32bits - i386 Rust Kernel from Scratch 🦀
+
 #[lang = "eh_personality"]
 #[no_mangle]
 pub extern "C" fn eh_personality() {}

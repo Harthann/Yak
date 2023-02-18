@@ -1,3 +1,5 @@
+//! Command line interface (term)
+
 use core::arch::asm;
 
 use crate::{kprint, kprintln, hexdump, screenclear};
