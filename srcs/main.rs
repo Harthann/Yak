@@ -116,7 +116,7 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 /*  Kernel initialisation   */
 #[no_mangle]
 pub extern "C" fn kinit() {
-	unsafe{crate::cli!()};
+    crate::wrappers::_cli();
 
 	/* Init paging and remove identity paging */
 	init_paging();
@@ -150,11 +150,11 @@ pub extern "C" fn kinit() {
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
 	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
-    pic::set_irq0_in_ms(0.15);
+    pic::set_irq0_in_ms(1.0);
 
 	/* Reserve some spaces to push things before main */
 	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-	unsafe{crate::sti!()};
+    crate::wrappers::_sti();
 
 	/*	Function to test and enter usermode */
 
@@ -242,6 +242,5 @@ pub extern "C" fn kmain() -> ! {
 
 	kprint!("$> ");
 	loop {
-
     }
 }
