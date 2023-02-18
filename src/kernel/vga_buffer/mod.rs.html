@@ -318,6 +318,44 @@
 <span id="312">312</span>
 <span id="313">313</span>
 <span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
+<span id="327">327</span>
+<span id="328">328</span>
+<span id="329">329</span>
+<span id="330">330</span>
+<span id="331">331</span>
+<span id="332">332</span>
+<span id="333">333</span>
+<span id="334">334</span>
+<span id="335">335</span>
+<span id="336">336</span>
+<span id="337">337</span>
+<span id="338">338</span>
+<span id="339">339</span>
+<span id="340">340</span>
+<span id="341">341</span>
+<span id="342">342</span>
+<span id="343">343</span>
+<span id="344">344</span>
+<span id="345">345</span>
+<span id="346">346</span>
+<span id="347">347</span>
+<span id="348">348</span>
+<span id="349">349</span>
+<span id="350">350</span>
+<span id="351">351</span>
+<span id="352">352</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Handler for vga buffer</span>
 
 <span class="kw">use</span> <span class="ident">core::fmt</span>;
@@ -374,6 +412,9 @@
 <span class="kw">const</span> <span class="ident">BUFFER_WIDTH</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">80</span>;
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NB_SCREEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">3</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">SCREENS</span>: <span class="ident">Mutex</span><span class="op">&lt;</span>[<span class="ident">Screen</span>; <span class="ident">NB_SCREEN</span>],<span class="bool-val">true</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Mutex::new</span>([<span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>()]);
+<span class="comment">//static mut SCREENGUARD: Mutex&lt;&amp;[Screen; NB_SCREEN], true&gt; = Mutex::new(&amp;SCREENS);</span>
+<span class="comment">//static mut SCREENS: Mutex&lt;[Screen; NB_SCREEN], true&gt; = Mutex([Screen::new(); NB_SCREEN]);</span>
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
@@ -392,15 +433,23 @@
 	}
 }
 
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">WRITER</span>: <span class="ident">Writer</span> <span class="op">=</span> <span class="ident">Writer</span> {
-	<span class="ident">screens</span>:		[<span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>()],
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::Mutex</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">WRITER</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Writer</span>, <span class="bool-val">true</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Mutex</span>::<span class="op">&lt;</span><span class="ident">Writer</span>, <span class="bool-val">true</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">Writer</span> {
+<span class="comment">//	screens:		[Screen::new(), Screen::new(), Screen::new()],</span>
 	<span class="ident">screen_index</span>:	<span class="number">0</span>,
+    <span class="ident">cursor</span>: <span class="ident">Cursor::new</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>)),
 	<span class="ident">vga_buffer</span>:		<span class="ident">VGABUFF_OFFSET</span> <span class="kw">as</span> <span class="kw">_</span>
-};
+});
+<span class="comment">//pub static mut WRITER: Writer = Writer {</span>
+<span class="comment">//	screens:		[Screen::new(), Screen::new(), Screen::new()],</span>
+<span class="comment">//	screen_index:	0,</span>
+<span class="comment">//	vga_buffer:		VGABUFF_OFFSET as _</span>
+<span class="comment">//};</span>
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Writer</span> {
-	<span class="ident">screens</span>:		[<span class="ident">Screen</span>; <span class="ident">NB_SCREEN</span>],
+<span class="comment">//	screens:		[Screen; NB_SCREEN],</span>
 	<span class="ident">screen_index</span>:	<span class="ident">usize</span>,
+    <span class="ident">cursor</span>:         <span class="ident">Cursor</span>,
 	<span class="ident">vga_buffer</span>:		<span class="kw-2">*mut</span> <span class="ident">Buffer</span>
 }
 
@@ -416,11 +465,14 @@
 			<span class="string">b&#39;\n&#39;</span> =&gt; <span class="self">self</span>.<span class="ident">new_line</span>(),
 			<span class="ident">byte</span> =&gt; {
 				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">code</span> <span class="op">=</span> <span class="ident">byte</span>;
-				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pos</span>: (<span class="ident">usize</span>, <span class="ident">usize</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">get_pos</span>();
+				<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pos</span>: (<span class="ident">usize</span>, <span class="ident">usize</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">get_pos</span>();
+                <span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.get_pos()};</span>
 				<span class="kw">if</span> <span class="ident">byte</span> <span class="op">==</span> <span class="number">0x08</span>
 				{
-					<span class="kw">if</span> <span class="self">self</span>.<span class="ident">get_screen</span>().<span class="ident">get_command</span>().<span class="ident">len</span>() <span class="op">==</span> <span class="number">0</span>
-						{<span class="kw">return</span> ;}
+					<span class="comment">//unsafe {</span>
+                    <span class="comment">//    if SCREENS.lock()[self.screen_index].get_command().len() == 0</span>
+					<span class="comment">//	    {return ;}</span>
+                    <span class="comment">//}</span>
 					<span class="kw">if</span> <span class="ident">pos</span>.<span class="number">0</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
 						<span class="ident">pos</span>.<span class="number">0</span> <span class="op">-</span><span class="op">=</span> <span class="number">1</span>;
 					} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">pos</span>.<span class="number">1</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span>{
@@ -431,36 +483,42 @@
 				}
 				<span class="kw">else</span> <span class="kw">if</span> <span class="ident">pos</span>.<span class="number">0</span> <span class="op">&gt;</span><span class="op">=</span> <span class="ident">BUFFER_WIDTH</span> {
 						<span class="self">self</span>.<span class="ident">new_line</span>();
-						<span class="ident">pos</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">get_pos</span>();
+						<span class="comment">//unsafe { pos = SCREENS.lock()[self.screen_index].cursor.get_pos() };</span>
 				}
 				<span class="kw">let</span> <span class="ident">screenchar</span> <span class="op">=</span> <span class="ident">ScreenChar</span> {
 					<span class="ident">ascii_code</span>: <span class="ident">code</span>,
-					<span class="ident">color_code</span>: <span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">get_color_code</span>(),
+                    <span class="ident">color_code</span>: <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">get_color_code</span>(),
+					<span class="comment">//color_code: unsafe{ SCREENS.lock()[self.screen_index].cursor.get_color_code() },</span>
 				};
 				<span class="kw">unsafe</span>{(<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">vga_buffer</span>).<span class="ident">chars</span>[<span class="ident">pos</span>.<span class="number">1</span>][<span class="ident">pos</span>.<span class="number">0</span>] <span class="op">=</span> <span class="ident">screenchar</span>};
-				<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>.<span class="ident">chars</span>[<span class="ident">pos</span>.<span class="number">1</span>][<span class="ident">pos</span>.<span class="number">0</span>] <span class="op">=</span> <span class="ident">screenchar</span>;
+				<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].buffer.chars[pos.1][pos.0] = screenchar };</span>
 				<span class="kw">if</span> <span class="ident">byte</span> <span class="op">!</span><span class="op">=</span> <span class="number">0x08</span>
 					{<span class="ident">pos</span>.<span class="number">0</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;}
-				<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">set_pos</span>(<span class="ident">pos</span>.<span class="number">0</span>, <span class="ident">pos</span>.<span class="number">1</span>);
+                <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">set_pos</span>(<span class="ident">pos</span>.<span class="number">0</span>, <span class="ident">pos</span>.<span class="number">1</span>);
+				<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.set_pos(pos.0, pos.1) };</span>
 			}
 		}
 	}
 
 	<span class="comment">/*	Move CURSOR one line lower and move all lines if needed */</span>
 	<span class="kw">fn</span> <span class="ident">new_line</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-		<span class="kw">let</span> <span class="ident">pos</span>: (<span class="ident">usize</span>, <span class="ident">usize</span>) <span class="op">=</span> <span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">get_pos</span>();
+		<span class="kw">let</span> <span class="ident">pos</span>: (<span class="ident">usize</span>, <span class="ident">usize</span>) <span class="op">=</span>  <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">get_pos</span>();
+            <span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.get_pos() };</span>
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">y</span> <span class="op">=</span> <span class="ident">pos</span>.<span class="number">1</span>;
 		<span class="kw">if</span> <span class="ident">pos</span>.<span class="number">1</span> <span class="op">!</span><span class="op">=</span> <span class="ident">BUFFER_HEIGHT</span> <span class="op">-</span> <span class="number">1</span> {
 			<span class="ident">y</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 		}
 		<span class="kw">else</span> {
 			<span class="kw">for</span> <span class="ident">row</span> <span class="kw">in</span> <span class="number">1</span>..<span class="ident">BUFFER_HEIGHT</span> {
-				<span class="kw">unsafe</span>{(<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">vga_buffer</span>).<span class="ident">chars</span>[<span class="ident">row</span> <span class="op">-</span> <span class="number">1</span>] <span class="op">=</span> (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">vga_buffer</span>).<span class="ident">chars</span>[<span class="ident">row</span>]};
-				<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>.<span class="ident">chars</span>[<span class="ident">row</span> <span class="op">-</span> <span class="number">1</span>] <span class="op">=</span> <span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>.<span class="ident">chars</span>[<span class="ident">row</span>];
+				<span class="kw">unsafe</span>{
+                    (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">vga_buffer</span>).<span class="ident">chars</span>[<span class="ident">row</span> <span class="op">-</span> <span class="number">1</span>] <span class="op">=</span> (<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">vga_buffer</span>).<span class="ident">chars</span>[<span class="ident">row</span>];
+				    <span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].buffer.chars[row - 1] = SCREENS.lock()[self.screen_index].buffer.chars[row] };</span>
+                }
 			}
 			<span class="self">self</span>.<span class="ident">clear_row</span>(<span class="ident">BUFFER_HEIGHT</span> <span class="op">-</span><span class="number">1</span>);
 		}
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">set_pos</span>(<span class="number">0</span>, <span class="ident">y</span>);
+        <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">set_pos</span>(<span class="number">0</span>, <span class="ident">y</span>);
+		<span class="comment">//unsafe { SCREENS.lock()[self.screen_index].cursor.set_pos(0, y) };</span>
 	}
 
 	<span class="comment">/*		Simply replace all row by spaces to visualy clear it */</span>
@@ -469,21 +527,23 @@
 			<span class="kw">let</span> <span class="ident">screenchar</span> <span class="op">=</span> <span class="ident">ScreenChar</span> {
 				<span class="ident">ascii_code</span>: <span class="number">0x20</span>,
 				<span class="ident">color_code</span>: <span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>)
-<span class="comment">//self.screens[self.screen_index].cursor.get_color_code()</span>
+<span class="comment">//              SCREENS.lock()[self.screen_index].cursor.get_color_code()</span>
 			};
 			<span class="kw">unsafe</span>{(<span class="kw-2">*</span><span class="self">self</span>.<span class="ident">vga_buffer</span>).<span class="ident">chars</span>[<span class="ident">row</span>][<span class="ident">i</span>] <span class="op">=</span> <span class="ident">screenchar</span>};
-			<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>.<span class="ident">chars</span>[<span class="ident">row</span>][<span class="ident">i</span>] <span class="op">=</span> <span class="ident">screenchar</span>;
+			<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].buffer.chars[row][i] = screenchar };</span>
 		}
 	}
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">reset</span>();
-		<span class="self">self</span>.<span class="ident">copy_buffer</span>(<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>);
+        <span class="macro">todo!</span>();
+		<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].reset() };</span>
+		<span class="comment">//unsafe{ self.copy_buffer(SCREENS.lock()[self.screen_index].buffer) };</span>
 	}
 
 	<span class="comment">/*	Write string to vga using write_byte functions if printable, else print a square */</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write_string</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">s</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) {
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">disable</span>();
+		<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.disable() };</span>
+        <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">disable</span>();
 		<span class="kw">for</span> <span class="ident">byte</span> <span class="kw">in</span> <span class="ident">s</span>.<span class="ident">bytes</span>() {
 			<span class="kw">match</span> <span class="ident">byte</span> {
 			<span class="comment">// printable ASCII byte or newline</span>
@@ -492,8 +552,10 @@
 				<span class="kw">_</span> =&gt; <span class="self">self</span>.<span class="ident">write_byte</span>(<span class="number">0xfe</span>),
 			}
 		}
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">update</span>();
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">enable</span>();
+        <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">update</span>();
+        <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">enable</span>();
+		<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.update() };</span>
+		<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.enable() };</span>
 	}
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">copy_buffer</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">buffer</span>: <span class="ident">Buffer</span>) {
@@ -504,22 +566,33 @@
 		}
 	}
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_screen</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">nb</span>: <span class="ident">usize</span>) {
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">disable</span>();
+		<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.disable() };</span>
+        <span class="comment">// Should copy vga to current buffer index</span>
+        <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">disable</span>();
 		<span class="self">self</span>.<span class="ident">screen_index</span> <span class="op">=</span> <span class="ident">nb</span>;
-		<span class="self">self</span>.<span class="ident">copy_buffer</span>(<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>);
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">update</span>();
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">enable</span>();
-		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">get_screen</span>().<span class="ident">cursor</span>.<span class="ident">get_pos</span>() <span class="op">==</span> (<span class="number">0</span>, <span class="number">0</span>) {
-			<span class="self">self</span>.<span class="ident">write_string</span>(<span class="string">&quot;$&gt; &quot;</span>);
+        <span class="kw">unsafe</span> {
+		    <span class="self">self</span>.<span class="ident">copy_buffer</span>(<span class="ident">SCREENS</span>.<span class="ident">lock</span>()[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">buffer</span>);
+            <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">update</span>();
+            <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">enable</span>();
+		    <span class="comment">//SCREENS.lock()[self.screen_index].cursor.update();</span>
+		    <span class="comment">//SCREENS.lock()[self.screen_index].cursor.enable();</span>
+        }
+		<span class="kw">unsafe</span> {
+            <span class="comment">//if SCREENS.lock()[self.screen_index].cursor.get_pos() == (0, 0) {</span>
+            <span class="kw">if</span> <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">get_pos</span>() <span class="op">==</span> (<span class="number">0</span>, <span class="number">0</span>) {
+			    <span class="self">self</span>.<span class="ident">write_string</span>(<span class="string">&quot;$&gt; &quot;</span>);
+            }
 		}
 	}
 	
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_screen</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut</span> <span class="ident">Screen</span> {
-		<span class="kw-2">&amp;mut</span> <span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>]
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_screen</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) -&gt; <span class="ident">usize</span> {
+        <span class="self">self</span>.<span class="ident">screen_index</span>
+		<span class="comment">//unsafe{ &amp; mut SCREENS.lock()[self.screen_index] }</span>
 	}
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">chcolor</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">new_color</span>: <span class="ident">ColorCode</span>) {
-		<span class="self">self</span>.<span class="ident">screens</span>[<span class="self">self</span>.<span class="ident">screen_index</span>].<span class="ident">cursor</span>.<span class="ident">set_color_code</span>(<span class="ident">new_color</span>);
+		<span class="comment">//unsafe{ SCREENS.lock()[self.screen_index].cursor.set_color_code(new_color) };</span>
+        <span class="self">self</span>.<span class="ident">cursor</span>.<span class="ident">set_color_code</span>(<span class="ident">new_color</span>);
 	}
 }
 
@@ -551,19 +624,19 @@
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">not</span>(<span class="ident">test</span>))]</span>
 <span class="attribute">#[<span class="ident">panic_handler</span>]</span>
 <span class="kw">fn</span> <span class="ident">panic</span>(<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident">PanicInfo</span>) -&gt; <span class="op">!</span> {
-	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::Red</span>, <span class="ident">Color::Black</span>))};
+	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">lock</span>().<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::Red</span>, <span class="ident">Color::Black</span>))};
 	<span class="macro">kprintln!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">info</span>);
-	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>))};
+	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">lock</span>().<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>))};
 	<span class="kw">loop</span> {}
 }
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="attribute">#[<span class="ident">panic_handler</span>]</span>
 <span class="kw">fn</span> <span class="ident">panic</span>(<span class="ident">info</span>: <span class="kw-2">&amp;</span><span class="ident">PanicInfo</span>) -&gt; <span class="op">!</span> {
-	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::Red</span>, <span class="ident">Color::Black</span>))};
+	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">lock</span>().<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::Red</span>, <span class="ident">Color::Black</span>))};
 	<span class="macro">kprintln!</span>(<span class="string">&quot;[failed]&quot;</span>);
 	<span class="macro">kprintln!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">info</span>);
-	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>))};
+	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">lock</span>().<span class="ident">chcolor</span>(<span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>))};
 	<span class="ident">io::outb</span>(<span class="number">0xf4</span>, <span class="number">0x11</span>);
 	<span class="kw">loop</span> {}
 }
@@ -571,7 +644,7 @@
 <span class="kw">use</span> <span class="ident">core::fmt::Write</span>;
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">_print</span>(<span class="ident">args</span>: <span class="ident">fmt::Arguments</span>) {
-	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">write_fmt</span>(<span class="ident">args</span>).<span class="ident">unwrap</span>()};
+	<span class="kw">unsafe</span>{<span class="ident">WRITER</span>.<span class="ident">lock</span>().<span class="ident">write_fmt</span>(<span class="ident">args</span>).<span class="ident">unwrap</span>()};
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
@@ -616,7 +689,7 @@
 <span class="macro">macro_rules!</span> <span class="ident">change_color</span> {
 	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fg</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bg</span>:<span class="ident">expr</span>) =&gt; (
 		<span class="kw">unsafe</span> {
-			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::WRITER</span>.<span class="ident">chcolor</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::color::ColorCode::new</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fg</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bg</span>))
+			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::WRITER</span>.<span class="ident">lock</span>().<span class="ident">chcolor</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::color::ColorCode::new</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fg</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bg</span>))
 		}
 	);
 }
@@ -624,13 +697,16 @@
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">clihandle</span> {
 	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">expr</span>) =&gt; (
-		<span class="kw">unsafe</span> {<span class="ident"><span class="kw">crate</span>::vga_buffer::WRITER</span>.<span class="ident">get_screen</span>().<span class="ident">get_command</span>().<span class="ident">handle</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>)}
+		<span class="kw">unsafe</span> {
+            <span class="kw">let</span> <span class="ident">screen_number</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::WRITER</span>.<span class="ident">lock</span>().<span class="ident">get_screen</span>();
+            <span class="ident"><span class="kw">crate</span>::vga_buffer::SCREENS</span>.<span class="ident">lock</span>()[<span class="ident">screen_number</span>].<span class="ident">get_command</span>().<span class="ident">handle</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>);
+        }
 	)
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">screenclear</span> {
-	() =&gt; (<span class="kw">unsafe</span> {<span class="ident"><span class="kw">crate</span>::vga_buffer::WRITER</span>.<span class="ident">clear</span>()})
+	() =&gt; (<span class="kw">unsafe</span> {<span class="ident"><span class="kw">crate</span>::vga_buffer::WRITER</span>.<span class="ident">lock</span>().<span class="ident">clear</span>()})
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

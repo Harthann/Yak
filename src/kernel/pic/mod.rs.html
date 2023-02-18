@@ -188,8 +188,8 @@
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">handlers</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">pit</span>;
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pit</span>::{<span class="ident">set_pit</span>, <span class="ident">set_irq0_in_ms</span>};
 
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pit::set_pit</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">handlers</span>::{<span class="ident">handler</span>, <span class="ident">JIFFIES</span>};
 <span class="comment">/* References: [https://wiki.osdev.org/8259_PIC] */</span>
 

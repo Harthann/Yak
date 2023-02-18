@@ -248,6 +248,9 @@
 <span id="242">242</span>
 <span id="243">243</span>
 <span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">feature</span>(<span class="ident">const_mut_refs</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">naked_functions</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">fmt_internals</span>)]</span>
@@ -259,6 +262,7 @@
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">fundamental</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">lang_items</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">c_variadic</span>)]</span>
+<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">core_intrinsics</span>)]</span>
 <span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>)]</span>
@@ -322,14 +326,15 @@
 <span class="kw">mod</span> <span class="ident">proc</span>;
 <span class="kw">mod</span> <span class="ident">user</span>;
 <span class="kw">mod</span> <span class="ident">wrappers</span>;
+<span class="kw">mod</span> <span class="ident">spin</span>;
+<span class="comment">//mod math;</span>
 <span class="kw">mod</span> <span class="ident">utils</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
 
 <span class="comment">/*  Modules used function and variable  */</span>
-<span class="kw">use</span> <span class="ident">memory::paging</span>::{<span class="ident">init_paging</span>, <span class="ident">page_directory</span>};
-<span class="kw">use</span> <span class="ident">memory::allocator::linked_list::LinkedListAllocator</span>;
+<span class="kw">use</span> <span class="ident">memory::paging</span>::{<span class="ident">init_paging</span>, <span class="ident">page_directory</span>}; <span class="kw">use</span> <span class="ident">memory::allocator::linked_list::LinkedListAllocator</span>;
 <span class="kw">use</span> <span class="ident">vga_buffer::color::Color</span>;
 <span class="kw">use</span> <span class="ident">cli::Command</span>;
 <span class="kw">use</span> <span class="ident">pic::setup_pic8259</span>;
@@ -397,6 +402,7 @@
 	<span class="ident">setup_pic8259</span>();
 	<span class="comment">/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */</span>
 	<span class="ident">pic::set_pit</span>(<span class="ident">pic::pit::CHANNEL_0</span>, <span class="ident">pic::pit::ACC_LOBHIB</span>, <span class="ident">pic::pit::MODE_2</span>, <span class="number">0x00ff</span>);
+    <span class="ident">pic::set_irq0_in_ms</span>(<span class="number">0.15</span>);
 
 	<span class="comment">/* Reserve some spaces to push things before main */</span>
 	<span class="kw">unsafe</span>{<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov esp, {}&quot;</span>, <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">kstack_addr</span> <span class="op">-</span> <span class="number">256</span>)};
@@ -479,7 +485,7 @@
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kmain</span>() -&gt; <span class="op">!</span> {
-	<span class="ident">test_task</span>();
+	<span class="comment">//test_task();</span>
 
 	<span class="macro">kprintln!</span>(<span class="string">&quot;Hello World of {}!&quot;</span>, <span class="number">42</span>);
 
