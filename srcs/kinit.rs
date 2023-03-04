@@ -56,7 +56,6 @@ use pic::setup_pic8259;
 use crate::memory::{init_heap, init_stack, VirtAddr};
 use crate::memory::paging::PAGE_WRITABLE;
 use crate::interrupts::init_idt;
-use proc::task::{init_tasking};
 use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
 pub use pic::handlers::JIFFIES;
 use crate::memory::MemoryZone;
