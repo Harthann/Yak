@@ -219,12 +219,10 @@ impl Writer {
 		    //SCREENS.lock()[self.screen_index].cursor.update();
 		    //SCREENS.lock()[self.screen_index].cursor.enable();
         }
-		unsafe {
             //if SCREENS.lock()[self.screen_index].cursor.get_pos() == (0, 0) {
-            if self.cursor.get_pos() == (0, 0) {
-			    self.write_string("$> ");
-            }
-		}
+        if self.cursor.get_pos() == (0, 0) {
+            self.write_string("$> ");
+        }
 	}
 	
 	pub fn get_screen(&mut self) -> usize {
