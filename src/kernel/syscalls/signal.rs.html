@@ -27,7 +27,7 @@
 <span id="21">21</span>
 <span id="22">22</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Pid</span>, <span class="ident">get_running_process</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{<span class="ident">Signal</span>, <span class="ident">SignalType</span>, <span class="ident">get_signal_type</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{<span class="ident">Signal</span>, <span class="ident">get_signal_type</span>};
 
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">sys_kill</span>(<span class="ident">pid</span>: <span class="ident">Pid</span>, <span class="ident">signal</span>: <span class="ident">i32</span>) -&gt; <span class="ident">i32</span> {
 	<span class="kw">if</span> <span class="ident">pid</span> <span class="op">&gt;</span> <span class="number">0</span> {

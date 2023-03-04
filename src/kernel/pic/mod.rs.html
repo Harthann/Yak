@@ -182,6 +182,7 @@
 <span id="176">176</span>
 <span id="177">177</span>
 <span id="178">178</span>
+<span id="179">179</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Setup Programmable Interrupt Controller</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::io</span>::{<span class="ident">inb</span>, <span class="ident">outb</span>, <span class="ident">io_wait</span>};
@@ -259,6 +260,7 @@
 
 <span class="kw">const</span> <span class="ident">PIC_EOI</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x20</span>; <span class="comment">/* End of Interrupts command code */</span>
 
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">end_of_interrupts</span>(<span class="ident">irq</span>: <span class="ident">usize</span>) {
 	<span class="kw">if</span> <span class="ident">irq</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">8</span> { <span class="comment">/* Slave interrupt request */</span>
 		<span class="ident">outb</span>(<span class="ident">PIC2_CMD</span>, <span class="ident">PIC_EOI</span>);

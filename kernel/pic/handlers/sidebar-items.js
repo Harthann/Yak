@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["handler",""]],"static":[["JIFFIES",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["handler",""],["irq_0",""]],"static":[["JIFFIES",""]]};
