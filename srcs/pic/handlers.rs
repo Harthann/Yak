@@ -16,10 +16,13 @@ pub fn handler(reg: &Registers, int_no: usize) {
 }
 
 #[naked]
+#[no_mangle]
 unsafe extern "C" fn irq_0() {
     #[cfg(not(feature = "multitasking"))]
     core::arch::asm!("
 		cli
+
+        pusha
 
         add dword ptr[JIFFIES], 1
         // call end_of_interrupt(0);
@@ -27,6 +30,8 @@ unsafe extern "C" fn irq_0() {
         push 0
         call end_of_interrupts
         add esp, 4
+
+        popa
 
 		sti
         iretd
