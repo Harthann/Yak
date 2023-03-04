@@ -1,5 +1,5 @@
 use crate::proc::process::{Pid, get_running_process};
-use crate::proc::signal::{Signal, SignalType, get_signal_type};
+use crate::proc::signal::{Signal, get_signal_type};
 
 pub extern "C" fn sys_kill(pid: Pid, signal: i32) -> i32 {
 	if pid > 0 {

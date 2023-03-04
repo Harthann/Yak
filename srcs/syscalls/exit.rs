@@ -33,7 +33,7 @@ pub struct RUsage {
 	ru_nivcsw: usize // Number of times an involuntary context switch took place
 }
 
-pub extern "C" fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
+pub extern "C" fn sys_wait4(_pid: Pid, _wstatus: *mut i32, _options: u32, _rusage: *mut RUsage) -> Pid {
 	0
 }
 

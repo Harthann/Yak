@@ -2,7 +2,7 @@ SHELL			=	/bin/bash
 
 ifeq ($(BUILD),release)
 NAME			=	kfs
-ARGS_CARGO		=	--release
+ARGS_CARGO		=	--no-default-features --release
 endif
 
 VERSION			=	5
@@ -100,7 +100,7 @@ $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
 # Build libkernel using cargo
-$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
+$(RUST_KERNEL):	$(KERNELSRCS) $(BOOTOBJS) Makefile Cargo.toml $(addprefix $(DIR_HEADERS)/, $(INCLUDES))
 				$(BUILD_PREFIX) cargo build $(ARGS_CARGO) $(BUILD_SUFFIX)
 
 # Check if the rust can compile without actually compiling it
