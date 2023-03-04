@@ -7,7 +7,7 @@ authors = ["lmartin <lmartin@student.42.fr>", "nieyraud <nieyraud@student.42.fr>
 
 [[bin]]
 name='kernel'
-path='srcs/main.rs'
+path='srcs/kinit.rs'
 test = true
 
 [profile.dev]
@@ -22,7 +22,7 @@ opt-level = "z"
 [features]
 # You can add feature by naming them in default
 # These feature need to be declare
-default = []
+default = ["multitasking"]
 
 # Declare feature multitasking, depends on nothing
 multitasking = []
