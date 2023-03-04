@@ -1,7 +1,4 @@
-use crate::io::{
-outb
-};
-
+use crate::x86_64::port::{PortWriteOnly, Port};
 /*
 ** I/O port     Usage
 ** 0x40         Channel 0 data port (read/write)
@@ -97,16 +94,20 @@ pub fn set_irq0_in_ms(ms: f32) {
 }
 
 pub fn set_pit(channel: u8, access: u8, mode: u8, data: u16) {
-	let port: u16 = match channel {
-		CHANNEL_0	=> CHAN0_DATA.into(),
-		CHANNEL_1	=> CHAN1_DATA.into(),
-		CHANNEL_2	=> CHAN2_DATA.into(),
+    let mut cmd_port: PortWriteOnly<u8> = PortWriteOnly::new(MODE_CMD as u16);
+
+	let mut data_port: PortWriteOnly<u8> = match channel {
+		CHANNEL_0	=> PortWriteOnly::new(CHAN0_DATA.into()),
+		CHANNEL_1	=> PortWriteOnly::new(CHAN1_DATA.into()),
+		CHANNEL_2	=> PortWriteOnly::new(CHAN2_DATA.into()),
 		_			=>	panic!("PIT Channel {channel} doesn't exist"),
 	};
-/*	Set cmd mod selected */
-	outb(MODE_CMD as u16, channel | access | mode);	
+    unsafe {
+        //	Set cmd mod selected
+        cmd_port.write(channel | access | mode);
 
-/*	Sending data to commands */
-	outb(port, (data & 0xff) as u8);
-	outb(port, ((data & 0xff00) >> 8) as u8);
+        //	Sending data to commands
+        data_port.write((data & 0xff) as u8);
+        data_port.write((data >> 8) as u8);
+    }
 }

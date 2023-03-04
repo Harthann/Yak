@@ -75,6 +75,7 @@ mod user;
 mod wrappers;
 mod spin;
 mod utils;
+mod x86_64;
 
 #[cfg(test)]
 mod test;
