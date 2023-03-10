@@ -1,0 +1,12 @@
+hard_tabs=true
+imports_layout="HorizontalVertical"
+max_width=80
+imports_granularity="Module"
+newline_style="Unix"
+struct_field_align_threshold=20
+enum_discrim_align_threshold=20
+match_block_trailing_comma=true
+trailing_comma="Never"
+normalize_comments=true
+struct_lit_width=72
+fn_call_width=72

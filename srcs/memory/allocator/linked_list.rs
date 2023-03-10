@@ -1,6 +1,6 @@
+use crate::memory::allocator::{align_up, AllocatorInit};
 use crate::memory::VirtAddr;
-use core::alloc::{Layout, GlobalAlloc};
-use crate::memory::allocator::{AllocatorInit, align_up};
+use core::alloc::{GlobalAlloc, Layout};
 
 impl AllocatorInit for LinkedListAllocator {
 	unsafe fn init(&mut self, heap_start: VirtAddr, heap_size: usize) {
@@ -16,8 +16,10 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 		let (size, align) = LinkedListAllocator::size_align(layout);
 		let allocator = mut_self;
 
-		if let Some((region, alloc_start)) = allocator.find_region(size, align) { 
-			let alloc_end = alloc_start.checked_add(size as u32).expect("overflow");
+		if let Some((region, alloc_start)) = allocator.find_region(size, align)
+		{
+			let alloc_end =
+				alloc_start.checked_add(size as u32).expect("overflow");
 			let excess_size: usize = (region.end_addr() - alloc_end) as usize;
 			if excess_size > 0 {
 				allocator.add_free_region(alloc_end, excess_size);
@@ -45,7 +47,7 @@ struct ListNode {
 
 impl ListNode {
 	const fn new(size: usize) -> Self {
-		Self {size, next: None}
+		Self { size, next: None }
 	}
 
 	fn start_addr(&self) -> VirtAddr {
@@ -63,22 +65,25 @@ pub struct LinkedListAllocator {
 
 impl LinkedListAllocator {
 	pub const fn new() -> Self {
-		Self {head: ListNode::new(0)}
+		Self { head: ListNode::new(0) }
 	}
 
-	/* Adjust the layout to contain a ListNode */
+	// Adjust the layout to contain a ListNode
 	fn size_align(layout: Layout) -> (usize, usize) {
-			let layout = layout
-				.align_to(core::mem::align_of::<ListNode>())
-				.expect("adjusting alignment failed")
-				.pad_to_align();
-			let size = layout.size().max(core::mem::size_of::<ListNode>());
-			(size, layout.align())
+		let layout = layout
+			.align_to(core::mem::align_of::<ListNode>())
+			.expect("adjusting alignment failed")
+			.pad_to_align();
+		let size = layout.size().max(core::mem::size_of::<ListNode>());
+		(size, layout.align())
 	}
 
-	/* check if the given region has the size needed */
-	fn alloc_from_region(region: &ListNode, size: usize, align: usize)
-		-> Result<VirtAddr, ()> {
+	// check if the given region has the size needed
+	fn alloc_from_region(
+		region: &ListNode,
+		size: usize,
+		align: usize
+	) -> Result<VirtAddr, ()> {
 		let alloc_start = align_up(region.start_addr(), align);
 		let alloc_end = alloc_start.checked_add(size as u32).ok_or(())?;
 		if alloc_end > region.end_addr() {
@@ -91,13 +96,18 @@ impl LinkedListAllocator {
 		Ok(alloc_start)
 	}
 
-	/* find a region and remove it from the linked list */
-	fn find_region(&mut self, size: usize, align: usize)
-		-> Option<(&'static mut ListNode, VirtAddr)> {
+	// find a region and remove it from the linked list
+	fn find_region(
+		&mut self,
+		size: usize,
+		align: usize
+	) -> Option<(&'static mut ListNode, VirtAddr)> {
 		let mut current = &mut self.head;
 
 		while let Some(ref mut region) = current.next {
-			if let Ok(alloc_start) = Self::alloc_from_region(&region, size, align) {
+			if let Ok(alloc_start) =
+				Self::alloc_from_region(&region, size, align)
+			{
 				let next = region.next.take();
 				let ret = Some((current.next.take().unwrap(), alloc_start));
 				current.next = next;
@@ -109,7 +119,7 @@ impl LinkedListAllocator {
 		None
 	}
 
-	/* add a free region to the linked list */
+	// add a free region to the linked list
 	unsafe fn add_free_region(&mut self, addr: VirtAddr, size: usize) {
 		assert_eq!(align_up(addr, core::mem::align_of::<ListNode>()), addr);
 		assert!(size >= core::mem::size_of::<ListNode>());

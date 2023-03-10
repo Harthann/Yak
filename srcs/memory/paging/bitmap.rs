@@ -1,16 +1,14 @@
 use crate::memory::PhysAddr;
 
-type Sector     = u8;
+type Sector = u8;
 
-/*  Hardcoded value corresponding to our paging maximum memory */
-const MAX_MEM:			u64   = 1024 * 1024 * 4096;
-const PAGE_SIZE:		usize = 4096;
-const SECTOR_SIZE:		usize = PAGE_SIZE * 8;
-const SECTOR_NUMBER:	usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
+// Hardcoded value corresponding to our paging maximum memory
+const MAX_MEM: u64 = 1024 * 1024 * 4096;
+const PAGE_SIZE: usize = 4096;
+const SECTOR_SIZE: usize = PAGE_SIZE * 8;
+const SECTOR_NUMBER: usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
 
-pub static mut PHYSMAP: Bitmaps = Bitmaps {
-	maps: [0; SECTOR_NUMBER]
-};
+pub static mut PHYSMAP: Bitmaps = Bitmaps { maps: [0; SECTOR_NUMBER] };
 
 pub struct Bitmaps {
 	maps: [Sector; SECTOR_NUMBER]
@@ -18,12 +16,10 @@ pub struct Bitmaps {
 
 impl Bitmaps {
 	pub const fn new() -> Bitmaps {
-		Bitmaps {
-			maps: [0; SECTOR_NUMBER],
-		}
+		Bitmaps { maps: [0; SECTOR_NUMBER] }
 	}
 
-/*  This function claim a specific page and return it or null if already claimed */
+	// This function claim a specific page and return it or null if already claimed
 	pub fn claim(&mut self, addr: PhysAddr) -> PhysAddr {
 		let i: usize = addr as usize / SECTOR_SIZE;
 		let shift: u8 = ((addr as usize % SECTOR_SIZE) / PAGE_SIZE) as u8;
@@ -32,10 +28,10 @@ impl Bitmaps {
 			return 0x0;
 		}
 		self.maps[i as usize] |= 1 << shift;
-		(i * SECTOR_SIZE + (shift as usize) * PAGE_SIZE ) as PhysAddr
+		(i * SECTOR_SIZE + (shift as usize) * PAGE_SIZE) as PhysAddr
 	}
 
-/*  This function only aim to claim starting memory and thus ignore if memory is already claim */
+	// This function only aim to claim starting memory and thus ignore if memory is already claim
 	pub fn claim_range(&mut self, addr: PhysAddr, range: usize) -> PhysAddr {
 		let mut i: usize = 0;
 		while i < range {
@@ -45,10 +41,8 @@ impl Bitmaps {
 		addr
 	}
 
-	/*
-		Get multiple page_frames that are physically next to each other, return 
-		the first physical adress
-	*/
+	// Get multiple page_frames that are physically next to each other, return
+	// the first physical adress
 	pub fn get_pages(&mut self, nb: usize) -> Result<PhysAddr, ()> {
 		let mut i: usize = 0;
 		let mut saved_i: usize = 0;
@@ -60,7 +54,7 @@ impl Bitmaps {
 			if self.maps[i] == 0xff || shift == 8 {
 				shift = 0;
 				i += 1;
-				continue ;
+				continue;
 			}
 			if (self.maps[i] >> shift) & 1 == 0 {
 				if count == 0 {
@@ -87,10 +81,11 @@ impl Bitmaps {
 			}
 			count -= 1;
 		}
-		Ok((saved_i * SECTOR_SIZE + (saved_shift as usize) * PAGE_SIZE) as PhysAddr)
+		Ok((saved_i * SECTOR_SIZE + (saved_shift as usize) * PAGE_SIZE)
+			as PhysAddr)
 	}
 
-/*  Return the next claimable frame and return it's physical addres */
+	// Return the next claimable frame and return it's physical addres
 	pub fn get_page(&mut self) -> Result<PhysAddr, ()> {
 		let mut i: usize = 0;
 		let mut shift: u8 = 0;
@@ -98,7 +93,8 @@ impl Bitmaps {
 		while self.maps[i] == 0xff {
 			i += 1;
 		}
-		if i == SECTOR_NUMBER { // TODO -> if physaddr is 0 ?
+		if i == SECTOR_NUMBER {
+			// TODO -> if physaddr is 0 ?
 			return Err(());
 		}
 		while (self.maps[i] >> shift) & 1 == 1 {
@@ -108,7 +104,7 @@ impl Bitmaps {
 		Ok((i * SECTOR_SIZE + (shift as usize) * PAGE_SIZE) as PhysAddr)
 	}
 
-/* indicates to the bitmaps a page is not used anymore */
+	// indicates to the bitmaps a page is not used anymore
 	pub fn free_page(&mut self, addr: PhysAddr) {
 		let i: usize = (addr / SECTOR_SIZE as u32) as usize;
 		let shift: u8 = (addr % SECTOR_SIZE as u32 / PAGE_SIZE as u32) as u8;

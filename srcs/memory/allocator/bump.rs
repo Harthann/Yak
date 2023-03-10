@@ -1,6 +1,6 @@
+use crate::memory::allocator::{align_up, AllocatorInit};
 use crate::memory::VirtAddr;
 use core::alloc::{GlobalAlloc, Layout};
-use crate::memory::allocator::{AllocatorInit, align_up};
 
 impl AllocatorInit for BumpAllocator {
 	unsafe fn init(&mut self, heap_start: VirtAddr, heap_size: usize) {
@@ -16,10 +16,11 @@ unsafe impl GlobalAlloc for BumpAllocator {
 		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let alloc_start = align_up(mut_self.next, layout.align());
-		let alloc_end: VirtAddr = match alloc_start.checked_add(layout.size() as u32) {
-			Some(end) => end,
-			None => return core::ptr::null_mut()
-		};
+		let alloc_end: VirtAddr =
+			match alloc_start.checked_add(layout.size() as u32) {
+				Some(end) => end,
+				None => return core::ptr::null_mut()
+			};
 
 		if alloc_end > mut_self.heap_end {
 			core::ptr::null_mut() // out of memory
@@ -43,19 +44,19 @@ unsafe impl GlobalAlloc for BumpAllocator {
 
 #[derive(Debug)]
 pub struct BumpAllocator {
-	heap_start: VirtAddr,
-	heap_end: VirtAddr,
-	next: VirtAddr,
+	heap_start:  VirtAddr,
+	heap_end:    VirtAddr,
+	next:        VirtAddr,
 	allocations: usize
 }
 
 impl BumpAllocator {
 	pub const fn new() -> Self {
 		BumpAllocator {
-				heap_start: 0,
-				heap_end: 0,
-				next: 0,
-				allocations: 0
+			heap_start:  0,
+			heap_end:    0,
+			next:        0,
+			allocations: 0
 		}
 	}
 }

@@ -1,15 +1,15 @@
 use core::fmt;
 
-use crate::KHEAP;
-use crate::vec::Vec;
-use crate::memory::{MemoryZone, Stack};
-use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
+use crate::memory::paging::{free_pages, PAGE_WRITABLE};
+use crate::memory::{MemoryZone, Stack};
+use crate::vec::Vec;
+use crate::KHEAP;
 
 use crate::proc::task::TASKLIST;
 
-use crate::proc::Id;
 use crate::proc::signal::{Signal, SignalType};
+use crate::proc::Id;
 
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
@@ -25,27 +25,27 @@ pub enum Status {
 }
 
 pub struct Process {
-	pub pid: Pid,
-	pub status: Status,
-	pub parent: *mut Process,
-	pub childs: Vec<Box<Process>>,
-	pub stack: MemoryZone,
-	pub heap: MemoryZone,
+	pub pid:     Pid,
+	pub status:  Status,
+	pub parent:  *mut Process,
+	pub childs:  Vec<Box<Process>>,
+	pub stack:   MemoryZone,
+	pub heap:    MemoryZone,
 	pub signals: Vec<Signal>,
-	pub owner: Id
+	pub owner:   Id
 }
 
 impl Process {
 	pub const fn new() -> Self {
 		Self {
-			pid: 0,
-			status: Status::Disable,
-			parent: core::ptr::null_mut(),
-			childs: Vec::new(),
-			stack: MemoryZone::new(),
-			heap: MemoryZone::new(),
+			pid:     0,
+			status:  Status::Disable,
+			parent:  core::ptr::null_mut(),
+			childs:  Vec::new(),
+			stack:   MemoryZone::new(),
+			heap:    MemoryZone::new(),
 			signals: Vec::new(),
-			owner: 0
+			owner:   0
 		}
 	}
 
@@ -69,14 +69,14 @@ impl Process {
 		Err(())
 	}
 
-	/* TODO: next_pid need to check overflow and if other pid is available */
+	// TODO: next_pid need to check overflow and if other pid is available
 	pub unsafe fn init(&mut self, parent: *mut Process, owner: Id) {
 		self.pid = NEXT_PID;
 		self.status = Status::Run;
 		self.parent = parent;
 		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 		self.heap = KHEAP;
-//		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
+		// 		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
 		self.owner = owner;
 		NEXT_PID += 1;
 	}
@@ -87,7 +87,7 @@ impl Process {
 		}
 		let parent: &mut Process = &mut *self.parent;
 		while self.childs.len() > 0 {
-			/* TODO: DON'T MOVE THREADS AND REMOVE THEM */
+			// TODO: DON'T MOVE THREADS AND REMOVE THEM
 			let res = self.childs.pop();
 			if res.is_none() {
 				todo!();
@@ -96,7 +96,7 @@ impl Process {
 			let len = parent.childs.len();
 			parent.childs[len - 1].parent = self.parent;
 		}
-		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
+		// Don't remove and wait for the parent process to do wait4() -> Zombify
 		self.status = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, status);
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
@@ -108,7 +108,7 @@ impl Process {
 		while i < parent.childs.len() {
 			let ptr: *mut Process = parent.childs[i].as_mut();
 			if ptr == &mut *self {
-				break ;
+				break;
 			}
 			i += 1;
 		}
@@ -126,7 +126,10 @@ impl Process {
 		}
 	}
 
-	pub unsafe fn get_signal_from_pid(&mut self, pid: Id) -> Result<Signal, ()> {
+	pub unsafe fn get_signal_from_pid(
+		&mut self,
+		pid: Id
+	) -> Result<Signal, ()> {
 		let mut i = 0;
 		while i < self.signals.len() {
 			if self.signals[i].sender == pid {
@@ -159,7 +162,7 @@ pub unsafe fn zombify_running_process(status: i32) {
 
 pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
 	let process = &mut *get_running_process();
-	if pid == -1  {
+	if pid == -1 {
 		process.get_signal()
 	} else {
 		process.get_signal_from_pid(pid)

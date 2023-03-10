@@ -14,8 +14,7 @@
 #![allow(dead_code)]
 #![allow(incomplete_features)]
 #![no_main]
-
-/*  Custom test framework  */
+// Custom test framework
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -26,42 +25,42 @@
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
-/*  Modules import  */
+// Modules import
 mod cli;
 mod gdt;
+mod interrupts;
+mod io;
 mod keyboard;
+mod main;
 mod memory;
 mod multiboot;
-mod vec;
-mod string;
-mod interrupts;
-mod syscalls;
-mod io;
-mod vga_buffer;
 mod pic;
 mod proc;
-mod user;
-mod wrappers;
 mod spin;
+mod string;
+mod syscalls;
+mod user;
 mod utils;
-mod main;
+mod vec;
+mod vga_buffer;
+mod wrappers;
 
 #[cfg(test)]
 mod test;
 
-/*  Modules used function and variable  */
-use memory::paging::{init_paging, page_directory}; use memory::allocator::linked_list::LinkedListAllocator;
-use cli::Command;
-use pic::setup_pic8259;
-use crate::memory::{init_heap, init_stack, VirtAddr};
-use crate::memory::paging::PAGE_WRITABLE;
+// Modules used function and variable
+use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
 use crate::interrupts::init_idt;
-use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
-pub use pic::handlers::JIFFIES;
-use crate::memory::MemoryZone;
+use crate::memory::paging::PAGE_WRITABLE;
+use crate::memory::{init_heap, init_stack, MemoryZone, VirtAddr};
+use cli::Command;
 use main::kmain;
+use memory::allocator::linked_list::LinkedListAllocator;
+use memory::paging::{init_paging, page_directory};
+pub use pic::handlers::JIFFIES;
+use pic::setup_pic8259;
 
-/*  Code from boot section  */
+// Code from boot section
 #[allow(dead_code)]
 extern "C" {
 	fn stack_bottom();
@@ -71,21 +70,21 @@ extern "C" {
 
 const GLOBAL_ALIGN: usize = 8;
 
-/* Allocation tracking */
+// Allocation tracking
 pub struct Tracker {
-	allocation:			usize,
-	allocated_bytes:	usize,
-	freed:				usize,
-	freed_bytes:		usize
+	allocation:      usize,
+	allocated_bytes: usize,
+	freed:           usize,
+	freed_bytes:     usize
 }
 
 impl Tracker {
 	pub const fn new() -> Self {
 		Self {
-			allocation: 0,
+			allocation:      0,
 			allocated_bytes: 0,
-			freed: 0,
-			freed_bytes: 0
+			freed:           0,
+			freed_bytes:     0
 		}
 	}
 }
@@ -102,55 +101,74 @@ pub static mut KHEAP: MemoryZone = MemoryZone::new();
 
 pub fn memory_state() {
 	unsafe {
-		kprintln!("\nAllocation: {} for {} bytes", KTRACKER.allocation, KTRACKER.allocated_bytes);
-		kprintln!("Free:       {} for {} bytes", KTRACKER.freed, KTRACKER.freed_bytes);
+		kprintln!(
+			"\nAllocation: {} for {} bytes",
+			KTRACKER.allocation,
+			KTRACKER.allocated_bytes
+		);
+		kprintln!(
+			"Free:       {} for {} bytes",
+			KTRACKER.freed,
+			KTRACKER.freed_bytes
+		);
 	}
 }
 
-/*  Kernel initialisation   */
+// Kernel initialisation
 #[no_mangle]
 pub extern "C" fn kinit() {
-    crate::wrappers::_cli();
+	crate::wrappers::_cli();
 
-	/* Init paging and remove identity paging */
+	// Init paging and remove identity paging
 	init_paging();
 
-	/* Update gdtr with higher half kernel gdt addr */
+	// Update gdtr with higher half kernel gdt addr
 	unsafe {
 		update_gdtr();
 		reload_gdt!();
 		init_idt();
 	}
 
-	/* HEAP KERNEL */
-	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
+	// HEAP KERNEL
+	let kstack_addr: VirtAddr = 0xffbfffff; // stack kernel
 	unsafe {
 		KSTACK = init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
-		KHEAP = init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
+		KHEAP = init_heap(
+			heap as u32,
+			100 * 0x1000,
+			PAGE_WRITABLE,
+			true,
+			&mut KALLOCATOR
+		);
 	}
 
 	gdt::tss::init_tss(kstack_addr);
 	reload_tss!();
 
-    #[cfg(feature = "multitasking")]
-    init_tasking();
+	#[cfg(feature = "multitasking")]
+	init_tasking();
 
-	/* init tracker after init first process */
+	// init tracker after init first process
 	unsafe {
 		KTRACKER = Tracker::new();
 		TRACKER = Tracker::new();
 	}
 
 	setup_pic8259();
-	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
-    pic::set_irq0_in_ms(1.0);
+	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
+	pic::set_pit(
+		pic::pit::CHANNEL_0,
+		pic::pit::ACC_LOBHIB,
+		pic::pit::MODE_2,
+		0x00ff
+	);
+	pic::set_irq0_in_ms(1.0);
 
-	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-    crate::wrappers::_sti();
+	// Reserve some spaces to push things before main
+	unsafe { core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256) };
+	crate::wrappers::_sti();
 
-	/*	Function to test and enter usermode */
+	// Function to test and enter usermode
 
 	#[cfg(test)]
 	test_main();
