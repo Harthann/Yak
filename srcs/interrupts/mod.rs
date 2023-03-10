@@ -138,7 +138,6 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 		}
 	}
 	let int_no: usize = reg.int_no as usize;
-	crate::kprintln!("int_no: {}", int_no);
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
 		match int_no { // TODO: enum exceptions

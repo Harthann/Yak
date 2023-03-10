@@ -1,11 +1,10 @@
 use crate::proc::process::{Process, Pid};
 use crate::proc::task::{Task, TASKLIST};
 
-use crate::memory::paging::page_directory;
 use crate::memory::paging::page_directory::PageDirectory;
 use crate::memory::paging::page_table::PageTable;
 
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER, PAGE_PRESENT};
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
 
 use crate::memory::allocator::Box;
 

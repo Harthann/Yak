@@ -4,8 +4,8 @@ use crate::io::{inb, outb, io_wait};
 
 pub mod handlers;
 pub mod pit;
+pub use pit::{set_pit, set_irq0_in_ms};
 
-pub use pit::set_pit;
 pub use handlers::{handler, JIFFIES};
 /* References: [https://wiki.osdev.org/8259_PIC] */
 
@@ -75,6 +75,7 @@ pub const PIC2_IRQ_SECATA:		u8 = PIC2_IRQ_OFFSET + 7;
 
 const PIC_EOI: u8 = 0x20; /* End of Interrupts command code */
 
+#[no_mangle]
 pub fn end_of_interrupts(irq: usize) {
 	if irq >= 8 { /* Slave interrupt request */
 		outb(PIC2_CMD, PIC_EOI);

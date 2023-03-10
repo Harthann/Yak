@@ -11,11 +11,6 @@ extern schedule_task
 
 extern JIFFIES
 
-irq_0:
-	cli
-	push 0; err_code
-	push -1; int_nok
-
 swap_task:
 	pusha
 

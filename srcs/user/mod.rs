@@ -4,9 +4,6 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::wrappers::{_cli, _sti};
 
-use crate::memory::{MemoryZone, Heap};
-
-use crate::memory::paging as mem;
 use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER, PAGE_PRESENT};
 use crate::memory::{VirtAddr, PhysAddr};
 
@@ -32,7 +29,7 @@ const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
-	let running_task: &mut Task = Task::get_running_task();
+//	let running_task: &mut Task = Task::get_running_task();
 	let parent: &mut Process = Process::get_running_process();
 
 	let mut process: Process = Process::new();

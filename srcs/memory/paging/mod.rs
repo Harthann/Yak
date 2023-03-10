@@ -118,6 +118,7 @@ macro_rules! refresh_tlb {
 		"mov cr3, eax"));
 }
 
+#[allow(unused)]
 macro_rules! enable_paging {
 	($page_directory:expr) => (core::arch::asm!("mov eax, {p}",
 		"mov cr3, eax",
@@ -127,10 +128,11 @@ macro_rules! enable_paging {
 		p = in(reg) (&$page_directory as *const _) as usize););
 }
 
+#[allow(unused)]
 macro_rules! disable_paging {
 	() => (core::arch::asm!("mov ebx, cr0",
 		"and ebx, ~(1 << 31)",
 		"mov cr0, ebx"));
 }
 
-pub (crate) use {get_vaddr, get_paddr, refresh_tlb, enable_paging, disable_paging};
+pub (crate) use {get_vaddr, get_paddr, refresh_tlb};

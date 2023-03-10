@@ -5,15 +5,12 @@ use crate::vec::Vec;
 use crate::utils::queue::Queue;
 use crate::interrupts::Registers;
 use crate::memory::{init_heap, init_stack, VirtAddr};
-use crate::memory::paging::{alloc_page};
 use crate::proc::{wrapper_fn, change_kernel_stack};
 use crate::proc::signal::{SignalHandler, SignalType};
 use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
 
 use crate::{KSTACK_ADDR, KALLOCATOR};
 use crate::memory::paging::{PAGE_WRITABLE};
-
-use crate::reload_tss;
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 

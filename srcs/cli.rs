@@ -9,10 +9,10 @@ use crate::memory::allocator;
 use crate::proc::process::Process;
 use crate::vga_buffer::{screenclear, hexdump};
 
-const NB_CMDS: usize = 10;
+const NB_CMDS: usize = 11;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown, jiffies, ps];
-const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown", "jiffies", "ps"];
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown, jiffies, ps, time];
+const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown", "jiffies", "ps", "time"];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -22,6 +22,15 @@ fn jiffies(_: &Command) {
 	unsafe {
 		crate::kprintln!("Jiffies: {}", crate::pic::JIFFIES);
 	}
+}
+
+fn time(_: &Command) {
+    unsafe {
+        crate::pic::pit::TIME_ELAPSED = crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
+        let second = (crate::pic::pit::TIME_ELAPSED / 1000.0) as u64;
+        let ms = ((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
+        crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
+    }
 }
 
 fn halt(_: &Command) {

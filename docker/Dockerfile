@@ -2,7 +2,7 @@ FROM alpine:3.16
 
 # Install base packages
 RUN apk update
-RUN apk add curl
+RUN apk add bash curl
 
 # Install compiler packages
 RUN apk add nasm gcc gdb

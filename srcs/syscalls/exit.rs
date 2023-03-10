@@ -1,4 +1,4 @@
-use crate::proc::{_exit, change_kernel_stack};
+use crate::proc::{change_kernel_stack};
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::process::{Process, Pid, MASTER_PROCESS};
 use crate::proc::task::{Task, TaskStatus};
@@ -7,7 +7,6 @@ use crate::wrappers::{_cli, _sti, cli_count, cli, sti, hlt};
 
 use crate::errno::ErrNo;
 use crate::KSTACK_ADDR;
-use crate::memory::paging::{page_directory, PAGE_WRITABLE, PAGE_PRESENT};
 
 const WNOHANG: u32 = 0x01;
 const WUNTRACED: u32 = 0x02;
@@ -44,7 +43,7 @@ extern "C" {
 	pub fn next_task();
 }
 
-pub fn sys_wait4(pid: Pid, wstatus: *mut i32, options: u32, rusage: *mut RUsage) -> Pid {
+pub fn sys_wait4(_pid: Pid, _wstatus: *mut i32, _options: u32, _rusage: *mut RUsage) -> Pid {
 	0
 }
 
@@ -135,6 +134,7 @@ macro_rules! __WIFSIGNALED {
 	);
 }
 
+#[allow(unused)]
 macro_rules! __WIFSTOPPED {
 	($status: expr) => (
 		(($status & 0xff) == 0x7f)
@@ -170,6 +170,7 @@ macro_rules! __W_STOPCODE {
 	);
 }
 
+#[allow(unused)]
 pub (crate) use {__WEXITSTATUS, __WTERMSIG, __WSTOPSIG, __WIFEXITED,
 	__WIFSIGNALED, __WIFSTOPPED, __WIFCONTINUED, __WCOREDUMP, __W_EXITCODE,
 	__W_STOPCODE};
