@@ -3,6 +3,7 @@
 
 global irq_0
 global switch_task
+global swap_task
 global next_task
 
 extern page_directory

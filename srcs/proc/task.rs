@@ -187,6 +187,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
+			crate::kprintln!("new_stack pid: {}", (*new_task.process).pid);
 			let process: &mut Process = Process::get_running_process();
 			_rst();
 			core::ptr::copy(
