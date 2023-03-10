@@ -1,4 +1,5 @@
 RUST_SRCS		=	main.rs \
+					kinit.rs \
 					mod.rs \
 					io.rs \
 					keyboard.rs \

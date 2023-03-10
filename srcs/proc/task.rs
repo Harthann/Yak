@@ -49,7 +49,7 @@ impl Task {
 		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
 	}
 
-	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
+	pub fn init_multitasking(kstack_addr: VirtAddr, stack_addr: VirtAddr, heap_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
 			core::arch::asm!("
@@ -60,9 +60,10 @@ impl Task {
 			cr3 = out(reg) task.regs.cr3,
 			eflags = out(reg) task.regs.eflags);
 			MASTER_PROCESS.state = Status::Run;
-			MASTER_PROCESS.stack = init_stack(stack_addr - 0x1000, 0x1000, PAGE_WRITABLE, false);
+			crate::kprintln!("kstack_addr: {:#x?}", kstack_addr);
+			MASTER_PROCESS.kernel_stack = init_stack(kstack_addr, 0x1000, PAGE_WRITABLE, false);
+			MASTER_PROCESS.stack = init_stack(stack_addr, 0x1000, PAGE_WRITABLE, false);
 			MASTER_PROCESS.heap = init_heap(heap_addr, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
-			change_kernel_stack(MASTER_PROCESS.stack.offset);
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
 			MASTER_PROCESS.owner = 0;
@@ -173,6 +174,7 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
+	crate::kprintln!("old_regs: {:#x?}", old_task.regs);
 	TASKLIST.push(old_task);
 	_rst();
 }
@@ -187,7 +189,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
-			crate::kprintln!("new_stack pid: {}", (*new_task.process).pid);
+			crate::kprintln!("new_task pid: {}", (*new_task.process).pid);
 			let process: &mut Process = Process::get_running_process();
 			_rst();
 			core::ptr::copy(

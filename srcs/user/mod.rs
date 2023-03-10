@@ -136,6 +136,9 @@ pub fn test_user_page() {
 	unsafe {
 		exec_fn_userspace(userfunc as u32, userfunc_end as usize - userfunc as usize);
 	}
+	let mut status: i32 = 0;
+	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
+	crate::kprintln!("ret: {}", ret);
 /*
 	let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
 	let funclen = userfunc_end as usize - userfunc as usize;

@@ -20,6 +20,7 @@ pub fn syscall_handler(reg: &mut Registers) {
 	if reg.eax > 448 {
 		todo!(); // problem
 	}
+	crate::kprintln!("syscall with reg: {:#x?}", reg);
 	// TODO: wrapper syscall
 	match reg.eax {
 		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx as _),

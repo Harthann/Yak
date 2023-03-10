@@ -20,6 +20,7 @@ jump_usermode:; jump_usermode(func: VirtAddr)
 	iret
 
 userfunc:
-	mov eax, 5
+	mov ebx, 42
+	mov eax, 1
 	int 0x80
 userfunc_end:

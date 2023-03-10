@@ -88,6 +88,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 }
 
 pub fn sys_exit(status: i32) -> ! {
+	crate::kprintln!("exit !");
 	unsafe {
 		change_kernel_stack(MASTER_PROCESS.stack.offset);
 		core::arch::asm!(
