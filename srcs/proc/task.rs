@@ -203,7 +203,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to last bytes on kstack to target
-			let mut copy_regs: &mut Registers =
+			let copy_regs: &mut Registers =
 				&mut *((((*new_task.process).kernel_stack.offset + 0xfff)
 					- core::mem::size_of::<Registers>() as u32) as *mut _);
 			*copy_regs = new_task.regs;

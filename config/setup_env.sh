@@ -9,6 +9,6 @@ echo -e '#!/bin/bash\nar $@ --target=elf32-i386' > $HOME/.local/bin/i386-elf-ar
 
 chmod +x $HOME/.local/bin/i386-elf-ar $HOME/.local/bin/i386-elf-ld
 
-curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh
+curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh -s -- -y
 
 sudo apt-get install -y xorriso grub-common mtools qemu-system
