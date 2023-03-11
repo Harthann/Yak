@@ -2,23 +2,27 @@
 
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
-use crate::{KSTACK_ADDR, VirtAddr};
-use crate::wrappers::{_cli, _sti, _rst};
+use crate::wrappers::{_cli, _rst, _sti};
+use crate::{VirtAddr, KSTACK_ADDR};
 
-use crate::memory::paging::page_directory;
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER, PAGE_PRESENT};
+use crate::memory::paging::{
+	page_directory,
+	PAGE_PRESENT,
+	PAGE_USER,
+	PAGE_WRITABLE
+};
 
-pub mod task;
 pub mod process;
 pub mod signal;
+pub mod task;
 
 #[cfg(test)]
 pub mod test;
 
-use process::{Process, Pid};
-use task::{Task, TASKLIST, schedule_task};
+use process::{Pid, Process};
+use task::{schedule_task, Task, TASKLIST};
 
-use crate::syscalls::exit::{__W_EXITCODE};
+use crate::syscalls::exit::__W_EXITCODE;
 
 pub type Id = i32;
 
@@ -29,24 +33,30 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
 	schedule_task();
-	/* Never goes there */
+	// Never goes there
 }
 
 #[naked]
 #[no_mangle]
 pub unsafe extern "C" fn wrapper_fn() {
-	core::arch::asm!("
+	core::arch::asm!(
+		"
 	mov eax, [esp]
 	add esp, 4
 	call eax
 	mov ebx, eax
 	mov eax, 1 // exit
 	int 0x80",
-	options(noreturn));
-	/* Never goes there */
+		options(noreturn)
+	);
+	// Never goes there
 }
 
-pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) -> Pid {
+pub unsafe extern "C" fn exec_fn(
+	func: VirtAddr,
+	args_size: &Vec<usize>,
+	mut args: ...
+) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let parent: &mut Process = Process::get_running_process();
@@ -59,9 +69,10 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
 	new_task.init(running_task.regs, process);
-	/* init_fn_task - Can't move to another function ??*/
+	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
-	new_task.regs.esp = (process.stack.offset + process.stack.size as u32) - sum as u32;
+	new_task.regs.esp =
+		(process.stack.offset + process.stack.size as u32) - sum as u32;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;
@@ -73,8 +84,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 					in("eax") args.arg::<u32>());
 				n -= 4;
 				nb += 4;
-			}
-			else if arg / 2 > 0 {
+			} else if arg / 2 > 0 {
 				core::arch::asm!("mov [{esp} + {nb}], ax",
 					esp = in(reg) new_task.regs.esp,
 					nb = in(reg) nb,
@@ -86,7 +96,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 			}
 		}
 	}
-	/* call function to wrapper_fn */
+	// call function to wrapper_fn
 	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
@@ -123,6 +133,11 @@ macro_rules! exec_fn {
 
 pub fn change_kernel_stack(addr: VirtAddr) {
 	unsafe {
-		page_directory.get_page_table(KSTACK_ADDR as usize >> 22).set_entry((KSTACK_ADDR as usize & 0x3ff000) >> 12, get_paddr!(addr) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT);
+		page_directory
+			.get_page_table(KSTACK_ADDR as usize >> 22)
+			.set_entry(
+				(KSTACK_ADDR as usize & 0x3ff000) >> 12,
+				get_paddr!(addr) | PAGE_WRITABLE | PAGE_USER | PAGE_PRESENT
+			);
 	}
 }

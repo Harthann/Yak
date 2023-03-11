@@ -45,17 +45,17 @@ fn vector_free() {
 
 #[test_case]
 fn vector_big_alloc() {
-	use crate::vec::{KGlobal, AllocError};
+	use crate::vec::{AllocError, KGlobal};
 
 	print_fn!();
 
-/* Should send an error */
+	// Should send an error
 	{
 		let x = Vec::<u32, KGlobal>::try_alloc(200000, &KGlobal);
 		assert_eq!(x, Err(AllocError));
 	}
 
-/* Big chunk */
+	// Big chunk
 	{
 		let size = 100000;
 		let mut x: Vec<u32> = Vec::with_capacity(size);
@@ -67,7 +67,7 @@ fn vector_big_alloc() {
 	}
 }
 
-/* Simply test if conversion is working */
+// Simply test if conversion is working
 #[test_case]
 fn vector_slices() {
 	print_fn!();
@@ -94,7 +94,6 @@ fn vector_deref() {
 	x.reverse();
 	assert_eq!(x[..], [4, 3, 2, 1]);
 }
-
 
 #[test_case]
 fn vector_insertion() {
@@ -130,21 +129,19 @@ fn vector_extend_from_slice() {
 
 use crate::vec;
 
-/*
-** vec![x..y] use specific function called "into_vec"
-** vec!() simply calls Vec::new()
-** vec![x; y] use specific function called from_elem
-** Assuming function related to macros works if macros works
-*/
+// vec![x..y] use specific function called "into_vec"
+// vec!() simply calls Vec::new()
+// vec![x; y] use specific function called from_elem
+// Assuming function related to macros works if macros works
 #[test_case]
 fn vector_macros() {
 	print_fn!();
 
-	let x: Vec<u32> = vec![0,1,2,3,4,5];
-	let y: Vec<u32> = vec!();//[0,1,2,3,4,5];
-	let z: Vec<u32> = vec![5; 10];//[0,1,2,3,4,5];
+	let x: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
+	let y: Vec<u32> = vec![]; //[0,1,2,3,4,5];
+	let z: Vec<u32> = vec![5; 10]; //[0,1,2,3,4,5];
 
-	assert_eq!(x[..], [0,1,2,3,4,5]);
+	assert_eq!(x[..], [0, 1, 2, 3, 4, 5]);
 
 	assert_eq!(y[..], []);
 	assert_eq!(y.capacity(), 0);
@@ -159,14 +156,14 @@ fn vector_macros() {
 fn vector_remove() {
 	print_fn!();
 
-	let mut x: Vec<u32> = vec![0,1,2,3,4,5];
+	let mut x: Vec<u32> = vec![0, 1, 2, 3, 4, 5];
 	let base_len = x.len();
 
 	assert_eq!(x.remove(1), 1);
 	assert_eq!(x.len(), base_len - 1);
 	assert_eq!(x.remove(3), 4);
 	assert_eq!(x.len(), base_len - 2);
-//	assert_eq!(x.remove(50), None); -> panic()
+	// 	assert_eq!(x.remove(50), None); -> panic()
 
 	assert_eq!(x.empty(), false);
 	x.clear();

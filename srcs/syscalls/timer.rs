@@ -1,5 +1,5 @@
-use crate::proc::Id;
 use crate::proc::process::Process;
+use crate::proc::Id;
 
 pub fn sys_getpid() -> Id {
 	Process::get_running_process().pid

@@ -1,8 +1,8 @@
-use crate::{print_fn, exec_fn};
 use crate::proc::process::Process;
 use crate::syscalls::exit::sys_waitpid;
-use crate::syscalls::signal::{sys_signal, sys_kill};
+use crate::syscalls::signal::{sys_kill, sys_signal};
 use crate::syscalls::timer::{sys_getpid, sys_getppid};
+use crate::{exec_fn, print_fn};
 
 pub fn simple_exec() -> usize {
 	2
@@ -84,7 +84,7 @@ fn test_simple_multiple_process() {
 
 fn create_subprocess(nb: usize) {
 	if nb > 0 {
-		unsafe{exec_fn!(create_subprocess, nb - 1)};
+		unsafe { exec_fn!(create_subprocess, nb - 1) };
 		sys_waitpid(-1, core::ptr::null_mut(), 0);
 	}
 }
@@ -103,7 +103,7 @@ fn test_subprocess() {
 
 fn create_multiple_subprocess(nb: usize) {
 	for i in 1..nb - 1 {
-		unsafe{exec_fn!(create_multiple_subprocess, i)};
+		unsafe { exec_fn!(create_multiple_subprocess, i) };
 	}
 	for _i in 1..nb - 1 {
 		let res = sys_waitpid(-1, core::ptr::null_mut(), 0);
@@ -135,11 +135,11 @@ fn test_sigkill() {
 		let pid = exec_fn!(sub_fn);
 		let mut wstatus: i32 = 0;
 		assert_eq!(Process::get_nb_process(), 2);
-		let res: i32 = sys_kill(666, 0); /* Check for pid presence */
+		let res: i32 = sys_kill(666, 0); // Check for pid presence
 		assert_ne!(res, 0); // TODO: Check for errcode
-		let res: i32 = sys_kill(pid, 0); /* Check for pid presence */
+		let res: i32 = sys_kill(pid, 0); // Check for pid presence
 		assert_eq!(res, 0);
-		let res: i32 = sys_kill(pid, 9); /* SIGKILL */
+		let res: i32 = sys_kill(pid, 9); // SIGKILL
 		assert_eq!(res, 0);
 		sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(__WIFSIGNALED!(wstatus), true);
@@ -149,10 +149,8 @@ fn test_sigkill() {
 }
 
 fn handler(_sig_no: i32) {
-	unsafe{
-		core::arch::asm!("mov ebx, 8",
-					"mov eax, 1",
-					"int 0x80");
+	unsafe {
+		core::arch::asm!("mov ebx, 8", "mov eax, 1", "int 0x80");
 	}
 }
 
@@ -230,7 +228,7 @@ unsafe fn sub_test_pid() {
 }
 
 #[test_case]
-fn test_pid () {
+fn test_pid() {
 	print_fn!();
 	unsafe {
 		assert_eq!(sys_getpid(), 0);

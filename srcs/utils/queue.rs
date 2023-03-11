@@ -1,13 +1,13 @@
 use crate::vec::Vec;
 
-/* TODO: Change to VecDeque */
+// TODO: Change to VecDeque
 pub struct Queue<T> {
 	vec: Vec<T>
 }
 
 impl<T: Clone> Queue<T> {
 	pub const fn new() -> Self {
-		Self {vec: Vec::new()}
+		Self { vec: Vec::new() }
 	}
 
 	pub fn len(&self) -> usize {
@@ -34,7 +34,7 @@ impl<T: Clone> Queue<T> {
 		self.get_mut(0)
 	}
 
-	pub fn get(&self, index: usize) -> Option<&T>{
+	pub fn get(&self, index: usize) -> Option<&T> {
 		if index < self.len() {
 			Some(&self.vec[index])
 		} else {

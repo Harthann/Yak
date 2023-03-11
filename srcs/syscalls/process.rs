@@ -1,10 +1,10 @@
-use crate::proc::process::{Process, Pid};
+use crate::proc::process::{Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
 use crate::memory::paging::page_table::PageTable;
 
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
+use crate::memory::paging::{PAGE_PRESENT, PAGE_WRITABLE};
 
 use crate::memory::allocator::Box;
 
@@ -39,7 +39,8 @@ pub fn sys_fork() -> Pid {
 		);
 		handler_page_tab.set_entry(
 			1023,
-			get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
+			get_paddr!(handler_page_tab as *const _)
+				| PAGE_WRITABLE | PAGE_PRESENT
 		);
 		// Setup heap + prg
 		page_dir.set_entry(
@@ -47,13 +48,14 @@ pub fn sys_fork() -> Pid {
 			get_paddr!(process.heap.offset) | PAGE_WRITABLE | PAGE_PRESENT
 		);
 		// Setup stack
-		page_dir.set_entry( 
+		page_dir.set_entry(
 			0xb0000000 >> 22,
 			get_paddr!(process.stack.offset) | PAGE_WRITABLE | PAGE_PRESENT
 		);
 		page_dir.set_entry(
 			1023,
-			get_paddr!(handler_page_tab as *const _) | PAGE_WRITABLE | PAGE_PRESENT
+			get_paddr!(handler_page_tab as *const _)
+				| PAGE_WRITABLE | PAGE_PRESENT
 		);
 
 		new_task.regs.cr3 = (page_dir as *mut _) as u32;

@@ -1,8 +1,8 @@
 use core::fmt;
 
-use crate::page_directory;
+use crate::memory::paging::{PAGE_PRESENT, PAGE_WRITABLE};
 use crate::memory::{PhysAddr, VirtAddr};
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
+use crate::page_directory;
 
 extern "C" {
 	fn _start_rodata();
@@ -27,14 +27,17 @@ impl PageTable {
 	pub fn init(&mut self) {
 		let mut i: usize = 0;
 
-		let page_directory_entry: usize = unsafe{page_directory.get_vaddr() as usize};
+		let page_directory_entry: usize =
+			unsafe { page_directory.get_vaddr() as usize };
 		while i < 1024 {
 			if i == 0 /* gdt */ ||
 (i >= (_start_rodata as usize & 0x3ff000) >> 12 &&
-i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12) /* VGA_BUFFER */ {
-				self.entries[i] = ((i * 0x1000) as u32 | PAGE_WRITABLE | PAGE_PRESENT).into();
-			}
-			else if i < (_start_rodata as usize & 0x3ff000) >> 12 {
+i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12)
+			// VGA_BUFFER
+			{
+				self.entries[i] =
+					((i * 0x1000) as u32 | PAGE_WRITABLE | PAGE_PRESENT).into();
+			} else if i < (_start_rodata as usize & 0x3ff000) >> 12 {
 				self.entries[i] = ((i * 0x1000) as u32 | PAGE_PRESENT).into();
 			} else {
 				self.entries[i] = 0x0.into();
@@ -56,11 +59,20 @@ i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12) /* VGA_BUF
 		}
 	}
 
-	pub fn new_index_frame(&mut self, index: usize, paddr: PhysAddr, flags: u32) {
+	pub fn new_index_frame(
+		&mut self,
+		index: usize,
+		paddr: PhysAddr,
+		flags: u32
+	) {
 		self.entries[index] = (paddr | flags | PAGE_PRESENT).into();
 	}
 
-	pub fn new_frame(&mut self, paddr: PhysAddr, flags: u32) -> Result<u16, ()> {
+	pub fn new_frame(
+		&mut self,
+		paddr: PhysAddr,
+		flags: u32
+	) -> Result<u16, ()> {
 		let mut i: usize = 0;
 
 		while i < 1024 {

@@ -51,68 +51,62 @@ extern "C" {
 
 static mut IDT: IDT = IDT {
 	idt_entries: [InterruptDescriptor {
-					offset_0: 0,
-					selector: 0,
-					zero: 0,
-					type_attr: 0,
-					offset_1: 0
-				}; IDT_MAX_DESCRIPTORS],
-	idtr: IDTR {
-		size: 0,
-		offset: 0
-	}
+		offset_0:  0,
+		selector:  0,
+		zero:      0,
+		type_attr: 0,
+		offset_1:  0
+	}; IDT_MAX_DESCRIPTORS],
+	idtr:        IDTR { size: 0, offset: 0 }
 };
 
 #[repr(C, packed)]
 #[derive(Debug, Copy, Clone)]
 pub struct Registers {
-	pub ds:			u32,
-	pub cr3:		u32,
-	pub edi:		u32,
-	pub esi:		u32,
-	pub ebp:		u32,
-	pub esp:		u32,
-	pub ebx:		u32,
-	pub edx:		u32,
-	pub ecx:		u32,
-	pub eax:		u32,
-	pub int_no:		u32,
-	pub err_code:	u32,
-	pub eip:		u32,
-	pub cs:			u32,
-	pub eflags:		u32,
-	pub useresp:	u32,
-	pub ss:			u32
+	pub ds:       u32,
+	pub cr3:      u32,
+	pub edi:      u32,
+	pub esi:      u32,
+	pub ebp:      u32,
+	pub esp:      u32,
+	pub ebx:      u32,
+	pub edx:      u32,
+	pub ecx:      u32,
+	pub eax:      u32,
+	pub int_no:   u32,
+	pub err_code: u32,
+	pub eip:      u32,
+	pub cs:       u32,
+	pub eflags:   u32,
+	pub useresp:  u32,
+	pub ss:       u32
 }
 
 impl Registers {
 	pub const fn new() -> Self {
 		Self {
-			ds:			0,
-			cr3:		0,
-			edi:		0,
-			esi:		0,
-			ebp:		0,
-			esp:		0,
-			ebx:		0,
-			edx:		0,
-			ecx:		0,
-			eax:		0,
-			int_no:		0,
-			err_code:	0,
-			eip:		0,
-			cs:			0,
-			eflags:		0,
-			useresp:	0,
-			ss:			0
+			ds:       0,
+			cr3:      0,
+			edi:      0,
+			esi:      0,
+			ebp:      0,
+			esp:      0,
+			ebx:      0,
+			edx:      0,
+			ecx:      0,
+			eax:      0,
+			int_no:   0,
+			err_code: 0,
+			eip:      0,
+			cs:       0,
+			eflags:   0,
+			useresp:  0,
+			ss:       0
 		}
 	}
 }
 
-use crate::pic::{
-PIC1_IRQ_OFFSET,
-PIC2_IRQ_OFFSET
-};
+use crate::pic::{PIC1_IRQ_OFFSET, PIC2_IRQ_OFFSET};
 
 fn page_fault_handler(reg: &Registers) {
 	unsafe {
@@ -125,13 +119,13 @@ fn page_fault_handler(reg: &Registers) {
 
 use crate::wrappers::{_cli, _rst};
 
-/* [https://wiki.osdev.org/Interrupts_tutorial]*/
-/* TODO: lock mutex before write and int */
+// [https://wiki.osdev.org/Interrupts_tutorial]
+// TODO: lock mutex before write and int
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: &mut Registers) {
 	_cli();
 	let mut esp: u32;
-	unsafe{core::arch::asm!("mov {}, esp", out(reg) esp)};
+	unsafe { core::arch::asm!("mov {}, esp", out(reg) esp) };
 	crate::kprintln!("stack addr in exception: {:#x}", esp);
 	unsafe {
 		let res = TASKLIST.peek();
@@ -142,20 +136,34 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 	}
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
-		crate::kprintln!("\n{} exception (code: {}):", STR_EXCEPTION[int_no], int_no);
-		match int_no { // TODO: enum exceptions
+		crate::kprintln!(
+			"\n{} exception (code: {}):",
+			STR_EXCEPTION[int_no],
+			int_no
+		);
+		match int_no {
+			// TODO: enum exceptions
 			14 => page_fault_handler(reg),
-			_ => {crate::kprintln!("{:#x?}", reg);}
+			_ => {
+				crate::kprintln!("{:#x?}", reg);
+			}
 		}
-		if int_no != 3 && int_no != 1 { /* TODO: HOW TO GET IF IT'S A TRAP OR NOT */
-			unsafe{core::arch::asm!("hlt")};
+		if int_no != 3 && int_no != 1 {
+			// TODO: HOW TO GET IF IT'S A TRAP OR NOT
+			unsafe { core::arch::asm!("hlt") };
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
 	} else {
-		if int_no < PIC1_IRQ_OFFSET as usize || int_no > PIC2_IRQ_OFFSET as usize + 7 {
-			crate::kprintln!("\nUnknown exception (code: {}):\n{:#x?}", int_no, reg);
-			unsafe{core::arch::asm!("hlt")};
+		if int_no < PIC1_IRQ_OFFSET as usize
+			|| int_no > PIC2_IRQ_OFFSET as usize + 7
+		{
+			crate::kprintln!(
+				"\nUnknown exception (code: {}):\n{:#x?}",
+				int_no,
+				reg
+			);
+			unsafe { core::arch::asm!("hlt") };
 		} else {
 			crate::pic::handler(reg, int_no);
 		}
@@ -167,7 +175,8 @@ pub unsafe fn init_idt() {
 	let mut i;
 
 	IDT.idtr.offset = (&IDT.idt_entries[0] as *const _) as u32;
-	IDT.idtr.size = (core::mem::size_of::<IDTR>() * IDT_MAX_DESCRIPTORS - 1) as u16;
+	IDT.idtr.size =
+		(core::mem::size_of::<IDTR>() * IDT_MAX_DESCRIPTORS - 1) as u16;
 	i = 0;
 	while i < IDT_SIZE {
 		let offset: u32 = isr_stub_table[i];
@@ -175,7 +184,7 @@ pub unsafe fn init_idt() {
 		i += 1;
 	}
 
-	/* syscalls */
+	// syscalls
 	IDT.idt_entries[0x80].init(isr_stub_syscall, GDT_OFFSET_KERNEL_CODE, 0xee);
 	IDT.idt_entries[32].init(irq_stub_0, GDT_OFFSET_KERNEL_CODE, 0x8e);
 	core::arch::asm!("lidt [{}]", in(reg) (&IDT.idtr as *const _) as u32);
@@ -184,28 +193,27 @@ pub unsafe fn init_idt() {
 #[repr(C, align(16))]
 struct IDT {
 	pub idt_entries: [InterruptDescriptor; IDT_MAX_DESCRIPTORS],
-	pub idtr: IDTR
+	pub idtr:        IDTR
 }
 
 #[repr(packed)]
 struct IDTR {
-	pub size:			u16,
-	pub offset:			u32
+	pub size:   u16,
+	pub offset: u32
 }
 
 #[repr(packed)]
 #[derive(Copy, Clone)]
 struct InterruptDescriptor {
-	offset_0:		u16,
-	selector:		u16,
-	zero:			u8,
-	type_attr:		u8, /* gate type, dpl and p fields */
-	offset_1:		u16
+	offset_0:  u16,
+	selector:  u16,
+	zero:      u8,
+	type_attr: u8, // gate type, dpl and p fields
+	offset_1:  u16
 }
 
 impl InterruptDescriptor {
-	pub fn init(&mut self, offset: u32, select: u16, type_attr: u8)
-	{
+	pub fn init(&mut self, offset: u32, select: u16, type_attr: u8) {
 		self.set_offset(offset);
 		self.selector = select;
 		self.zero = 0;

@@ -1,48 +1,48 @@
-use crate::proc::Id;
-use crate::proc::process::{Process, MASTER_PROCESS};
 use crate::errno::ErrNo;
+use crate::proc::process::{Process, MASTER_PROCESS};
+use crate::proc::Id;
 
-pub type SigHandlerFn = fn (i32);
+pub type SigHandlerFn = fn(i32);
 
 pub struct SignalHandler {
-	pub signal: i32,
+	pub signal:  i32,
 	pub handler: SigHandlerFn
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum SignalType {
-	SIGHUP		= 1,
-	SIGINT		= 2,
-	SIGQUIT		= 3,
-	SIGILL		= 4,
-	SIGTRAP		= 5,
-	SIGABRT		= 6,
-	SIGBUS		= 7,
-	SIGFPE		= 8,
-	SIGKILL		= 9,
-	SIGUSR1		= 10,
-	SIGSEGV		= 11,
-	SIGUSR2		= 12,
-	SIGPIPE		= 13,
-	SIGALRM		= 14,
-	SIGTERM		= 15,
-	SIGSTKFLT	= 16,
-	SIGCHLD		= 17,
-	SIGCONT		= 18,
-	SIGTSTOP	= 19,
-	SIGTSTP		= 20,
-	SIGTTIN		= 21,
-	SIGTTOU		= 22,
-	SIGURG		= 23,
-	SIGXCPU		= 24,
-	SIGXFSZ		= 25,
-	SIGVTALRM	= 26,
-	SIGPROF		= 27,
-	SIGWINCH	= 28,
-	SIGIO		= 29,
-	SIGPWR		= 30,
-	SIGSYS		= 31,
-	SIGRTMIN	= 32
+	SIGHUP    = 1,
+	SIGINT    = 2,
+	SIGQUIT   = 3,
+	SIGILL    = 4,
+	SIGTRAP   = 5,
+	SIGABRT   = 6,
+	SIGBUS    = 7,
+	SIGFPE    = 8,
+	SIGKILL   = 9,
+	SIGUSR1   = 10,
+	SIGSEGV   = 11,
+	SIGUSR2   = 12,
+	SIGPIPE   = 13,
+	SIGALRM   = 14,
+	SIGTERM   = 15,
+	SIGSTKFLT = 16,
+	SIGCHLD   = 17,
+	SIGCONT   = 18,
+	SIGTSTOP  = 19,
+	SIGTSTP   = 20,
+	SIGTTIN   = 21,
+	SIGTTOU   = 22,
+	SIGURG    = 23,
+	SIGXCPU   = 24,
+	SIGXFSZ   = 25,
+	SIGVTALRM = 26,
+	SIGPROF   = 27,
+	SIGWINCH  = 28,
+	SIGIO     = 29,
+	SIGPWR    = 30,
+	SIGSYS    = 31,
+	SIGRTMIN  = 32
 }
 
 pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
@@ -85,21 +85,22 @@ pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
 
 #[derive(Copy, Clone, PartialEq)]
 pub struct Signal {
-	pub sender: Id,
+	pub sender:  Id,
 	pub sigtype: SignalType,
 	pub wstatus: i32
 }
 
 impl Signal {
 	pub const fn new(pid: Id, sigtype: SignalType, wstatus: i32) -> Self {
-		Self {
-			sender: pid,
-			sigtype: sigtype,
-			wstatus: wstatus
-		}
+		Self { sender: pid, sigtype: sigtype, wstatus: wstatus }
 	}
 
-	pub fn send_to_pid(pid: Id, sender_pid: Id, sigtype: SignalType, wstatus: i32) -> Result<Id, ErrNo>{
+	pub fn send_to_pid(
+		pid: Id,
+		sender_pid: Id,
+		sigtype: SignalType,
+		wstatus: i32
+	) -> Result<Id, ErrNo> {
 		unsafe {
 			let process: &mut Process = MASTER_PROCESS.search_from_pid(pid)?;
 			Self::send_to_process(process, sender_pid, sigtype, wstatus);
@@ -107,7 +108,12 @@ impl Signal {
 		Ok(pid)
 	}
 
-	pub fn send_to_process(process: &mut Process, pid: Id, sigtype: SignalType, wstatus: i32) {
+	pub fn send_to_process(
+		process: &mut Process,
+		pid: Id,
+		sigtype: SignalType,
+		wstatus: i32
+	) {
 		let signal = Self::new(pid, sigtype, wstatus);
 		process.signals.push(signal);
 	}

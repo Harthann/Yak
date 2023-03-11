@@ -14,8 +14,7 @@
 #![allow(dead_code)]
 #![allow(incomplete_features)]
 #![no_main]
-
-/*  Custom test framework  */
+// Custom test framework
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -28,21 +27,21 @@ pub extern "C" fn eh_personality() {}
 
 const GLOBAL_ALIGN: usize = 8;
 
-/* Allocation tracking */
+// Allocation tracking
 pub struct Tracker {
-	allocation:			usize,
-	allocated_bytes:	usize,
-	freed:				usize,
-	freed_bytes:		usize
+	allocation:      usize,
+	allocated_bytes: usize,
+	freed:           usize,
+	freed_bytes:     usize
 }
 
 impl Tracker {
 	pub const fn new() -> Self {
 		Self {
-			allocation: 0,
+			allocation:      0,
 			allocated_bytes: 0,
-			freed: 0,
-			freed_bytes: 0
+			freed:           0,
+			freed_bytes:     0
 		}
 	}
 }
@@ -52,49 +51,57 @@ static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
 	unsafe {
-		kprintln!("\nAllocation: {} for {} bytes", KTRACKER.allocation, KTRACKER.allocated_bytes);
-		kprintln!("Free:       {} for {} bytes", KTRACKER.freed, KTRACKER.freed_bytes);
+		kprintln!(
+			"\nAllocation: {} for {} bytes",
+			KTRACKER.allocation,
+			KTRACKER.allocated_bytes
+		);
+		kprintln!(
+			"Free:       {} for {} bytes",
+			KTRACKER.freed,
+			KTRACKER.freed_bytes
+		);
 	}
 }
 
-/*  Modules import  */
-mod main;
+// Modules import
 mod cli;
 mod gdt;
 mod keyboard;
+mod main;
 #[macro_use]
 mod memory;
-mod multiboot;
-mod vec;
-mod string;
 mod interrupts;
+mod multiboot;
+mod string;
+mod vec;
 #[macro_use]
 mod syscalls;
 mod io;
-mod vga_buffer;
 mod pic;
 mod proc;
 mod user;
+mod vga_buffer;
 #[macro_use]
 mod wrappers;
-mod utils;
 mod errno;
 mod spin;
+mod utils;
 
 #[cfg(test)]
 mod test;
 
-/*  Modules used function and variable  */
-use memory::paging::{init_paging, page_directory};
-use memory::allocator::linked_list::LinkedListAllocator;
+// Modules used function and variable
 use cli::Command;
+use memory::allocator::linked_list::LinkedListAllocator;
+use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
 
 #[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
-/*  Code from boot section  */
+// Code from boot section
 #[allow(dead_code)]
 extern "C" {
 	fn stack_bottom();
@@ -102,28 +109,28 @@ extern "C" {
 	fn heap();
 }
 
-use crate::memory::{VirtAddr};
+use crate::memory::VirtAddr;
 
 use crate::interrupts::init_idt;
 
-use proc::task::{Task};
+use proc::task::Task;
 
-use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
-//use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
-pub use pic::handlers::JIFFIES;
+use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
+// use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 use main::kmain;
+pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xffafffff;
 
-/*  Kernel initialisation   */
+// Kernel initialisation
 #[no_mangle]
 pub extern "C" fn kinit() {
-	unsafe{cli!()};
-//	multiboot::read_tags();
-	/* Init paging and remove identity paging */
+	unsafe { cli!() };
+	// 	multiboot::read_tags();
+	// Init paging and remove identity paging
 	init_paging();
-	/* Update gdtr with higher half kernel gdt addr */
+	// Update gdtr with higher half kernel gdt addr
 	unsafe {
 		update_gdtr();
 		reload_gdt!();
@@ -135,24 +142,29 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(KSTACK_ADDR);
 	reload_tss!();
 
-	/* init tracker after init first process */
+	// init tracker after init first process
 	unsafe {
 		KTRACKER = Tracker::new();
 		TRACKER = Tracker::new();
 	}
 
 	setup_pic8259();
-	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x0fff);
+	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
+	pic::set_pit(
+		pic::pit::CHANNEL_0,
+		pic::pit::ACC_LOBHIB,
+		pic::pit::MODE_2,
+		0x0fff
+	);
 
-	/* Reserve some spaces to push things before main */
+	// Reserve some spaces to push things before main
 	unsafe {
 		core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256);
 		sti!();
 	}
 
-	/*	Function to test and enter usermode */
-//	user::test_user_page();
+	// Function to test and enter usermode
+	// 	user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
@@ -164,13 +176,17 @@ pub extern "C" fn kinit() {
 use crate::proc::process::Pid;
 
 use crate::syscalls::exit::sys_waitpid;
-use crate::syscalls::signal::{sys_signal, sys_kill};
+use crate::syscalls::signal::{sys_kill, sys_signal};
 
 fn handler(nb: i32) {
 	kprintln!("in handler: {}", nb);
-	unsafe {core::arch::asm!("mov ebx, 8
+	unsafe {
+		core::arch::asm!(
+			"mov ebx, 8
 								mov eax, 1
-								int 0x80");}
+								int 0x80"
+		);
+	}
 }
 
 unsafe fn dumb_main(nb: usize) -> u32 {
@@ -192,9 +208,17 @@ unsafe fn dumb_main(nb: usize) -> u32 {
 		let mut wstatus: i32 = 0;
 		let test: i32 = sys_waitpid(pid, &mut wstatus, 0);
 		if __WIFEXITED!(wstatus) {
-			kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+			kprintln!(
+				"exited process pid: {} - exit: {}",
+				test,
+				__WEXITSTATUS!(wstatus)
+			);
 		} else {
-			kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+			kprintln!(
+				"exited process pid: {} - signal: {}",
+				test,
+				__WSTOPSIG!(wstatus)
+			);
 		}
 	}
 	if nb == 3 {
@@ -218,42 +242,66 @@ pub fn test_task() {
 		let test: i32 = sys_waitpid(pids[i], &mut wstatus, 0);
 		crate::kprintln!("end wait: {}", pids[i]);
 		if __WIFEXITED!(wstatus) {
-			kprintln!("main exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+			kprintln!(
+				"main exited process pid: {} - exit: {}",
+				test,
+				__WEXITSTATUS!(wstatus)
+			);
 		} else {
-			kprintln!("main exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+			kprintln!(
+				"main exited process pid: {} - signal: {}",
+				test,
+				__WSTOPSIG!(wstatus)
+			);
 		}
 		i += 1;
 	}
-	/* TEST NO PID */
+	// TEST NO PID
 	let mut wstatus: i32 = 0;
 	let test: i32 = sys_waitpid(123, &mut wstatus, 0x01);
 	if test < 0 {
 		kprintln!("no such pid - waitpid: {}", test);
 	}
-	/* TEST NO PROCESS */
+	// TEST NO PROCESS
 	let test: i32 = sys_kill(123, 17);
 	kprintln!("kill no process pid: {}", test);
-	/* TEST NO SIGNAL TYPE */
+	// TEST NO SIGNAL TYPE
 	let test: i32 = sys_kill(pids[2], 2000);
 	kprintln!("kill no signal type: {}", test);
-	/* TEST KILL */
+	// TEST KILL
 	let test: i32 = sys_kill(pids[2], 17);
 	kprintln!("killed {} with {}: {}", 1, 17, test);
-	/* TEST KILL SIGILL*/
+	// TEST KILL SIGILL
 	let test: i32 = sys_kill(pids[2], 9);
 	kprintln!("killed {} with {}: {}", 1, 9, test);
 	let mut wstatus: i32 = 0;
 	let test: i32 = sys_waitpid(pids[2], &mut wstatus, 0x01);
 	if __WIFEXITED!(wstatus) {
-		kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+		kprintln!(
+			"exited process pid: {} - exit: {}",
+			test,
+			__WEXITSTATUS!(wstatus)
+		);
 	} else {
-		kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+		kprintln!(
+			"exited process pid: {} - signal: {}",
+			test,
+			__WSTOPSIG!(wstatus)
+		);
 	}
 	let test: i32 = sys_waitpid(-1, &mut wstatus, 0);
 	if __WIFEXITED!(wstatus) {
-		kprintln!("exited process pid: {} - exit: {}", test, __WEXITSTATUS!(wstatus));
+		kprintln!(
+			"exited process pid: {} - exit: {}",
+			test,
+			__WEXITSTATUS!(wstatus)
+		);
 	} else {
-		kprintln!("exited process pid: {} - signal: {}", test, __WSTOPSIG!(wstatus));
+		kprintln!(
+			"exited process pid: {} - signal: {}",
+			test,
+			__WSTOPSIG!(wstatus)
+		);
 	}
-//	loop {}
+	// 	loop {}
 }

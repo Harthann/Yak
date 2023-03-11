@@ -1,7 +1,5 @@
-use crate::pic::{
-    PIC1_IRQ_OFFSET,
-};
 use crate::interrupts::Registers;
+use crate::pic::PIC1_IRQ_OFFSET;
 use crate::vga_buffer;
 
 #[no_mangle]
@@ -17,14 +15,15 @@ pub fn handler(reg: &Registers, int_no: usize) {
 }
 
 extern "C" {
-	 fn swap_task();
+	fn swap_task();
 }
 
 #[naked]
 #[no_mangle]
 unsafe extern "C" fn irq_0() {
-    #[cfg(not(feature = "multitasking"))]
-    core::arch::asm!("
+	#[cfg(not(feature = "multitasking"))]
+	core::arch::asm!(
+		"
 		cli
 
         pusha
@@ -41,14 +40,18 @@ unsafe extern "C" fn irq_0() {
 		sti
         iretd
     ",
-    options(noreturn));
+		options(noreturn)
+	);
 
-    #[cfg(feature = "multitasking")]
-    core::arch::asm!("
+	#[cfg(feature = "multitasking")]
+	core::arch::asm!(
+		"
 	cli
 	push 0
 	push -1
 
 	jmp swap_task
-	", options(noreturn));
+	",
+		options(noreturn)
+	);
 }
