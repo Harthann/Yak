@@ -71,9 +71,29 @@
 <span id="65">65</span>
 <span id="66">66</span>
 <span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
+<span id="73">73</span>
+<span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
+<span id="80">80</span>
+<span id="81">81</span>
+<span id="82">82</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::_exit</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{
+	<span class="ident">get_running_process</span>,
+	<span class="ident">get_signal_running_process</span>,
+	<span class="ident">Pid</span>,
+	<span class="ident">Process</span>
+};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{<span class="ident">Signal</span>, <span class="ident">SignalType</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Process</span>, <span class="ident">Pid</span>, <span class="ident">get_running_process</span>, <span class="ident">get_signal_running_process</span>};
 
 <span class="kw">const</span> <span class="ident">WNOHANG</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0x01</span>;
 <span class="kw">const</span> <span class="ident">WUNTRACED</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0x02</span>;
@@ -82,43 +102,53 @@
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>, <span class="ident">packed</span>)]</span>
 <span class="kw">struct</span> <span class="ident">Timeval</span> {
-	<span class="ident">tv_sec</span>: <span class="ident">Time</span>, <span class="comment">// Number of whole seconds of elapsed time</span>
-	<span class="ident">tv_usec</span>: <span class="ident">usize</span> <span class="comment">// Number of microseconds of rest of elapsed time minus tv_sec</span>
+	<span class="ident">tv_sec</span>:  <span class="ident">Time</span>,  <span class="comment">// Number of whole seconds of elapsed time</span>
+	<span class="ident">tv_usec</span>: <span class="ident">usize</span>  <span class="comment">/* Number of microseconds of rest of elapsed time minus tv_sec */</span>
 }
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">C</span>, <span class="ident">packed</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">RUsage</span> {
-	<span class="ident">ru_utime</span>: <span class="ident">Timeval</span>, <span class="comment">// Time spent executing user instructions</span>
-	<span class="ident">ru_stime</span>: <span class="ident">Timeval</span>, <span class="comment">// Time spent in operating system code on behalf of processes</span>
-	<span class="ident">ru_maxrss</span>: <span class="ident">usize</span>, <span class="comment">// The maximum resident set size used, in kilobytes</span>
-	<span class="ident">ru_ixrss</span>: <span class="ident">usize</span>, <span class="comment">// Size of shared memory</span>
-	<span class="ident">ru_idrss</span>: <span class="ident">usize</span>, <span class="comment">// Size of unshared memory</span>
-	<span class="ident">ru_isrss</span>: <span class="ident">usize</span>, <span class="comment">// Size of unshared memory used fork stack space</span>
-	<span class="ident">ru_minflt</span>: <span class="ident">usize</span>, <span class="comment">// Number of page requested</span>
-	<span class="ident">ru_majflt</span>: <span class="ident">usize</span>, <span class="comment">// Number of page faults</span>
-	<span class="ident">ru_nswap</span>: <span class="ident">usize</span>, <span class="comment">// Number of swap</span>
-	<span class="ident">ru_inblock</span>: <span class="ident">usize</span>, <span class="comment">// Number of times read from disk</span>
-	<span class="ident">ru_oublock</span>: <span class="ident">usize</span>, <span class="comment">// Number of times write to disk</span>
-	<span class="ident">ru_msgsnd</span>: <span class="ident">usize</span>, <span class="comment">// Number of IPC messages sent</span>
-	<span class="ident">ru_msgrcv</span>: <span class="ident">usize</span>, <span class="comment">// Number of IPC messages received</span>
-	<span class="ident">ru_nsignals</span>: <span class="ident">usize</span>, <span class="comment">// Number of signals received</span>
-	<span class="ident">ru_nvcsw</span>: <span class="ident">usize</span>, <span class="comment">// Number of times processes voluntarily invoked a context switch</span>
-	<span class="ident">ru_nivcsw</span>: <span class="ident">usize</span> <span class="comment">// Number of times an involuntary context switch took place</span>
+	<span class="ident">ru_utime</span>:    <span class="ident">Timeval</span>, <span class="comment">// Time spent executing user instructions</span>
+	<span class="ident">ru_stime</span>:    <span class="ident">Timeval</span>, <span class="comment">/* Time spent in operating system code on behalf of processes */</span>
+	<span class="ident">ru_maxrss</span>:   <span class="ident">usize</span>,   <span class="comment">// The maximum resident set size used, in kilobytes</span>
+	<span class="ident">ru_ixrss</span>:    <span class="ident">usize</span>,   <span class="comment">// Size of shared memory</span>
+	<span class="ident">ru_idrss</span>:    <span class="ident">usize</span>,   <span class="comment">// Size of unshared memory</span>
+	<span class="ident">ru_isrss</span>:    <span class="ident">usize</span>,   <span class="comment">// Size of unshared memory used fork stack space</span>
+	<span class="ident">ru_minflt</span>:   <span class="ident">usize</span>,   <span class="comment">// Number of page requested</span>
+	<span class="ident">ru_majflt</span>:   <span class="ident">usize</span>,   <span class="comment">// Number of page faults</span>
+	<span class="ident">ru_nswap</span>:    <span class="ident">usize</span>,   <span class="comment">// Number of swap</span>
+	<span class="ident">ru_inblock</span>:  <span class="ident">usize</span>,   <span class="comment">// Number of times read from disk</span>
+	<span class="ident">ru_oublock</span>:  <span class="ident">usize</span>,   <span class="comment">// Number of times write to disk</span>
+	<span class="ident">ru_msgsnd</span>:   <span class="ident">usize</span>,   <span class="comment">// Number of IPC messages sent</span>
+	<span class="ident">ru_msgrcv</span>:   <span class="ident">usize</span>,   <span class="comment">// Number of IPC messages received</span>
+	<span class="ident">ru_nsignals</span>: <span class="ident">usize</span>,   <span class="comment">// Number of signals received</span>
+	<span class="ident">ru_nvcsw</span>:    <span class="ident">usize</span>, <span class="comment">/* Number of times processes voluntarily invoked a context switch */</span>
+	<span class="ident">ru_nivcsw</span>:   <span class="ident">usize</span> <span class="comment">/* Number of times an involuntary context switch took place */</span>
 }
 
-<span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">sys_wait4</span>(<span class="ident">_pid</span>: <span class="ident">Pid</span>, <span class="ident">_wstatus</span>: <span class="kw-2">*mut</span> <span class="ident">i32</span>, <span class="ident">_options</span>: <span class="ident">u32</span>, <span class="ident">_rusage</span>: <span class="kw-2">*mut</span> <span class="ident">RUsage</span>) -&gt; <span class="ident">Pid</span> {
+<span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">sys_wait4</span>(
+	<span class="ident">_pid</span>: <span class="ident">Pid</span>,
+	<span class="ident">_wstatus</span>: <span class="kw-2">*mut</span> <span class="ident">i32</span>,
+	<span class="ident">_options</span>: <span class="ident">u32</span>,
+	<span class="ident">_rusage</span>: <span class="kw-2">*mut</span> <span class="ident">RUsage</span>
+) -&gt; <span class="ident">Pid</span> {
 	<span class="number">0</span>
 }
 
-<span class="comment">/* TODO: handle status (as flags) (in signal too) */</span>
-<span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">sys_waitpid</span>(<span class="ident">pid</span>: <span class="ident">Pid</span>, <span class="ident">wstatus</span>: <span class="kw-2">*mut</span> <span class="ident">i32</span>, <span class="ident">options</span>: <span class="ident">u32</span>) -&gt; <span class="ident">Pid</span> {
+<span class="comment">// TODO: handle status (as flags) (in signal too)</span>
+<span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">sys_waitpid</span>(
+	<span class="ident">pid</span>: <span class="ident">Pid</span>,
+	<span class="ident">wstatus</span>: <span class="kw-2">*mut</span> <span class="ident">i32</span>,
+	<span class="ident">options</span>: <span class="ident">u32</span>
+) -&gt; <span class="ident">Pid</span> {
 	<span class="kw">unsafe</span> {
 		<span class="kw">while</span> <span class="ident">options</span> <span class="op">&amp;</span> <span class="ident">WNOHANG</span> <span class="op">==</span> <span class="number">0</span> {
 			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">get_signal_running_process</span>(<span class="ident">pid</span>);
 			<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_ok</span>() {
 				<span class="kw">let</span> <span class="ident">signal</span>: <span class="ident">Signal</span> <span class="op">=</span> <span class="ident">res</span>.<span class="ident">unwrap</span>();
 				<span class="kw">if</span> <span class="ident">signal</span>.<span class="ident">sigtype</span> <span class="op">==</span> <span class="ident">SignalType::SIGCHLD</span> {
-					<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> (<span class="kw-2">*</span><span class="ident">get_running_process</span>()).<span class="ident">search_from_pid</span>(<span class="ident">signal</span>.<span class="ident">sender</span>);
+					<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span>
+						(<span class="kw-2">*</span><span class="ident">get_running_process</span>()).<span class="ident">search_from_pid</span>(<span class="ident">signal</span>.<span class="ident">sender</span>);
 					<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_ok</span>() {
 						<span class="kw">let</span> <span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="ident">res</span>.<span class="ident">unwrap</span>();
 						<span class="ident">process</span>.<span class="ident">remove</span>();
@@ -136,7 +166,7 @@
 	<span class="kw">unsafe</span> {
 		<span class="ident">_exit</span>(<span class="ident">status</span>);
 	}
-	<span class="comment">/* Never goes there */</span>
+	<span class="comment">// Never goes there</span>
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

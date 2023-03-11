@@ -70,6 +70,12 @@
 <span id="64">64</span>
 <span id="65">65</span>
 <span id="66">66</span>
+<span id="67">67</span>
+<span id="68">68</span>
+<span id="69">69</span>
+<span id="70">70</span>
+<span id="71">71</span>
+<span id="72">72</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Wrappers for cli, sti and hlt asm instructions</span>
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
@@ -79,14 +85,16 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">_cli</span>() {
 	<span class="kw">unsafe</span> {
-		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;
+		<span class="macro">core::arch::asm!</span>(
+			<span class="string">&quot;
 		add dword ptr[cli_count], 1
 		cmp dword ptr[cli_count], 1
 		jne 1f
 		cli
 		1:
 		ret&quot;</span>,
-		<span class="ident">options</span>(<span class="ident">noreturn</span>));
+			<span class="ident">options</span>(<span class="ident">noreturn</span>)
+		);
 	}
 }
 
@@ -94,14 +102,16 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">_sti</span>() {
 	<span class="kw">unsafe</span> {
-		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;
+		<span class="macro">core::arch::asm!</span>(
+			<span class="string">&quot;
 		sub dword ptr[cli_count], 1
 		cmp dword ptr[cli_count], 0
 		jne 2f
 		sti
 		2:
 		ret&quot;</span>,
-		<span class="ident">options</span>(<span class="ident">noreturn</span>));
+			<span class="ident">options</span>(<span class="ident">noreturn</span>)
+		);
 	}
 }
 
@@ -109,10 +119,12 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">_rst</span>() {
 	<span class="kw">unsafe</span> {
-		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;
+		<span class="macro">core::arch::asm!</span>(
+			<span class="string">&quot;
 		mov dword ptr[cli_count], 0
 		ret&quot;</span>,
-		<span class="ident">options</span>(<span class="ident">noreturn</span>));
+			<span class="ident">options</span>(<span class="ident">noreturn</span>)
+		);
 	}
 }
 
@@ -120,21 +132,21 @@
 <span class="macro">macro_rules!</span> <span class="ident">cli</span> {
 	() =&gt; {
 		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;cli&quot;</span>)
-	}
+	};
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">sti</span> {
 	() =&gt; {
 		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;sti&quot;</span>)
-	}
+	};
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">hlt</span> {
 	() =&gt; {
 		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;hlt&quot;</span>)
-	}
+	};
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

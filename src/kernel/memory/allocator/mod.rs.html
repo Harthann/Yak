@@ -60,8 +60,10 @@
 <span id="54">54</span>
 <span id="55">55</span>
 <span id="56">56</span>
-</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">linked_list</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bump</span>;
+<span id="57">57</span>
+<span id="58">58</span>
+</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bump</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">linked_list</span>;
 
 <span class="kw">mod</span> <span class="ident">boxed</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">boxed::Box</span>;
@@ -72,37 +74,39 @@
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">kglobal</span>;
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">kglobal::KGlobal</span>;
 
-<span class="kw">use</span> <span class="ident">core::alloc</span>::{
-<span class="ident">GlobalAlloc</span>,
-<span class="ident">Layout</span>
-};
+<span class="kw">use</span> <span class="ident">core::alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
 <span class="kw">use</span> <span class="ident">core::ptr::NonNull</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::VirtAddr</span>;
 
-<span class="comment">/*	Trait definitions to inialize a global allocator */</span>
+<span class="comment">// Trait definitions to inialize a global allocator</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">AllocatorInit</span>: <span class="ident">GlobalAlloc</span> {
 	<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">offset</span>: <span class="ident">VirtAddr</span>, <span class="ident">size</span>: <span class="ident">usize</span>);
 }
 
-<span class="comment">/* Custom trait to define Allocator design */</span>
+<span class="comment">// Custom trait to define Allocator design</span>
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Allocator</span> {
 	<span class="kw">fn</span> <span class="ident">allocate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
 	<span class="kw">fn</span> <span class="ident">deallocate</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>);
-	<span class="kw">fn</span> <span class="ident">allocate_zeroed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
-	<span class="kw">fn</span> <span class="ident">realloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">old</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">allocate_zeroed</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">layout</span>: <span class="ident">Layout</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
+	<span class="kw">fn</span> <span class="ident">realloc</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+		<span class="ident">old</span>: <span class="ident">Layout</span>,
+		<span class="ident">new_size</span>: <span class="ident">usize</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span>;
 }
 
-<span class="comment">/* Allocation error type definition */</span>
+<span class="comment">// Allocation error type definition</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">AllocError</span>;
 
-
-<span class="comment">/*
-	Align is a power of 2 so if we substract 1 his binary representation contain
-	only 1 (0b1111..). We can then AND it with addr to get the right alignment.
-	(add it with the addr to get the next alignment - align_up())
-*/</span>
+<span class="comment">// Align is a power of 2 so if we substract 1 his binary representation contain</span>
+<span class="comment">// only 1 (0b1111..). We can then AND it with addr to get the right alignment.</span>
+<span class="comment">// (add it with the addr to get the next alignment - align_up())</span>
 <span class="kw">fn</span> <span class="ident">align_down</span>(<span class="ident">addr</span>: <span class="ident">VirtAddr</span>, <span class="ident">align</span>: <span class="ident">usize</span>) -&gt; <span class="ident">VirtAddr</span> {
 	<span class="kw">if</span> <span class="ident">align</span>.<span class="ident">is_power_of_two</span>() {
 		<span class="ident">addr</span> <span class="op">&amp;</span> <span class="op">!</span>(<span class="ident">align</span> <span class="kw">as</span> <span class="ident">u32</span> <span class="op">-</span> <span class="number">1</span>)

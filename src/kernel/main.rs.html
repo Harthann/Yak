@@ -20,23 +20,21 @@
 <span id="14">14</span>
 <span id="15">15</span>
 <span id="16">16</span>
-<span id="17">17</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::string</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::color::Color</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">kprint</span>, <span class="ident">kprintln</span>, <span class="ident">change_color</span>};
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::color::Color</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">change_color</span>, <span class="ident">kprint</span>, <span class="ident">kprintln</span>, <span class="ident">string</span>};
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kmain</span>() -&gt; <span class="op">!</span> {
-
 	<span class="macro">kprintln!</span>(<span class="string">&quot;Hello World of {}!&quot;</span>, <span class="number">42</span>);
 
 	<span class="macro">change_color!</span>(<span class="ident">Color::Red</span>, <span class="ident">Color::White</span>);
-	<span class="kw">let</span> <span class="ident">workspace_msg</span> <span class="op">=</span> <span class="ident">string::String::from</span>(<span class="string">&quot;Press Ctrl-2 to navigate to the second workspace&quot;</span>);
+	<span class="kw">let</span> <span class="ident">workspace_msg</span> <span class="op">=</span> <span class="ident">string::String::from</span>(
+		<span class="string">&quot;Press Ctrl-2 to navigate to the second workspace&quot;</span>
+	);
 	<span class="macro">kprintln!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">workspace_msg</span>);
 	<span class="macro">change_color!</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>);
 	<span class="macro">kprint!</span>(<span class="string">&quot;$&gt; &quot;</span>);
-	<span class="kw">loop</span> {
-    }
+	<span class="kw">loop</span> {}
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

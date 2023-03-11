@@ -30,13 +30,13 @@
 <span id="24">24</span>
 <span id="25">25</span>
 <span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Testing user space code</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span> <span class="kw">as</span> <span class="ident">mem</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{
-<span class="ident">PAGE_WRITABLE</span>,
-<span class="ident">PAGE_USER</span>
-};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_USER</span>, <span class="ident">PAGE_WRITABLE</span>};
 
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
 	<span class="kw">fn</span> <span class="ident">jump_usermode</span>();
@@ -45,11 +45,17 @@
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">test_user_page</span>() {
-	<span class="kw">let</span> <span class="ident">userpage</span> <span class="op">=</span> <span class="ident">mem::alloc_pages_at_addr</span>(<span class="number">0x400000</span>, <span class="number">1</span>, <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_USER</span>).<span class="ident">expect</span>(<span class="string">&quot;&quot;</span>);
+	<span class="kw">let</span> <span class="ident">userpage</span> <span class="op">=</span>
+		<span class="ident">mem::alloc_pages_at_addr</span>(<span class="number">0x400000</span>, <span class="number">1</span>, <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_USER</span>)
+			.<span class="ident">expect</span>(<span class="string">&quot;&quot;</span>);
 	<span class="kw">let</span> <span class="ident">funclen</span> <span class="op">=</span> <span class="ident">userfunc_end</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> <span class="ident">userfunc</span> <span class="kw">as</span> <span class="ident">usize</span>;
-	
+
 	<span class="kw">unsafe</span> {
-		<span class="ident">core::ptr::copy_nonoverlapping</span>(<span class="ident">userfunc</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u8</span>, <span class="ident">userpage</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">funclen</span>);
+		<span class="ident">core::ptr::copy_nonoverlapping</span>(
+			<span class="ident">userfunc</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u8</span>,
+			<span class="ident">userpage</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">u8</span>,
+			<span class="ident">funclen</span>
+		);
 	}
 	<span class="ident">mem::print_pdentry</span>(<span class="number">1</span>);
 	<span class="kw">unsafe</span> {

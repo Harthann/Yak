@@ -60,29 +60,19 @@
 <span id="54">54</span>
 <span id="55">55</span>
 <span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::io</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::ColorCode</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::BUFFER_WIDTH</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer</span>::{<span class="ident">ColorCode</span>, <span class="ident">BUFFER_WIDTH</span>};
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>, <span class="ident">Copy</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Cursor</span> {
-	<span class="ident">x</span>:	<span class="ident">usize</span>,
-	<span class="ident">y</span>:	<span class="ident">usize</span>,
+	<span class="ident">x</span>:          <span class="ident">usize</span>,
+	<span class="ident">y</span>:          <span class="ident">usize</span>,
 	<span class="ident">color_code</span>: <span class="ident">ColorCode</span>
 }
 
 <span class="kw">impl</span> <span class="ident">Cursor</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">x</span>: <span class="ident">usize</span>, <span class="ident">y</span>: <span class="ident">usize</span>, <span class="ident">color_code</span>: <span class="ident">ColorCode</span>) -&gt; <span class="ident">Cursor</span> {
-		<span class="ident">Cursor</span> {
-				<span class="ident">x</span>: <span class="ident">x</span>,
-				<span class="ident">y</span>: <span class="ident">y</span>,
-				<span class="ident">color_code</span>: <span class="ident">color_code</span>
-		}
+		<span class="ident">Cursor</span> { <span class="ident">x</span>: <span class="ident">x</span>, <span class="ident">y</span>: <span class="ident">y</span>, <span class="ident">color_code</span>: <span class="ident">color_code</span> }
 	}
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">update</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) {

@@ -139,12 +139,28 @@
 <span id="133">133</span>
 <span id="134">134</span>
 <span id="135">135</span>
-</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_directory</span>;
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+</pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bitmap</span>;
+<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_directory</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_table</span>;
-<span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bitmap</span>;
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">PhysAddr</span>, <span class="ident">VirtAddr</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::multiboot</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">VirtAddr</span>, <span class="ident">PhysAddr</span>};
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
@@ -157,22 +173,22 @@
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PAGE_WRITABLE</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0b10</span>;
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">PAGE_USER</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0b100</span>;
 
-<span class="comment">/*
-	Initiliaze the paging:
-	- setup a page_table at the index 768 containing kernel code paddrs and
-	page_directoy paddr
-	- reset the initial page_table at index 0 and setup the page to index every
-	page_tables in memory
-	- initialize the bitmap of page tables
-	- refresh tlb to clear the cache of the CPU
-*/</span>
+<span class="comment">// Initiliaze the paging:</span>
+<span class="comment">// - setup a page_table at the index 768 containing kernel code paddrs and</span>
+<span class="comment">// page_directoy paddr</span>
+<span class="comment">// - reset the initial page_table at index 0 and setup the page to index every</span>
+<span class="comment">// page_tables in memory</span>
+<span class="comment">// - initialize the bitmap of page tables</span>
+<span class="comment">// - refresh tlb to clear the cache of the CPU</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_paging</span>() {
 	<span class="kw">unsafe</span> {
-		<span class="kw">let</span> <span class="ident">pd_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> (<span class="ident">page_directory</span>.<span class="ident">get_vaddr</span>() <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="kw">as</span> <span class="ident">PhysAddr</span>;
+		<span class="kw">let</span> <span class="ident">pd_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span>
+			(<span class="ident">page_directory</span>.<span class="ident">get_vaddr</span>() <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="kw">as</span> <span class="ident">PhysAddr</span>;
 		<span class="ident">multiboot::claim_multiboot</span>();
-		<span class="ident">bitmap::physmap_as_mut</span>().<span class="ident">claim_range</span>(<span class="number">0x0</span>, ((<span class="ident">pd_paddr</span> <span class="op">/</span> <span class="number">0x1000</span>) <span class="op">+</span> <span class="number">1024</span>) <span class="kw">as</span> <span class="ident">usize</span>);
+		<span class="ident">bitmap::physmap_as_mut</span>()
+			.<span class="ident">claim_range</span>(<span class="number">0x0</span>, ((<span class="ident">pd_paddr</span> <span class="op">/</span> <span class="number">0x1000</span>) <span class="op">+</span> <span class="number">1024</span>) <span class="kw">as</span> <span class="ident">usize</span>);
 
-		<span class="comment">/* Init paging map */</span>
+		<span class="comment">// Init paging map</span>
 		<span class="kw">let</span> <span class="ident">kernel_pt_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="ident">pd_paddr</span> <span class="op">+</span> (<span class="number">768</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">0x1000</span>;
 		<span class="kw">let</span> <span class="ident">handler_pt_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="ident">pd_paddr</span> <span class="op">+</span> (<span class="number">1023</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">0x1000</span>;
 		<span class="kw">let</span> <span class="ident">init_pt_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="ident">pd_paddr</span> <span class="op">+</span> <span class="number">0x1000</span>;
@@ -181,8 +197,10 @@
 		<span class="ident">init_page_tab</span>.<span class="ident">set_entry</span>(<span class="number">1023</span>, <span class="ident">handler_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="number">1</span>);
 		<span class="macro">crate::refresh_tlb!</span>();
 
-		<span class="kw">let</span> <span class="ident">kernel_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">crate::get_vaddr!</span>(<span class="number">0</span>, <span class="number">768</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handler_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">crate::get_vaddr!</span>(<span class="number">0</span>, <span class="number">1023</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
+		<span class="kw">let</span> <span class="ident">kernel_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span>
+			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">crate::get_vaddr!</span>(<span class="number">0</span>, <span class="number">768</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">handler_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span>
+			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">crate::get_vaddr!</span>(<span class="number">0</span>, <span class="number">1023</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
 		<span class="ident">kernel_page_tab</span>.<span class="ident">init</span>();
 		<span class="ident">handler_page_tab</span>.<span class="ident">set_entry</span>(<span class="number">0</span>, <span class="ident">init_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="number">1</span>);
 		<span class="ident">handler_page_tab</span>.<span class="ident">set_entry</span>(<span class="number">768</span>, <span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="number">1</span>);
@@ -207,55 +225,69 @@
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">kalloc_pages</span>(<span class="ident">nb</span>: <span class="ident">usize</span>, <span class="ident">flags</span>: <span class="ident">u32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-	<span class="kw">unsafe</span>{<span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">kget_page_frames</span>(<span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>)}
+	<span class="kw">unsafe</span> { <span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">kget_page_frames</span>(<span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>) }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alloc_pages_at_addr</span>(<span class="ident">vaddr</span>: <span class="ident">VirtAddr</span>, <span class="ident">nb</span>: <span class="ident">usize</span>, <span class="ident">flags</span>: <span class="ident">u32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-	<span class="kw">unsafe</span>{<span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">get_page_frames_at_addr</span>(<span class="ident">vaddr</span>, <span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>)}
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alloc_pages_at_addr</span>(
+	<span class="ident">vaddr</span>: <span class="ident">VirtAddr</span>,
+	<span class="ident">nb</span>: <span class="ident">usize</span>,
+	<span class="ident">flags</span>: <span class="ident">u32</span>
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
+	<span class="kw">unsafe</span> { <span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">get_page_frames_at_addr</span>(<span class="ident">vaddr</span>, <span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>) }
 }
 
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">kalloc_pages_at_addr</span>(<span class="ident">vaddr</span>: <span class="ident">VirtAddr</span>, <span class="ident">nb</span>: <span class="ident">usize</span>, <span class="ident">flags</span>: <span class="ident">u32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-	<span class="kw">unsafe</span>{<span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">kget_page_frames_at_addr</span>(<span class="ident">vaddr</span>, <span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>)}
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">kalloc_pages_at_addr</span>(
+	<span class="ident">vaddr</span>: <span class="ident">VirtAddr</span>,
+	<span class="ident">nb</span>: <span class="ident">usize</span>,
+	<span class="ident">flags</span>: <span class="ident">u32</span>
+) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
+	<span class="kw">unsafe</span> { <span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">kget_page_frames_at_addr</span>(<span class="ident">vaddr</span>, <span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>) }
 }
 
-<span class="comment">/* Allocate &#39;nb&#39; page frames */</span>
+<span class="comment">// Allocate &#39;nb&#39; page frames</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alloc_pages</span>(<span class="ident">nb</span>: <span class="ident">usize</span>, <span class="ident">flags</span>: <span class="ident">u32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-	<span class="kw">unsafe</span>{<span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">get_page_frames</span>(<span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>)}
+	<span class="kw">unsafe</span> { <span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">get_page_frames</span>(<span class="ident">nb</span>, <span class="ident">flags</span>)<span class="question-mark">?</span>) }
 }
 
-<span class="comment">/* Allocate a page frame */</span>
+<span class="comment">// Allocate a page frame</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alloc_page</span>(<span class="ident">flags</span>: <span class="ident">u32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-	<span class="kw">unsafe</span>{<span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">get_page_frame</span>(<span class="ident">flags</span>)<span class="question-mark">?</span>)}
+	<span class="kw">unsafe</span> { <span class="prelude-val">Ok</span>(<span class="ident">page_directory</span>.<span class="ident">get_page_frame</span>(<span class="ident">flags</span>)<span class="question-mark">?</span>) }
 }
 
-<span class="comment">/* free multiple pages */</span>
+<span class="comment">// free multiple pages</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">free_pages</span>(<span class="ident">vaddr</span>: <span class="ident">VirtAddr</span>, <span class="ident">nb</span>: <span class="ident">usize</span>) {
-	<span class="kw">unsafe</span>{<span class="ident">page_directory</span>.<span class="ident">remove_page_frames</span>(<span class="ident">vaddr</span>, <span class="ident">nb</span>)};
+	<span class="kw">unsafe</span> { <span class="ident">page_directory</span>.<span class="ident">remove_page_frames</span>(<span class="ident">vaddr</span>, <span class="ident">nb</span>) };
 }
 
-<span class="comment">/* Free a page frame */</span>
+<span class="comment">// Free a page frame</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">free_page</span>(<span class="ident">vaddr</span>: <span class="ident">VirtAddr</span>) {
-	<span class="kw">unsafe</span>{<span class="ident">page_directory</span>.<span class="ident">remove_page_frame</span>(<span class="ident">vaddr</span>)};
+	<span class="kw">unsafe</span> { <span class="ident">page_directory</span>.<span class="ident">remove_page_frame</span>(<span class="ident">vaddr</span>) };
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">get_paddr</span> {
-	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span>:<span class="ident">expr</span>) =&gt;
-		(
-			<span class="ident">page_directory</span>.<span class="ident">get_page_table</span>(((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0xffc00000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>).<span class="ident">entries</span>[((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>].<span class="ident">get_paddr</span>() <span class="op">+</span> (((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0xfff</span>) <span class="kw">as</span> <span class="ident"><span class="kw">crate</span>::memory::PhysAddr</span>)
-		);
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span>:<span class="ident">expr</span>) =&gt; {
+		<span class="ident">page_directory</span>
+			.<span class="ident">get_page_table</span>(((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0xffc00000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>)
+			.<span class="ident">entries</span>[((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>]
+			.<span class="ident">get_paddr</span>()
+			<span class="op">+</span> (((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">vaddr</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0xfff</span>) <span class="kw">as</span> <span class="ident"><span class="kw">crate</span>::memory::PhysAddr</span>)
+	};
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">get_vaddr</span> {
-	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pd_index</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pt_index</span>:<span class="ident">expr</span>) =&gt;
-		((((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pd_index</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">22</span>) <span class="op">|</span> ((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pt_index</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">12</span>)) <span class="kw">as</span> <span class="ident"><span class="kw">crate</span>::memory::VirtAddr</span>);
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pd_index</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">pt_index</span>:<span class="ident">expr</span>) =&gt; {
+		(((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pd_index</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">22</span>) <span class="op">|</span> ((<span class="macro-nonterminal">$</span><span class="macro-nonterminal">pt_index</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">12</span>))
+			<span class="kw">as</span> <span class="ident"><span class="kw">crate</span>::memory::VirtAddr</span>
+	};
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">refresh_tlb</span> {
-	() =&gt; (<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov eax, cr3&quot;</span>,
-		<span class="string">&quot;mov cr3, eax&quot;</span>));
+	() =&gt; {
+		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov eax, cr3&quot;</span>, <span class="string">&quot;mov cr3, eax&quot;</span>)
+	};
 }
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
@@ -270,9 +302,9 @@
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">disable_paging</span> {
-	() =&gt; (<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov ebx, cr0&quot;</span>,
-		<span class="string">&quot;and ebx, ~(1 &lt;&lt; 31)&quot;</span>,
-		<span class="string">&quot;mov cr0, ebx&quot;</span>));
+	() =&gt; {
+		<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov ebx, cr0&quot;</span>, <span class="string">&quot;and ebx, ~(1 &lt;&lt; 31)&quot;</span>, <span class="string">&quot;mov cr0, ebx&quot;</span>)
+	};
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

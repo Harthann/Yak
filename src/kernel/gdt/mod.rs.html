@@ -137,12 +137,19 @@
 <span id="131">131</span>
 <span id="132">132</span>
 <span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
 </pre><pre class="rust"><code><span class="doccomment">//! GDT and TSS setup/helpers</span>
 
-<span class="kw">use</span> <span class="ident">core::fmt</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kprintln</span>;
+<span class="kw">use</span> <span class="ident">core::fmt</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">tss</span>;
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tss</span>::{<span class="ident">Tss</span>, <span class="ident">init_tss</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">tss</span>::{<span class="ident">init_tss</span>, <span class="ident">Tss</span>};
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">KERNEL_BASE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0xc0000000</span>;
 
@@ -153,7 +160,7 @@
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">packed</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">GDTR</span> {
-	<span class="ident">size</span>: <span class="ident">u16</span>,
+	<span class="ident">size</span>:   <span class="ident">u16</span>,
 	<span class="ident">offset</span>: <span class="ident">u32</span>
 }
 
@@ -163,11 +170,11 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">SegmentDescriptor</span> {
-	<span class="ident">limit</span>:			<span class="ident">u16</span>,
-	<span class="ident">base</span>:			[<span class="ident">u8</span>; <span class="number">3</span>],
-	<span class="ident">access</span>:			<span class="ident">u8</span>,
-	<span class="ident">limit_flags</span>:	<span class="ident">u8</span>,
-	<span class="ident">base_end</span>:		<span class="ident">u8</span>
+	<span class="ident">limit</span>:       <span class="ident">u16</span>,
+	<span class="ident">base</span>:        [<span class="ident">u8</span>; <span class="number">3</span>],
+	<span class="ident">access</span>:      <span class="ident">u8</span>,
+	<span class="ident">limit_flags</span>: <span class="ident">u8</span>,
+	<span class="ident">base_end</span>:    <span class="ident">u8</span>
 }
 
 <span class="kw">impl</span> <span class="ident">SegmentDescriptor</span> {
@@ -199,7 +206,7 @@
 
 	<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_base</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">u32</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">base</span>:<span class="ident">u32</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">base_end</span>.<span class="ident">into</span>();
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">base</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">base_end</span>.<span class="ident">into</span>();
 		<span class="ident">base</span> <span class="op">=</span> <span class="ident">base</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span> <span class="op">|</span> (<span class="self">self</span>.<span class="ident">base</span>[<span class="number">2</span>] <span class="kw">as</span> <span class="ident">u32</span>);
 		<span class="ident">base</span> <span class="op">=</span> <span class="ident">base</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span> <span class="op">|</span> (<span class="self">self</span>.<span class="ident">base</span>[<span class="number">1</span>] <span class="kw">as</span> <span class="ident">u32</span>);
 		<span class="ident">base</span> <span class="op">=</span> <span class="ident">base</span> <span class="op">&lt;</span><span class="op">&lt;</span> <span class="number">8</span> <span class="op">|</span> (<span class="self">self</span>.<span class="ident">base</span>[<span class="number">0</span>] <span class="kw">as</span> <span class="ident">u32</span>);
@@ -209,35 +216,43 @@
 
 <span class="kw">impl</span> <span class="ident">fmt::Display</span> <span class="kw">for</span> <span class="ident">SegmentDescriptor</span> {
 	<span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">f</span>: <span class="kw-2">&amp;mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
-		<span class="macro">write!</span>(<span class="ident">f</span>, <span class="string">&quot;base: {:#010x}
+		<span class="macro">write!</span>(
+			<span class="ident">f</span>,
+			<span class="string">&quot;base: {:#010x}
 limit: {:#06x}
 access: {:#010b}
 limit_flags: {:#06b}&quot;</span>,
-	<span class="self">self</span>.<span class="ident">get_base</span>(), <span class="self">self</span>.<span class="ident">limit</span>, <span class="self">self</span>.<span class="ident">access</span>, <span class="self">self</span>.<span class="ident">limit_flags</span>)
+			<span class="self">self</span>.<span class="ident">get_base</span>(),
+			<span class="self">self</span>.<span class="ident">limit</span>,
+			<span class="self">self</span>.<span class="ident">access</span>,
+			<span class="self">self</span>.<span class="ident">limit_flags</span>
+		)
 	}
 }
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_gdt</span>() {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">segments</span>: <span class="kw-2">*mut</span> <span class="ident">SegmentDescriptor</span> <span class="op">=</span> (<span class="ident">gdt_start</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="ident">KERNEL_BASE</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>;
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">segments</span>: <span class="kw-2">*mut</span> <span class="ident">SegmentDescriptor</span> <span class="op">=</span>
+		(<span class="ident">gdt_start</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="ident">KERNEL_BASE</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>;
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">id</span> <span class="op">=</span> <span class="number">0</span>;
 	<span class="kw">let</span> <span class="ident">end</span> <span class="op">=</span> (<span class="ident">gdt_desc</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="ident">KERNEL_BASE</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">SegmentDescriptor</span>;
 	<span class="kw">while</span> <span class="ident">segments</span> <span class="op">&lt;</span> <span class="ident">end</span> {
-		<span class="kw">let</span> <span class="ident">segment</span> <span class="op">=</span> <span class="kw">unsafe</span>{<span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">segments</span>};
+		<span class="kw">let</span> <span class="ident">segment</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="ident">segments</span> };
 		<span class="macro">kprintln!</span>(<span class="string">&quot;\nSegment {}:\n{}&quot;</span>, <span class="ident">id</span>, <span class="ident">segment</span>);
-		<span class="ident">segments</span> <span class="op">=</span> <span class="kw">unsafe</span>{<span class="ident">segments</span>.<span class="ident">add</span>(<span class="number">1</span>)};
+		<span class="ident">segments</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">segments</span>.<span class="ident">add</span>(<span class="number">1</span>) };
 		<span class="ident">id</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 	}
 }
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_segment</span>(<span class="ident">index</span>: <span class="ident">usize</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">SegmentDescriptor</span>{
-	<span class="kw">let</span> <span class="ident">segments</span>: <span class="kw-2">*mut</span> <span class="ident">SegmentDescriptor</span> <span class="op">=</span> (<span class="ident">gdt_start</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="ident">KERNEL_BASE</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>;
-	<span class="kw">unsafe</span>{<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">segments</span>.<span class="ident">add</span>(<span class="ident">index</span>))}
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_segment</span>(<span class="ident">index</span>: <span class="ident">usize</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">SegmentDescriptor</span> {
+	<span class="kw">let</span> <span class="ident">segments</span>: <span class="kw-2">*mut</span> <span class="ident">SegmentDescriptor</span> <span class="op">=</span>
+		(<span class="ident">gdt_start</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">+</span> <span class="ident">KERNEL_BASE</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>;
+	<span class="kw">unsafe</span> { <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">segments</span>.<span class="ident">add</span>(<span class="ident">index</span>)) }
 }
 
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_segment</span>(<span class="ident">index</span>:<span class="ident">usize</span>, <span class="ident">base</span>: <span class="ident">u32</span>, <span class="ident">limit</span>:<span class="ident">u32</span>, <span class="ident">flag</span>:<span class="ident">u8</span>, <span class="ident">access</span>:<span class="ident">u8</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_segment</span>(<span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">base</span>: <span class="ident">u32</span>, <span class="ident">limit</span>: <span class="ident">u32</span>, <span class="ident">flag</span>: <span class="ident">u8</span>, <span class="ident">access</span>: <span class="ident">u8</span>) {
 	<span class="kw">let</span> <span class="ident">segment</span> <span class="op">=</span> <span class="ident">get_segment</span>(<span class="ident">index</span>);
 
 	<span class="ident">segment</span>.<span class="ident">set_base</span>(<span class="ident">base</span>);
@@ -263,12 +278,11 @@ limit_flags: {:#06b}&quot;</span>,
 
 <span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">reload_tss</span> {
-	() =&gt; (
+	() =&gt; {
 		<span class="kw">unsafe</span> {
-			<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov ax, 0x38&quot;</span>,
-						<span class="string">&quot;ltr ax&quot;</span>);
+			<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov ax, 0x38&quot;</span>, <span class="string">&quot;ltr ax&quot;</span>);
 		}
-	)
+	};
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

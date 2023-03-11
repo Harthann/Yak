@@ -164,6 +164,24 @@
 <span id="158">158</span>
 <span id="159">159</span>
 <span id="160">160</span>
+<span id="161">161</span>
+<span id="162">162</span>
+<span id="163">163</span>
+<span id="164">164</span>
+<span id="165">165</span>
+<span id="166">166</span>
+<span id="167">167</span>
+<span id="168">168</span>
+<span id="169">169</span>
+<span id="170">170</span>
+<span id="171">171</span>
+<span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">feature</span>(<span class="ident">const_mut_refs</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">naked_functions</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">fmt_internals</span>)]</span>
@@ -180,8 +198,7 @@
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>)]</span>
 <span class="attribute">#![<span class="ident">no_main</span>]</span>
-
-<span class="comment">/*  Custom test framework  */</span>
+<span class="comment">// Custom test framework</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">custom_test_frameworks</span>)]</span>
 <span class="attribute">#![<span class="ident">test_runner</span>(<span class="ident"><span class="kw">crate</span>::test::test_runner</span>)]</span>
 <span class="attribute">#![<span class="ident">reexport_test_harness_main</span> <span class="op">=</span> <span class="string">&quot;test_main&quot;</span>]</span>
@@ -192,42 +209,42 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">eh_personality</span>() {}
 
-<span class="comment">/*  Modules import  */</span>
+<span class="comment">// Modules import</span>
 <span class="kw">mod</span> <span class="ident">cli</span>;
 <span class="kw">mod</span> <span class="ident">gdt</span>;
+<span class="kw">mod</span> <span class="ident">interrupts</span>;
+<span class="kw">mod</span> <span class="ident">io</span>;
 <span class="kw">mod</span> <span class="ident">keyboard</span>;
+<span class="kw">mod</span> <span class="ident">main</span>;
 <span class="kw">mod</span> <span class="ident">memory</span>;
 <span class="kw">mod</span> <span class="ident">multiboot</span>;
-<span class="kw">mod</span> <span class="ident">vec</span>;
-<span class="kw">mod</span> <span class="ident">string</span>;
-<span class="kw">mod</span> <span class="ident">interrupts</span>;
-<span class="kw">mod</span> <span class="ident">syscalls</span>;
-<span class="kw">mod</span> <span class="ident">io</span>;
-<span class="kw">mod</span> <span class="ident">vga_buffer</span>;
 <span class="kw">mod</span> <span class="ident">pic</span>;
 <span class="kw">mod</span> <span class="ident">proc</span>;
-<span class="kw">mod</span> <span class="ident">user</span>;
-<span class="kw">mod</span> <span class="ident">wrappers</span>;
 <span class="kw">mod</span> <span class="ident">spin</span>;
+<span class="kw">mod</span> <span class="ident">string</span>;
+<span class="kw">mod</span> <span class="ident">syscalls</span>;
+<span class="kw">mod</span> <span class="ident">user</span>;
 <span class="kw">mod</span> <span class="ident">utils</span>;
-<span class="kw">mod</span> <span class="ident">main</span>;
+<span class="kw">mod</span> <span class="ident">vec</span>;
+<span class="kw">mod</span> <span class="ident">vga_buffer</span>;
+<span class="kw">mod</span> <span class="ident">wrappers</span>;
 
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
 
-<span class="comment">/*  Modules used function and variable  */</span>
-<span class="kw">use</span> <span class="ident">memory::paging</span>::{<span class="ident">init_paging</span>, <span class="ident">page_directory</span>}; <span class="kw">use</span> <span class="ident">memory::allocator::linked_list::LinkedListAllocator</span>;
-<span class="kw">use</span> <span class="ident">cli::Command</span>;
-<span class="kw">use</span> <span class="ident">pic::setup_pic8259</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">init_heap</span>, <span class="ident">init_stack</span>, <span class="ident">VirtAddr</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::PAGE_WRITABLE</span>;
+<span class="comment">// Modules used function and variable</span>
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::gdt</span>::{<span class="ident">gdt_desc</span>, <span class="ident">update_gdtr</span>, <span class="ident">KERNEL_BASE</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::interrupts::init_idt</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::gdt</span>::{<span class="ident">KERNEL_BASE</span>, <span class="ident">gdt_desc</span>, <span class="ident">update_gdtr</span>};
-<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pic::handlers::JIFFIES</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::MemoryZone</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::PAGE_WRITABLE</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">init_heap</span>, <span class="ident">init_stack</span>, <span class="ident">MemoryZone</span>, <span class="ident">VirtAddr</span>};
+<span class="kw">use</span> <span class="ident">cli::Command</span>;
 <span class="kw">use</span> <span class="ident">main::kmain</span>;
+<span class="kw">use</span> <span class="ident">memory::allocator::linked_list::LinkedListAllocator</span>;
+<span class="kw">use</span> <span class="ident">memory::paging</span>::{<span class="ident">init_paging</span>, <span class="ident">page_directory</span>};
+<span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pic::handlers::JIFFIES</span>;
+<span class="kw">use</span> <span class="ident">pic::setup_pic8259</span>;
 
-<span class="comment">/*  Code from boot section  */</span>
+<span class="comment">// Code from boot section</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
 	<span class="kw">fn</span> <span class="ident">stack_bottom</span>();
@@ -237,21 +254,21 @@
 
 <span class="kw">const</span> <span class="ident">GLOBAL_ALIGN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">8</span>;
 
-<span class="comment">/* Allocation tracking */</span>
+<span class="comment">// Allocation tracking</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Tracker</span> {
-	<span class="ident">allocation</span>:			<span class="ident">usize</span>,
-	<span class="ident">allocated_bytes</span>:	<span class="ident">usize</span>,
-	<span class="ident">freed</span>:				<span class="ident">usize</span>,
-	<span class="ident">freed_bytes</span>:		<span class="ident">usize</span>
+	<span class="ident">allocation</span>:      <span class="ident">usize</span>,
+	<span class="ident">allocated_bytes</span>: <span class="ident">usize</span>,
+	<span class="ident">freed</span>:           <span class="ident">usize</span>,
+	<span class="ident">freed_bytes</span>:     <span class="ident">usize</span>
 }
 
 <span class="kw">impl</span> <span class="ident">Tracker</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
-			<span class="ident">allocation</span>: <span class="number">0</span>,
+			<span class="ident">allocation</span>:      <span class="number">0</span>,
 			<span class="ident">allocated_bytes</span>: <span class="number">0</span>,
-			<span class="ident">freed</span>: <span class="number">0</span>,
-			<span class="ident">freed_bytes</span>: <span class="number">0</span>
+			<span class="ident">freed</span>:           <span class="number">0</span>,
+			<span class="ident">freed_bytes</span>:     <span class="number">0</span>
 		}
 	}
 }
@@ -268,55 +285,74 @@
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">memory_state</span>() {
 	<span class="kw">unsafe</span> {
-		<span class="macro">kprintln!</span>(<span class="string">&quot;\nAllocation: {} for {} bytes&quot;</span>, <span class="ident">KTRACKER</span>.<span class="ident">allocation</span>, <span class="ident">KTRACKER</span>.<span class="ident">allocated_bytes</span>);
-		<span class="macro">kprintln!</span>(<span class="string">&quot;Free:       {} for {} bytes&quot;</span>, <span class="ident">KTRACKER</span>.<span class="ident">freed</span>, <span class="ident">KTRACKER</span>.<span class="ident">freed_bytes</span>);
+		<span class="macro">kprintln!</span>(
+			<span class="string">&quot;\nAllocation: {} for {} bytes&quot;</span>,
+			<span class="ident">KTRACKER</span>.<span class="ident">allocation</span>,
+			<span class="ident">KTRACKER</span>.<span class="ident">allocated_bytes</span>
+		);
+		<span class="macro">kprintln!</span>(
+			<span class="string">&quot;Free:       {} for {} bytes&quot;</span>,
+			<span class="ident">KTRACKER</span>.<span class="ident">freed</span>,
+			<span class="ident">KTRACKER</span>.<span class="ident">freed_bytes</span>
+		);
 	}
 }
 
-<span class="comment">/*  Kernel initialisation   */</span>
+<span class="comment">// Kernel initialisation</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kinit</span>() {
-    <span class="ident"><span class="kw">crate</span>::wrappers::_cli</span>();
+	<span class="ident"><span class="kw">crate</span>::wrappers::_cli</span>();
 
-	<span class="comment">/* Init paging and remove identity paging */</span>
+	<span class="comment">// Init paging and remove identity paging</span>
 	<span class="ident">init_paging</span>();
 
-	<span class="comment">/* Update gdtr with higher half kernel gdt addr */</span>
+	<span class="comment">// Update gdtr with higher half kernel gdt addr</span>
 	<span class="kw">unsafe</span> {
 		<span class="ident">update_gdtr</span>();
 		<span class="macro">reload_gdt!</span>();
 		<span class="ident">init_idt</span>();
 	}
 
-	<span class="comment">/* HEAP KERNEL */</span>
-	<span class="kw">let</span> <span class="ident">kstack_addr</span>: <span class="ident">VirtAddr</span> <span class="op">=</span> <span class="number">0xffbfffff</span>; <span class="comment">/* stack kernel */</span>
+	<span class="comment">// HEAP KERNEL</span>
+	<span class="kw">let</span> <span class="ident">kstack_addr</span>: <span class="ident">VirtAddr</span> <span class="op">=</span> <span class="number">0xffbfffff</span>; <span class="comment">// stack kernel</span>
 	<span class="kw">unsafe</span> {
 		<span class="ident">KSTACK</span> <span class="op">=</span> <span class="ident">init_stack</span>(<span class="ident">kstack_addr</span>, <span class="number">2</span> <span class="op">*</span> <span class="number">0x1000</span>, <span class="ident">PAGE_WRITABLE</span>, <span class="bool-val">false</span>);
-		<span class="ident">KHEAP</span> <span class="op">=</span> <span class="ident">init_heap</span>(<span class="ident">heap</span> <span class="kw">as</span> <span class="ident">u32</span>, <span class="number">100</span> <span class="op">*</span> <span class="number">0x1000</span>, <span class="ident">PAGE_WRITABLE</span>, <span class="bool-val">true</span>, <span class="kw-2">&amp;mut</span> <span class="ident">KALLOCATOR</span>);
+		<span class="ident">KHEAP</span> <span class="op">=</span> <span class="ident">init_heap</span>(
+			<span class="ident">heap</span> <span class="kw">as</span> <span class="ident">u32</span>,
+			<span class="number">100</span> <span class="op">*</span> <span class="number">0x1000</span>,
+			<span class="ident">PAGE_WRITABLE</span>,
+			<span class="bool-val">true</span>,
+			<span class="kw-2">&amp;mut</span> <span class="ident">KALLOCATOR</span>
+		);
 	}
 
 	<span class="ident">gdt::tss::init_tss</span>(<span class="ident">kstack_addr</span>);
 	<span class="macro">reload_tss!</span>();
 
-    <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;multitasking&quot;</span>)]</span>
-    <span class="ident">init_tasking</span>();
+	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;multitasking&quot;</span>)]</span>
+	<span class="ident">init_tasking</span>();
 
-	<span class="comment">/* init tracker after init first process */</span>
+	<span class="comment">// init tracker after init first process</span>
 	<span class="kw">unsafe</span> {
 		<span class="ident">KTRACKER</span> <span class="op">=</span> <span class="ident">Tracker::new</span>();
 		<span class="ident">TRACKER</span> <span class="op">=</span> <span class="ident">Tracker::new</span>();
 	}
 
 	<span class="ident">setup_pic8259</span>();
-	<span class="comment">/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */</span>
-	<span class="ident">pic::set_pit</span>(<span class="ident">pic::pit::CHANNEL_0</span>, <span class="ident">pic::pit::ACC_LOBHIB</span>, <span class="ident">pic::pit::MODE_2</span>, <span class="number">0x00ff</span>);
-    <span class="ident">pic::set_irq0_in_ms</span>(<span class="number">1.0</span>);
+	<span class="comment">// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching</span>
+	<span class="ident">pic::set_pit</span>(
+		<span class="ident">pic::pit::CHANNEL_0</span>,
+		<span class="ident">pic::pit::ACC_LOBHIB</span>,
+		<span class="ident">pic::pit::MODE_2</span>,
+		<span class="number">0x00ff</span>
+	);
+	<span class="ident">pic::set_irq0_in_ms</span>(<span class="number">1.0</span>);
 
-	<span class="comment">/* Reserve some spaces to push things before main */</span>
-	<span class="kw">unsafe</span>{<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov esp, {}&quot;</span>, <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">kstack_addr</span> <span class="op">-</span> <span class="number">256</span>)};
-    <span class="ident"><span class="kw">crate</span>::wrappers::_sti</span>();
+	<span class="comment">// Reserve some spaces to push things before main</span>
+	<span class="kw">unsafe</span> { <span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov esp, {}&quot;</span>, <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">kstack_addr</span> <span class="op">-</span> <span class="number">256</span>) };
+	<span class="ident"><span class="kw">crate</span>::wrappers::_sti</span>();
 
-	<span class="comment">/*	Function to test and enter usermode */</span>
+	<span class="comment">// Function to test and enter usermode</span>
 
 	<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 	<span class="ident">test_main</span>();

@@ -107,27 +107,33 @@
 <span id="101">101</span>
 <span id="102">102</span>
 <span id="103">103</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::alloc</span>::{
-<span class="ident">GlobalAlloc</span>,
-<span class="ident">Layout</span>
-};
-<span class="kw">use</span> <span class="ident">core::ptr::NonNull</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator</span>::{
-<span class="ident">Allocator</span>,
-<span class="ident">AllocError</span>
-};
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator</span>::{<span class="ident">AllocError</span>, <span class="ident">Allocator</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::KALLOCATOR</span>;
+<span class="kw">use</span> <span class="ident">core::alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
+<span class="kw">use</span> <span class="ident">core::ptr::NonNull</span>;
 
-<span class="comment">/* Struct to wrap allocation */</span>
+<span class="comment">// Struct to wrap allocation</span>
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">KGlobal</span>;
 
-
-<span class="comment">/* The three next function use KKALLOCATOR to perform
-** Physical allocation
-** Physical deallocation
-** Physical reallocation
-*/</span>
+<span class="comment">// The three next function use KKALLOCATOR to perform</span>
+<span class="comment">// Physical allocation</span>
+<span class="comment">// Physical deallocation</span>
+<span class="comment">// Physical reallocation</span>
 <span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">alloc</span>(<span class="ident">layout</span>: <span class="ident">Layout</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">u8</span> {
 	<span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">KALLOCATOR</span>.<span class="ident">alloc</span>(<span class="ident">layout</span>);
@@ -136,7 +142,6 @@
 		<span class="ident"><span class="kw">crate</span>::KTRACKER</span>.<span class="ident">allocated_bytes</span> <span class="op">+</span><span class="op">=</span> <span class="ident">layout</span>.<span class="ident">size</span>();
 	}
 	<span class="ident">ptr</span>
-
 }
 
 <span class="attribute">#[<span class="ident">inline</span>]</span>
@@ -155,8 +160,11 @@
 
 <span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">realloc</span>(<span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">old</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) -&gt; <span class="kw-2">*mut</span> <span class="ident">u8</span> {
-	<span class="kw">let</span> <span class="ident">new_ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span> <span class="op">=</span> <span class="ident">alloc</span>(<span class="ident">Layout::from_size_align</span>(<span class="ident">new_size</span>, <span class="ident">old</span>.<span class="ident">align</span>()).<span class="ident">unwrap</span>());
-	<span class="kw">if</span> <span class="ident">new_ptr</span>.<span class="ident">is_null</span>() { <span class="kw">return</span> <span class="ident">core::ptr::null_mut</span>(); }
+	<span class="kw">let</span> <span class="ident">new_ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span> <span class="op">=</span>
+		<span class="ident">alloc</span>(<span class="ident">Layout::from_size_align</span>(<span class="ident">new_size</span>, <span class="ident">old</span>.<span class="ident">align</span>()).<span class="ident">unwrap</span>());
+	<span class="kw">if</span> <span class="ident">new_ptr</span>.<span class="ident">is_null</span>() {
+		<span class="kw">return</span> <span class="ident">core::ptr::null_mut</span>();
+	}
 
 	<span class="ident">core::ptr::copy_nonoverlapping</span>(<span class="ident">ptr</span>, <span class="ident">new_ptr</span>, <span class="ident">old</span>.<span class="ident">size</span>());
 
@@ -165,14 +173,26 @@
 }
 
 <span class="kw">impl</span> <span class="ident">KGlobal</span> {
-	<span class="comment">/* Mem type determine if you use virtual or physical memory */</span>
+	<span class="comment">// Mem type determine if you use virtual or physical memory</span>
 	<span class="attribute">#[<span class="ident">inline</span>]</span>
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alloc_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>, <span class="ident">zeroed</span>: <span class="ident">bool</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">alloc_impl</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">layout</span>: <span class="ident">Layout</span>,
+		<span class="ident">zeroed</span>: <span class="ident">bool</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
 		<span class="kw">match</span> <span class="ident">layout</span>.<span class="ident">size</span>() {
-			<span class="number">0</span> =&gt; { <span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">NonNull::dangling</span>()); },
+			<span class="number">0</span> =&gt; {
+				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">NonNull::dangling</span>());
+			},
 			<span class="ident">_size</span> =&gt; {
-				<span class="kw">let</span> <span class="ident">raw_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span>{ <span class="kw">if</span> <span class="ident">zeroed</span> {<span class="ident">alloc_zeroed</span>(<span class="ident">layout</span>)} <span class="kw">else</span> {<span class="ident">alloc</span>(<span class="ident">layout</span>)} };
-				<span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">NonNull::new</span>(<span class="ident">raw_ptr</span>).<span class="ident">ok_or</span>(<span class="ident">AllocError</span>{})<span class="question-mark">?</span>;
+				<span class="kw">let</span> <span class="ident">raw_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> {
+					<span class="kw">if</span> <span class="ident">zeroed</span> {
+						<span class="ident">alloc_zeroed</span>(<span class="ident">layout</span>)
+					} <span class="kw">else</span> {
+						<span class="ident">alloc</span>(<span class="ident">layout</span>)
+					}
+				};
+				<span class="kw">let</span> <span class="ident">ptr</span> <span class="op">=</span> <span class="ident">NonNull::new</span>(<span class="ident">raw_ptr</span>).<span class="ident">ok_or</span>(<span class="ident">AllocError</span> {})<span class="question-mark">?</span>;
 				<span class="prelude-val">Ok</span>(<span class="ident">ptr</span>)
 			}
 		}
@@ -180,7 +200,7 @@
 
 	<span class="attribute">#[<span class="ident">inline</span>]</span>
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">dealloc_impl</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">u8</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) {
-		<span class="kw">unsafe</span>{ <span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>) };
+		<span class="kw">unsafe</span> { <span class="ident">dealloc</span>(<span class="ident">ptr</span>, <span class="ident">layout</span>) };
 	}
 }
 
@@ -191,7 +211,10 @@
 	}
 
 	<span class="attribute">#[<span class="ident">inline</span>]</span>
-	<span class="kw">fn</span> <span class="ident">allocate_zeroed</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">layout</span>: <span class="ident">Layout</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">allocate_zeroed</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">layout</span>: <span class="ident">Layout</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
 		<span class="self">self</span>.<span class="ident">alloc_impl</span>(<span class="ident">layout</span>, <span class="bool-val">true</span>)
 	}
 
@@ -201,12 +224,17 @@
 	}
 
 	<span class="attribute">#[<span class="ident">inline</span>]</span>
-	<span class="kw">fn</span> <span class="ident">realloc</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">oldlayout</span>: <span class="ident">Layout</span>, <span class="ident">new_size</span>: <span class="ident">usize</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
+	<span class="kw">fn</span> <span class="ident">realloc</span>(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		<span class="ident">ptr</span>: <span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>,
+		<span class="ident">oldlayout</span>: <span class="ident">Layout</span>,
+		<span class="ident">new_size</span>: <span class="ident">usize</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">NonNull</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="ident">AllocError</span><span class="op">&gt;</span> {
 		<span class="kw">if</span> <span class="ident">oldlayout</span>.<span class="ident">size</span>() <span class="op">&gt;</span><span class="op">=</span> <span class="ident">new_size</span> {
 			<span class="prelude-val">Ok</span>(<span class="ident">ptr</span>)
 		} <span class="kw">else</span> {
-			<span class="kw">let</span> <span class="ident">raw_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span>{ <span class="ident">realloc</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>(), <span class="ident">oldlayout</span>, <span class="ident">new_size</span>) };
-			<span class="ident">NonNull::new</span>(<span class="ident">raw_ptr</span>).<span class="ident">ok_or</span>(<span class="ident">AllocError</span>{})
+			<span class="kw">let</span> <span class="ident">raw_ptr</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="ident">realloc</span>(<span class="ident">ptr</span>.<span class="ident">as_ptr</span>(), <span class="ident">oldlayout</span>, <span class="ident">new_size</span>) };
+			<span class="ident">NonNull::new</span>(<span class="ident">raw_ptr</span>).<span class="ident">ok_or</span>(<span class="ident">AllocError</span> {})
 		}
 	}
 }

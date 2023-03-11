@@ -113,43 +113,49 @@
 <span id="107">107</span>
 <span id="108">108</span>
 <span id="109">109</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::Id</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Process</span>, <span class="ident">MASTER_PROCESS</span>};
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Process</span>, <span class="ident">MASTER_PROCESS</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::Id</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">SignalType</span> {
-	<span class="ident">SIGHUP</span>		<span class="op">=</span> <span class="number">1</span>,
-	<span class="ident">SIGINT</span>		<span class="op">=</span> <span class="number">2</span>,
-	<span class="ident">SIGQUIT</span>		<span class="op">=</span> <span class="number">3</span>,
-	<span class="ident">SIGILL</span>		<span class="op">=</span> <span class="number">4</span>,
-	<span class="ident">SIGTRAP</span>		<span class="op">=</span> <span class="number">5</span>,
-	<span class="ident">SIGABRT</span>		<span class="op">=</span> <span class="number">6</span>,
-	<span class="ident">SIGBUS</span>		<span class="op">=</span> <span class="number">7</span>,
-	<span class="ident">SIGFPE</span>		<span class="op">=</span> <span class="number">8</span>,
-	<span class="ident">SIGKILL</span>		<span class="op">=</span> <span class="number">9</span>,
-	<span class="ident">SIGUSR1</span>		<span class="op">=</span> <span class="number">10</span>,
-	<span class="ident">SIGSEGV</span>		<span class="op">=</span> <span class="number">11</span>,
-	<span class="ident">SIGUSR2</span>		<span class="op">=</span> <span class="number">12</span>,
-	<span class="ident">SIGPIPE</span>		<span class="op">=</span> <span class="number">13</span>,
-	<span class="ident">SIGALRM</span>		<span class="op">=</span> <span class="number">14</span>,
-	<span class="ident">SIGTERM</span>		<span class="op">=</span> <span class="number">15</span>,
-	<span class="ident">SIGSTKFLT</span>	<span class="op">=</span> <span class="number">16</span>,
-	<span class="ident">SIGCHLD</span>		<span class="op">=</span> <span class="number">17</span>,
-	<span class="ident">SIGCONT</span>		<span class="op">=</span> <span class="number">18</span>,
-	<span class="ident">SIGTSTOP</span>	<span class="op">=</span> <span class="number">19</span>,
-	<span class="ident">SIGTSTP</span>		<span class="op">=</span> <span class="number">20</span>,
-	<span class="ident">SIGTTIN</span>		<span class="op">=</span> <span class="number">21</span>,
-	<span class="ident">SIGTTOU</span>		<span class="op">=</span> <span class="number">22</span>,
-	<span class="ident">SIGURG</span>		<span class="op">=</span> <span class="number">23</span>,
-	<span class="ident">SIGXCPU</span>		<span class="op">=</span> <span class="number">24</span>,
-	<span class="ident">SIGXFSZ</span>		<span class="op">=</span> <span class="number">25</span>,
-	<span class="ident">SIGVTALRM</span>	<span class="op">=</span> <span class="number">26</span>,
-	<span class="ident">SIGPROF</span>		<span class="op">=</span> <span class="number">27</span>,
-	<span class="ident">SIGWINCH</span>	<span class="op">=</span> <span class="number">28</span>,
-	<span class="ident">SIGIO</span>		<span class="op">=</span> <span class="number">29</span>,
-	<span class="ident">SIGPWR</span>		<span class="op">=</span> <span class="number">30</span>,
-	<span class="ident">SIGSYS</span>		<span class="op">=</span> <span class="number">31</span>,
-	<span class="ident">SIGRTMIN</span>	<span class="op">=</span> <span class="number">32</span>
+	<span class="ident">SIGHUP</span>    <span class="op">=</span> <span class="number">1</span>,
+	<span class="ident">SIGINT</span>    <span class="op">=</span> <span class="number">2</span>,
+	<span class="ident">SIGQUIT</span>   <span class="op">=</span> <span class="number">3</span>,
+	<span class="ident">SIGILL</span>    <span class="op">=</span> <span class="number">4</span>,
+	<span class="ident">SIGTRAP</span>   <span class="op">=</span> <span class="number">5</span>,
+	<span class="ident">SIGABRT</span>   <span class="op">=</span> <span class="number">6</span>,
+	<span class="ident">SIGBUS</span>    <span class="op">=</span> <span class="number">7</span>,
+	<span class="ident">SIGFPE</span>    <span class="op">=</span> <span class="number">8</span>,
+	<span class="ident">SIGKILL</span>   <span class="op">=</span> <span class="number">9</span>,
+	<span class="ident">SIGUSR1</span>   <span class="op">=</span> <span class="number">10</span>,
+	<span class="ident">SIGSEGV</span>   <span class="op">=</span> <span class="number">11</span>,
+	<span class="ident">SIGUSR2</span>   <span class="op">=</span> <span class="number">12</span>,
+	<span class="ident">SIGPIPE</span>   <span class="op">=</span> <span class="number">13</span>,
+	<span class="ident">SIGALRM</span>   <span class="op">=</span> <span class="number">14</span>,
+	<span class="ident">SIGTERM</span>   <span class="op">=</span> <span class="number">15</span>,
+	<span class="ident">SIGSTKFLT</span> <span class="op">=</span> <span class="number">16</span>,
+	<span class="ident">SIGCHLD</span>   <span class="op">=</span> <span class="number">17</span>,
+	<span class="ident">SIGCONT</span>   <span class="op">=</span> <span class="number">18</span>,
+	<span class="ident">SIGTSTOP</span>  <span class="op">=</span> <span class="number">19</span>,
+	<span class="ident">SIGTSTP</span>   <span class="op">=</span> <span class="number">20</span>,
+	<span class="ident">SIGTTIN</span>   <span class="op">=</span> <span class="number">21</span>,
+	<span class="ident">SIGTTOU</span>   <span class="op">=</span> <span class="number">22</span>,
+	<span class="ident">SIGURG</span>    <span class="op">=</span> <span class="number">23</span>,
+	<span class="ident">SIGXCPU</span>   <span class="op">=</span> <span class="number">24</span>,
+	<span class="ident">SIGXFSZ</span>   <span class="op">=</span> <span class="number">25</span>,
+	<span class="ident">SIGVTALRM</span> <span class="op">=</span> <span class="number">26</span>,
+	<span class="ident">SIGPROF</span>   <span class="op">=</span> <span class="number">27</span>,
+	<span class="ident">SIGWINCH</span>  <span class="op">=</span> <span class="number">28</span>,
+	<span class="ident">SIGIO</span>     <span class="op">=</span> <span class="number">29</span>,
+	<span class="ident">SIGPWR</span>    <span class="op">=</span> <span class="number">30</span>,
+	<span class="ident">SIGSYS</span>    <span class="op">=</span> <span class="number">31</span>,
+	<span class="ident">SIGRTMIN</span>  <span class="op">=</span> <span class="number">32</span>
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">get_signal_type</span>(<span class="ident">nb</span>: <span class="ident">i32</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">SignalType</span>, ()<span class="op">&gt;</span> {
@@ -192,21 +198,22 @@
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Signal</span> {
-	<span class="kw">pub</span> <span class="ident">sender</span>: <span class="ident">Id</span>,
+	<span class="kw">pub</span> <span class="ident">sender</span>:  <span class="ident">Id</span>,
 	<span class="kw">pub</span> <span class="ident">sigtype</span>: <span class="ident">SignalType</span>,
-	<span class="kw">pub</span> <span class="ident">status</span>: <span class="ident">i32</span>
+	<span class="kw">pub</span> <span class="ident">status</span>:  <span class="ident">i32</span>
 }
 
 <span class="kw">impl</span> <span class="ident">Signal</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">pid</span>: <span class="ident">Id</span>, <span class="ident">sigtype</span>: <span class="ident">SignalType</span>, <span class="ident">status</span>: <span class="ident">i32</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> {
-			<span class="ident">sender</span>: <span class="ident">pid</span>,
-			<span class="ident">sigtype</span>: <span class="ident">sigtype</span>,
-			<span class="ident">status</span>: <span class="ident">status</span>
-		}
+		<span class="self">Self</span> { <span class="ident">sender</span>: <span class="ident">pid</span>, <span class="ident">sigtype</span>: <span class="ident">sigtype</span>, <span class="ident">status</span>: <span class="ident">status</span> }
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to_pid</span>(<span class="ident">pid</span>: <span class="ident">Id</span>, <span class="ident">sender_pid</span>: <span class="ident">Id</span>, <span class="ident">sigtype</span>: <span class="ident">SignalType</span>, <span class="ident">status</span>: <span class="ident">i32</span>) {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to_pid</span>(
+		<span class="ident">pid</span>: <span class="ident">Id</span>,
+		<span class="ident">sender_pid</span>: <span class="ident">Id</span>,
+		<span class="ident">sigtype</span>: <span class="ident">SignalType</span>,
+		<span class="ident">status</span>: <span class="ident">i32</span>
+	) {
 		<span class="kw">unsafe</span> {
 			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">MASTER_PROCESS</span>.<span class="ident">search_from_pid</span>(<span class="ident">pid</span>);
 			<span class="kw">if</span> <span class="op">!</span><span class="ident">res</span>.<span class="ident">is_ok</span>() {
@@ -217,7 +224,12 @@
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to_process</span>(<span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span>, <span class="ident">pid</span>: <span class="ident">Id</span>, <span class="ident">sigtype</span>: <span class="ident">SignalType</span>, <span class="ident">status</span>: <span class="ident">i32</span>) {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">send_to_process</span>(
+		<span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span>,
+		<span class="ident">pid</span>: <span class="ident">Id</span>,
+		<span class="ident">sigtype</span>: <span class="ident">SignalType</span>,
+		<span class="ident">status</span>: <span class="ident">i32</span>
+	) {
 		<span class="kw">let</span> <span class="ident">signal</span> <span class="op">=</span> <span class="ident"><span class="self">Self</span>::new</span>(<span class="ident">pid</span>, <span class="ident">sigtype</span>, <span class="ident">status</span>);
 		<span class="ident">process</span>.<span class="ident">signals</span>.<span class="ident">push</span>(<span class="ident">signal</span>);
 	}

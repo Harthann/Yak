@@ -176,18 +176,21 @@
 <span id="170">170</span>
 <span id="171">171</span>
 <span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::KHEAP</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vec::Vec</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">MemoryZone</span>, <span class="ident">Stack</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_WRITABLE</span>, <span class="ident">free_pages</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator::Box</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">free_pages</span>, <span class="ident">PAGE_WRITABLE</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">MemoryZone</span>, <span class="ident">Stack</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vec::Vec</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::KHEAP</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::task::TASKLIST</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::Id</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{<span class="ident">Signal</span>, <span class="ident">SignalType</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::Id</span>;
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">NEXT_PID</span>: <span class="ident">Id</span> <span class="op">=</span> <span class="number">0</span>;
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">MASTER_PROCESS</span>: <span class="ident">Process</span> <span class="op">=</span> <span class="ident">Process::new</span>();
@@ -203,27 +206,27 @@
 }
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Process</span> {
-	<span class="kw">pub</span> <span class="ident">pid</span>: <span class="ident">Pid</span>,
-	<span class="kw">pub</span> <span class="ident">status</span>: <span class="ident">Status</span>,
-	<span class="kw">pub</span> <span class="ident">parent</span>: <span class="kw-2">*mut</span> <span class="ident">Process</span>,
-	<span class="kw">pub</span> <span class="ident">childs</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Process</span><span class="op">&gt;</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">stack</span>: <span class="ident">MemoryZone</span>,
-	<span class="kw">pub</span> <span class="ident">heap</span>: <span class="ident">MemoryZone</span>,
+	<span class="kw">pub</span> <span class="ident">pid</span>:     <span class="ident">Pid</span>,
+	<span class="kw">pub</span> <span class="ident">status</span>:  <span class="ident">Status</span>,
+	<span class="kw">pub</span> <span class="ident">parent</span>:  <span class="kw-2">*mut</span> <span class="ident">Process</span>,
+	<span class="kw">pub</span> <span class="ident">childs</span>:  <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Process</span><span class="op">&gt;</span><span class="op">&gt;</span>,
+	<span class="kw">pub</span> <span class="ident">stack</span>:   <span class="ident">MemoryZone</span>,
+	<span class="kw">pub</span> <span class="ident">heap</span>:    <span class="ident">MemoryZone</span>,
 	<span class="kw">pub</span> <span class="ident">signals</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">Signal</span><span class="op">&gt;</span>,
-	<span class="kw">pub</span> <span class="ident">owner</span>: <span class="ident">Id</span>
+	<span class="kw">pub</span> <span class="ident">owner</span>:   <span class="ident">Id</span>
 }
 
 <span class="kw">impl</span> <span class="ident">Process</span> {
 	<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="self">Self</span> {
 		<span class="self">Self</span> {
-			<span class="ident">pid</span>: <span class="number">0</span>,
-			<span class="ident">status</span>: <span class="ident">Status::Disable</span>,
-			<span class="ident">parent</span>: <span class="ident">core::ptr::null_mut</span>(),
-			<span class="ident">childs</span>: <span class="ident">Vec::new</span>(),
-			<span class="ident">stack</span>: <span class="ident">MemoryZone::new</span>(),
-			<span class="ident">heap</span>: <span class="ident">MemoryZone::new</span>(),
+			<span class="ident">pid</span>:     <span class="number">0</span>,
+			<span class="ident">status</span>:  <span class="ident">Status::Disable</span>,
+			<span class="ident">parent</span>:  <span class="ident">core::ptr::null_mut</span>(),
+			<span class="ident">childs</span>:  <span class="ident">Vec::new</span>(),
+			<span class="ident">stack</span>:   <span class="ident">MemoryZone::new</span>(),
+			<span class="ident">heap</span>:    <span class="ident">MemoryZone::new</span>(),
 			<span class="ident">signals</span>: <span class="ident">Vec::new</span>(),
-			<span class="ident">owner</span>: <span class="number">0</span>
+			<span class="ident">owner</span>:   <span class="number">0</span>
 		}
 	}
 
@@ -247,14 +250,14 @@
 		<span class="prelude-val">Err</span>(())
 	}
 
-	<span class="comment">/* TODO: next_pid need to check overflow and if other pid is available */</span>
+	<span class="comment">// TODO: next_pid need to check overflow and if other pid is available</span>
 	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">parent</span>: <span class="kw-2">*mut</span> <span class="ident">Process</span>, <span class="ident">owner</span>: <span class="ident">Id</span>) {
 		<span class="self">self</span>.<span class="ident">pid</span> <span class="op">=</span> <span class="ident">NEXT_PID</span>;
 		<span class="self">self</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">Status::Run</span>;
 		<span class="self">self</span>.<span class="ident">parent</span> <span class="op">=</span> <span class="ident">parent</span>;
 		<span class="self">self</span>.<span class="ident">stack</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Stack</span><span class="op">&gt;</span><span class="ident">::init</span>(<span class="number">0x1000</span>, <span class="ident">PAGE_WRITABLE</span>, <span class="bool-val">false</span>);
 		<span class="self">self</span>.<span class="ident">heap</span> <span class="op">=</span> <span class="ident">KHEAP</span>;
-<span class="comment">//		self.heap = &lt;MemoryZone as Heap&gt;::init(0x1000, PAGE_WRITABLE, false, &amp;mut KALLOCATOR);</span>
+		<span class="comment">// 		self.heap = &lt;MemoryZone as Heap&gt;::init(0x1000, PAGE_WRITABLE, false, &amp;mut KALLOCATOR);</span>
 		<span class="self">self</span>.<span class="ident">owner</span> <span class="op">=</span> <span class="ident">owner</span>;
 		<span class="ident">NEXT_PID</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 	}
@@ -265,7 +268,7 @@
 		}
 		<span class="kw">let</span> <span class="ident">parent</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="self">self</span>.<span class="ident">parent</span>;
 		<span class="kw">while</span> <span class="self">self</span>.<span class="ident">childs</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
-			<span class="comment">/* TODO: DON&#39;T MOVE THREADS AND REMOVE THEM */</span>
+			<span class="comment">// TODO: DON&#39;T MOVE THREADS AND REMOVE THEM</span>
 			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">childs</span>.<span class="ident">pop</span>();
 			<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_none</span>() {
 				<span class="macro">todo!</span>();
@@ -274,7 +277,7 @@
 			<span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">parent</span>.<span class="ident">childs</span>.<span class="ident">len</span>();
 			<span class="ident">parent</span>.<span class="ident">childs</span>[<span class="ident">len</span> <span class="op">-</span> <span class="number">1</span>].<span class="ident">parent</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">parent</span>;
 		}
-		<span class="comment">/* Don&#39;t remove and wait for the parent process to do wait4() -&gt; Zombify */</span>
+		<span class="comment">// Don&#39;t remove and wait for the parent process to do wait4() -&gt; Zombify</span>
 		<span class="self">self</span>.<span class="ident">status</span> <span class="op">=</span> <span class="ident">Status::Zombie</span>;
 		<span class="ident">Signal::send_to_process</span>(<span class="ident">parent</span>, <span class="self">self</span>.<span class="ident">pid</span>, <span class="ident">SignalType::SIGCHLD</span>, <span class="ident">status</span>);
 		<span class="ident">free_pages</span>(<span class="self">self</span>.<span class="ident">stack</span>.<span class="ident">offset</span>, <span class="self">self</span>.<span class="ident">stack</span>.<span class="ident">size</span> <span class="op">/</span> <span class="number">0x1000</span>);
@@ -286,7 +289,7 @@
 		<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="ident">parent</span>.<span class="ident">childs</span>.<span class="ident">len</span>() {
 			<span class="kw">let</span> <span class="ident">ptr</span>: <span class="kw-2">*mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="ident">parent</span>.<span class="ident">childs</span>[<span class="ident">i</span>].<span class="ident">as_mut</span>();
 			<span class="kw">if</span> <span class="ident">ptr</span> <span class="op">==</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="self">self</span> {
-				<span class="kw">break</span> ;
+				<span class="kw">break</span>;
 			}
 			<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 		}
@@ -304,7 +307,10 @@
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get_signal_from_pid</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">pid</span>: <span class="ident">Id</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Signal</span>, ()<span class="op">&gt;</span> {
+	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get_signal_from_pid</span>(
+		<span class="kw-2">&amp;mut</span> <span class="self">self</span>,
+		<span class="ident">pid</span>: <span class="ident">Id</span>
+	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Signal</span>, ()<span class="op">&gt;</span> {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;
 		<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">signals</span>.<span class="ident">len</span>() {
 			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">signals</span>[<span class="ident">i</span>].<span class="ident">sender</span> <span class="op">==</span> <span class="ident">pid</span> {
@@ -337,7 +343,7 @@
 
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">get_signal_running_process</span>(<span class="ident">pid</span>: <span class="ident">Id</span>) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">Signal</span>, ()<span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="ident">process</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">get_running_process</span>();
-	<span class="kw">if</span> <span class="ident">pid</span> <span class="op">==</span> <span class="op">-</span><span class="number">1</span>  {
+	<span class="kw">if</span> <span class="ident">pid</span> <span class="op">==</span> <span class="op">-</span><span class="number">1</span> {
 		<span class="ident">process</span>.<span class="ident">get_signal</span>()
 	} <span class="kw">else</span> {
 		<span class="ident">process</span>.<span class="ident">get_signal_from_pid</span>(<span class="ident">pid</span>)
