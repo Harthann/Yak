@@ -2,15 +2,29 @@
 
 use core::arch::asm;
 
-use crate::{kprint, kprintln, hexdump, screenclear};
-use crate::io;
-use crate::string::String;
 use crate::memory::allocator;
+use crate::string::String;
+use crate::{hexdump, io, kprint, kprintln, screenclear};
 
 const NB_CMDS: usize = 11;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [reboot, halt, hexdump_parser, keymap, interrupt, clear, help, shutdown, jiffies, ps, time];
-const KNOWN_CMD: [&str; NB_CMDS]= ["reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown", "jiffies", "ps", "time"];
+pub static COMMANDS: [fn(&Command); NB_CMDS] = [
+	reboot,
+	halt,
+	hexdump_parser,
+	keymap,
+	interrupt,
+	clear,
+	help,
+	shutdown,
+	jiffies,
+	ps,
+	time
+];
+const KNOWN_CMD: [&str; NB_CMDS] = [
+	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
+	"jiffies", "ps", "time"
+];
 
 fn reboot(_: &Command) {
 	io::outb(0x64, 0xfe);
@@ -23,12 +37,14 @@ fn jiffies(_: &Command) {
 }
 
 fn time(_: &Command) {
-    unsafe {
-        crate::pic::pit::TIME_ELAPSED = crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
-        let second = (crate::pic::pit::TIME_ELAPSED / 1000.0) as u64;
-        let ms = ((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
-        crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
-    }
+	unsafe {
+		crate::pic::pit::TIME_ELAPSED =
+			crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
+		let second = (crate::pic::pit::TIME_ELAPSED / 1000.0) as u64;
+		let ms =
+			((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
+		crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
+	}
 }
 
 fn halt(_: &Command) {
@@ -53,7 +69,7 @@ fn shutdown(_: &Command) {
 }
 
 fn ps(_: &Command) {
-	unsafe{crate::proc::process::print_all_process()};
+	unsafe { crate::proc::process::print_all_process() };
 }
 
 fn hextou(string: &str) -> Option<usize> {
@@ -95,7 +111,7 @@ fn hexdump_parser(command: &Command) {
 	if count != 3 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: hexdump [addr] [size]");
-		return ;
+		return;
 	}
 
 	count = 0;
@@ -103,10 +119,12 @@ fn hexdump_parser(command: &Command) {
 		if iter.len() != 0 {
 			if count > 0 {
 				match atou(iter) {
-					Some(x)	=> args[count as usize - 1] = x,
-					_		=> {kprintln!("Invalid argument.");
-								kprintln!("Usage: hexdump [addr] [size]");
-								return ;}
+					Some(x) => args[count as usize - 1] = x,
+					_ => {
+						kprintln!("Invalid argument.");
+						kprintln!("Usage: hexdump [addr] [size]");
+						return;
+					}
 				}
 			}
 			count += 1;
@@ -115,7 +133,7 @@ fn hexdump_parser(command: &Command) {
 	hexdump!(args[0] as *const u8, args[1]);
 }
 
-use crate::keyboard::{KEYMAP, KEYMAP_US, KEYMAP_FR};
+use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
 fn keymap(command: &Command) {
 	let cmd = &command.command;
@@ -130,21 +148,21 @@ fn keymap(command: &Command) {
 	if count != 2 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: keymap {{us, fr}}");
-		return ;
+		return;
 	}
 
 	count = 0;
 	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
 		if count > 0 {
 			if iter == "us" {
-				unsafe {KEYMAP = &KEYMAP_US};
+				unsafe { KEYMAP = &KEYMAP_US };
 			} else if iter == "fr" {
-				unsafe {KEYMAP = &KEYMAP_FR};
+				unsafe { KEYMAP = &KEYMAP_FR };
 			} else {
 				kprintln!("Invalid argument.");
 				kprintln!("Usage: keymap {{us, fr}}");
 			}
-			return ;
+			return;
 		}
 		count += 1;
 	}
@@ -169,7 +187,7 @@ fn interrupt(command: &Command) {
 	if count != 2 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: int [nb]");
-		return ;
+		return;
 	}
 
 	count = 0;
@@ -177,10 +195,12 @@ fn interrupt(command: &Command) {
 		if iter.len() != 0 {
 			if count > 0 {
 				match atou(iter) {
-					Some(x)	=> arg = x,
-					_		=> {kprintln!("Invalid argument.");
-								kprintln!("Usage: int [nb]");
-								return ;}
+					Some(x) => arg = x,
+					_ => {
+						kprintln!("Invalid argument.");
+						kprintln!("Usage: int [nb]");
+						return;
+					}
 				}
 			}
 			count += 1;
@@ -189,9 +209,9 @@ fn interrupt(command: &Command) {
 	if arg > 255 {
 		kprintln!("Invalid argument.");
 		kprintln!("Usage: int [nb]");
-		return ;
+		return;
 	}
-	unsafe{int(arg as u8)};
+	unsafe { int(arg as u8) };
 }
 
 #[derive(Debug, Clone)]
@@ -201,9 +221,7 @@ pub struct Command {
 
 impl Command {
 	pub const fn new() -> Command {
-		Command {
-			command: String::new()
-		}
+		Command { command: String::new() }
 	}
 
 	fn append(&mut self, x: char) -> Result<(), allocator::AllocError> {
@@ -242,7 +260,11 @@ impl Command {
 		} else if charcode == '\n' {
 			match self.is_known() {
 				Some(x) => COMMANDS[x](&self),
-				_		=> {if self.command.len() != 0 {kprintln!("Unknown command. Type `help` to list available commands");}},
+				_ => {
+					if self.command.len() != 0 {
+						kprintln!("Unknown command. Type `help` to list available commands");
+					}
+				},
 			}
 			self.clear();
 			kprint!("$> ");

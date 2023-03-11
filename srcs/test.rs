@@ -1,6 +1,5 @@
-use crate::io;
 use crate::vga_buffer::color::Color;
-use crate::KTRACKER;
+use crate::{io, KTRACKER};
 
 #[cfg(test)]
 #[macro_export]
@@ -14,7 +13,7 @@ macro_rules! function {
 		name = &name[..name.len() - 3];
 		let split = name.split("::");
 		split.last().unwrap()
-	}}
+	}};
 }
 
 #[cfg(test)]
@@ -22,14 +21,13 @@ macro_rules! function {
 macro_rules! print_fn {
 	() => {
 		crate::kprint!("{:40}{}", crate::function!(), "");
-	}
+	};
 }
-
 
 pub fn leaks() -> bool {
 	unsafe {
-		KTRACKER.allocation != KTRACKER.freed ||
-		KTRACKER.allocated_bytes != KTRACKER.freed_bytes
+		KTRACKER.allocation != KTRACKER.freed
+			|| KTRACKER.allocated_bytes != KTRACKER.freed_bytes
 	}
 }
 
@@ -54,7 +52,8 @@ pub trait Testable {
 
 #[cfg(test)]
 impl<T> Testable for T
-where T: Fn(),
+where
+	T: Fn()
 {
 	fn run(&self) {
 		self();

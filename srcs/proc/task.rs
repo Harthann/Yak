@@ -1,32 +1,35 @@
-use core::ptr;
-use crate::utils::queue::Queue;
 use crate::interrupts::Registers;
-use crate::proc::wrapper_fn;
+use crate::memory::paging::{alloc_page, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
-use crate::memory::paging::{PAGE_WRITABLE, alloc_page};
+use crate::proc::wrapper_fn;
+use crate::utils::queue::Queue;
+use core::ptr;
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
 #[derive(Copy, Clone)]
 pub struct Task {
-	pub regs: Registers,
+	pub regs:    Registers,
 	pub process: *mut Process
 }
 
 impl Task {
 	pub const fn new() -> Self {
-		Self {
-			regs: Registers::new(),
-			process: ptr::null_mut()
-		}
+		Self { regs: Registers::new(), process: ptr::null_mut() }
 	}
 
-	pub unsafe extern "C" fn init(&mut self, flags: u32, page_dir: u32, process: *mut Process) {
+	pub unsafe extern "C" fn init(
+		&mut self,
+		flags: u32,
+		page_dir: u32,
+		process: *mut Process
+	) {
 		self.regs.eip = wrapper_fn as VirtAddr;
 		self.regs.eflags = flags;
 		self.regs.cr3 = page_dir;
 		self.process = process;
-		self.regs.esp = (*process).stack.offset + ((*process).stack.size - 4) as u32;
+		self.regs.esp =
+			(*process).stack.offset + ((*process).stack.size - 4) as u32;
 	}
 }
 
@@ -37,8 +40,8 @@ extern "C" {
 #[no_mangle]
 pub static mut STACK_TASK_SWITCH: VirtAddr = 0;
 
-use crate::proc::process::{Process, MASTER_PROCESS, NEXT_PID, Status};
-use crate::{KSTACK, KHEAP};
+use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
+use crate::{KHEAP, KSTACK};
 
 pub fn init_tasking() {
 	let mut task = Task::new();
@@ -68,7 +71,7 @@ pub fn init_tasking() {
 use crate::wrappers::{_cli, _rst};
 
 #[no_mangle]
-pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
+pub unsafe extern "C" fn next_task(regs: &mut Registers) -> ! {
 	_cli();
 	let mut task = TASKLIST.pop();
 	task.regs = *regs;
@@ -80,6 +83,6 @@ pub unsafe extern "C" fn next_task(regs: &mut Registers) -> !{
 	let mut regs = res.unwrap().regs;
 	_rst();
 	switch_task(&mut regs);
-	/* Never goes there */
+	// Never goes there
 	loop {}
 }

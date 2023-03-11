@@ -6,7 +6,7 @@ pub struct Queue<T> {
 
 impl<T> Queue<T> {
 	pub const fn new() -> Self {
-		Self {queue: Vec::new()}
+		Self { queue: Vec::new() }
 	}
 
 	pub fn len(&self) -> usize {

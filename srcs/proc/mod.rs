@@ -2,15 +2,15 @@
 
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
+use crate::wrappers::{_cli, _rst, _sti};
 use crate::VirtAddr;
-use crate::wrappers::{_cli, _sti, _rst};
 
-pub mod task;
 pub mod process;
 pub mod signal;
+pub mod task;
 
-use process::{Process, Pid, zombify_running_process};
-use task::{Task, TASKLIST, switch_task};
+use process::{zombify_running_process, Pid, Process};
+use task::{switch_task, Task, TASKLIST};
 
 pub type Id = i32;
 
@@ -25,14 +25,15 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	}
 	_rst();
 	switch_task(&res.as_ref().unwrap().regs);
-	/* Never goes there */
+	// Never goes there
 	loop {}
 }
 
 #[naked]
 #[no_mangle]
 pub unsafe extern "C" fn wrapper_fn() {
-	core::arch::asm!("
+	core::arch::asm!(
+		"
 	mov eax, [esp]
 	add esp, 4
 	call eax
@@ -41,13 +42,18 @@ pub unsafe extern "C" fn wrapper_fn() {
 	sub esp, 256
 	push eax
 	call _exit",
-	options(noreturn));
-	/* Never goes there */
+		options(noreturn)
+	);
+	// Never goes there
 }
 
-pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut args: ...) -> Pid {
+pub unsafe extern "C" fn exec_fn(
+	func: VirtAddr,
+	args_size: &Vec<usize>,
+	mut args: ...
+) -> Pid {
 	_cli();
-	let proc: Process =  Process::new();
+	let proc: Process = Process::new();
 	let res = TASKLIST.peek();
 	if res.is_none() {
 		todo!();
@@ -61,7 +67,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 	(*proc_ptr).init(&mut *parent, 0);
 	let mut new_task: Task = Task::new();
 	new_task.init(running_task.regs.eflags, running_task.regs.cr3, proc_ptr);
-	/* init_fn_task - Can't move to another function ??*/
+	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp -= sum as u32;
 	let mut nb = 0;
@@ -75,8 +81,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 					in("eax") args.arg::<u32>());
 				n -= 4;
 				nb += 4;
-			}
-			else if arg / 2 > 0 {
+			} else if arg / 2 > 0 {
 				core::arch::asm!("mov [{esp} + {nb}], ax",
 					esp = in(reg) new_task.regs.esp,
 					nb = in(reg) nb,
@@ -88,7 +93,7 @@ pub unsafe extern "C" fn exec_fn(func: VirtAddr, args_size: &Vec<usize>, mut arg
 			}
 		}
 	}
-	/* call function to wrapper_fn */
+	// call function to wrapper_fn
 	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,

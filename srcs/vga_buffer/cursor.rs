@@ -1,21 +1,16 @@
 use crate::io;
-use crate::vga_buffer::ColorCode;
-use crate::vga_buffer::BUFFER_WIDTH;
+use crate::vga_buffer::{ColorCode, BUFFER_WIDTH};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cursor {
-	x:	usize,
-	y:	usize,
+	x:          usize,
+	y:          usize,
 	color_code: ColorCode
 }
 
 impl Cursor {
 	pub const fn new(x: usize, y: usize, color_code: ColorCode) -> Cursor {
-		Cursor {
-				x: x,
-				y: y,
-				color_code: color_code
-		}
+		Cursor { x: x, y: y, color_code: color_code }
 	}
 
 	pub fn update(&self) {
