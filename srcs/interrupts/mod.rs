@@ -124,9 +124,6 @@ use crate::wrappers::{_cli, _rst};
 #[no_mangle]
 pub extern "C" fn exception_handler(reg: &mut Registers) {
 	_cli();
-	let mut esp: u32;
-	unsafe { core::arch::asm!("mov {}, esp", out(reg) esp) };
-	crate::kprintln!("stack addr in exception: {:#x}", esp);
 	unsafe {
 		let res = TASKLIST.peek();
 		if res.is_some() {

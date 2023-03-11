@@ -43,6 +43,7 @@ pub unsafe extern "C" fn wrapper_fn() {
 		"
 	mov eax, [esp]
 	add esp, 4
+	sti
 	call eax
 	mov ebx, eax
 	mov eax, 1 // exit

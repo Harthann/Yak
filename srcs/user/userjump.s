@@ -16,7 +16,9 @@ jump_usermode:; jump_usermode(func: VirtAddr)
 	push eax ; current esp
 	pushf ; eflags
 	push (4 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
+
 	push ebx ; func
+	sti
 	iret
 
 userfunc:

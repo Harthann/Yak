@@ -41,13 +41,14 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 		PAGE_WRITABLE | PAGE_USER,
 		false
 	);
-	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
 	parent.childs.push(Box::new(process));
 
 	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
 
 	new_task.process = process;
+
+	crate::kprintln!("where is my user stack: {:#x?}", process.stack.offset);
 
 	let pd_paddr: PhysAddr =
 		(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
@@ -149,13 +150,19 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 			| PAGE_USER
 	);
 
+	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
 	new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 	new_task.regs.esp -= 4;
+	crate::kprintln!(
+		"write at the addr: {:#x}",
+		process.stack.offset + process.stack.size as u32 - 4
+	);
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) USER_HEAP_ADDR);
 	new_task.regs.esp = USER_STACK_ADDR - 7;
+	crate::kprintln!("USER_HEAD_ADDR: {:#x?}", USER_HEAP_ADDR);
 	crate::kprintln!("USER_STACK_ADDR: {:#x?}", USER_STACK_ADDR);
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	TASKLIST.push(new_task);
@@ -172,7 +179,11 @@ pub fn test_user_page() {
 	}
 	let mut status: i32 = 0;
 	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
-	crate::kprintln!("ret: {}", ret);
+	crate::kprintln!("pid ret: {}", ret);
+	crate::kprintln!(
+		"status: {}",
+		crate::syscalls::exit::__WEXITSTATUS!(status)
+	);
 	// let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
 	// let funclen = userfunc_end as usize - userfunc as usize;
 	//

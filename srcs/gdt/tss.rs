@@ -63,7 +63,6 @@ pub struct Tss {
 // Field ssp is present in osdev Task State Switching tutorial
 // but not in the example shown higher
 // ssp: u32 */
-
 use crate::interrupts::Registers;
 
 pub static mut TSS: Tss = Tss::new();
@@ -79,7 +78,7 @@ pub fn init_tss(stack_addr: u32) {
 			(&TSS as *const Tss) as u32,
 			TSS.iopb as u32,
 			0x40,
-			0x89
+			0xe9
 		);
 	}
 }

@@ -164,7 +164,7 @@ pub extern "C" fn kinit() {
 	}
 
 	// Function to test and enter usermode
-	// 	user::test_user_page();
+	// user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
@@ -181,11 +181,7 @@ use crate::syscalls::signal::{sys_kill, sys_signal};
 fn handler(nb: i32) {
 	kprintln!("in handler: {}", nb);
 	unsafe {
-		core::arch::asm!(
-			"mov ebx, 8
-								mov eax, 1
-								int 0x80"
-		);
+		core::arch::asm!("mov ebx, 8", "mov eax, 1", "int 0x80");
 	}
 }
 
