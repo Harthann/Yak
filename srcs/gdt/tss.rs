@@ -58,16 +58,19 @@ pub struct Tss {
 
 	// Presented as reserved in Task State Switching tutorial
 	pub trap: u16,
-	pub iopb: u16 /* 	Field ssp is present in osdev Task State Switching tutorial
-	               * 	but not in the example shown higher
-	               * 	ssp:		u32 */
+	pub iopb: u16
 }
+// Field ssp is present in osdev Task State Switching tutorial
+// but not in the example shown higher
+// ssp: u32 */
+
+use crate::interrupts::Registers;
 
 pub static mut TSS: Tss = Tss::new();
 
 pub fn init_tss(stack_addr: u32) {
 	unsafe {
-		TSS.esp0 = stack_addr;
+		TSS.esp0 = stack_addr - core::mem::size_of::<Registers>() as u32;
 		TSS.ss0 = 0x18;
 		TSS.iopb = core::mem::size_of::<Tss>() as u16;
 		// Page directory entry for virt addr

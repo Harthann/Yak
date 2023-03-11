@@ -10,6 +10,8 @@ extern page_directory
 extern save_task
 extern schedule_task
 
+%define KSTACK_ADDR 0xffbfffff
+
 extern JIFFIES
 
 swap_task:
@@ -56,6 +58,8 @@ switch_task:
 	je .get_regs ; if cr3 is kernel don't swap
 
 	mov cr3, ebx
+	mov eax, KSTACK_ADDR; if swap reajust regs ptr
+	sub eax, regs_size
 
 	.get_regs:
 		mov edi, dword[eax + regs.edi]

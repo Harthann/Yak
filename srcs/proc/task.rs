@@ -186,6 +186,9 @@ unsafe fn do_signal(task: &mut Task) {
 #[no_mangle]
 pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
+	let mut esp: u32;
+	core::arch::asm!("mov {}, esp", out(reg) esp);
+	crate::kprintln!("esp: {:#x?}", esp);
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
 	crate::kprintln!("old_regs: {:#x?}", old_task.regs);
@@ -204,21 +207,16 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			crate::kprintln!("new_task pid: {}", (*new_task.process).pid);
-			let process: &mut Process = Process::get_running_process();
-			_rst();
-			core::ptr::copy(
-				(KSTACK_ADDR - 0xfff) as *const u8,
-				process.kernel_stack.offset as *mut u8,
-				0x1000
-			);
-			change_kernel_stack(process.kernel_stack.offset);
-			refresh_tlb!();
-			// 			TODO NOT WORKING
-			// 			/* Reload tss to get the new kernel stack */
-			// 			reload_tss!();
 			crate::kprintln!("new_regs: {:#x?}", new_task.regs);
-			// Put registers into the stack
+			// Copy registers to last bytes on kstack to target
+			core::ptr::copy(
+				&new_task.regs as *const _,
+				(((*new_task.process).kernel_stack.offset + 0xfff) - core::mem::size_of::<Registers>() as u32) as *mut _,
+				core::mem::size_of::<Registers>()
+			);
 			let regs: Registers = new_task.regs;
+			crate::kprintln!("switch_task !");
+			_rst();
 			switch_task(&regs);
 			// never goes there
 		}
