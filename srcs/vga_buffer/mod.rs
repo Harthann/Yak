@@ -125,6 +125,7 @@ impl Writer {
 					pos.0 += 1;
 				}
 				self.cursor.set_pos(pos.0, pos.1);
+                self.cursor.update();
 			}
 		}
 	}
