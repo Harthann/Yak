@@ -118,8 +118,8 @@ impl Writer {
 				}
 				let screenchar = ScreenChar {
 					ascii_code: code,
-					color_code: self.cursor.get_color_code() /* color_code: unsafe{ SCREENS.lock()[self.screen_index].cursor.get_color_code() }, */
-				};
+					color_code: self.cursor.get_color_code()
+                };
 				self.vga_buffer[pos.1][pos.0] = screenchar;
 				if byte != 0x08 {
 					pos.0 += 1;
@@ -150,7 +150,7 @@ impl Writer {
 		for i in 0..BUFFER_WIDTH {
 			let screenchar = ScreenChar {
 				ascii_code: 0x20,
-				color_code: ColorCode::new(Color::White, Color::Black) /* SCREENS.lock()[self.screen_index].cursor.get_color_code() */
+				color_code: ColorCode::new(Color::White, Color::Black)
 			};
 			self.vga_buffer[row][i] = screenchar;
 		}
@@ -179,8 +179,14 @@ impl Writer {
 		let mut screen_guard = SCREENS.lock();
 		// Should copy vga to current buffer index
 		self.cursor.disable();
+
+        screen_guard[self.screen_index].buffer.copy_from_slice(self.vga_buffer.as_mut()); 
+        screen_guard[self.screen_index].cursor = self.cursor;
+
 		self.screen_index = nb;
-        screen_guard[self.screen_index].buffer.swap_with_slice(&mut *self.vga_buffer);
+        self.vga_buffer.copy_from_slice(screen_guard[self.screen_index].buffer.as_mut()); 
+        self.cursor = screen_guard[self.screen_index].cursor;
+
 		self.cursor.update();
 		self.cursor.enable();
 		if self.cursor.get_pos() == (0, 0) {
@@ -190,7 +196,6 @@ impl Writer {
 
 	pub fn get_screen(&mut self) -> usize {
 		self.screen_index
-		// unsafe{ & mut SCREENS.lock()[self.screen_index] }
 	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
