@@ -189,23 +189,3 @@ impl Stack for MemoryZone {
 		stack
 	}
 }
-
-// kphys => physically contiguous
-pub fn init_heap(
-	offset: VirtAddr,
-	size: usize,
-	flags: u32,
-	kphys: bool,
-	allocator: &mut dyn AllocatorInit
-) -> MemoryZone {
-	<MemoryZone as Heap>::init_addr(offset, size, flags, kphys, allocator)
-}
-
-pub fn init_stack(
-	stack_top: VirtAddr,
-	size: usize,
-	flags: u32,
-	kphys: bool
-) -> MemoryZone {
-	<MemoryZone as Stack>::init_addr(stack_top, size, flags, kphys)
-}

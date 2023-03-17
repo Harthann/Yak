@@ -58,10 +58,11 @@ switch_task:
 	je .get_regs ; if cr3 is kernel don't swap
 
 	mov cr3, ebx
-	mov eax, KSTACK_ADDR; if swap reajust regs ptr
-	sub eax, regs_size
 
 	.get_regs:
+		mov eax, KSTACK_ADDR + 1; reajust ptr with kstack
+		sub eax, regs_size
+
 		mov edi, dword[eax + regs.edi]
 		mov esi, dword[eax + regs.esi]
 		mov ebp, dword[eax + regs.ebp]

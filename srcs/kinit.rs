@@ -139,7 +139,7 @@ pub extern "C" fn kinit() {
 		init_idt();
 	}
 
-	Task::init_multitasking(KSTACK_ADDR, STACK_ADDR, heap as u32);
+	Task::init_multitasking(STACK_ADDR, heap as u32);
 
 	gdt::tss::init_tss(KSTACK_ADDR);
 	reload_tss!();

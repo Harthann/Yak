@@ -1,15 +1,21 @@
 use core::ptr;
 
 use crate::interrupts::Registers;
-use crate::memory::{init_heap, init_stack, VirtAddr};
+use crate::memory::VirtAddr;
 use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
 use crate::proc::{change_kernel_stack, wrapper_fn};
 use crate::utils::queue::Queue;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
+use crate::memory::{MemoryZone, Stack, Heap};
+use crate::memory::paging::page_directory;
 
-use crate::memory::paging::PAGE_WRITABLE;
+use crate::memory::paging::{
+	PAGE_PRESENT,
+	PAGE_USER,
+	PAGE_WRITABLE
+};
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
@@ -50,7 +56,6 @@ impl Task {
 	}
 
 	pub fn init_multitasking(
-		kstack_addr: VirtAddr,
 		stack_addr: VirtAddr,
 		heap_addr: VirtAddr
 	) {
@@ -64,12 +69,11 @@ impl Task {
 			cr3 = out(reg) task.regs.cr3,
 			eflags = out(reg) task.regs.eflags);
 			MASTER_PROCESS.state = Status::Run;
-			crate::kprintln!("kstack_addr: {:#x?}", kstack_addr);
-			MASTER_PROCESS.kernel_stack =
-				init_stack(kstack_addr, 0x1000, PAGE_WRITABLE, false);
-			MASTER_PROCESS.stack =
-				init_stack(stack_addr, 0x1000, PAGE_WRITABLE, false);
-			MASTER_PROCESS.heap = init_heap(
+			// Don't setup kernel_stack at KSTACK_ADDR otherwise we will remove the pointer on every task switch
+			MASTER_PROCESS.kernel_stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
+			page_directory.claim_index_page_table((KSTACK_ADDR as usize >> 22), PAGE_WRITABLE | PAGE_PRESENT);
+			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(stack_addr, 0x1000, PAGE_WRITABLE, false);
+			MASTER_PROCESS.heap = <MemoryZone as Heap>::init_addr(
 				heap_addr,
 				100 * 0x1000,
 				PAGE_WRITABLE,
@@ -188,6 +192,7 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
+	crate::kprintln!("old_regs: {:#x?}", *regs);
 	TASKLIST.push(old_task);
 	_rst();
 }
@@ -204,7 +209,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to last bytes on kstack to target
 			let copy_regs: &mut Registers =
-				&mut *((((*new_task.process).kernel_stack.offset + 0xfff)
+				&mut *((((*new_task.process).kernel_stack.offset + 0x1000)
 					- core::mem::size_of::<Registers>() as u32) as *mut _);
 			*copy_regs = new_task.regs;
 			change_kernel_stack((*new_task.process).kernel_stack.offset);

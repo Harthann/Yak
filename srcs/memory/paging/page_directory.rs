@@ -217,7 +217,7 @@ impl PageDirectory {
 		Ok(())
 	}
 
-	fn claim_index_page_table(
+	pub fn claim_index_page_table(
 		&mut self,
 		index: usize,
 		flags: u32
