@@ -18,6 +18,8 @@ use crate::memory::allocator::Box;
 
 use crate::KSTACK_ADDR;
 
+use crate::gdt::KERNEL_BASE;
+
 extern "C" {
 	fn jump_usermode(func: VirtAddr);
 	fn userfunc();
@@ -50,9 +52,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	crate::kprintln!("where is my user stack: {:#x?}", process.stack.offset);
 
-	let pd_paddr: PhysAddr =
-		(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-	let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
+	let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory.get_page_table(768).get_vaddr());
+	crate::kprintln!("kernel_pt_paddr: {:#x}", kernel_pt_paddr);
 
 	// TODO: free those when process ends ?
 	let page_dir: &mut PageDirectory = PageDirectory::new();
@@ -62,34 +63,26 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	let process_kernel_stack: &mut PageTable = PageTable::new();
 	crate::kprintln!("kernel_pt_paddr: {:#x?}", kernel_pt_paddr);
 	// Reference page table
-	handler_page_tab.set_entry(
+	handler_page_tab.new_index_frame(
 		USER_HEAP_ADDR as usize >> 22,
-		get_paddr!(process_heap as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(process_heap as *const _),
+		PAGE_WRITABLE | PAGE_USER
 	);
-	handler_page_tab.set_entry(
+	handler_page_tab.new_index_frame(
 		USER_STACK_ADDR as usize >> 22,
-		get_paddr!(process_stack as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(process_stack as *const _),
+		PAGE_WRITABLE | PAGE_USER
 	);
-	handler_page_tab.set_entry(768, kernel_pt_paddr | PAGE_PRESENT | PAGE_USER);
-	handler_page_tab.set_entry(
+	handler_page_tab.new_index_frame(768, kernel_pt_paddr, PAGE_USER);
+	handler_page_tab.new_index_frame(
 		KSTACK_ADDR as usize >> 22,
-		get_paddr!(process_kernel_stack as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(process_kernel_stack as *const _),
+		PAGE_WRITABLE | PAGE_USER
 	);
-	handler_page_tab.set_entry(
+	handler_page_tab.new_index_frame(
 		1023,
-		get_paddr!(handler_page_tab as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(handler_page_tab as *const _),
+		PAGE_WRITABLE | PAGE_USER
 	);
 
 	// Setup heap + prg
@@ -128,26 +121,20 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	);
 
 	// Setup stack and heap
-	process_heap.set_entry(
+	process_heap.new_index_frame(
 		(USER_HEAP_ADDR as usize & 0x3ff000) >> 12,
-		get_paddr!(process.heap.offset)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(process.heap.offset),
+		PAGE_WRITABLE | PAGE_USER
 	);
-	process_stack.set_entry(
+	process_stack.new_index_frame(
 		(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
-		get_paddr!(process.stack.offset)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(process.stack.offset),
+		PAGE_WRITABLE | PAGE_USER
 	);
-	process_kernel_stack.set_entry(
+	process_kernel_stack.new_index_frame(
 		(KSTACK_ADDR as usize & 0x3ff000) >> 12,
-		get_paddr!(process.kernel_stack.offset)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
+		get_paddr!(process.kernel_stack.offset),
+		PAGE_WRITABLE | PAGE_USER
 	);
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
