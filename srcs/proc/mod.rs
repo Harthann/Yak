@@ -5,7 +5,7 @@ use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
 
-use crate::memory::paging::{PAGE_PRESENT, PAGE_WRITABLE, PAGE_GLOBAL, PAGE_USER};
+use crate::memory::paging::{PAGE_WRITABLE, PAGE_GLOBAL};
 
 use crate::memory::paging::page_directory;
 
@@ -42,9 +42,10 @@ pub unsafe extern "C" fn wrapper_fn() {
 	add esp, 4
 	sti
 	call eax
-	mov ebx, eax
-	mov eax, 1 // exit
-	int 0x80",
+	cli
+	mov esp, 0xffc00000
+	push eax
+	call _exit",
 		options(noreturn)
 	);
 	// Never goes there
@@ -132,9 +133,7 @@ macro_rules! exec_fn {
 #[inline(always)]
 pub fn change_kernel_stack(addr: VirtAddr) {
 	unsafe {
-		let mut page_table = page_directory.get_page_table((KSTACK_ADDR >> 22) as usize);
-//		crate::kprintln!("lol: {}", page_table.entries[((KSTACK_ADDR as usize & 0x3ff000) as usize) >> 12]);
-		page_table.new_index_frame(
+		page_directory.get_page_table((KSTACK_ADDR >> 22) as usize).new_index_frame(
 			((KSTACK_ADDR & 0x3ff000) as usize) >> 12,
 			get_paddr!(addr),
 			PAGE_WRITABLE | PAGE_GLOBAL

@@ -18,8 +18,6 @@ use crate::memory::allocator::Box;
 
 use crate::KSTACK_ADDR;
 
-use crate::gdt::KERNEL_BASE;
-
 extern "C" {
 	fn jump_usermode(func: VirtAddr);
 	fn userfunc();

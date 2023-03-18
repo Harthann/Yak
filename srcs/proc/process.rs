@@ -95,7 +95,6 @@ impl Process {
 
 	pub fn setup_stack(&mut self, size: usize, flags: u32, kphys: bool) {
 		self.stack = <MemoryZone as Stack>::init(size, flags, kphys);
-		crate::kprintln!("process stack: {:#x?}", self.stack.offset);
 	}
 
 	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
@@ -104,10 +103,6 @@ impl Process {
 
 	pub fn setup_kernel_stack(&mut self, size: usize, flags: u32, kphys: bool) {
 		self.kernel_stack = <MemoryZone as Stack>::init(size, flags, kphys);
-		crate::kprintln!(
-			"process kernel_stack: {:#x?}",
-			self.kernel_stack.offset
-		);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
@@ -141,9 +136,6 @@ impl Process {
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
 		self.state = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
-		free_pages(self.stack.offset, self.stack.size / 0x1000);
-		free_pages(self.heap.offset, self.heap.size / 0x1000);
-		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
 	}
 
 	pub unsafe fn remove(&mut self) {
@@ -159,6 +151,9 @@ impl Process {
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
+		free_pages(self.stack.offset, self.stack.size / 0x1000);
+		free_pages(self.heap.offset, self.heap.size / 0x1000);
+		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
 		parent.childs.remove(i);
 	}
 

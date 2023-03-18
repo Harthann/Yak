@@ -35,7 +35,6 @@ pub fn init_paging() {
 
 		// Init paging map
 		let kernel_pt_paddr: PhysAddr = bitmap::physmap_as_mut().get_page().unwrap();
-		crate::kprintln!("kernel_pt_paddr: {:#x}", kernel_pt_paddr);
 		let handler_pt_paddr: PhysAddr = bitmap::physmap_as_mut().get_page().unwrap();
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);

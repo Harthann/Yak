@@ -1,5 +1,5 @@
 use crate::proc::process::Process;
-use crate::syscalls::exit::sys_waitpid;
+use crate::syscalls::exit::{sys_waitpid, sys_exit};
 use crate::syscalls::signal::{sys_kill, sys_signal};
 use crate::syscalls::timer::{sys_getpid, sys_getppid};
 use crate::{exec_fn, print_fn};
@@ -149,9 +149,7 @@ fn test_sigkill() {
 }
 
 fn handler(_sig_no: i32) {
-	unsafe {
-		core::arch::asm!("mov ebx, 8", "mov eax, 1", "int 0x80");
-	}
+	sys_exit(42);
 }
 
 fn sub_fn() {
@@ -171,7 +169,7 @@ fn test_simple_signal() {
 		assert_eq!(res, 0);
 		sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(__WIFEXITED!(wstatus), true);
-		assert_eq!(__WEXITSTATUS!(wstatus), 8);
+		assert_eq!(__WEXITSTATUS!(wstatus), 42);
 		assert_eq!(Process::get_nb_process(), 1);
 	}
 }
