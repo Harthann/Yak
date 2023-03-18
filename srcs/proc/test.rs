@@ -1,5 +1,5 @@
 use crate::proc::process::Process;
-use crate::syscalls::exit::{sys_waitpid, sys_exit};
+use crate::syscalls::exit::{sys_exit, sys_waitpid};
 use crate::syscalls::signal::{sys_kill, sys_signal};
 use crate::syscalls::timer::{sys_getpid, sys_getppid};
 use crate::{exec_fn, print_fn};

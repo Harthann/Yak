@@ -5,7 +5,7 @@ use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
 
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_GLOBAL};
+use crate::memory::paging::{PAGE_GLOBAL, PAGE_WRITABLE};
 
 use crate::memory::paging::page_directory;
 
@@ -133,11 +133,13 @@ macro_rules! exec_fn {
 #[inline(always)]
 pub fn change_kernel_stack(addr: VirtAddr) {
 	unsafe {
-		page_directory.get_page_table((KSTACK_ADDR >> 22) as usize).new_index_frame(
-			((KSTACK_ADDR & 0x3ff000) as usize) >> 12,
-			get_paddr!(addr),
-			PAGE_WRITABLE | PAGE_GLOBAL
-		);
+		page_directory
+			.get_page_table((KSTACK_ADDR >> 22) as usize)
+			.new_index_frame(
+				((KSTACK_ADDR & 0x3ff000) as usize) >> 12,
+				get_paddr!(addr),
+				PAGE_WRITABLE | PAGE_GLOBAL
+			);
 		refresh_tlb!();
 	}
 }
