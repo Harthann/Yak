@@ -2,6 +2,17 @@ use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
 use crate::{kprint, kprintln, string};
 
+use crate::wrappers::{hlt, cli, sti};
+pub fn sleep(microseconds: usize) {
+    unsafe {
+    let tmp = crate::pic::JIFFIES;
+    while crate::pic::JIFFIES != tmp + microseconds {
+        sti!();
+        hlt!();
+        cli!();
+    }
+    }
+}
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
