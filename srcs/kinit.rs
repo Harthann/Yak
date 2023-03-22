@@ -87,6 +87,7 @@ mod wrappers;
 mod errno;
 mod spin;
 mod utils;
+mod sound;
 
 #[cfg(test)]
 mod test;
@@ -150,12 +151,9 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
-	pic::set_pit(
-		pic::pit::CHANNEL_0,
-		pic::pit::ACC_LOBHIB,
-		pic::pit::MODE_2,
-		0x0fff
-	);
+    // This setup should be done using frequency, but for readability and ease of use, this is done
+    // with time between each interrupt in ms.
+    pic::set_irq0_in_ms(1.0);
 
 	// Reserve some spaces to push things before main
 	unsafe {
