@@ -74,7 +74,7 @@ doc:
 				cargo doc $(ARGS_CARGO) --open
 
 boot:			$(NAME)
-				$(RUN_PREFIX) $(QEMU) -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display curses 2> qemu.log $(RUN_SUFFIX)
+				$(RUN_PREFIX) $(QEMU) -soundhw pcspk -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display curses 2> qemu.log $(RUN_SUFFIX)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
