@@ -1,5 +1,4 @@
-use crate::proc::change_kernel_stack;
-use crate::proc::process::{Pid, Process, MASTER_PROCESS};
+use crate::proc::process::{Pid, Process};
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::task::{Task, TaskStatus};
 
@@ -95,9 +94,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 }
 
 pub fn sys_exit(status: i32) -> ! {
-	crate::kprintln!("exit !");
 	unsafe {
-		change_kernel_stack(MASTER_PROCESS.stack.offset);
 		core::arch::asm!(
 		"mov eax, {status}",
 		"mov esp, {kstack}",

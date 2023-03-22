@@ -23,7 +23,6 @@ pub unsafe fn update_gdtr() {
 	gdtr.offset = (gdt_start as usize + KERNEL_BASE) as u32;
 }
 
-#[derive(Debug)]
 pub struct SegmentDescriptor {
 	limit:       u16,
 	base:        [u8; 3],

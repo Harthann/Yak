@@ -1,15 +1,20 @@
 use core::ptr;
 
 use crate::interrupts::Registers;
-use crate::memory::{init_heap, init_stack, VirtAddr};
+use crate::memory::VirtAddr;
 use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
-use crate::proc::{change_kernel_stack, wrapper_fn};
+use crate::proc::{wrapper_fn};
 use crate::utils::queue::Queue;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
+use crate::memory::{MemoryZone, Stack, Heap};
+use crate::memory::paging::page_directory;
 
-use crate::memory::paging::PAGE_WRITABLE;
+use crate::memory::paging::{
+	PAGE_WRITABLE,
+	PAGE_GLOBAL
+};
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
@@ -50,7 +55,6 @@ impl Task {
 	}
 
 	pub fn init_multitasking(
-		kstack_addr: VirtAddr,
 		stack_addr: VirtAddr,
 		heap_addr: VirtAddr
 	) {
@@ -64,12 +68,17 @@ impl Task {
 			cr3 = out(reg) task.regs.cr3,
 			eflags = out(reg) task.regs.eflags);
 			MASTER_PROCESS.state = Status::Run;
-			crate::kprintln!("kstack_addr: {:#x?}", kstack_addr);
-			MASTER_PROCESS.kernel_stack =
-				init_stack(kstack_addr, 0x1000, PAGE_WRITABLE, false);
-			MASTER_PROCESS.stack =
-				init_stack(stack_addr, 0x1000, PAGE_WRITABLE, false);
-			MASTER_PROCESS.heap = init_heap(
+			MASTER_PROCESS.kernel_stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
+			page_directory.claim_index_page_table(KSTACK_ADDR as usize >> 22, PAGE_WRITABLE | PAGE_GLOBAL);
+			page_directory.get_page_table(KSTACK_ADDR as usize >> 22).
+				new_index_frame(
+					(KSTACK_ADDR as usize & 0x3ff000) >> 12,
+					get_paddr!(MASTER_PROCESS.kernel_stack.offset),
+					PAGE_WRITABLE
+				);
+			refresh_tlb!();
+			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(stack_addr, 0x1000, PAGE_WRITABLE, false);
+			MASTER_PROCESS.heap = <MemoryZone as Heap>::init_addr(
 				heap_addr,
 				100 * 0x1000,
 				PAGE_WRITABLE,
@@ -133,10 +142,8 @@ unsafe fn _end_handler() {
 	task.regs = *regs;
 	task.regs.esp += core::mem::size_of::<Task>() as u32;
 	task.state = TaskStatus::Running;
-	change_kernel_stack(Process::get_running_process().kernel_stack.offset);
 	_rst();
-	crate::kprintln!("end_handler");
-	switch_task(&task.regs);
+	schedule_task();
 }
 
 unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
@@ -153,10 +160,8 @@ unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
 		esp = in(reg) task.regs.esp,
 		in("eax") handler.handler);
 	task.regs.eip = wrapper_handler as u32;
-	change_kernel_stack(Process::get_running_process().kernel_stack.offset);
 	_rst();
-	crate::kprintln!("handle_signal");
-	switch_task(&task.regs);
+	schedule_task();
 }
 
 unsafe fn do_signal(task: &mut Task) {
@@ -192,6 +197,8 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_rst();
 }
 
+use crate::proc::change_kernel_stack;
+
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
@@ -203,14 +210,13 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to last bytes on kstack to target
-			let mut copy_regs: &mut Registers =
-				&mut *((((*new_task.process).kernel_stack.offset + 0xfff)
+			let copy_regs: &mut Registers =
+				&mut *((((*new_task.process).kernel_stack.offset + 0x1000)
 					- core::mem::size_of::<Registers>() as u32) as *mut _);
 			*copy_regs = new_task.regs;
-			change_kernel_stack((*new_task.process).kernel_stack.offset);
-			let regs: Registers = new_task.regs;
 			_rst();
-			switch_task(&regs);
+			change_kernel_stack((*new_task.process).kernel_stack.offset);
+			switch_task((KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32) as *mut _);
 			// never goes there
 		}
 		let skipped_task: Task = TASKLIST.pop();

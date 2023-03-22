@@ -27,9 +27,32 @@ swap_task:
 	mov eax, page_directory - KERNEL_BASE
 	mov ebx, cr3
 	cmp eax, ebx
-	je .jiffies ; if cr3 is kernel don't swap
+	je .get_kernel_kstack ; if cr3 is kernel don't swap
 
 	mov cr3, eax
+	jmp .jiffies
+
+	.get_kernel_kstack
+	mov eax, esp
+	mov esp, KSTACK_ADDR + 1
+
+	push dword[eax + regs.ss]
+	push dword[eax + regs.useresp]
+	push dword[eax + regs.eflags]
+	push dword[eax + regs.cs]
+	push dword[eax + regs.eip]
+	push dword[eax + regs.err_code]
+	push dword[eax + regs.int_no]
+	push dword[eax + regs.eax]
+	push dword[eax + regs.ecx]
+	push dword[eax + regs.edx]
+	push dword[eax + regs.ebx]
+	push dword[eax + regs.esp]
+	push dword[eax + regs.ebp]
+	push dword[eax + regs.esi]
+	push dword[eax + regs.edi]
+	push dword[eax + regs.cr3]
+	push dword[eax + regs.ds]
 
 	.jiffies:
 	add dword[JIFFIES], 1
@@ -58,10 +81,11 @@ switch_task:
 	je .get_regs ; if cr3 is kernel don't swap
 
 	mov cr3, ebx
-	mov eax, KSTACK_ADDR; if swap reajust regs ptr
-	sub eax, regs_size
 
 	.get_regs:
+		mov eax, KSTACK_ADDR + 1; reajust ptr with kstack
+		sub eax, regs_size
+
 		mov edi, dword[eax + regs.edi]
 		mov esi, dword[eax + regs.esi]
 		mov ebp, dword[eax + regs.ebp]

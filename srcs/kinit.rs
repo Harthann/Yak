@@ -127,10 +127,12 @@ const STACK_ADDR: VirtAddr = 0xffafffff;
 // Kernel initialisation
 #[no_mangle]
 pub extern "C" fn kinit() {
-	unsafe { cli!() };
-	// 	multiboot::read_tags();
+	crate::wrappers::_cli();
+
+	// multiboot::read_tags();
 	// Init paging and remove identity paging
 	init_paging();
+
 	// Update gdtr with higher half kernel gdt addr
 	unsafe {
 		update_gdtr();
@@ -138,7 +140,7 @@ pub extern "C" fn kinit() {
 		init_idt();
 	}
 
-	Task::init_multitasking(KSTACK_ADDR, STACK_ADDR, heap as u32);
+	Task::init_multitasking(STACK_ADDR, heap as u32);
 
 	gdt::tss::init_tss(KSTACK_ADDR);
 	reload_tss!();
@@ -156,10 +158,8 @@ pub extern "C" fn kinit() {
     pic::set_irq0_in_ms(1.0);
 
 	// Reserve some spaces to push things before main
-	unsafe {
-		core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256);
-		sti!();
-	}
+	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };
+	crate::wrappers::_sti();
 
 	// Function to test and enter usermode
 	// user::test_user_page();

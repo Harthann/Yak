@@ -217,21 +217,19 @@ impl PageDirectory {
 		Ok(())
 	}
 
-	fn claim_index_page_table(
+	pub fn claim_index_page_table(
 		&mut self,
 		index: usize,
 		flags: u32
 	) -> Result<usize, ()> {
 		unsafe {
-			let pd_paddr: PhysAddr =
-				(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
-			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
-			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+			let paddr: PhysAddr = bitmap::physmap_as_mut().get_page()?;
+			let page_tab: &mut PageTable = self.get_page_table(1023);
+			page_tab.set_entry(index, paddr | PAGE_WRITABLE | PAGE_PRESENT);
 			refresh_tlb!();
-			let new: &mut PageTable = page_directory.get_page_table(index);
+			let new: &mut PageTable = self.get_page_table(index);
 			new.clear();
-			self.entries[index] = (pt_paddr | flags | PAGE_PRESENT).into();
+			self.entries[index] = (paddr | flags | PAGE_PRESENT).into();
 			refresh_tlb!();
 			Ok(index)
 		}
@@ -360,7 +358,9 @@ impl PageDirectory {
 			if self.entries[index].get_present() == 1 {
 				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
+				bitmap::physmap_as_mut().free_page(self.entries[index].get_paddr());
 				self.entries[index] = (0x00000002 as u32).into();
+				self.get_page_table(1023).entries[index];
 				refresh_tlb!();
 				return Ok(());
 			} else {

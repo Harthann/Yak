@@ -34,8 +34,8 @@ pub fn init_paging() {
 			.claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		// Init paging map
-		let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
-		let handler_pt_paddr: PhysAddr = pd_paddr + (1023 + 1) * 0x1000;
+		let kernel_pt_paddr: PhysAddr = bitmap::physmap_as_mut().get_page().unwrap();
+		let handler_pt_paddr: PhysAddr = bitmap::physmap_as_mut().get_page().unwrap();
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab
