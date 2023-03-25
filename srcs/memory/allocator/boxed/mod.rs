@@ -40,8 +40,8 @@ impl<T> Box<T> {
 	}
 
 	pub const unsafe fn from_raw(x: *mut T) -> Box<T, KGlobal> {
-        Box::<T, KGlobal>::from_raw_in(x, KGlobal)
-    }
+		Box::<T, KGlobal>::from_raw_in(x, KGlobal)
+	}
 }
 
 impl<T, A: Allocator> Box<T, A> {
@@ -80,13 +80,13 @@ impl<T, A: Allocator> Box<T, A> {
 		}
 	}
 
-    pub const unsafe fn from_raw_in(x: *mut T, alloc: A) -> Box<T, A> {
-        Box {
-            ptr:    NonNull::new_unchecked(x as *mut _),
-            alloc:  alloc,
-            layout: Layout::new::<T>()
-        }
-    }
+	pub const unsafe fn from_raw_in(x: *mut T, alloc: A) -> Box<T, A> {
+		Box {
+			ptr:    NonNull::new_unchecked(x as *mut _),
+			alloc:  alloc,
+			layout: Layout::new::<T>()
+		}
+	}
 
 	pub fn write(mut boxed: Self, value: T) -> Box<T, A> {
 		*boxed = value;

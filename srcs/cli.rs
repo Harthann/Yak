@@ -249,20 +249,20 @@ impl Command {
 	}
 
 	pub fn handle(&mut self, charcode: char) {
-        if charcode == '\x08' { 
-            if self.command.len() != 0 {
-                crate::vga_buffer::WRITER.lock().write_byte(0x08);
-            }
+		if charcode == '\x08' {
+			if self.command.len() != 0 {
+				crate::vga_buffer::WRITER.lock().write_byte(0x08);
+			}
 			self.command.pop();
-        } else if charcode >= ' ' && charcode <= '~' {
-		    crate::kprint!("{}", charcode);
+		} else if charcode >= ' ' && charcode <= '~' {
+			crate::kprint!("{}", charcode);
 			if self.append(charcode).is_err() {
 				kprintln!("Can't handle longer command, clearing buffer");
 				kprint!("$> ");
 				self.clear();
 			}
 		} else if charcode == '\n' {
-		    crate::kprint!("{}", charcode);
+			crate::kprint!("{}", charcode);
 			match self.is_known() {
 				Some(x) => COMMANDS[x](&self),
 				_ => {

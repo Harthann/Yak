@@ -142,8 +142,9 @@ pub fn handle_event() -> char {
 		&& charcode <= ('0' as u8 + NB_SCREEN as u8) as char
 		&& getflag!(SpecialKeyFlag::Ctrl)
 	{
-	    vga_buffer::WRITER.lock()
-	    	.change_screen((charcode as usize - '0' as usize - 1) as usize);
+		vga_buffer::WRITER
+			.lock()
+			.change_screen((charcode as usize - '0' as usize - 1) as usize);
 		return '\0';
 	} else if charcode == '\0' {
 		let special_keys: &SpecialKeys = unsafe { &KEYMAP.special_keys };

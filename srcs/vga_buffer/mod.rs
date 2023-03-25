@@ -9,8 +9,8 @@ use color::{Color, ColorCode};
 mod cursor;
 use cursor::Cursor;
 
-use crate::spin::Mutex;
 use crate::memory::allocator::Box;
+use crate::spin::Mutex;
 
 #[derive(Debug, Clone)]
 pub struct Screen {
@@ -30,10 +30,9 @@ impl Screen {
 				ColorCode::new(Color::White, Color::Black)
 			),
 			buffer:  [[ScreenChar {
-			        ascii_code: 0,
-				    color_code: ColorCode::new(Color::White, Color::Black)
-			        }; BUFFER_WIDTH];
-            BUFFER_HEIGHT],
+				ascii_code: 0,
+				color_code: ColorCode::new(Color::White, Color::Black)
+			}; BUFFER_WIDTH]; BUFFER_HEIGHT],
 			command: Command::new()
 		}
 	}
@@ -73,23 +72,16 @@ pub static SCREENS: Mutex<[Screen; NB_SCREEN], true> =
 
 type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
-pub static WRITER: Mutex<Writer, true> =
-	Mutex::<Writer, true>::new(Writer {
-		screen_index: 0,
-		cursor:       Cursor::new(
-			0,
-			0,
-			ColorCode::new(Color::White, Color::Black)
-		),
-		vga_buffer: unsafe {
-            Box::<Buffer>::from_raw(VGABUFF_OFFSET as *mut _)
-        }
-	});
+pub static WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
+	screen_index: 0,
+	cursor:       Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
+	vga_buffer:   unsafe { Box::<Buffer>::from_raw(VGABUFF_OFFSET as *mut _) }
+});
 
 pub struct Writer {
 	screen_index: usize,
 	cursor:       Cursor,
-	vga_buffer:   Box::<Buffer>
+	vga_buffer:   Box<Buffer>
 }
 
 unsafe impl Send for Writer {}
@@ -114,18 +106,18 @@ impl Writer {
 					code = 0x0;
 				} else if pos.0 >= BUFFER_WIDTH {
 					self.new_line();
-                    pos = self.cursor.get_pos();
+					pos = self.cursor.get_pos();
 				}
 				let screenchar = ScreenChar {
 					ascii_code: code,
 					color_code: self.cursor.get_color_code()
-                };
+				};
 				self.vga_buffer[pos.1][pos.0] = screenchar;
 				if byte != 0x08 {
 					pos.0 += 1;
 				}
 				self.cursor.set_pos(pos.0, pos.1);
-                self.cursor.update();
+				self.cursor.update();
 			}
 		}
 	}
@@ -180,12 +172,15 @@ impl Writer {
 		// Should copy vga to current buffer index
 		self.cursor.disable();
 
-        screen_guard[self.screen_index].buffer.copy_from_slice(self.vga_buffer.as_mut()); 
-        screen_guard[self.screen_index].cursor = self.cursor;
+		screen_guard[self.screen_index]
+			.buffer
+			.copy_from_slice(self.vga_buffer.as_mut());
+		screen_guard[self.screen_index].cursor = self.cursor;
 
 		self.screen_index = nb;
-        self.vga_buffer.copy_from_slice(screen_guard[self.screen_index].buffer.as_mut()); 
-        self.cursor = screen_guard[self.screen_index].cursor;
+		self.vga_buffer
+			.copy_from_slice(screen_guard[self.screen_index].buffer.as_mut());
+		self.cursor = screen_guard[self.screen_index].cursor;
 
 		self.cursor.update();
 		self.cursor.enable();
@@ -231,9 +226,13 @@ macro_rules! kprintln {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	WRITER.lock().chcolor(ColorCode::new(Color::Red, Color::Black));
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("{}", info);
-	WRITER.lock().chcolor(ColorCode::new(Color::White, Color::Black));
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::White, Color::Black));
 	loop {}
 }
 
@@ -259,7 +258,7 @@ fn panic(info: &PanicInfo) -> ! {
 use core::fmt::Write;
 
 pub fn _print(args: fmt::Arguments) {
-    WRITER.lock().write_fmt(args).unwrap();
+	WRITER.lock().write_fmt(args).unwrap();
 }
 
 #[macro_export]
@@ -305,9 +304,9 @@ pub fn hexdump(ptr: *const u8, size: usize) {
 #[macro_export]
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => {
-	$crate::vga_buffer::WRITER
-        .lock()
-		.chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
+		$crate::vga_buffer::WRITER
+			.lock()
+			.chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
 	};
 }
 
@@ -317,8 +316,8 @@ macro_rules! clihandle {
 		unsafe {
 			let screen_number = crate::vga_buffer::WRITER.lock().get_screen();
 			crate::vga_buffer::SCREENS.lock()[screen_number]
-                                      .get_command()
-                                      .handle($arg);
+				.get_command()
+				.handle($arg);
 		}
 	};
 }
