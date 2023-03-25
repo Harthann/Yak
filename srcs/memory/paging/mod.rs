@@ -13,8 +13,10 @@ extern "C" {
 use page_directory::PageDirectory;
 use page_table::PageTable;
 
-pub const PAGE_WRITABLE: u32 = 0b10;
+pub const PAGE_GLOBAL: u32 = 0b100000000;
 pub const PAGE_USER: u32 = 0b100;
+pub const PAGE_WRITABLE: u32 = 0b10;
+pub const PAGE_PRESENT: u32 = 0b1;
 
 // Initiliaze the paging:
 // - setup a page_table at the index 768 containing kernel code paddrs and
@@ -32,32 +34,51 @@ pub fn init_paging() {
 			.claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		// Init paging map
-		let kernel_pt_paddr: PhysAddr = pd_paddr + (768 + 1) * 0x1000;
-		let handler_pt_paddr: PhysAddr = pd_paddr + (1023 + 1) * 0x1000;
+		let kernel_pt_paddr: PhysAddr =
+			bitmap::physmap_as_mut().get_page().unwrap();
+		let handler_pt_paddr: PhysAddr =
+			bitmap::physmap_as_mut().get_page().unwrap();
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
-		init_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
-		init_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
-		crate::refresh_tlb!();
+		init_page_tab
+			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		init_page_tab
+			.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		refresh_tlb!();
 
+		// Setup handler page table
 		let kernel_page_tab: &mut PageTable =
-			&mut *(crate::get_vaddr!(0, 768) as *mut _);
+			&mut *(get_vaddr!(0, 768) as *mut _);
 		let mut handler_page_tab: &mut PageTable =
-			&mut *(crate::get_vaddr!(0, 1023) as *mut _);
+			&mut *(get_vaddr!(0, 1023) as *mut _);
 		kernel_page_tab.init();
-		handler_page_tab.set_entry(0, init_pt_paddr | PAGE_WRITABLE | 1);
-		handler_page_tab.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
-		handler_page_tab.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
-		page_directory.set_entry(0, 2);
-		page_directory.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | 1);
-		page_directory.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | 1);
-		crate::refresh_tlb!();
+		handler_page_tab
+			.set_entry(0, init_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		handler_page_tab.set_entry(
+			768,
+			kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		handler_page_tab.set_entry(
+			1023,
+			handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		page_directory.set_entry(0, 0);
+		page_directory.set_entry(
+			768,
+			kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		page_directory.set_entry(
+			1023,
+			handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
+		);
+		refresh_tlb!();
 
+		// Remove init page
 		init_page_tab = page_directory.get_page_table(0);
 		handler_page_tab = page_directory.get_page_table(1023);
 		init_page_tab.clear();
 		handler_page_tab.set_entry(0, 0);
-		crate::refresh_tlb!();
+		refresh_tlb!();
 	}
 }
 
@@ -107,18 +128,16 @@ pub fn free_page(vaddr: VirtAddr) {
 	unsafe { page_directory.remove_page_frame(vaddr) };
 }
 
-#[macro_export]
 macro_rules! get_paddr {
 	($vaddr:expr) => {
-		page_directory
-			.get_page_table((($vaddr as usize) & 0xffc00000) >> 22)
+		crate::memory::paging::page_directory
+			.get_page_table(($vaddr as usize) >> 22)
 			.entries[(($vaddr as usize) & 0x3ff000) >> 12]
 			.get_paddr()
 			+ ((($vaddr as usize) & 0xfff) as crate::memory::PhysAddr)
 	};
 }
 
-#[macro_export]
 macro_rules! get_vaddr {
 	($pd_index:expr, $pt_index:expr) => {
 		((($pd_index as usize) << 22) | (($pt_index as usize) << 12))
@@ -126,14 +145,13 @@ macro_rules! get_vaddr {
 	};
 }
 
-#[macro_export]
 macro_rules! refresh_tlb {
 	() => {
 		core::arch::asm!("mov eax, cr3", "mov cr3, eax")
 	};
 }
 
-#[macro_export]
+#[allow(unused)]
 macro_rules! enable_paging {
 	($page_directory:expr) => (core::arch::asm!("mov eax, {p}",
 		"mov cr3, eax",
@@ -143,9 +161,11 @@ macro_rules! enable_paging {
 		p = in(reg) (&$page_directory as *const _) as usize););
 }
 
-#[macro_export]
+#[allow(unused)]
 macro_rules! disable_paging {
 	() => {
 		core::arch::asm!("mov ebx, cr0", "and ebx, ~(1 << 31)", "mov cr0, ebx")
 	};
 }
+
+pub(crate) use {get_paddr, get_vaddr, refresh_tlb};

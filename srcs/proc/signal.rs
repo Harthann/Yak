@@ -1,7 +1,15 @@
+use crate::errno::ErrNo;
 use crate::proc::process::{Process, MASTER_PROCESS};
 use crate::proc::Id;
 
-#[derive(Copy, Clone, PartialEq)]
+pub type SigHandlerFn = fn(i32);
+
+pub struct SignalHandler {
+	pub signal:  i32,
+	pub handler: SigHandlerFn
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum SignalType {
 	SIGHUP    = 1,
 	SIGINT    = 2,
@@ -37,7 +45,7 @@ pub enum SignalType {
 	SIGRTMIN  = 32
 }
 
-pub fn get_signal_type(nb: i32) -> Result<SignalType, ()> {
+pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
 	match nb {
 		_ if nb == SignalType::SIGHUP as i32 => Ok(SignalType::SIGHUP),
 		_ if nb == SignalType::SIGINT as i32 => Ok(SignalType::SIGINT),
@@ -71,45 +79,42 @@ pub fn get_signal_type(nb: i32) -> Result<SignalType, ()> {
 		_ if nb == SignalType::SIGPWR as i32 => Ok(SignalType::SIGPWR),
 		_ if nb == SignalType::SIGSYS as i32 => Ok(SignalType::SIGSYS),
 		_ if nb == SignalType::SIGRTMIN as i32 => Ok(SignalType::SIGRTMIN),
-		_ => Err(())
+		_ => Err(ErrNo::EINVAL)
 	}
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Signal {
 	pub sender:  Id,
 	pub sigtype: SignalType,
-	pub status:  i32
+	pub wstatus: i32
 }
 
 impl Signal {
-	pub const fn new(pid: Id, sigtype: SignalType, status: i32) -> Self {
-		Self { sender: pid, sigtype: sigtype, status: status }
+	pub const fn new(pid: Id, sigtype: SignalType, wstatus: i32) -> Self {
+		Self { sender: pid, sigtype: sigtype, wstatus: wstatus }
 	}
 
 	pub fn send_to_pid(
 		pid: Id,
 		sender_pid: Id,
 		sigtype: SignalType,
-		status: i32
-	) {
+		wstatus: i32
+	) -> Result<Id, ErrNo> {
 		unsafe {
-			let res = MASTER_PROCESS.search_from_pid(pid);
-			if !res.is_ok() {
-				todo!();
-			}
-			let process: &mut Process = res.unwrap();
-			Self::send_to_process(process, sender_pid, sigtype, status);
+			let process: &mut Process = MASTER_PROCESS.search_from_pid(pid)?;
+			Self::send_to_process(process, sender_pid, sigtype, wstatus);
 		}
+		Ok(pid)
 	}
 
 	pub fn send_to_process(
 		process: &mut Process,
 		pid: Id,
 		sigtype: SignalType,
-		status: i32
+		wstatus: i32
 	) {
-		let signal = Self::new(pid, sigtype, status);
+		let signal = Self::new(pid, sigtype, wstatus);
 		process.signals.push(signal);
 	}
 }

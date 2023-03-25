@@ -2,6 +2,7 @@
 
 use crate::{io, Command};
 use core::fmt;
+use core::fmt::Write;
 use core::panic::PanicInfo;
 
 pub mod color;
@@ -255,17 +256,8 @@ fn panic(info: &PanicInfo) -> ! {
 	loop {}
 }
 
-use core::fmt::Write;
-
 pub fn _print(args: fmt::Arguments) {
 	WRITER.lock().write_fmt(args).unwrap();
-}
-
-#[macro_export]
-macro_rules! hexdump {
-	($ptr:expr, $size:expr) => {
-		$crate::vga_buffer::hexdump($ptr, $size)
-	};
 }
 
 pub fn hexdump(ptr: *const u8, size: usize) {
@@ -301,7 +293,6 @@ pub fn hexdump(ptr: *const u8, size: usize) {
 	}
 }
 
-#[macro_export]
 macro_rules! change_color {
 	($fg:expr, $bg:expr) => {
 		$crate::vga_buffer::WRITER
@@ -310,21 +301,21 @@ macro_rules! change_color {
 	};
 }
 
-#[macro_export]
 macro_rules! clihandle {
 	($arg:expr) => {
 		unsafe {
 			let screen_number = crate::vga_buffer::WRITER.lock().get_screen();
-			crate::vga_buffer::SCREENS.lock()[screen_number]
+			$crate::vga_buffer::SCREENS.lock()[screen_number]
 				.get_command()
 				.handle($arg);
 		}
 	};
 }
 
-#[macro_export]
 macro_rules! screenclear {
 	() => {
-		crate::vga_buffer::WRITER.lock().clear()
+		$crate::vga_buffer::WRITER.lock().clear()
 	};
 }
+
+pub(crate) use {change_color, clihandle, screenclear};

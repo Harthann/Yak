@@ -135,9 +135,9 @@ gdt_start:
 		iend
 	task_state:
 		istruc segment_descriptor
-			at limit,		dw tss
-			at base,		db 0x68, 0x0, 0x0
-			at access,		db 0b10001001; 0x89 (PRESENT_BYTE | WRITABLE_SEGMENT | NOT_FOR_CPU)
+			at limit,		dw 0x0000
+			at base,		db 0x0, 0x0, 0x0
+			at access,		db 0b11101001; 0xe9 (PRESENT_BYTE | USER_LVL| CODE_OR_DATA | WRITABLE_SEGMENT | NOT_FOR_CPU)
 			at limit_flags,	db 0b00000000
 			at base_end,	db 0x0
 		iend
@@ -153,4 +153,3 @@ gdt_end:
 gdt_desc:
 	size	dw gdt_end - gdt_start
 	offset	dd gdt_start
-tss:

@@ -1,5 +1,5 @@
 use crate::vga_buffer::color::Color;
-use crate::{io, KTRACKER};
+use crate::{io, vga_buffer, KTRACKER};
 
 #[cfg(test)]
 #[macro_export]
@@ -57,8 +57,8 @@ where
 {
 	fn run(&self) {
 		self();
-		crate::change_color!(Color::Green, Color::Black);
+		vga_buffer::change_color!(Color::Green, Color::Black);
 		crate::kprintln!("[ok]");
-		crate::change_color!(Color::White, Color::Black);
+		vga_buffer::change_color!(Color::White, Color::Black);
 	}
 }

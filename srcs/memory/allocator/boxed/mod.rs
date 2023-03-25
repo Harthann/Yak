@@ -88,8 +88,10 @@ impl<T, A: Allocator> Box<T, A> {
 		}
 	}
 
-	pub fn write(mut boxed: Self, value: T) -> Box<T, A> {
-		*boxed = value;
+	pub fn write(boxed: Self, value: T) -> Box<T, A> {
+		unsafe {
+			boxed.ptr.as_ptr().write(value);
+		}
 		boxed
 	}
 }
@@ -110,6 +112,7 @@ impl<T, A: Allocator> DerefMut for Box<T, A> {
 
 impl<T: ?Sized, A: Allocator> Drop for Box<T, A> {
 	fn drop(&mut self) {
+		unsafe { core::ptr::drop_in_place(self.ptr.as_ptr()) };
 		self.alloc.deallocate(self.ptr.cast(), self.layout);
 	}
 }
