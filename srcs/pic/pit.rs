@@ -1,4 +1,4 @@
-use crate::io::outb;
+use crate::io::{inb, outb};
 
 // I/O port     Usage
 // 0x40         Channel 0 data port (read/write)
@@ -101,4 +101,22 @@ pub fn set_pit(channel: u8, access: u8, mode: u8, data: u16) {
 	// Sending data to commands
 	outb(port, (data & 0xff) as u8);
 	outb(port, ((data & 0xff00) >> 8) as u8);
+}
+
+pub fn play_sound(frequency: f32) {
+	let freq = (1193182.0 / frequency) as u16;
+	outb(0x43, 0xb6);
+	outb(0x42, (freq & 0xff) as u8);
+	outb(0x42, ((freq & 0xff00) >> 8) as u8);
+}
+
+pub fn speaker_on() {
+	let tmp: u8 = inb(0x61);
+	if tmp != (tmp | 3) {
+		outb(0x61, tmp | 3);
+	}
+}
+
+pub fn speaker_off() {
+	outb(0x61, inb(0x61) & 0xfc);
 }
