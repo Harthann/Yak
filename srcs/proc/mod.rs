@@ -35,11 +35,11 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 
 #[naked]
 #[no_mangle]
-pub unsafe extern "C" fn wrapper_fn() {
+pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 	core::arch::asm!(
 		"
-	mov eax, [esp]
-	add esp, 4
+	mov eax, [esp + 4]
+	add esp, 8
 	sti
 	call eax
 	cli
@@ -100,6 +100,7 @@ pub unsafe extern "C" fn exec_fn(
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
+	new_task.regs.esp -= 4;
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid
