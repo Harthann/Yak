@@ -22,7 +22,7 @@ pub static COMMANDS: [fn(&Command); NB_CMDS] = [
 	jiffies,
 	ps,
 	time,
-    play
+	play
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
@@ -35,19 +35,18 @@ fn reboot(_: &Command) {
 
 fn play(command: &Command) {
 	let cmd = &command.command;
-    let mut count = 0;
-    let mut sound: &str = "Unknown";
+	let mut count = 0;
+	let mut sound: &str = "Unknown";
 
 	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-        // Ignore first iteration since it's command name
-        if iter.len() != 0 && count == 1 {
-            sound = iter;
-        }
-        count += 1;
-    }
-    crate::sound::play(sound);
+		// Ignore first iteration since it's command name
+		if iter.len() != 0 && count == 1 {
+			sound = iter;
+		}
+		count += 1;
+	}
+	crate::sound::play(sound);
 }
-
 
 fn jiffies(_: &Command) {
 	unsafe {

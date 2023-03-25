@@ -50,7 +50,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	crate::kprintln!("where is my user stack: {:#x?}", process.stack.offset);
 
-	let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory.get_page_table(768).get_vaddr());
+	let kernel_pt_paddr: PhysAddr =
+		get_paddr!(page_directory.get_page_table(768).get_vaddr());
 	crate::kprintln!("kernel_pt_paddr: {:#x}", kernel_pt_paddr);
 
 	// TODO: free those when process ends ?

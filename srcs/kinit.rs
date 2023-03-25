@@ -85,9 +85,9 @@ mod vga_buffer;
 #[macro_use]
 mod wrappers;
 mod errno;
+mod sound;
 mod spin;
 mod utils;
-mod sound;
 
 #[cfg(test)]
 mod test;
@@ -153,9 +153,9 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
-    // This setup should be done using frequency, but for readability and ease of use, this is done
-    // with time between each interrupt in ms.
-    pic::set_irq0_in_ms(1.0);
+	// This setup should be done using frequency, but for readability and ease of use, this is done
+	// with time between each interrupt in ms.
+	pic::set_irq0_in_ms(1.0);
 
 	// Reserve some spaces to push things before main
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };

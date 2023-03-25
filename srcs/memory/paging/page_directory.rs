@@ -358,7 +358,8 @@ impl PageDirectory {
 			if self.entries[index].get_present() == 1 {
 				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
-				bitmap::physmap_as_mut().free_page(self.entries[index].get_paddr());
+				bitmap::physmap_as_mut()
+					.free_page(self.entries[index].get_paddr());
 				self.entries[index] = (0x00000002 as u32).into();
 				self.get_page_table(1023).entries[index];
 				refresh_tlb!();
