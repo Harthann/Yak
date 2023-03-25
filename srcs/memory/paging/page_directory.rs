@@ -1,11 +1,15 @@
 use core::fmt;
 
-use crate::get_vaddr;
-
 use crate::memory::paging::{bitmap, page_directory, PageTable};
 use crate::memory::{PhysAddr, VirtAddr};
 
-use crate::PAGE_WRITABLE;
+use crate::memory::paging::{
+	get_paddr,
+	get_vaddr,
+	refresh_tlb,
+	PAGE_PRESENT,
+	PAGE_WRITABLE
+};
 
 #[repr(transparent)]
 pub struct PageDirectory {
@@ -13,6 +17,16 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
+	pub fn new() -> &'static mut Self {
+		unsafe {
+			let res = page_directory.get_page_frame(PAGE_WRITABLE);
+			if !res.is_ok() {
+				todo!();
+			}
+			&mut *(res.unwrap() as *mut _)
+		}
+	}
+
 	pub fn set_entry(&mut self, index: usize, value: u32) {
 		self.entries[index] = value.into();
 	}
@@ -23,7 +37,7 @@ impl PageDirectory {
 		nb: usize,
 		flags: u32
 	) -> Result<VirtAddr, ()> {
-		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 
 		if self.entries[pd_index].get_present() == 0 {
@@ -39,7 +53,7 @@ impl PageDirectory {
 		nb: usize,
 		flags: u32
 	) -> Result<VirtAddr, ()> {
-		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 
 		if self.entries[pd_index].get_present() == 0 {
@@ -65,7 +79,6 @@ impl PageDirectory {
 			return Err(());
 		}
 		while i < 1023 && available != nb {
-			// 1023 reserved for page_table def
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -109,7 +122,6 @@ impl PageDirectory {
 			return Err(());
 		}
 		while i < 1023 && available != nb {
-			// 1023 reserved for page_table def
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -143,7 +155,6 @@ impl PageDirectory {
 		let mut i: usize = 0;
 
 		while i < 1023 {
-			// 1023 reserved for page_table def
 			if self.entries[i].get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
 				if res.is_ok() {
@@ -206,22 +217,20 @@ impl PageDirectory {
 		Ok(())
 	}
 
-	fn claim_index_page_table(
+	pub fn claim_index_page_table(
 		&mut self,
 		index: usize,
 		flags: u32
 	) -> Result<usize, ()> {
 		unsafe {
-			let pd_paddr: PhysAddr =
-				(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
-			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
-			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | 1);
-			crate::refresh_tlb!();
-			let new: &mut PageTable = page_directory.get_page_table(index);
+			let paddr: PhysAddr = bitmap::physmap_as_mut().get_page()?;
+			let page_tab: &mut PageTable = self.get_page_table(1023);
+			page_tab.set_entry(index, paddr | PAGE_WRITABLE | PAGE_PRESENT);
+			refresh_tlb!();
+			let new: &mut PageTable = self.get_page_table(index);
 			new.clear();
-			self.entries[index] = (pt_paddr | flags | 1).into();
-			crate::refresh_tlb!();
+			self.entries[index] = (paddr | flags | PAGE_PRESENT).into();
+			refresh_tlb!();
 			Ok(index)
 		}
 	}
@@ -317,8 +326,8 @@ impl PageDirectory {
 			if vaddr & 0xfff != 0 {
 				return; // Not aligned
 			}
-			let paddr: PhysAddr = crate::get_paddr!(vaddr);
-			let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+			let paddr: PhysAddr = get_paddr!(vaddr);
+			let pd_index: usize = (vaddr >> 22) as usize;
 			let i: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 			let page_table: &mut PageTable =
 				page_directory.get_page_table(pd_index);
@@ -349,8 +358,11 @@ impl PageDirectory {
 			if self.entries[index].get_present() == 1 {
 				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
+				bitmap::physmap_as_mut()
+					.free_page(self.entries[index].get_paddr());
 				self.entries[index] = (0x00000002 as u32).into();
-				crate::refresh_tlb!();
+				self.get_page_table(1023).entries[index];
+				refresh_tlb!();
 				return Ok(());
 			} else {
 				return Err(());

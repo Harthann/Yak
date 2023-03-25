@@ -1,6 +1,7 @@
 //! Allocator, Box and Pagination
 
 pub mod allocator;
+#[macro_use]
 pub mod paging;
 
 use crate::memory::allocator::AllocatorInit;
@@ -87,6 +88,7 @@ pub trait Heap {
 		kphys: bool,
 		allocator: &mut dyn AllocatorInit
 	) -> MemoryZone;
+	fn init_no_allocator(size: usize, flags: u32, kphys: bool) -> MemoryZone;
 }
 
 pub trait Stack {
@@ -138,6 +140,19 @@ impl Heap for MemoryZone {
 		unsafe { allocator.init(heap.offset, size) };
 		heap
 	}
+
+	fn init_no_allocator(size: usize, flags: u32, kphys: bool) -> MemoryZone {
+		let mut heap: MemoryZone = MemoryZone {
+			offset:    0,
+			type_zone: TypeZone::Heap,
+			size:      size,
+			flags:     flags,
+			kphys:     kphys
+		};
+		heap.offset = init_memory(size, flags, kphys)
+			.expect("unable to allocate pages for heap");
+		heap
+	}
 }
 
 impl Stack for MemoryZone {
@@ -173,24 +188,4 @@ impl Stack for MemoryZone {
 			.expect("unable to allocate pages for stack");
 		stack
 	}
-}
-
-// kphys => physically contiguous
-pub fn init_heap(
-	offset: VirtAddr,
-	size: usize,
-	flags: u32,
-	kphys: bool,
-	allocator: &mut dyn AllocatorInit
-) -> MemoryZone {
-	<MemoryZone as Heap>::init_addr(offset, size, flags, kphys, allocator)
-}
-
-pub fn init_stack(
-	stack_top: VirtAddr,
-	size: usize,
-	flags: u32,
-	kphys: bool
-) -> MemoryZone {
-	<MemoryZone as Stack>::init_addr(stack_top, size, flags, kphys)
 }

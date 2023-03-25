@@ -3,43 +3,47 @@
 use crate::memory::allocator::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
-use crate::VirtAddr;
+use crate::{VirtAddr, KSTACK_ADDR};
+
+use crate::memory::paging::{PAGE_GLOBAL, PAGE_WRITABLE};
+
+use crate::memory::paging::page_directory;
 
 pub mod process;
 pub mod signal;
 pub mod task;
 
-use process::{zombify_running_process, Pid, Process};
-use task::{switch_task, Task, TASKLIST};
+#[cfg(test)]
+pub mod test;
+
+use process::{Pid, Process};
+use task::{schedule_task, Task, TASKLIST};
+
+use crate::syscalls::exit::__W_EXITCODE;
 
 pub type Id = i32;
 
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	zombify_running_process(status);
-	TASKLIST.pop();
-	let res = &TASKLIST.peek();
-	if res.is_none() {
-		todo!();
-	}
+	let task: Task = TASKLIST.pop();
+	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
-	switch_task(&res.as_ref().unwrap().regs);
+	schedule_task();
 	// Never goes there
-	loop {}
 }
 
 #[naked]
 #[no_mangle]
-pub unsafe extern "C" fn wrapper_fn() {
+pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 	core::arch::asm!(
 		"
-	mov eax, [esp]
-	add esp, 4
+	mov eax, [esp + 4]
+	add esp, 8
+	sti
 	call eax
 	cli
-	mov esp, STACK_TASK_SWITCH
-	sub esp, 256
+	mov esp, 0xffc00000
 	push eax
 	call _exit",
 		options(noreturn)
@@ -53,23 +57,21 @@ pub unsafe extern "C" fn exec_fn(
 	mut args: ...
 ) -> Pid {
 	_cli();
-	let proc: Process = Process::new();
-	let res = TASKLIST.peek();
-	if res.is_none() {
-		todo!();
-	}
-	let running_task = res.unwrap();
-	let parent: &mut Process = &mut *running_task.process;
-	let childs: &mut Vec<Box<Process>> = &mut parent.childs;
-	childs.push(Box::new(proc));
-	let len = childs.len();
-	let proc_ptr: *mut Process = childs[len - 1].as_mut();
-	(*proc_ptr).init(&mut *parent, 0);
+	let running_task: &mut Task = Task::get_running_task();
+	let parent: &mut Process = Process::get_running_process();
+
+	let mut process = Process::new();
+	process.init(parent);
+	process.setup_kernel_stack(0x1000, parent.stack.flags, parent.stack.kphys);
+	process.setup_stack(0x1000, parent.stack.flags, parent.stack.kphys);
+	parent.childs.push(Box::new(process));
+	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
-	new_task.init(running_task.regs.eflags, running_task.regs.cr3, proc_ptr);
+	new_task.init(running_task.regs, process);
 	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
-	new_task.regs.esp -= sum as u32;
+	new_task.regs.esp =
+		(process.stack.offset + process.stack.size as u32) - sum as u32;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;
@@ -98,9 +100,10 @@ pub unsafe extern "C" fn exec_fn(
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
+	new_task.regs.esp -= 4;
 	TASKLIST.push(new_task);
 	_sti();
-	(*proc_ptr).pid
+	process.pid
 }
 
 #[macro_export]
@@ -113,11 +116,31 @@ macro_rules! size_of_args {
 
 #[macro_export]
 macro_rules! exec_fn {
+	($func:expr) => {
+		{
+			let args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			crate::proc::exec_fn($func as u32, &args_size)
+		}
+	};
 	($func:expr, $($rest:expr),+) => {
 		{
 			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
 			crate::size_of_args!(args_size, $($rest),+);
-			crate::proc::exec_fn($func, &args_size, $($rest),+)
+			crate::proc::exec_fn($func as u32, &args_size, $($rest),+)
 		}
+	}
+}
+
+#[inline(always)]
+pub fn change_kernel_stack(addr: VirtAddr) {
+	unsafe {
+		page_directory
+			.get_page_table((KSTACK_ADDR >> 22) as usize)
+			.new_index_frame(
+				((KSTACK_ADDR & 0x3ff000) as usize) >> 12,
+				get_paddr!(addr),
+				PAGE_WRITABLE | PAGE_GLOBAL
+			);
+		refresh_tlb!();
 	}
 }

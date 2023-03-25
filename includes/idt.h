@@ -1,8 +1,6 @@
 %ifndef IDT_H
 %define IDT_H
 
-extern isr_common_stub
-
 %macro isr_err_stub 1
 isr_stub_%+%1:
 	cli

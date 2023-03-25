@@ -2,25 +2,58 @@
 
 use crate::interrupts::Registers;
 
+#[macro_use]
 pub mod exit;
+pub mod mmap;
+pub mod process;
 pub mod signal;
+pub mod timer;
 
 use exit::{sys_exit, sys_wait4, sys_waitpid};
-use signal::sys_kill;
+use mmap::{sys_mmap, sys_munmap};
+use process::sys_fork;
+use signal::{sys_kill, sys_signal};
+use timer::{sys_getpid, sys_getppid, sys_getuid};
 
-// Parameters order: ebx, ecx, edx, esi, edi, ebp
+/// Parameters order: ebx, ecx, edx, esi, edi, ebp
 pub fn syscall_handler(reg: &mut Registers) {
 	if reg.eax > 448 {
 		todo!(); // problem
 	}
+	crate::kprintln!("syscall with reg: {:#x?}", reg);
+	// TODO: wrapper syscall
 	match reg.eax {
 		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx as _),
+		_ if reg.eax == Syscall::fork as u32 => reg.eax = sys_fork() as u32,
 		_ if reg.eax == Syscall::waitpid as u32 => {
 			reg.eax =
 				sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32
 		},
+		_ if reg.eax == Syscall::getpid as u32 => reg.eax = sys_getpid() as u32,
+		_ if reg.eax == Syscall::getuid as u32 => reg.eax = sys_getuid() as u32,
 		_ if reg.eax == Syscall::kill as u32 => {
 			reg.eax = sys_kill(reg.ebx as _, reg.ecx as _) as u32
+		},
+		_ if reg.eax == Syscall::signal as u32 => {
+			reg.eax = sys_signal(reg.ebx as _, unsafe {
+				core::mem::transmute(reg.ecx as *const ())
+			}) as u32
+		},
+		_ if reg.eax == Syscall::getppid as u32 => {
+			reg.eax = sys_getppid() as u32
+		},
+		_ if reg.eax == Syscall::getppid as u32 => {
+			reg.eax = sys_mmap(
+				reg.ebx as _,
+				reg.ecx as _,
+				reg.edx as _,
+				reg.esi as _,
+				reg.edi as _,
+				reg.ebp as _
+			) as u32
+		},
+		_ if reg.eax == Syscall::getppid as u32 => {
+			reg.eax = sys_munmap(reg.ebx as _, reg.ecx as _) as u32
 		},
 		_ if reg.eax == Syscall::wait4 as u32 => {
 			reg.eax = sys_wait4(

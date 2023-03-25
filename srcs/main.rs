@@ -1,8 +1,11 @@
+use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
-use crate::{change_color, kprint, kprintln, string};
+use crate::{kprint, kprintln, string};
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
+	crate::user::test_user_page();
+
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);

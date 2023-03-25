@@ -3,8 +3,10 @@
 use core::arch::asm;
 
 use crate::memory::allocator;
+use crate::proc::process::Process;
 use crate::string::String;
-use crate::{hexdump, io, kprint, kprintln, screenclear};
+use crate::vga_buffer::{hexdump, screenclear};
+use crate::{io, kprint, kprintln};
 
 const NB_CMDS: usize = 11;
 
@@ -69,7 +71,7 @@ fn shutdown(_: &Command) {
 }
 
 fn ps(_: &Command) {
-	unsafe { crate::proc::process::print_all_process() };
+	unsafe { Process::print_all_process() };
 }
 
 fn hextou(string: &str) -> Option<usize> {
@@ -130,7 +132,7 @@ fn hexdump_parser(command: &Command) {
 			count += 1;
 		}
 	}
-	hexdump!(args[0] as *const u8, args[1]);
+	hexdump(args[0] as *const u8, args[1]);
 }
 
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};

@@ -23,7 +23,7 @@ opt-level = "z"
 # You can add feature by naming them in default
 # These feature need to be declare
 # e.g: default = ["multitasking"]
-default = []
+default = ["multitasking"]
 
 # Declare feature multitasking, depends on nothing
 multitasking = []
