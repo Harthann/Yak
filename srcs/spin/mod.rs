@@ -19,9 +19,11 @@ impl<T, const INT: bool> Mutex<T, INT> {
 		Mutex { lock: AtomicBool::new(false), data: UnsafeCell::new(data) }
 	}
 }
+unsafe impl<T: ?Sized + Send, const INT: bool> Sync for Mutex<T, INT> {}
+unsafe impl<T: ?Sized + Send, const INT: bool> Send for Mutex<T, INT> {}
 
 impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
-	fn obtain_lock(&mut self) {
+	fn obtain_lock(&self) {
 		while self.lock.compare_and_swap(false, true, Ordering::Acquire)
 			!= false
 		{
@@ -34,7 +36,7 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 		}
 	}
 
-	pub fn lock(&mut self) -> MutexGuard<T, INT> {
+	pub fn lock(&self) -> MutexGuard<T, INT> {
 		self.obtain_lock();
 		MutexGuard { lock: &self.lock, data: unsafe { &mut *self.data.get() } }
 	}

@@ -38,6 +38,10 @@ impl<T> Box<T> {
 	pub fn ktry_new(x: T) -> Result<Box<T, KGlobal>, AllocError> {
 		Box::<T, KGlobal>::try_new_in(x, KGlobal)
 	}
+
+	pub const unsafe fn from_raw(x: *mut T) -> Box<T, KGlobal> {
+		Box::<T, KGlobal>::from_raw_in(x, KGlobal)
+	}
 }
 
 impl<T, A: Allocator> Box<T, A> {
@@ -73,6 +77,14 @@ impl<T, A: Allocator> Box<T, A> {
 		match res {
 			None => Err(AllocError {}),
 			Some(ptr) => Ok(Box { ptr: ptr, alloc: alloc, layout: layout })
+		}
+	}
+
+	pub const unsafe fn from_raw_in(x: *mut T, alloc: A) -> Box<T, A> {
+		Box {
+			ptr:    NonNull::new_unchecked(x as *mut _),
+			alloc:  alloc,
+			layout: Layout::new::<T>()
 		}
 	}
 
