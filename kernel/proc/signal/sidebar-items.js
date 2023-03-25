@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["SignalType",""]],"fn":[["get_signal_type",""]],"struct":[["Signal",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["SignalType",""]],"fn":[["get_signal_type",""]],"struct":[["Signal",""],["SignalHandler",""]],"type":[["SigHandlerFn",""]]};

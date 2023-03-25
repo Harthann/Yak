@@ -20,11 +20,17 @@
 <span id="14">14</span>
 <span id="15">15</span>
 <span id="16">16</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::color::Color</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">change_color</span>, <span class="ident">kprint</span>, <span class="ident">kprintln</span>, <span class="ident">string</span>};
+<span id="17">17</span>
+<span id="18">18</span>
+<span id="19">19</span>
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::change_color</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::color::Color</span>;
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">kprint</span>, <span class="ident">kprintln</span>, <span class="ident">string</span>};
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kmain</span>() -&gt; <span class="op">!</span> {
+	<span class="ident"><span class="kw">crate</span>::user::test_user_page</span>();
+
 	<span class="macro">kprintln!</span>(<span class="string">&quot;Hello World of {}!&quot;</span>, <span class="number">42</span>);
 
 	<span class="macro">change_color!</span>(<span class="ident">Color::Red</span>, <span class="ident">Color::White</span>);

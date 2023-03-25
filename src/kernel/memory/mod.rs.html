@@ -195,14 +195,10 @@
 <span id="189">189</span>
 <span id="190">190</span>
 <span id="191">191</span>
-<span id="192">192</span>
-<span id="193">193</span>
-<span id="194">194</span>
-<span id="195">195</span>
-<span id="196">196</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Allocator, Box and Pagination</span>
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">allocator</span>;
+<span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">paging</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator::AllocatorInit</span>;
@@ -289,6 +285,7 @@
 		<span class="ident">kphys</span>: <span class="ident">bool</span>,
 		<span class="ident">allocator</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">AllocatorInit</span>
 	) -&gt; <span class="ident">MemoryZone</span>;
+	<span class="kw">fn</span> <span class="ident">init_no_allocator</span>(<span class="ident">size</span>: <span class="ident">usize</span>, <span class="ident">flags</span>: <span class="ident">u32</span>, <span class="ident">kphys</span>: <span class="ident">bool</span>) -&gt; <span class="ident">MemoryZone</span>;
 }
 
 <span class="kw">pub</span> <span class="kw">trait</span> <span class="ident">Stack</span> {
@@ -340,6 +337,19 @@
 		<span class="kw">unsafe</span> { <span class="ident">allocator</span>.<span class="ident">init</span>(<span class="ident">heap</span>.<span class="ident">offset</span>, <span class="ident">size</span>) };
 		<span class="ident">heap</span>
 	}
+
+	<span class="kw">fn</span> <span class="ident">init_no_allocator</span>(<span class="ident">size</span>: <span class="ident">usize</span>, <span class="ident">flags</span>: <span class="ident">u32</span>, <span class="ident">kphys</span>: <span class="ident">bool</span>) -&gt; <span class="ident">MemoryZone</span> {
+		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">heap</span>: <span class="ident">MemoryZone</span> <span class="op">=</span> <span class="ident">MemoryZone</span> {
+			<span class="ident">offset</span>:    <span class="number">0</span>,
+			<span class="ident">type_zone</span>: <span class="ident">TypeZone::Heap</span>,
+			<span class="ident">size</span>:      <span class="ident">size</span>,
+			<span class="ident">flags</span>:     <span class="ident">flags</span>,
+			<span class="ident">kphys</span>:     <span class="ident">kphys</span>
+		};
+		<span class="ident">heap</span>.<span class="ident">offset</span> <span class="op">=</span> <span class="ident">init_memory</span>(<span class="ident">size</span>, <span class="ident">flags</span>, <span class="ident">kphys</span>)
+			.<span class="ident">expect</span>(<span class="string">&quot;unable to allocate pages for heap&quot;</span>);
+		<span class="ident">heap</span>
+	}
 }
 
 <span class="kw">impl</span> <span class="ident">Stack</span> <span class="kw">for</span> <span class="ident">MemoryZone</span> {
@@ -375,26 +385,6 @@
 			.<span class="ident">expect</span>(<span class="string">&quot;unable to allocate pages for stack&quot;</span>);
 		<span class="ident">stack</span>
 	}
-}
-
-<span class="comment">// kphys =&gt; physically contiguous</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_heap</span>(
-	<span class="ident">offset</span>: <span class="ident">VirtAddr</span>,
-	<span class="ident">size</span>: <span class="ident">usize</span>,
-	<span class="ident">flags</span>: <span class="ident">u32</span>,
-	<span class="ident">kphys</span>: <span class="ident">bool</span>,
-	<span class="ident">allocator</span>: <span class="kw-2">&amp;mut</span> <span class="kw">dyn</span> <span class="ident">AllocatorInit</span>
-) -&gt; <span class="ident">MemoryZone</span> {
-	<span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Heap</span><span class="op">&gt;</span><span class="ident">::init_addr</span>(<span class="ident">offset</span>, <span class="ident">size</span>, <span class="ident">flags</span>, <span class="ident">kphys</span>, <span class="ident">allocator</span>)
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_stack</span>(
-	<span class="ident">stack_top</span>: <span class="ident">VirtAddr</span>,
-	<span class="ident">size</span>: <span class="ident">usize</span>,
-	<span class="ident">flags</span>: <span class="ident">u32</span>,
-	<span class="ident">kphys</span>: <span class="ident">bool</span>
-) -&gt; <span class="ident">MemoryZone</span> {
-	<span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Stack</span><span class="op">&gt;</span><span class="ident">::init_addr</span>(<span class="ident">stack_top</span>, <span class="ident">size</span>, <span class="ident">flags</span>, <span class="ident">kphys</span>)
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>

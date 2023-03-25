@@ -154,10 +154,22 @@
 <span id="148">148</span>
 <span id="149">149</span>
 <span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
+<span id="156">156</span>
+<span id="157">157</span>
+<span id="158">158</span>
+<span id="159">159</span>
+<span id="160">160</span>
+<span id="161">161</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_PRESENT</span>, <span class="ident">PAGE_WRITABLE</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">PhysAddr</span>, <span class="ident">VirtAddr</span>};
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">page_directory</span>, <span class="ident">PAGE_WRITABLE</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::page_directory</span>;
 
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
 	<span class="kw">fn</span> <span class="ident">_start_rodata</span>();
@@ -169,6 +181,16 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PageTable</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="self">Self</span> {
+		<span class="kw">unsafe</span> {
+			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">page_directory</span>.<span class="ident">get_page_frame</span>(<span class="ident">PAGE_WRITABLE</span>);
+			<span class="kw">if</span> <span class="op">!</span><span class="ident">res</span>.<span class="ident">is_ok</span>() {
+				<span class="macro">todo!</span>();
+			}
+			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">res</span>.<span class="ident">unwrap</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>)
+		}
+	}
+
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 
@@ -181,9 +203,9 @@
 			<span class="comment">// VGA_BUFFER</span>
 			{
 				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>] <span class="op">=</span>
-					((<span class="ident">i</span> <span class="op">*</span> <span class="number">0x1000</span>) <span class="kw">as</span> <span class="ident">u32</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="number">1</span>).<span class="ident">into</span>();
+					((<span class="ident">i</span> <span class="op">*</span> <span class="number">0x1000</span>) <span class="kw">as</span> <span class="ident">u32</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>).<span class="ident">into</span>();
 			} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">i</span> <span class="op">&lt;</span> (<span class="ident">_start_rodata</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span> {
-				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>] <span class="op">=</span> ((<span class="ident">i</span> <span class="op">*</span> <span class="number">0x1000</span>) <span class="kw">as</span> <span class="ident">u32</span> <span class="op">|</span> <span class="number">1</span>).<span class="ident">into</span>();
+				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>] <span class="op">=</span> ((<span class="ident">i</span> <span class="op">*</span> <span class="number">0x1000</span>) <span class="kw">as</span> <span class="ident">u32</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>).<span class="ident">into</span>();
 			} <span class="kw">else</span> {
 				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>] <span class="op">=</span> <span class="number">0x0</span>.<span class="ident">into</span>();
 			}
@@ -210,7 +232,7 @@
 		<span class="ident">paddr</span>: <span class="ident">PhysAddr</span>,
 		<span class="ident">flags</span>: <span class="ident">u32</span>
 	) {
-		<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>] <span class="op">=</span> (<span class="ident">paddr</span> <span class="op">|</span> <span class="ident">flags</span> <span class="op">|</span> <span class="number">1</span>).<span class="ident">into</span>();
+		<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>] <span class="op">=</span> (<span class="ident">paddr</span> <span class="op">|</span> <span class="ident">flags</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>).<span class="ident">into</span>();
 	}
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new_frame</span>(
@@ -222,7 +244,7 @@
 
 		<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="number">1024</span> {
 			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>].<span class="ident">get_present</span>() <span class="op">!</span><span class="op">=</span> <span class="number">1</span> {
-				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>] <span class="op">=</span> (<span class="ident">paddr</span> <span class="op">|</span> <span class="ident">flags</span> <span class="op">|</span> <span class="number">1</span>).<span class="ident">into</span>();
+				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>] <span class="op">=</span> (<span class="ident">paddr</span> <span class="op">|</span> <span class="ident">flags</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>).<span class="ident">into</span>();
 				<span class="kw">return</span> <span class="prelude-val">Ok</span>(<span class="ident">i</span> <span class="kw">as</span> <span class="ident">u16</span>);
 			}
 			<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;

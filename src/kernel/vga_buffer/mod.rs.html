@@ -375,19 +375,11 @@
 <span id="369">369</span>
 <span id="370">370</span>
 <span id="371">371</span>
-<span id="372">372</span>
-<span id="373">373</span>
-<span id="374">374</span>
-<span id="375">375</span>
-<span id="376">376</span>
-<span id="377">377</span>
-<span id="378">378</span>
-<span id="379">379</span>
-<span id="380">380</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Handler for vga buffer</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">io</span>, <span class="ident">Command</span>};
 <span class="kw">use</span> <span class="ident">core::fmt</span>;
+<span class="kw">use</span> <span class="ident">core::fmt::Write</span>;
 <span class="kw">use</span> <span class="ident">core::panic::PanicInfo</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">color</span>;
@@ -689,17 +681,8 @@
 	<span class="kw">loop</span> {}
 }
 
-<span class="kw">use</span> <span class="ident">core::fmt::Write</span>;
-
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">_print</span>(<span class="ident">args</span>: <span class="ident">fmt::Arguments</span>) {
 	<span class="kw">unsafe</span> { <span class="ident">WRITER</span>.<span class="ident">lock</span>().<span class="ident">write_fmt</span>(<span class="ident">args</span>).<span class="ident">unwrap</span>() };
-}
-
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
-<span class="macro">macro_rules!</span> <span class="ident">hexdump</span> {
-	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ptr</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">size</span>:<span class="ident">expr</span>) =&gt; {
-		<span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::hexdump</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ptr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">size</span>)
-	};
 }
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">hexdump</span>(<span class="ident">ptr</span>: <span class="kw-2">*const</span> <span class="ident">u8</span>, <span class="ident">size</span>: <span class="ident">usize</span>) {
@@ -735,7 +718,6 @@
 	}
 }
 
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">change_color</span> {
 	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">fg</span>:<span class="ident">expr</span>, <span class="macro-nonterminal">$</span><span class="macro-nonterminal">bg</span>:<span class="ident">expr</span>) =&gt; {
 		<span class="kw">unsafe</span> {
@@ -746,24 +728,24 @@
 	};
 }
 
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">clihandle</span> {
 	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">expr</span>) =&gt; {
 		<span class="kw">unsafe</span> {
 			<span class="kw">let</span> <span class="ident">screen_number</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::WRITER</span>.<span class="ident">lock</span>().<span class="ident">get_screen</span>();
-			<span class="ident"><span class="kw">crate</span>::vga_buffer::SCREENS</span>.<span class="ident">lock</span>()[<span class="ident">screen_number</span>]
+			<span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::SCREENS</span>.<span class="ident">lock</span>()[<span class="ident">screen_number</span>]
 				.<span class="ident">get_command</span>()
 				.<span class="ident">handle</span>(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>);
 		}
 	};
 }
 
-<span class="attribute">#[<span class="ident">macro_export</span>]</span>
 <span class="macro">macro_rules!</span> <span class="ident">screenclear</span> {
 	() =&gt; {
-		<span class="kw">unsafe</span> { <span class="ident"><span class="kw">crate</span>::vga_buffer::WRITER</span>.<span class="ident">lock</span>().<span class="ident">clear</span>() }
+		<span class="kw">unsafe</span> { <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::vga_buffer::WRITER</span>.<span class="ident">lock</span>().<span class="ident">clear</span>() }
 	};
 }
+
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">use</span> {<span class="ident">change_color</span>, <span class="ident">clihandle</span>, <span class="ident">screenclear</span>};
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>
 </body></html>

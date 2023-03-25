@@ -485,14 +485,30 @@
 <span id="479">479</span>
 <span id="480">480</span>
 <span id="481">481</span>
+<span id="482">482</span>
+<span id="483">483</span>
+<span id="484">484</span>
+<span id="485">485</span>
+<span id="486">486</span>
+<span id="487">487</span>
+<span id="488">488</span>
+<span id="489">489</span>
+<span id="490">490</span>
+<span id="491">491</span>
+<span id="492">492</span>
+<span id="493">493</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
-
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::get_vaddr</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">bitmap</span>, <span class="ident">page_directory</span>, <span class="ident">PageTable</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">PhysAddr</span>, <span class="ident">VirtAddr</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::PAGE_WRITABLE</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{
+	<span class="ident">get_paddr</span>,
+	<span class="ident">get_vaddr</span>,
+	<span class="ident">refresh_tlb</span>,
+	<span class="ident">PAGE_PRESENT</span>,
+	<span class="ident">PAGE_WRITABLE</span>
+};
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PageDirectory</span> {
@@ -500,6 +516,16 @@
 }
 
 <span class="kw">impl</span> <span class="ident">PageDirectory</span> {
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="self">Self</span> {
+		<span class="kw">unsafe</span> {
+			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">page_directory</span>.<span class="ident">get_page_frame</span>(<span class="ident">PAGE_WRITABLE</span>);
+			<span class="kw">if</span> <span class="op">!</span><span class="ident">res</span>.<span class="ident">is_ok</span>() {
+				<span class="macro">todo!</span>();
+			}
+			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">res</span>.<span class="ident">unwrap</span>() <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>)
+		}
+	}
+
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">set_entry</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">index</span>: <span class="ident">usize</span>, <span class="ident">value</span>: <span class="ident">u32</span>) {
 		<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>] <span class="op">=</span> <span class="ident">value</span>.<span class="ident">into</span>();
 	}
@@ -510,7 +536,7 @@
 		<span class="ident">nb</span>: <span class="ident">usize</span>,
 		<span class="ident">flags</span>: <span class="ident">u32</span>
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">pd_index</span>: <span class="ident">usize</span> <span class="op">=</span> ((<span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0xffc00000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+		<span class="kw">let</span> <span class="ident">pd_index</span>: <span class="ident">usize</span> <span class="op">=</span> (<span class="ident">vaddr</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>;
 		<span class="kw">let</span> <span class="ident">pt_index</span>: <span class="ident">usize</span> <span class="op">=</span> ((<span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>) <span class="kw">as</span> <span class="ident">usize</span>;
 
 		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">pd_index</span>].<span class="ident">get_present</span>() <span class="op">==</span> <span class="number">0</span> {
@@ -526,7 +552,7 @@
 		<span class="ident">nb</span>: <span class="ident">usize</span>,
 		<span class="ident">flags</span>: <span class="ident">u32</span>
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">VirtAddr</span>, ()<span class="op">&gt;</span> {
-		<span class="kw">let</span> <span class="ident">pd_index</span>: <span class="ident">usize</span> <span class="op">=</span> ((<span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0xffc00000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+		<span class="kw">let</span> <span class="ident">pd_index</span>: <span class="ident">usize</span> <span class="op">=</span> (<span class="ident">vaddr</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>;
 		<span class="kw">let</span> <span class="ident">pt_index</span>: <span class="ident">usize</span> <span class="op">=</span> ((<span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>) <span class="kw">as</span> <span class="ident">usize</span>;
 
 		<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">pd_index</span>].<span class="ident">get_present</span>() <span class="op">==</span> <span class="number">0</span> {
@@ -552,7 +578,6 @@
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(());
 		}
 		<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="number">1023</span> <span class="op">&amp;&amp;</span> <span class="ident">available</span> <span class="op">!</span><span class="op">=</span> <span class="ident">nb</span> {
-			<span class="comment">// 1023 reserved for page_table def</span>
 			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>].<span class="ident">get_present</span>() <span class="op">==</span> <span class="number">1</span> {
 				<span class="ident">j</span> <span class="op">=</span> <span class="number">0</span>;
 				<span class="kw">while</span> <span class="ident">j</span> <span class="op">&lt;</span> <span class="number">1024</span> <span class="op">&amp;&amp;</span> <span class="ident">available</span> <span class="op">!</span><span class="op">=</span> <span class="ident">nb</span> {
@@ -596,7 +621,6 @@
 			<span class="kw">return</span> <span class="prelude-val">Err</span>(());
 		}
 		<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="number">1023</span> <span class="op">&amp;&amp;</span> <span class="ident">available</span> <span class="op">!</span><span class="op">=</span> <span class="ident">nb</span> {
-			<span class="comment">// 1023 reserved for page_table def</span>
 			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>].<span class="ident">get_present</span>() <span class="op">==</span> <span class="number">1</span> {
 				<span class="ident">j</span> <span class="op">=</span> <span class="number">0</span>;
 				<span class="kw">while</span> <span class="ident">j</span> <span class="op">&lt;</span> <span class="number">1024</span> <span class="op">&amp;&amp;</span> <span class="ident">available</span> <span class="op">!</span><span class="op">=</span> <span class="ident">nb</span> {
@@ -630,7 +654,6 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 
 		<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="number">1023</span> {
-			<span class="comment">// 1023 reserved for page_table def</span>
 			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">i</span>].<span class="ident">get_present</span>() <span class="op">==</span> <span class="number">1</span> {
 				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_page_table</span>(<span class="ident">i</span>).<span class="ident">new_frame</span>(<span class="ident">paddr</span>, <span class="ident">flags</span>);
 				<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_ok</span>() {
@@ -693,22 +716,20 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">fn</span> <span class="ident">claim_index_page_table</span>(
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">claim_index_page_table</span>(
 		<span class="kw-2">&amp;mut</span> <span class="self">self</span>,
 		<span class="ident">index</span>: <span class="ident">usize</span>,
 		<span class="ident">flags</span>: <span class="ident">u32</span>
 	) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span><span class="ident">usize</span>, ()<span class="op">&gt;</span> {
 		<span class="kw">unsafe</span> {
-			<span class="kw">let</span> <span class="ident">pd_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span>
-				(<span class="ident">page_directory</span>.<span class="ident">get_vaddr</span>() <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="kw">as</span> <span class="ident">PhysAddr</span>;
-			<span class="kw">let</span> <span class="ident">pt_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="ident">pd_paddr</span> <span class="op">+</span> (<span class="ident">index</span> <span class="kw">as</span> <span class="ident">u32</span> <span class="op">+</span> <span class="number">1</span>) <span class="op">*</span> <span class="number">0x1000</span>;
-			<span class="kw">let</span> <span class="ident">page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="ident">page_directory</span>.<span class="ident">get_page_table</span>(<span class="number">1023</span>);
-			<span class="ident">page_tab</span>.<span class="ident">set_entry</span>(<span class="ident">index</span>, <span class="ident">pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="number">1</span>);
-			<span class="macro">crate::refresh_tlb!</span>();
-			<span class="kw">let</span> <span class="ident">new</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="ident">page_directory</span>.<span class="ident">get_page_table</span>(<span class="ident">index</span>);
+			<span class="kw">let</span> <span class="ident">paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="ident">bitmap::physmap_as_mut</span>().<span class="ident">get_page</span>()<span class="question-mark">?</span>;
+			<span class="kw">let</span> <span class="ident">page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_page_table</span>(<span class="number">1023</span>);
+			<span class="ident">page_tab</span>.<span class="ident">set_entry</span>(<span class="ident">index</span>, <span class="ident">paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>);
+			<span class="macro">refresh_tlb!</span>();
+			<span class="kw">let</span> <span class="ident">new</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_page_table</span>(<span class="ident">index</span>);
 			<span class="ident">new</span>.<span class="ident">clear</span>();
-			<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>] <span class="op">=</span> (<span class="ident">pt_paddr</span> <span class="op">|</span> <span class="ident">flags</span> <span class="op">|</span> <span class="number">1</span>).<span class="ident">into</span>();
-			<span class="macro">crate::refresh_tlb!</span>();
+			<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>] <span class="op">=</span> (<span class="ident">paddr</span> <span class="op">|</span> <span class="ident">flags</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>).<span class="ident">into</span>();
+			<span class="macro">refresh_tlb!</span>();
 			<span class="prelude-val">Ok</span>(<span class="ident">index</span>)
 		}
 	}
@@ -804,8 +825,8 @@
 			<span class="kw">if</span> <span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0xfff</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
 				<span class="kw">return</span>; <span class="comment">// Not aligned</span>
 			}
-			<span class="kw">let</span> <span class="ident">paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="macro">crate::get_paddr!</span>(<span class="ident">vaddr</span>);
-			<span class="kw">let</span> <span class="ident">pd_index</span>: <span class="ident">usize</span> <span class="op">=</span> ((<span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0xffc00000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>;
+			<span class="kw">let</span> <span class="ident">paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="macro">get_paddr!</span>(<span class="ident">vaddr</span>);
+			<span class="kw">let</span> <span class="ident">pd_index</span>: <span class="ident">usize</span> <span class="op">=</span> (<span class="ident">vaddr</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>;
 			<span class="kw">let</span> <span class="ident">i</span>: <span class="ident">usize</span> <span class="op">=</span> ((<span class="ident">vaddr</span> <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>) <span class="kw">as</span> <span class="ident">usize</span>;
 			<span class="kw">let</span> <span class="ident">page_table</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span>
 				<span class="ident">page_directory</span>.<span class="ident">get_page_table</span>(<span class="ident">pd_index</span>);
@@ -836,8 +857,11 @@
 			<span class="kw">if</span> <span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>].<span class="ident">get_present</span>() <span class="op">==</span> <span class="number">1</span> {
 				<span class="kw">let</span> <span class="ident">page_table</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">get_page_table</span>(<span class="ident">index</span>);
 				<span class="ident">page_table</span>.<span class="ident">clear</span>();
+				<span class="ident">bitmap::physmap_as_mut</span>()
+					.<span class="ident">free_page</span>(<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>].<span class="ident">get_paddr</span>());
 				<span class="self">self</span>.<span class="ident">entries</span>[<span class="ident">index</span>] <span class="op">=</span> (<span class="number">0x00000002</span> <span class="kw">as</span> <span class="ident">u32</span>).<span class="ident">into</span>();
-				<span class="macro">crate::refresh_tlb!</span>();
+				<span class="self">self</span>.<span class="ident">get_page_table</span>(<span class="number">1023</span>).<span class="ident">entries</span>[<span class="ident">index</span>];
+				<span class="macro">refresh_tlb!</span>();
 				<span class="kw">return</span> <span class="prelude-val">Ok</span>(());
 			} <span class="kw">else</span> {
 				<span class="kw">return</span> <span class="prelude-val">Err</span>(());

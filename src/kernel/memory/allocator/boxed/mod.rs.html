@@ -125,6 +125,9 @@
 <span id="119">119</span>
 <span id="120">120</span>
 <span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::alloc::Layout</span>;
 <span class="kw">use</span> <span class="ident">core::fmt</span>;
 <span class="kw">use</span> <span class="ident">core::ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>};
@@ -203,8 +206,10 @@
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write</span>(<span class="kw-2">mut</span> <span class="ident">boxed</span>: <span class="self">Self</span>, <span class="ident">value</span>: <span class="ident">T</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">A</span><span class="op">&gt;</span> {
-		<span class="kw-2">*</span><span class="ident">boxed</span> <span class="op">=</span> <span class="ident">value</span>;
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">write</span>(<span class="ident">boxed</span>: <span class="self">Self</span>, <span class="ident">value</span>: <span class="ident">T</span>) -&gt; <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">A</span><span class="op">&gt;</span> {
+		<span class="kw">unsafe</span> {
+			<span class="ident">boxed</span>.<span class="ident">ptr</span>.<span class="ident">as_ptr</span>().<span class="ident">write</span>(<span class="ident">value</span>);
+		}
 		<span class="ident">boxed</span>
 	}
 }
@@ -225,6 +230,7 @@
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="question-mark">?</span><span class="ident">Sized</span>, <span class="ident">A</span>: <span class="ident">Allocator</span><span class="op">&gt;</span> <span class="ident">Drop</span> <span class="kw">for</span> <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">T</span>, <span class="ident">A</span><span class="op">&gt;</span> {
 	<span class="kw">fn</span> <span class="ident">drop</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>) {
+		<span class="kw">unsafe</span> { <span class="ident">core::ptr::drop_in_place</span>(<span class="self">self</span>.<span class="ident">ptr</span>.<span class="ident">as_ptr</span>()) };
 		<span class="self">self</span>.<span class="ident">alloc</span>.<span class="ident">deallocate</span>(<span class="self">self</span>.<span class="ident">ptr</span>.<span class="ident">cast</span>(), <span class="self">self</span>.<span class="ident">layout</span>);
 	}
 }

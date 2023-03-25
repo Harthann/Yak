@@ -277,13 +277,17 @@
 <span id="271">271</span>
 <span id="272">272</span>
 <span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Command line interface (term)</span>
 
 <span class="kw">use</span> <span class="ident">core::arch::asm</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process::Process</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::string::String</span>;
-<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">hexdump</span>, <span class="ident">io</span>, <span class="ident">kprint</span>, <span class="ident">kprintln</span>, <span class="ident">screenclear</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer</span>::{<span class="ident">hexdump</span>, <span class="ident">screenclear</span>};
+<span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">io</span>, <span class="ident">kprint</span>, <span class="ident">kprintln</span>};
 
 <span class="kw">const</span> <span class="ident">NB_CMDS</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">11</span>;
 
@@ -348,7 +352,7 @@
 }
 
 <span class="kw">fn</span> <span class="ident">ps</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
-	<span class="kw">unsafe</span> { <span class="ident"><span class="kw">crate</span>::proc::process::print_all_process</span>() };
+	<span class="kw">unsafe</span> { <span class="ident">Process::print_all_process</span>() };
 }
 
 <span class="kw">fn</span> <span class="ident">hextou</span>(<span class="ident">string</span>: <span class="kw-2">&amp;</span><span class="ident">str</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span> {
@@ -409,7 +413,7 @@
 			<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
 		}
 	}
-	<span class="macro">hexdump!</span>(<span class="ident">args</span>[<span class="number">0</span>] <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u8</span>, <span class="ident">args</span>[<span class="number">1</span>]);
+	<span class="ident">hexdump</span>(<span class="ident">args</span>[<span class="number">0</span>] <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u8</span>, <span class="ident">args</span>[<span class="number">1</span>]);
 }
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::keyboard</span>::{<span class="ident">KEYMAP</span>, <span class="ident">KEYMAP_FR</span>, <span class="ident">KEYMAP_US</span>};
