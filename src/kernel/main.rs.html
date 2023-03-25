@@ -23,9 +23,35 @@
 <span id="17">17</span>
 <span id="18">18</span>
 <span id="19">19</span>
+<span id="20">20</span>
+<span id="21">21</span>
+<span id="22">22</span>
+<span id="23">23</span>
+<span id="24">24</span>
+<span id="25">25</span>
+<span id="26">26</span>
+<span id="27">27</span>
+<span id="28">28</span>
+<span id="29">29</span>
+<span id="30">30</span>
+<span id="31">31</span>
+<span id="32">32</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::change_color</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer::color::Color</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::wrappers</span>::{<span class="ident">cli</span>, <span class="ident">hlt</span>, <span class="ident">sti</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">kprint</span>, <span class="ident">kprintln</span>, <span class="ident">string</span>};
+
+<span class="comment">// Temporary sleep function until a proper sleep is implemented and teste</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sleep</span>(<span class="ident">microseconds</span>: <span class="ident">usize</span>) {
+	<span class="kw">unsafe</span> {
+		<span class="kw">let</span> <span class="ident">tmp</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::pic::JIFFIES</span>;
+		<span class="kw">while</span> <span class="ident"><span class="kw">crate</span>::pic::JIFFIES</span> <span class="op">&lt;</span> <span class="ident">tmp</span> <span class="op">+</span> <span class="ident">microseconds</span> {
+			<span class="macro">sti!</span>();
+			<span class="macro">hlt!</span>();
+			<span class="macro">cli!</span>();
+		}
+	}
+}
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kmain</span>() -&gt; <span class="op">!</span> {

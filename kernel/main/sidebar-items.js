@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["kmain",""]]};
+window.SIDEBAR_ITEMS = {"fn":[["kmain",""],["sleep",""]]};

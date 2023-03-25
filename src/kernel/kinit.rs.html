@@ -176,8 +176,6 @@
 <span id="170">170</span>
 <span id="171">171</span>
 <span id="172">172</span>
-<span id="173">173</span>
-<span id="174">174</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">feature</span>(<span class="ident">const_mut_refs</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">naked_functions</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">fmt_internals</span>)]</span>
@@ -265,6 +263,7 @@
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">wrappers</span>;
 <span class="kw">mod</span> <span class="ident">errno</span>;
+<span class="kw">mod</span> <span class="ident">sound</span>;
 <span class="kw">mod</span> <span class="ident">spin</span>;
 <span class="kw">mod</span> <span class="ident">utils</span>;
 
@@ -332,12 +331,9 @@
 
 	<span class="ident">setup_pic8259</span>();
 	<span class="comment">// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching</span>
-	<span class="ident">pic::set_pit</span>(
-		<span class="ident">pic::pit::CHANNEL_0</span>,
-		<span class="ident">pic::pit::ACC_LOBHIB</span>,
-		<span class="ident">pic::pit::MODE_2</span>,
-		<span class="number">0x0fff</span>
-	);
+	<span class="comment">// This setup should be done using frequency, but for readability and ease of use, this is done</span>
+	<span class="comment">// with time between each interrupt in ms.</span>
+	<span class="ident">pic::set_irq0_in_ms</span>(<span class="number">1.0</span>);
 
 	<span class="comment">// Reserve some spaces to push things before main</span>
 	<span class="kw">unsafe</span> { <span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov esp, {}&quot;</span>, <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">STACK_ADDR</span> <span class="op">-</span> <span class="number">256</span>) };
