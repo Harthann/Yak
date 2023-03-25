@@ -2,15 +2,19 @@
 
 use core::arch::asm;
 
+use crate::vec::Vec;
+use crate::string::ToString;
 use crate::memory::allocator;
-use crate::proc::process::Process;
+use crate::proc::process::{Process, Pid};
 use crate::string::String;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
+use crate::syscalls::exit::sys_waitpid;
+use crate::syscalls::signal::sys_kill;
 
-const NB_CMDS: usize = 12;
+const NB_CMDS: usize = 13;
 
-pub static COMMANDS: [fn(&Command); NB_CMDS] = [
+pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	reboot,
 	halt,
 	hexdump_parser,
@@ -22,39 +26,62 @@ pub static COMMANDS: [fn(&Command); NB_CMDS] = [
 	jiffies,
 	ps,
 	time,
-	play
+	play,
+	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "time", "play"
+	"jiffies", "ps", "time", "play", "kill"
 ];
 
-fn reboot(_: &Command) {
+fn kill(command: Vec<String>) {
+	let mut count: usize = 0;
+	let mut wstatus: i32 = 0;
+	let mut pid: Pid = 0;
+
+	if command.len() != 2 {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: kill [pid]");
+		return;
+	}
+
+	if let Some(res) = atou(command[1].as_str()) {
+		pid = res as Pid;
+	} else {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: kill [pid]");
+		return;
+	}
+
+	let res: i32 = sys_kill(pid, 9); // SIGKILL
+	if res != 0 {
+		kprintln!("[Error]: {}", res);
+		return;
+	}
+	sys_waitpid(pid, &mut wstatus, 0);
+}
+
+fn reboot(_: Vec<String>) {
 	io::outb(0x64, 0xfe);
 }
 
-fn play(command: &Command) {
-	let cmd = &command.command;
-	let mut count = 0;
+fn play(command: Vec<String>) {
 	let mut sound: &str = "Unknown";
 
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		// Ignore first iteration since it's command name
-		if iter.len() != 0 && count == 1 {
-			sound = iter;
-		}
-		count += 1;
+	if command.len() == 2 {
+		sound = command[1].as_str();
 	}
+	crate::kprintln!("sound: {}", sound);
 	crate::sound::play(sound);
 }
 
-fn jiffies(_: &Command) {
+fn jiffies(_: Vec<String>) {
 	unsafe {
 		crate::kprintln!("Jiffies: {}", crate::pic::JIFFIES);
 	}
 }
 
-fn time(_: &Command) {
+fn time(_: Vec<String>) {
 	unsafe {
 		crate::pic::pit::TIME_ELAPSED =
 			crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
@@ -65,28 +92,28 @@ fn time(_: &Command) {
 	}
 }
 
-fn halt(_: &Command) {
+fn halt(_: Vec<String>) {
 	unsafe {
 		asm!("hlt");
 	}
 }
 
-fn clear(_: &Command) {
+fn clear(_: Vec<String>) {
 	screenclear!();
 }
 
-fn help(_: &Command) {
+fn help(_: Vec<String>) {
 	kprintln!("Available commands:");
 	for i in KNOWN_CMD {
 		kprintln!("    {}", i);
 	}
 }
 
-fn shutdown(_: &Command) {
+fn shutdown(_: Vec<String>) {
 	io::outb(0xf4, 0x10);
 }
 
-fn ps(_: &Command) {
+fn ps(_: Vec<String>) {
 	unsafe { Process::print_all_process() };
 }
 
@@ -114,75 +141,52 @@ fn atou(string: &str) -> Option<usize> {
 	string.parse::<usize>().ok()
 }
 
-fn hexdump_parser(command: &Command) {
-	let cmd = &command.command;
-
-	let mut count: i32 = 0;
+fn hexdump_parser(command: Vec<String>) {
 	let mut args: [usize; 2] = [0, 0];
 
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		if iter.len() != 0 {
-			count += 1;
-		}
-	}
-
-	if count != 3 {
+	if command.len() != 3 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: hexdump [addr] [size]");
 		return;
 	}
 
-	count = 0;
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		if iter.len() != 0 {
-			if count > 0 {
-				match atou(iter) {
-					Some(x) => args[count as usize - 1] = x,
-					_ => {
-						kprintln!("Invalid argument.");
-						kprintln!("Usage: hexdump [addr] [size]");
-						return;
-					}
-				}
-			}
-			count += 1;
-		}
+	if let Some(res) = atou(command[1].as_str()) {
+		args[0] = res;
+	} else {
+		kprintln!("Invalid number of arguments.");
+		kprintln!("Usage: hexdump [addr] [size]");
+		return;
 	}
+
+	if let Some(res) = atou(command[2].as_str()) {
+		args[1] = res;
+	} else {
+		kprintln!("Invalid number of arguments.");
+		kprintln!("Usage: hexdump [addr] [size]");
+		return;
+	}
+
 	hexdump(args[0] as *const u8, args[1]);
 }
 
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
-fn keymap(command: &Command) {
-	let cmd = &command.command;
+fn keymap(command: Vec<String>) {
 	let mut count: usize = 0;
 
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		if iter.len() != 0 {
-			count += 1;
-		}
-	}
-
-	if count != 2 {
+	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: keymap {{us, fr}}");
 		return;
 	}
 
-	count = 0;
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		if count > 0 {
-			if iter == "us" {
-				unsafe { KEYMAP = &KEYMAP_US };
-			} else if iter == "fr" {
-				unsafe { KEYMAP = &KEYMAP_FR };
-			} else {
-				kprintln!("Invalid argument.");
-				kprintln!("Usage: keymap {{us, fr}}");
-			}
-			return;
-		}
-		count += 1;
+	if command[1] == "us" {
+		unsafe { KEYMAP = &KEYMAP_US };
+	} else if command[1] == "fr" {
+		unsafe { KEYMAP = &KEYMAP_FR };
+	} else {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: keymap {{us, fr}}");
 	}
 }
 
@@ -190,40 +194,23 @@ extern "C" {
 	pub fn int(nb: u8);
 }
 
-fn interrupt(command: &Command) {
-	let cmd = &command.command;
-
-	let mut count: i32 = 0;
+fn interrupt(command: Vec<String>) {
 	let mut arg: usize = 0;
 
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		if iter.len() != 0 {
-			count += 1;
-		}
-	}
-
-	if count != 2 {
+	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: int [nb]");
 		return;
 	}
 
-	count = 0;
-	for iter in cmd.split(&[' ', '\t', '\0'][..]) {
-		if iter.len() != 0 {
-			if count > 0 {
-				match atou(iter) {
-					Some(x) => arg = x,
-					_ => {
-						kprintln!("Invalid argument.");
-						kprintln!("Usage: int [nb]");
-						return;
-					}
-				}
-			}
-			count += 1;
-		}
+	if let Some(res) = atou(command[1].as_str()) {
+		arg = res;
+	} else {
+		kprintln!("Invalid number of arguments.");
+		kprintln!("Usage: hexdump [addr] [size]");
+		return;
 	}
+
 	if arg > 255 {
 		kprintln!("Invalid argument.");
 		kprintln!("Usage: int [nb]");
@@ -258,7 +245,7 @@ impl Command {
 		let mut j = 0;
 		while j < KNOWN_CMD.len() {
 			let cmd: &str = self.command.split(" ").nth(0)?;
-			if Some(cmd) == Some(KNOWN_CMD[j]) {
+			if Some(cmd) == Some(&KNOWN_CMD[j].to_string()) {
 				return Some(j);
 			}
 			j += 1;
@@ -282,7 +269,14 @@ impl Command {
 		} else if charcode == '\n' {
 			crate::kprint!("{}", charcode);
 			match self.is_known() {
-				Some(x) => COMMANDS[x](&self),
+				Some(x) => {
+					let mut split: Vec<String> = Vec::new();
+					let splited = self.command.split(&[' ', '\t', '\0'][..]);
+					for arg in splited {
+						split.push(arg.to_string());
+					}
+					COMMANDS[x](split);
+				},
 				_ => {
 					if self.command.len() != 0 {
 						kprintln!("Unknown command. Type `help` to list available commands");
