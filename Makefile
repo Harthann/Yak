@@ -38,6 +38,8 @@ MAKEFILE_PATH	=	$(dir $(abspath Makefile))
 DIR_ISO			=	iso
 DIR_GRUB		=	$(DIR_ISO)/boot/grub
 
+DIR_LOGS        =   logs
+
 vpath %.s $(foreach dir, ${shell find $(DIR_SRCS) -type d}, $(dir))
 include files.mk
 
@@ -73,8 +75,15 @@ all:			$(NAME)
 doc:
 				cargo doc $(ARGS_CARGO) --open
 
-boot:			$(NAME)
-				$(RUN_PREFIX) $(QEMU) -soundhw pcspk -no-reboot -d int -drive format=raw,file=$(NAME) -serial file:kernel.log -device isa-debug-exit,iobase=0xf4,iosize=0x04 -display curses 2> qemu.log $(RUN_SUFFIX)
+boot:			$(NAME) $(DIR_LOGS)
+				$(RUN_PREFIX) $(QEMU) -soundhw pcspk\
+									  -no-reboot\
+									  -d int\
+									  -drive format=raw,file=$(NAME)\
+									  -serial file:$(DIR_LOGS)/kernel.log\
+									  -serial file:$(DIR_LOGS)/debug_kernel.log\
+									  -device isa-debug-exit,iobase=0xf4,iosize=0x04\
+									  -display curses 2> $(DIR_LOGS)/qemu.log $(RUN_SUFFIX)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
@@ -122,11 +131,14 @@ $(DIR_OBJS)/%.o: %.s
 
 $(DIR_OBJS):
 				mkdir -p $(DIR_OBJS)
+$(DIR_LOGS):
+				mkdir -p $(DIR_LOGS)
+
 
 clean:
 				rm -rf $(DIR_OBJS)
 				rm -rf $(LIBBOOT)
-				rm -rf qemu.log kernel.log
+				rm -rf $(DIR_LOGS)
 				rm -rf target
 				rm -rf Cargo.lock
 				rm -rf $(DIR_ISO)
