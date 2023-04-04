@@ -7,7 +7,7 @@ use crate::x86::interrupt::{
 };
 
 use crate::proc::process::Status;
-use crate::proc::task::{schedule_task, switch_task, Task};
+use crate::proc::task::{switch_task, Task};
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;

@@ -2,7 +2,7 @@
 
 use crate::vga_buffer::NB_SCREEN;
 use crate::x86::io;
-use crate::{kprint, vga_buffer};
+use crate::vga_buffer;
 
 const PRESSED: usize = 0;
 const RELEASED: usize = 1;

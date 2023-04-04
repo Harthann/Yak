@@ -39,7 +39,7 @@ pub fn init_paging() {
 			bitmap::physmap_as_mut().get_page().unwrap();
 		// Use identity mapping to setup kernel page
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
-		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
+		let init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab
 			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		refresh_tlb!();
