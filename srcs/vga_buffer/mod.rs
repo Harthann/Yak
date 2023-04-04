@@ -1,10 +1,10 @@
 //! Handler for vga buffer
 
+use crate::x86_64::io;
+use crate::Command;
 use core::fmt;
 use core::fmt::Write;
 use core::panic::PanicInfo;
-use crate::x86_64::io;
-use crate::Command;
 
 pub mod color;
 use color::{Color, ColorCode};

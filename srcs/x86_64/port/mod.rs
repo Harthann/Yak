@@ -1,8 +1,13 @@
 use core::marker::PhantomData;
 
 mod markers;
-pub use markers::{ReadOnlyAccess, WriteOnlyAccess, ReadWriteAccess};
-pub use markers::{PortReadAccess, PortWriteAccess};
+pub use markers::{
+	PortReadAccess,
+	PortWriteAccess,
+	ReadOnlyAccess,
+	ReadWriteAccess,
+	WriteOnlyAccess
+};
 
 mod ops;
 pub use ops::{PortRead, PortWrite};
@@ -17,35 +22,31 @@ pub use ops::{PortRead, PortWrite};
 /// If the struct passed as geenric argument implement the correct marker trait
 /// implementation will be done
 pub struct PortGeneric<T, MODE> {
-    port: u16,
-    _mode: PhantomData<(T, MODE)>,
+	port:  u16,
+	_mode: PhantomData<(T, MODE)>
 }
 
 impl<T, MODE> PortGeneric<T, MODE> {
-    pub const fn new(port: u16) -> Self {
-        Self {
-            port: port,
-            _mode: PhantomData
-        }
-    }
+	pub const fn new(port: u16) -> Self {
+		Self { port: port, _mode: PhantomData }
+	}
 }
 
 /// Type aliases for Read/Write accessed port
-pub type Port<T>            = PortGeneric<T, ReadWriteAccess>;
+pub type Port<T> = PortGeneric<T, ReadWriteAccess>;
 /// Type aliases for Read only accessed port
-pub type PortReadOnly<T>    = PortGeneric<T, ReadOnlyAccess>;
+pub type PortReadOnly<T> = PortGeneric<T, ReadOnlyAccess>;
 /// Type aliases for Write only accessed port
-pub type PortWriteOnly<T>   = PortGeneric<T, WriteOnlyAccess>;
-
+pub type PortWriteOnly<T> = PortGeneric<T, WriteOnlyAccess>;
 
 impl<T: PortRead, MODE: PortReadAccess> PortGeneric<T, MODE> {
-    pub unsafe fn read(& self) -> T {
-        T::read_from_port(self.port)
-    }
+	pub unsafe fn read(&self) -> T {
+		T::read_from_port(self.port)
+	}
 }
 
 impl<T: PortWrite, MODE: PortWriteAccess> PortGeneric<T, MODE> {
-    pub unsafe fn write(&mut self, value: T){
-        T::write_to_port(self.port, value);
-    }
+	pub unsafe fn write(&mut self, value: T) {
+		T::write_to_port(self.port, value);
+	}
 }

@@ -1,9 +1,9 @@
 //! Setup interrupts and exception handler
 use crate::x86_64::interrupt::{
-IDT_MAX_DESCRIPTORS,
-IDT_SIZE,
-STR_EXCEPTION,
-EXCEPTION_SIZE
+	EXCEPTION_SIZE,
+	IDT_MAX_DESCRIPTORS,
+	IDT_SIZE,
+	STR_EXCEPTION
 };
 
 use crate::proc::process::Status;

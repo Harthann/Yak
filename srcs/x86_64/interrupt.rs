@@ -36,4 +36,3 @@ pub const STR_EXCEPTION: [&'static str; EXCEPTION_SIZE] = [
 	"Security Exception",
 	"Reserved"
 ];
-

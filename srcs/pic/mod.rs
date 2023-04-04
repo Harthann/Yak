@@ -1,5 +1,5 @@
 //! Setup Programmable Interrupt Controller
-use crate::x86_64::io::{inb, outb, io_wait};
+use crate::x86_64::io::{inb, io_wait, outb};
 
 pub mod handlers;
 pub mod pit;
@@ -42,11 +42,11 @@ pub enum Pic2 {
 	SecondaryATA  = 0x80  // 0b1000 0000
 }
 
-const PIC1:      u16 = 0x20; /* io base addr for master PIC */
-const PIC2:      u16 = 0xa0; /* io base addr for slave PIC */
-const PIC1_CMD:  u16 = PIC1;
+const PIC1: u16 = 0x20; // io base addr for master PIC
+const PIC2: u16 = 0xa0; // io base addr for slave PIC
+const PIC1_CMD: u16 = PIC1;
 const PIC1_DATA: u16 = PIC1 + 1;
-const PIC2_CMD:  u16 = PIC2;
+const PIC2_CMD: u16 = PIC2;
 const PIC2_DATA: u16 = PIC2 + 1;
 
 pub const PIC1_IRQ_OFFSET: u8 = 0x20;
@@ -80,17 +80,17 @@ pub fn end_of_interrupts(irq: usize) {
 	outb(PIC1_CMD, PIC_EOI);
 }
 
-const ICW1_ICW4:       u8 = 0x01; /* ICW4 (not needed) */
-const ICW1_SINGLE:     u8 = 0x02; /* Single (cascade) mode */
-const ICW1_INTERVAL4:  u8 = 0x04; /* Call address interval 4 (8) */
-const ICW1_LEVEL:      u8 = 0x08; /* Level triggered (edge) mode */
-const ICW1_INIT:       u8 = 0x10; /* Initiliazation - required! */
+const ICW1_ICW4: u8 = 0x01; // ICW4 (not needed)
+const ICW1_SINGLE: u8 = 0x02; // Single (cascade) mode
+const ICW1_INTERVAL4: u8 = 0x04; // Call address interval 4 (8)
+const ICW1_LEVEL: u8 = 0x08; // Level triggered (edge) mode
+const ICW1_INIT: u8 = 0x10; // Initiliazation - required!
 
-const ICW4_8086:       u8 = 0x01; /* 8086/88 (MCS-80/85) mode */
-const ICW4_AUTO:       u8 = 0x02; /* Auto (normal EOI) */
-const ICW4_BUF_SLAVE:  u8 = 0x08; /* Buffered mode/slave */
-const ICW4_BUF_MASTER: u8 = 0x0c; /* Buffered mode/master */
-const ICW4_SFNM:       u8 = 0x10; /* Special fully nested (not) */
+const ICW4_8086: u8 = 0x01; // 8086/88 (MCS-80/85) mode
+const ICW4_AUTO: u8 = 0x02; // Auto (normal EOI)
+const ICW4_BUF_SLAVE: u8 = 0x08; // Buffered mode/slave
+const ICW4_BUF_MASTER: u8 = 0x0c; // Buffered mode/master
+const ICW4_SFNM: u8 = 0x10; // Special fully nested (not)
 
 pub fn pic_remap(offset1: u8, offset2: u8) {
 	// save masks

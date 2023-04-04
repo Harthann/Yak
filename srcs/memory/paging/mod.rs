@@ -126,5 +126,5 @@ macro_rules! get_vaddr {
 	};
 }
 
-pub(crate) use {get_paddr, get_vaddr, crate::refresh_tlb};
-
+pub(crate) use crate::refresh_tlb;
+pub(crate) use {get_paddr, get_vaddr};

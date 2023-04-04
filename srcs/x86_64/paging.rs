@@ -1,7 +1,8 @@
 #[macro_export]
 macro_rules! refresh_tlb {
-	() => (core::arch::asm!("mov eax, cr3",
-		"mov cr3, eax"));
+	() => {
+		core::arch::asm!("mov eax, cr3", "mov cr3, eax")
+	};
 }
 
 #[macro_export]
@@ -16,8 +17,7 @@ macro_rules! enable_paging {
 
 #[macro_export]
 macro_rules! disable_paging {
-	() => (core::arch::asm!("mov ebx, cr0",
-		"and ebx, ~(1 << 31)",
-		"mov cr0, ebx"));
+	() => {
+		core::arch::asm!("mov ebx, cr0", "and ebx, ~(1 << 31)", "mov cr0, ebx")
+	};
 }
-
