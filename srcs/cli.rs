@@ -71,7 +71,9 @@ fn play(command: Vec<String>) {
 		sound = command[1].as_str();
 	}
 	crate::kprintln!("sound: {}", sound);
-	crate::sound::play(sound);
+	unsafe {
+		crate::exec_fn!(crate::sound::play, sound);
+	}
 }
 
 fn jiffies(_: Vec<String>) {
