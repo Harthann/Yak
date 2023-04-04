@@ -1,11 +1,15 @@
 use core::fmt;
 
-use crate::get_vaddr;
+use crate::memory::paging::{bitmap, page_directory, PageTable};
+use crate::memory::{PhysAddr, VirtAddr};
 
-use crate::memory::{VirtAddr, PhysAddr};
-use crate::memory::paging::{page_directory, PageTable, bitmap};
-
-use crate::PAGE_WRITABLE;
+use crate::memory::paging::{
+	get_paddr,
+	get_vaddr,
+	refresh_tlb,
+	PAGE_PRESENT,
+	PAGE_WRITABLE
+};
 
 #[repr(transparent)]
 pub struct PageDirectory {
@@ -13,15 +17,29 @@ pub struct PageDirectory {
 }
 
 impl PageDirectory {
+	pub fn new() -> &'static mut Self {
+		unsafe {
+			let res = page_directory.get_page_frame(PAGE_WRITABLE);
+			if !res.is_ok() {
+				todo!();
+			}
+			&mut *(res.unwrap() as *mut _)
+		}
+	}
 
 	pub fn set_entry(&mut self, index: usize, value: u32) {
 		self.entries[index] = value.into();
 	}
 
-	pub fn kget_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
-		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+	pub fn kget_page_frames_at_addr(
+		&mut self,
+		vaddr: VirtAddr,
+		nb: usize,
+		flags: u32
+	) -> Result<VirtAddr, ()> {
+		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
-		
+
 		if self.entries[pd_index].get_present() == 0 {
 			self.claim_index_page_tables(pd_index, (nb / 1024) + 1, flags)?;
 		}
@@ -29,10 +47,15 @@ impl PageDirectory {
 		Ok(vaddr)
 	}
 
-	pub fn get_page_frames_at_addr(&mut self, vaddr: VirtAddr, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
-		let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+	pub fn get_page_frames_at_addr(
+		&mut self,
+		vaddr: VirtAddr,
+		nb: usize,
+		flags: u32
+	) -> Result<VirtAddr, ()> {
+		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
-		
+
 		if self.entries[pd_index].get_present() == 0 {
 			self.claim_index_page_tables(pd_index, (nb / 1024) + 1, flags)?;
 		}
@@ -40,11 +63,13 @@ impl PageDirectory {
 		Ok(vaddr)
 	}
 
-	/*
-		Get page frames that are virtually and physically adjacents, return the
-		virtual address of the first one
-	*/
-	pub fn kget_page_frames(&mut self, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
+	// Get page frames that are virtually and physically adjacents, return the
+	// virtual address of the first one
+	pub fn kget_page_frames(
+		&mut self,
+		nb: usize,
+		flags: u32
+	) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
 		let mut i: usize = 768; // map kernel page if physically neighbour > 0xc0000000
 		let mut i_saved: usize = 0;
@@ -53,7 +78,7 @@ impl PageDirectory {
 		if nb == 0 {
 			return Err(());
 		}
-		while i < 1023 && available != nb { /* 1023 reserved for page_table def */
+		while i < 1023 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -81,11 +106,13 @@ impl PageDirectory {
 		Ok(vaddr)
 	}
 
-	/*
-		Claim 'nb' page frames (by lowest index), pages must be virtually
-		adjacents
-	*/
-	pub fn get_page_frames(&mut self, nb: usize, flags: u32) -> Result<VirtAddr, ()> {
+	// Claim 'nb' page frames (by lowest index), pages must be virtually
+	// adjacents
+	pub fn get_page_frames(
+		&mut self,
+		nb: usize,
+		flags: u32
+	) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
 		let mut i: usize = 0;
 		let mut i_saved: usize = 1;
@@ -94,7 +121,7 @@ impl PageDirectory {
 		if nb == 0 {
 			return Err(());
 		}
-		while i < 1023 && available != nb { /* 1023 reserved for page_table def */
+		while i < 1023 && available != nb {
 			if self.entries[i].get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
@@ -122,12 +149,12 @@ impl PageDirectory {
 		Ok(vaddr)
 	}
 
-	/* Claim a page frame (by lowest index) */
+	// Claim a page frame (by lowest index)
 	pub fn get_page_frame(&mut self, flags: u32) -> Result<VirtAddr, ()> {
 		let paddr = bitmap::physmap_as_mut().get_page()?;
 		let mut i: usize = 0;
 
-		while i < 1023 { /* 1023 reserved for page_table def */
+		while i < 1023 {
 			if self.entries[i].get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
 				if res.is_ok() {
@@ -140,11 +167,15 @@ impl PageDirectory {
 		Ok(get_vaddr!(i, self.get_page_table(i).new_frame(paddr, flags)?))
 	}
 
-	/*
-		Claim a range of page frames based on 'nb' size and specified index with
-		adjacent physical addresses
-	*/
-	fn kclaim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize, flags: u32) -> Result <(), ()> {
+	// Claim a range of page frames based on 'nb' size and specified index with
+	// adjacent physical addresses
+	fn kclaim_index_page_frames(
+		&mut self,
+		mut pd_index: usize,
+		mut pt_index: usize,
+		nb: usize,
+		flags: u32
+	) -> Result<(), ()> {
 		let mut paddr: PhysAddr = bitmap::physmap_as_mut().get_pages(nb)?;
 
 		let mut i: usize = 0;
@@ -153,7 +184,8 @@ impl PageDirectory {
 				pt_index = 0;
 				pd_index += 1;
 			}
-			self.get_page_table(pd_index).new_index_frame(pt_index, paddr, flags);
+			self.get_page_table(pd_index)
+				.new_index_frame(pt_index, paddr, flags);
 			pt_index += 1;
 			i += 1;
 			paddr += 4096;
@@ -161,8 +193,14 @@ impl PageDirectory {
 		Ok(())
 	}
 
-	/* Claim a range of page frames based on 'nb' size and specified index */
-	fn claim_index_page_frames(&mut self, mut pd_index: usize, mut pt_index: usize, nb: usize, flags: u32) -> Result <(), ()> {
+	// Claim a range of page frames based on 'nb' size and specified index
+	fn claim_index_page_frames(
+		&mut self,
+		mut pd_index: usize,
+		mut pt_index: usize,
+		nb: usize,
+		flags: u32
+	) -> Result<(), ()> {
 		let mut i: usize = 0;
 
 		while i < nb {
@@ -171,74 +209,92 @@ impl PageDirectory {
 				pd_index += 1;
 			}
 			let paddr: PhysAddr = bitmap::physmap_as_mut().get_page()?;
-			self.get_page_table(pd_index).new_index_frame(pt_index, paddr, flags);
+			self.get_page_table(pd_index)
+				.new_index_frame(pt_index, paddr, flags);
 			pt_index += 1;
 			i += 1;
 		}
 		Ok(())
 	}
 
-	fn claim_index_page_table(&mut self, index: usize, flags: u32) -> Result<usize, ()> {
+	pub fn claim_index_page_table(
+		&mut self,
+		index: usize,
+		flags: u32
+	) -> Result<usize, ()> {
 		unsafe {
-			let pd_paddr: PhysAddr = (page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-			let pt_paddr: PhysAddr = pd_paddr + (index as u32 + 1) * 0x1000;
-			let page_tab: &mut PageTable = page_directory.get_page_table(1023);
-			page_tab.set_entry(index, pt_paddr | PAGE_WRITABLE | 1);
-			crate::refresh_tlb!();
-			let new: &mut PageTable = page_directory.get_page_table(index);
+			let paddr: PhysAddr = bitmap::physmap_as_mut().get_page()?;
+			let page_tab: &mut PageTable = self.get_page_table(1023);
+			page_tab.set_entry(index, paddr | PAGE_WRITABLE | PAGE_PRESENT);
+			refresh_tlb!();
+			let new: &mut PageTable = self.get_page_table(index);
 			new.clear();
-			self.entries[index] = (pt_paddr | flags | 1).into();
-			crate::refresh_tlb!();
+			self.entries[index] = (paddr | flags | PAGE_PRESENT).into();
+			refresh_tlb!();
 			Ok(index)
 		}
 	}
 
-	/* Claim a new page table and return index of the new page */
+	// Claim a new page table and return index of the new page
 	fn claim_page_table(&mut self, flags: u32) -> Result<usize, ()> {
-			let mut i: usize = 0;
+		let mut i: usize = 0;
 
-			while i < 1024 {
-				if self.entries[i].get_present() == 0 {
-					return self.claim_index_page_table(i, flags);
-				}
-				i += 1;
+		while i < 1024 {
+			if self.entries[i].get_present() == 0 {
+				return self.claim_index_page_table(i, flags);
 			}
-			todo!();
-			//Err(())
+			i += 1;
+		}
+		todo!();
+		// Err(())
 	}
 
-	/*
-		Claim 'nb' new page tables adjacent and return the lowest index of those
-		pages.
-	*/
-	fn claim_page_tables(&mut self, nb: usize, flags: u32) -> Result<usize, ()> {
-			if nb == 1 {
-				return self.claim_page_table(flags);
-			}
-			let mut i: usize = 0;
+	// Claim 'nb' new page tables adjacent and return the lowest index of those
+	// pages.
+	fn claim_page_tables(
+		&mut self,
+		nb: usize,
+		flags: u32
+	) -> Result<usize, ()> {
+		if nb == 1 {
+			return self.claim_page_table(flags);
+		}
+		let mut i: usize = 0;
 
-			while i < 1024 {
-				if self.entries[i].get_present() == 0 {
-					let mut j: usize = i + 1;
-					while j < 1024 && self.entries[j].get_present() == 0 && j - i != nb{
-						j += 1;
-					}
-					if j - i == nb && j < 1024 {
-						while i < j {
-							let ret = self.claim_index_page_table(i, flags);
-							assert!(ret.is_ok(), "unable to claim page table {}", i);
-							i += 1;
-						}
-						return Ok(i - nb);
-					}
+		while i < 1024 {
+			if self.entries[i].get_present() == 0 {
+				let mut j: usize = i + 1;
+				while j < 1024
+					&& self.entries[j].get_present() == 0
+					&& j - i != nb
+				{
+					j += 1;
 				}
-				i += 1;
+				if j - i == nb && j < 1024 {
+					while i < j {
+						let ret = self.claim_index_page_table(i, flags);
+						assert!(
+							ret.is_ok(),
+							"unable to claim page table {}",
+							i
+						);
+						i += 1;
+					}
+					return Ok(i - nb);
+				}
 			}
-			todo!();
-			//Err(())
+			i += 1;
+		}
+		todo!();
+		// Err(())
 	}
 
-	fn claim_index_page_tables(&mut self, index: usize, nb: usize, flags: u32) -> Result<usize, ()> {
+	fn claim_index_page_tables(
+		&mut self,
+		index: usize,
+		nb: usize,
+		flags: u32
+	) -> Result<usize, ()> {
 		if nb == 1 {
 			return self.claim_index_page_table(index, flags);
 		}
@@ -253,7 +309,7 @@ impl PageDirectory {
 
 	pub fn remove_page_frames(&mut self, mut vaddr: VirtAddr, nb: usize) {
 		if vaddr & 0xfff != 0 {
-			return ; /* Not aligned */
+			return; // Not aligned
 		}
 		let mut i: usize = 0;
 
@@ -264,42 +320,49 @@ impl PageDirectory {
 		}
 	}
 
-
-	/* Remove a page frame at a specified virtual address */
+	// Remove a page frame at a specified virtual address
 	pub fn remove_page_frame(&mut self, vaddr: VirtAddr) {
 		unsafe {
 			if vaddr & 0xfff != 0 {
-				return ; /* Not aligned */
+				return; // Not aligned
 			}
-			let paddr: PhysAddr = crate::get_paddr!(vaddr);
-			let pd_index: usize = ((vaddr & 0xffc00000) >> 22) as usize;
+			let paddr: PhysAddr = get_paddr!(vaddr);
+			let pd_index: usize = (vaddr >> 22) as usize;
 			let i: usize = ((vaddr & 0x3ff000) >> 12) as usize;
-			let page_table: &mut PageTable = page_directory.get_page_table(pd_index);
+			let page_table: &mut PageTable =
+				page_directory.get_page_table(pd_index);
 			page_table.set_entry(i, 0);
 			// if last page_frame, free the page_table
 			let mut i = 0;
 			while i < 1024 {
 				if page_table.entries[i].value != 0 {
-					break ;
+					break;
 				}
 				i += 1;
 			}
 			if i == 1024 {
 				let ret = self.remove_page_table(pd_index);
-				assert!(ret.is_ok(), "Unable to remove page table {}", pd_index);
+				assert!(
+					ret.is_ok(),
+					"Unable to remove page table {}",
+					pd_index
+				);
 			}
 			bitmap::physmap_as_mut().free_page(paddr);
 		}
 	}
 
-	/* Remove a page table at specified index */
+	// Remove a page table at specified index
 	pub fn remove_page_table(&mut self, index: usize) -> Result<(), ()> {
 		unsafe {
 			if self.entries[index].get_present() == 1 {
 				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
+				bitmap::physmap_as_mut()
+					.free_page(self.entries[index].get_paddr());
 				self.entries[index] = (0x00000002 as u32).into();
-				crate::refresh_tlb!();
+				self.get_page_table(1023).entries[index];
+				refresh_tlb!();
 				return Ok(());
 			} else {
 				return Err(());
@@ -307,15 +370,13 @@ impl PageDirectory {
 		}
 	}
 
-	/*
-		Get the page_table at the specified index
-		The page table 0 index every page_table
-	*/
+	// Get the page_table at the specified index
+	// The page table 0 index every page_table
 	pub fn get_page_table(&self, index: usize) -> &mut PageTable {
-		unsafe{&mut *(get_vaddr!(1023, index) as *mut _)}
+		unsafe { &mut *(get_vaddr!(1023, index) as *mut _) }
 	}
 
-	/* Return the virtual address of the page directory */
+	// Return the virtual address of the page directory
 	pub fn get_vaddr(&self) -> VirtAddr {
 		self as *const Self as VirtAddr
 	}
@@ -396,7 +457,8 @@ impl PageDirectoryEntry {
 		if self.get_ps() == 0 {
 			((self.value & 0b111000000000) >> 9) as u8
 		} else {
-			(((self.value & 0b111100000000) >> 8) | ((self.value & 0b01000000) >> 2)) as u8
+			(((self.value & 0b111100000000) >> 8)
+				| ((self.value & 0b01000000) >> 2)) as u8
 		}
 	}
 
@@ -420,7 +482,8 @@ impl PageDirectoryEntry {
 		if self.get_ps() == 0 {
 			self.value & 0xfffff000
 		} else {
-			((self.value & 0xfff00000) >> 10) | ((self.value & 0b111111110000000000000) << 19)
+			((self.value & 0xfff00000) >> 10)
+				| ((self.value & 0b111111110000000000000) << 19)
 		}
 	}
 

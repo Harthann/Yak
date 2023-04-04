@@ -1,8 +1,8 @@
 //! String implementation
 
-use crate::vec::Vec;
 use crate::memory::allocator::AllocError;
-use core::{str,ops,fmt};
+use crate::vec::Vec;
+use core::{fmt, ops, str};
 
 #[cfg(test)]
 pub mod test;
@@ -23,16 +23,12 @@ pub struct String {
 impl String {
 	#[inline]
 	pub const fn new() -> String {
-		String {
-			vec: Vec::new()
-		}
+		String { vec: Vec::new() }
 	}
 
 	#[inline]
 	pub fn with_capacity(capacity: usize) -> String {
-		String {
-			vec: Vec::with_capacity(capacity)
-		}
+		String { vec: Vec::with_capacity(capacity) }
 	}
 
 	#[inline]
@@ -50,7 +46,7 @@ impl String {
 		self.vec.capacity()
 	}
 
-/* Insertion functions wrapper of vec container */
+	// Insertion functions wrapper of vec container
 	#[inline]
 	pub fn reserve(&mut self, additional: usize) {
 		self.vec.reserve(additional);
@@ -85,32 +81,39 @@ impl String {
 	}
 
 	#[inline]
-	pub fn try_push(&mut self, value: char) -> Result<(), AllocError>  {
+	pub fn try_push(&mut self, value: char) -> Result<(), AllocError> {
 		self.vec.try_push(value as u8)
 	}
 
-	pub fn try_push_str(&mut self, value: &str) -> Result<(), AllocError>  {
+	pub fn try_push_str(&mut self, value: &str) -> Result<(), AllocError> {
 		for i in value.chars() {
 			self.try_push(i)?;
 		}
-        Ok(())
+		Ok(())
 	}
 
 	#[inline]
-	pub fn try_insert(&mut self, idx: usize, ch: char) -> Result<(), AllocError>  {
+	pub fn try_insert(
+		&mut self,
+		idx: usize,
+		ch: char
+	) -> Result<(), AllocError> {
 		self.vec.try_insert(idx, ch as u8)
 	}
 
-	pub fn try_insert_str(&mut self, mut idx: usize, string: &str) -> Result<(), AllocError>  {
+	pub fn try_insert_str(
+		&mut self,
+		mut idx: usize,
+		string: &str
+	) -> Result<(), AllocError> {
 		for i in string.chars() {
 			self.vec.try_insert(idx, i as u8)?;
 			idx += 1;
 		}
-        Ok(())
+		Ok(())
 	}
 
-
-/* Deletion function wrapper */
+	// Deletion function wrapper
 	pub fn pop(&mut self) -> Option<char> {
 		match self.vec.pop() {
 			Some(x) => Some(x as char),
@@ -133,25 +136,21 @@ impl ops::Deref for String {
 
 	#[inline]
 	fn deref(&self) -> &str {
-		unsafe{ str::from_utf8_unchecked(&self.vec)}
+		unsafe { str::from_utf8_unchecked(&self.vec) }
 	}
 }
 
 impl ops::DerefMut for String {
-
 	#[inline]
 	fn deref_mut(&mut self) -> &mut str {
-		unsafe{ str::from_utf8_unchecked_mut(&mut *self.vec)}
+		unsafe { str::from_utf8_unchecked_mut(&mut *self.vec) }
 	}
 }
 
 impl From<&str> for String {
-	
 	#[inline]
 	fn from(s: &str) -> String {
-		String {
-			vec: Vec::<u8>::into_vec(s.as_bytes())
-		}
+		String { vec: Vec::<u8>::into_vec(s.as_bytes()) }
 	}
 }
 
@@ -162,8 +161,7 @@ impl fmt::Display for String {
 	}
 }
 
-
-/* Equality implementation between two String */
+// Equality implementation between two String
 impl PartialEq for String {
 	#[inline]
 	fn eq(&self, other: &String) -> bool {
@@ -175,7 +173,7 @@ impl PartialEq for String {
 	}
 }
 
-/* Equality implementation betwee String and str either lhs or rhs */
+// Equality implementation betwee String and str either lhs or rhs
 impl PartialEq<str> for String {
 	#[inline]
 	fn eq(&self, other: &str) -> bool {
@@ -198,7 +196,7 @@ impl PartialEq<String> for str {
 	}
 }
 
-/* Same as previous implementation but takes ref to str instead */
+// Same as previous implementation but takes ref to str instead
 impl PartialEq<&str> for String {
 	#[inline]
 	fn eq(&self, other: &&str) -> bool {
@@ -221,7 +219,7 @@ impl PartialEq<String> for &str {
 	}
 }
 
-/* Write and ToString impl are taken from rust source code */
+// Write and ToString impl are taken from rust source code
 impl fmt::Write for String {
 	#[inline]
 	fn write_str(&mut self, s: &str) -> fmt::Result {
@@ -236,8 +234,7 @@ impl fmt::Write for String {
 	}
 }
 
-
-/* ToString impl for different type */
+// ToString impl for different type
 pub trait ToString {
 	fn to_string(&self) -> String;
 }

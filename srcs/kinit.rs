@@ -9,13 +9,12 @@
 #![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]
-#![feature(core_intrinsics)]
+#![feature(asm_const)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
 #![no_main]
-
-/*  Custom test framework  */
+// Custom test framework
 #![feature(custom_test_frameworks)]
 #![test_runner(crate::test::test_runner)]
 #![reexport_test_harness_main = "test_main"]
@@ -26,42 +25,84 @@
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
-/*  Modules import  */
+const GLOBAL_ALIGN: usize = 8;
+
+// Allocation tracking
+pub struct Tracker {
+	allocation:      usize,
+	allocated_bytes: usize,
+	freed:           usize,
+	freed_bytes:     usize
+}
+
+impl Tracker {
+	pub const fn new() -> Self {
+		Self {
+			allocation:      0,
+			allocated_bytes: 0,
+			freed:           0,
+			freed_bytes:     0
+		}
+	}
+}
+
+static mut TRACKER: Tracker = Tracker::new();
+static mut KTRACKER: Tracker = Tracker::new();
+
+pub fn memory_state() {
+	unsafe {
+		kprintln!(
+			"\nAllocation: {} for {} bytes",
+			KTRACKER.allocation,
+			KTRACKER.allocated_bytes
+		);
+		kprintln!(
+			"Free:       {} for {} bytes",
+			KTRACKER.freed,
+			KTRACKER.freed_bytes
+		);
+	}
+}
+
+// Modules import
 mod cli;
 mod gdt;
 mod keyboard;
+mod main;
+#[macro_use]
 mod memory;
-mod multiboot;
-mod vec;
-mod string;
 mod interrupts;
+mod multiboot;
+mod string;
+mod vec;
+#[macro_use]
 mod syscalls;
-mod vga_buffer;
 mod pic;
 mod proc;
 mod user;
+mod vga_buffer;
+#[macro_use]
 mod wrappers;
+mod errno;
+mod sound;
 mod spin;
 mod utils;
-mod main;
 mod x86_64;
 
 #[cfg(test)]
 mod test;
 
-/*  Modules used function and variable  */
-use memory::paging::{init_paging, page_directory}; use memory::allocator::linked_list::LinkedListAllocator;
+// Modules used function and variable
 use cli::Command;
+use memory::allocator::linked_list::LinkedListAllocator;
+use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
-use crate::memory::{init_heap, init_stack, VirtAddr};
-use crate::memory::paging::PAGE_WRITABLE;
-use crate::interrupts::init_idt;
-use crate::gdt::{KERNEL_BASE, gdt_desc, update_gdtr};
-pub use pic::handlers::JIFFIES;
-use crate::memory::MemoryZone;
-use main::kmain;
 
-/*  Code from boot section  */
+#[global_allocator]
+static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
+// Code from boot section
 #[allow(dead_code)]
 extern "C" {
 	fn stack_bottom();
@@ -69,87 +110,59 @@ extern "C" {
 	fn heap();
 }
 
-const GLOBAL_ALIGN: usize = 8;
+use crate::memory::VirtAddr;
 
-/* Allocation tracking */
-pub struct Tracker {
-	allocation:			usize,
-	allocated_bytes:	usize,
-	freed:				usize,
-	freed_bytes:		usize
-}
+use crate::interrupts::init_idt;
 
-impl Tracker {
-	pub const fn new() -> Self {
-		Self {
-			allocation: 0,
-			allocated_bytes: 0,
-			freed: 0,
-			freed_bytes: 0
-		}
-	}
-}
+use proc::task::Task;
 
-#[global_allocator]
-static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
-static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
+// use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
+use main::kmain;
+pub use pic::handlers::JIFFIES;
 
-static mut TRACKER: Tracker = Tracker::new();
-static mut KTRACKER: Tracker = Tracker::new();
+const KSTACK_ADDR: VirtAddr = 0xffbfffff;
+const STACK_ADDR: VirtAddr = 0xffafffff;
 
-pub static mut KSTACK: MemoryZone = MemoryZone::new();
-pub static mut KHEAP: MemoryZone = MemoryZone::new();
-
-pub fn memory_state() {
-	unsafe {
-		kprintln!("\nAllocation: {} for {} bytes", KTRACKER.allocation, KTRACKER.allocated_bytes);
-		kprintln!("Free:       {} for {} bytes", KTRACKER.freed, KTRACKER.freed_bytes);
-	}
-}
-
-/*  Kernel initialisation   */
+// Kernel initialisation
 #[no_mangle]
 pub extern "C" fn kinit() {
-    crate::wrappers::_cli();
+	crate::wrappers::_cli();
 
-	/* Init paging and remove identity paging */
+	// multiboot::read_tags();
+	// Init paging and remove identity paging
 	init_paging();
 
-	/* Update gdtr with higher half kernel gdt addr */
+	// Update gdtr with higher half kernel gdt addr
 	unsafe {
 		update_gdtr();
 		reload_gdt!();
 		init_idt();
 	}
 
-	/* HEAP KERNEL */
-	let kstack_addr: VirtAddr = 0xffbfffff; /* stack kernel */
-	unsafe {
-		KSTACK = init_stack(kstack_addr, 2 * 0x1000, PAGE_WRITABLE, false);
-		KHEAP = init_heap(heap as u32, 100 * 0x1000, PAGE_WRITABLE, true, &mut KALLOCATOR);
-	}
+	Task::init_multitasking(STACK_ADDR, heap as u32);
 
-	gdt::tss::init_tss(kstack_addr);
+	gdt::tss::init_tss(KSTACK_ADDR);
 	reload_tss!();
 
-    #[cfg(feature = "multitasking")]
-    init_tasking();
-
-	/* init tracker after init first process */
+	// init tracker after init first process
 	unsafe {
 		KTRACKER = Tracker::new();
 		TRACKER = Tracker::new();
 	}
 
 	setup_pic8259();
-	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
-    pic::set_irq0_in_ms(1.0);
+	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
+	// This setup should be done using frequency, but for readability and ease of use, this is done
+	// with time between each interrupt in ms.
+	pic::set_irq0_in_ms(1.0);
 
-	/* Reserve some spaces to push things before main */
-	unsafe{core::arch::asm!("mov esp, {}", in(reg) kstack_addr - 256)};
-    crate::wrappers::_sti();
+	// Reserve some spaces to push things before main
+	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };
+	crate::wrappers::_sti();
 
-	/*	Function to test and enter usermode */
+	// Function to test and enter usermode
+	// user::test_user_page();
 
 	#[cfg(test)]
 	test_main();

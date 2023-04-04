@@ -20,3 +20,4 @@ macro_rules! disable_paging {
 		"and ebx, ~(1 << 31)",
 		"mov cr0, ebx"));
 }
+

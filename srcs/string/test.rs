@@ -1,7 +1,4 @@
-use crate::{
-//kprintln,
-print_fn
-};
+use crate::print_fn;
 use crate::string::String;
 
 #[test_case]
@@ -35,7 +32,7 @@ fn string_capacity() {
 fn string_push_pop() {
 	print_fn!();
 
-	let mut	x = String::new();
+	let mut x = String::new();
 
 	assert_eq!(x.capacity(), 0);
 	assert_eq!(x.len(), 0);
@@ -90,7 +87,7 @@ fn string_push_str() {
 
 	assert_eq!(&x[..], "Hello");
 	assert_eq!(x.len(), 5);
-	
+
 	x.push_str(" world!");
 	assert_eq!(&x[..], "Hello world!");
 	assert_eq!(x.len(), 12);

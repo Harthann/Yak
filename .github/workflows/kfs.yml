@@ -7,8 +7,19 @@ on:
     branches: [ main, dev ]
 
 jobs:
-  build:
+  check-format:
+    runs-on: ubuntu-latest
 
+    steps:
+    - uses: actions/checkout@v2
+    - name: Update
+      run: sudo apt-get update -y
+    - name: Install rust
+      run: curl --proto '=https' --tlsv1.3 https://sh.rustup.rs -sSf | sh -s -- -y
+    - name: Check format
+      run: cargo fmt --all --check
+
+  test:
     runs-on: ubuntu-latest
 
     steps:

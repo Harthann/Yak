@@ -1,22 +1,24 @@
 use core::fmt;
+use core::ptr::copy_nonoverlapping;
 
-use crate::KHEAP;
-use crate::vec::Vec;
-use crate::memory::{MemoryZone, Stack};
-use crate::memory::paging::{PAGE_WRITABLE, free_pages};
 use crate::memory::allocator::Box;
+use crate::memory::paging::free_pages;
+use crate::memory::{Heap, MemoryZone, Stack};
+use crate::vec::Vec;
 
-use crate::proc::task::TASKLIST;
+use crate::proc::task::Task;
 
+use crate::proc::signal::{Signal, SignalHandler, SignalType};
 use crate::proc::Id;
-use crate::proc::signal::{Signal, SignalType};
+
+use crate::errno::ErrNo;
 
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
 pub type Pid = Id;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Status {
 	Disable,
 	Run,
@@ -25,28 +27,41 @@ pub enum Status {
 }
 
 pub struct Process {
-	pub pid: Pid,
-	pub status: Status,
-	pub parent: *mut Process,
-	pub childs: Vec<Box<Process>>,
-	pub stack: MemoryZone,
-	pub heap: MemoryZone,
-	pub signals: Vec<Signal>,
-	pub owner: Id
+	pub pid:             Pid,
+	pub state:           Status,
+	pub parent:          *mut Process,
+	pub childs:          Vec<Box<Process>>,
+	pub stack:           MemoryZone,
+	pub heap:            MemoryZone,
+	pub kernel_stack:    MemoryZone,
+	pub signals:         Vec<Signal>,
+	pub signal_handlers: Vec<SignalHandler>,
+	pub owner:           Id
 }
 
 impl Process {
 	pub const fn new() -> Self {
 		Self {
-			pid: 0,
-			status: Status::Disable,
-			parent: core::ptr::null_mut(),
-			childs: Vec::new(),
-			stack: MemoryZone::new(),
-			heap: MemoryZone::new(),
-			signals: Vec::new(),
-			owner: 0
+			pid:             0,
+			state:           Status::Disable,
+			parent:          core::ptr::null_mut(),
+			childs:          Vec::new(),
+			stack:           MemoryZone::new(),
+			heap:            MemoryZone::new(),
+			kernel_stack:    MemoryZone::new(),
+			signals:         Vec::new(),
+			signal_handlers: Vec::new(),
+			owner:           0
 		}
+	}
+
+	pub fn get_nb_subprocess(&self) -> usize {
+		let mut ret: usize = 0;
+		for process in self.childs.iter() {
+			ret += 1;
+			ret += process.get_nb_subprocess()
+		}
+		ret
 	}
 
 	pub fn print_tree(&self) {
@@ -56,7 +71,7 @@ impl Process {
 		}
 	}
 
-	pub fn search_from_pid(&mut self, pid: Id) -> Result<&mut Process, ()> {
+	pub fn search_from_pid(&mut self, pid: Id) -> Result<&mut Process, ErrNo> {
 		if self.pid == pid {
 			return Ok(self);
 		}
@@ -66,28 +81,50 @@ impl Process {
 				return res;
 			}
 		}
-		Err(())
+		Err(ErrNo::ESRCH)
 	}
 
-	/* TODO: next_pid need to check overflow and if other pid is available */
-	pub unsafe fn init(&mut self, parent: *mut Process, owner: Id) {
+	// TODO: next_pid need to check overflow and if other pid is available
+	pub unsafe fn init(&mut self, parent: &mut Process) {
 		self.pid = NEXT_PID;
-		self.status = Status::Run;
+		self.state = Status::Run;
 		self.parent = parent;
-		self.stack = <MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
-		self.heap = KHEAP;
-//		self.heap = <MemoryZone as Heap>::init(0x1000, PAGE_WRITABLE, false, &mut KALLOCATOR);
-		self.owner = owner;
+		self.owner = parent.owner;
 		NEXT_PID += 1;
 	}
 
-	pub unsafe fn zombify(&mut self, status: i32) {
+	pub fn setup_stack(&mut self, size: usize, flags: u32, kphys: bool) {
+		self.stack = <MemoryZone as Stack>::init(size, flags, kphys);
+	}
+
+	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
+		self.heap = <MemoryZone as Heap>::init_no_allocator(size, flags, kphys);
+	}
+
+	pub fn setup_kernel_stack(&mut self, size: usize, flags: u32, kphys: bool) {
+		self.kernel_stack = <MemoryZone as Stack>::init(size, flags, kphys);
+	}
+
+	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
+		copy_nonoverlapping(
+			parent.stack.offset as *mut u8,
+			self.stack.offset as *mut u8,
+			self.stack.size
+		);
+		copy_nonoverlapping(
+			parent.heap.offset as *mut u8,
+			self.heap.offset as *mut u8,
+			self.heap.size
+		);
+	}
+
+	pub unsafe fn zombify(&mut self, wstatus: i32) {
 		if self.parent.is_null() {
 			todo!();
 		}
 		let parent: &mut Process = &mut *self.parent;
 		while self.childs.len() > 0 {
-			/* TODO: DON'T MOVE THREADS AND REMOVE THEM */
+			// TODO: DON'T MOVE THREADS AND REMOVE THEM
 			let res = self.childs.pop();
 			if res.is_none() {
 				todo!();
@@ -96,10 +133,9 @@ impl Process {
 			let len = parent.childs.len();
 			parent.childs[len - 1].parent = self.parent;
 		}
-		/* Don't remove and wait for the parent process to do wait4() -> Zombify */
-		self.status = Status::Zombie;
-		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, status);
-		free_pages(self.stack.offset, self.stack.size / 0x1000);
+		// Don't remove and wait for the parent process to do wait4() -> Zombify
+		self.state = Status::Zombie;
+		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
 	}
 
 	pub unsafe fn remove(&mut self) {
@@ -108,65 +144,83 @@ impl Process {
 		while i < parent.childs.len() {
 			let ptr: *mut Process = parent.childs[i].as_mut();
 			if ptr == &mut *self {
-				break ;
+				break;
 			}
 			i += 1;
 		}
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
+		free_pages(self.stack.offset, self.stack.size / 0x1000);
+		free_pages(self.heap.offset, self.heap.size / 0x1000);
+		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
 		parent.childs.remove(i);
 	}
 
-	pub unsafe fn get_signal(&mut self) -> Result<Signal, ()> {
-		if self.signals.len() > 0 {
-			Ok(self.signals.pop().unwrap())
-		} else {
-			Err(())
-		}
-	}
-
-	pub unsafe fn get_signal_from_pid(&mut self, pid: Id) -> Result<Signal, ()> {
+	pub unsafe fn get_signal(
+		&mut self,
+		signal: SignalType
+	) -> Result<Signal, ErrNo> {
 		let mut i = 0;
 		while i < self.signals.len() {
-			if self.signals[i].sender == pid {
+			if self.signals[i].sigtype == signal {
 				return Ok(self.signals.remove(i));
 			}
 			i += 1;
 		}
-		Err(())
+		Err(ErrNo::EAGAIN)
+	}
+
+	pub unsafe fn get_signal_from_pid(
+		&mut self,
+		pid: Id,
+		signal: SignalType
+	) -> Result<Signal, ErrNo> {
+		MASTER_PROCESS.search_from_pid(pid)?; // Return ErrNo::ESRCH if doesn't exist
+		let mut i = 0;
+		while i < self.signals.len() {
+			if self.signals[i].sender == pid
+				&& self.signals[i].sigtype == signal
+			{
+				return Ok(self.signals.remove(i));
+			}
+			i += 1;
+		}
+		Err(ErrNo::EAGAIN)
+	}
+
+	pub fn get_running_process() -> &'static mut Self {
+		unsafe { &mut *Task::get_running_task().process }
+	}
+
+	pub unsafe fn get_signal_running_process(
+		pid: Id,
+		signal: SignalType
+	) -> Result<Signal, ErrNo> {
+		let process: &mut Process = Process::get_running_process();
+		if pid == -1 {
+			process.get_signal(signal)
+		} else if pid > 0 {
+			process.get_signal_from_pid(pid, signal)
+		} else if pid == 0 {
+			todo!();
+		} else {
+			todo!();
+		}
+	}
+
+	pub unsafe fn get_nb_process() -> usize {
+		MASTER_PROCESS.get_nb_subprocess() + 1
+	}
+
+	pub unsafe fn print_all_process() {
+		crate::kprintln!("       PID        OWNER   STATUS");
+		MASTER_PROCESS.print_tree();
 	}
 }
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.status)
+		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.state)
 	}
-}
-
-pub unsafe fn get_running_process() -> *mut Process {
-	let res = TASKLIST.peek();
-	if res.is_none() {
-		todo!();
-	}
-	let task = res.unwrap();
-	task.process
-}
-
-pub unsafe fn zombify_running_process(status: i32) {
-	(*get_running_process()).zombify(status);
-}
-
-pub unsafe fn get_signal_running_process(pid: Id) -> Result<Signal, ()> {
-	let process = &mut *get_running_process();
-	if pid == -1  {
-		process.get_signal()
-	} else {
-		process.get_signal_from_pid(pid)
-	}
-}
-
-pub unsafe fn print_all_process() {
-	crate::kprintln!("       PID        OWNER   STATUS");
-	MASTER_PROCESS.print_tree();
 }

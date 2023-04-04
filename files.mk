@@ -1,4 +1,5 @@
 RUST_SRCS		=	main.rs \
+					kinit.rs \
 					mod.rs \
 					io.rs \
 					keyboard.rs \
@@ -21,10 +22,18 @@ RUST_SRCS		=	main.rs \
 					signal.rs \
 					queue.rs \
 					kinit.rs\
-					$(SYSCALL_SRCS)
+					errno.rs \
+					$(SYSCALL_SRCS) \
+					$(SOUNDS)
 
 SYSCALL_SRCS	=	exit.rs \
-					signal.rs
+					signal.rs \
+					timer.rs
+
+SOUNDS = notes_frequencies.rs \
+		 note.rs \
+		 overworld.rs \
+		 mii.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
 INCLUDES	=		boot.h \
