@@ -1,5 +1,5 @@
-use core::fmt;
 use crate::spin::Mutex;
+use core::fmt;
 use core::fmt::Write;
 
 const SERIAL_COM1: u16 = 0x3f8;
@@ -12,17 +12,16 @@ const SERIAL_COM7: u16 = 0x5e8;
 const SERIAL_COM8: u16 = 0x4e8;
 
 /// Dummy structure to impl fmt::write
-pub struct DWriter {
-}
+pub struct DWriter {}
 
 impl fmt::Write for DWriter {
-    /// Send to SERIAL_COM2 all bytes from s
+	/// Send to SERIAL_COM2 all bytes from s
 	fn write_str(&mut self, s: &str) -> fmt::Result {
-        for i in s.bytes() {
-            crate::io::outb(SERIAL_COM2, i);
-        }
-        Ok(())
-    }
+		for i in s.bytes() {
+			crate::io::outb(SERIAL_COM2, i);
+		}
+		Ok(())
+	}
 }
 
 #[macro_export]
@@ -44,6 +43,6 @@ macro_rules! dprintln {
 
 /// Wrapper function to call from print macros
 pub fn _print(args: fmt::Arguments) {
-    let mut dwriter = DWriter {};
-    dwriter.write_fmt(args).unwrap();
+	let mut dwriter = DWriter {};
+	dwriter.write_fmt(args).unwrap();
 }
