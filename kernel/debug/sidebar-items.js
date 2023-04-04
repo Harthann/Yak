@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["SERIAL_COM1",""],["SERIAL_COM2",""],["SERIAL_COM3",""],["SERIAL_COM4",""],["SERIAL_COM5",""],["SERIAL_COM6",""],["SERIAL_COM7",""],["SERIAL_COM8",""]],"fn":[["_print","Wrapper function to call from print macros"]],"struct":[["DWriter","Dummy structure to impl fmt::write"]]};
