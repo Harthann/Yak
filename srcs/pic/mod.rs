@@ -1,5 +1,5 @@
 //! Setup Programmable Interrupt Controller
-use crate::x86_64::io::{inb, io_wait, outb};
+use crate::x86::io::{inb, io_wait, outb};
 
 pub mod handlers;
 pub mod pit;

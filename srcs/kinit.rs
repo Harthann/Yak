@@ -87,7 +87,7 @@ mod errno;
 mod sound;
 mod spin;
 mod utils;
-mod x86_64;
+mod x86;
 
 #[cfg(test)]
 mod test;

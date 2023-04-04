@@ -1,7 +1,7 @@
 //! Keyboard handler and key mapping
 
 use crate::vga_buffer::NB_SCREEN;
-use crate::x86_64::io;
+use crate::x86::io;
 use crate::{kprint, vga_buffer};
 
 const PRESSED: usize = 0;

@@ -1,5 +1,5 @@
 use crate::vga_buffer::{ColorCode, BUFFER_WIDTH};
-use crate::x86_64::io;
+use crate::x86::io;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cursor {

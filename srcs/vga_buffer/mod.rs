@@ -1,6 +1,6 @@
 //! Handler for vga buffer
 
-use crate::x86_64::io;
+use crate::x86::io;
 use crate::Command;
 use core::fmt;
 use core::fmt::Write;

@@ -1,5 +1,5 @@
 use crate::vga_buffer::color::Color;
-use crate::x86_64::io;
+use crate::x86::io;
 use crate::{vga_buffer, KTRACKER};
 
 #[cfg(test)]

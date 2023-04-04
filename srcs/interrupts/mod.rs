@@ -1,5 +1,5 @@
 //! Setup interrupts and exception handler
-use crate::x86_64::interrupt::{
+use crate::x86::interrupt::{
 	EXCEPTION_SIZE,
 	IDT_MAX_DESCRIPTORS,
 	IDT_SIZE,

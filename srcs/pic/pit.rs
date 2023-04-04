@@ -1,5 +1,5 @@
-use crate::x86_64::io::{inb, outb};
-use crate::x86_64::port::PortWriteOnly;
+use crate::x86::io::{inb, outb};
+use crate::x86::port::PortWriteOnly;
 // I/O port     Usage
 // 0x40         Channel 0 data port (read/write)
 // 0x41         Channel 1 data port (read/write)
