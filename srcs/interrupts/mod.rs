@@ -1,6 +1,7 @@
 //! Setup interrupts and exception handler
 
-use crate::proc::task::TASKLIST;
+use crate::proc::process::Status;
+use crate::proc::task::{schedule_task, switch_task, Task};
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
@@ -122,15 +123,11 @@ use crate::wrappers::{_cli, _rst};
 // [https://wiki.osdev.org/Interrupts_tutorial]
 // TODO: lock mutex before write and int
 #[no_mangle]
-pub extern "C" fn exception_handler(reg: &mut Registers) {
+pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 	_cli();
-	unsafe {
-		let res = TASKLIST.peek();
-		if res.is_some() {
-			let mut task = res.unwrap();
-			task.regs = *reg;
-		}
-	}
+	let mut task = Task::get_running_task();
+	task.regs = *reg;
+	let process: &crate::proc::process::Process = &*task.process;
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(
@@ -147,7 +144,7 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 		}
 		if int_no != 3 && int_no != 1 {
 			// TODO: HOW TO GET IF IT'S A TRAP OR NOT
-			unsafe { core::arch::asm!("hlt") };
+			core::arch::asm!("hlt");
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
@@ -160,12 +157,17 @@ pub extern "C" fn exception_handler(reg: &mut Registers) {
 				int_no,
 				reg
 			);
-			unsafe { core::arch::asm!("hlt") };
+			core::arch::asm!("hlt");
 		} else {
 			crate::pic::handler(reg, int_no);
 		}
 	}
+	reg.int_no = u32::MAX; // identifier for switch_task
+	if process.state == Status::Disable || process.state == Status::Zombie {
+		crate::proc::task::schedule_task();
+	}
 	_rst();
+	switch_task(reg);
 }
 
 pub unsafe fn init_idt() {

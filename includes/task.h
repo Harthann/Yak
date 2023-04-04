@@ -1,6 +1,8 @@
 %ifndef TASK_H
 %define TASK_H
 
+%define KSTACK_ADDR 0xffbfffff
+
 struc regs
 	.ds:			resd 1
 	.cr3:			resd 1

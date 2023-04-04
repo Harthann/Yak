@@ -10,8 +10,6 @@ extern page_directory
 extern save_task
 extern schedule_task
 
-%define KSTACK_ADDR 0xffbfffff
-
 extern JIFFIES
 
 swap_task:

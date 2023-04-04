@@ -18,7 +18,7 @@ pub static mut MASTER_PROCESS: Process = Process::new();
 
 pub type Pid = Id;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Status {
 	Disable,
 	Run,
