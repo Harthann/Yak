@@ -1,48 +1,16 @@
 //! Setup interrupts and exception handler
+use crate::x86::interrupt::{
+	EXCEPTION_SIZE,
+	IDT_MAX_DESCRIPTORS,
+	IDT_SIZE,
+	STR_EXCEPTION
+};
 
 use crate::proc::process::Status;
-use crate::proc::task::{schedule_task, switch_task, Task};
+use crate::proc::task::{switch_task, Task};
 use crate::syscalls::syscall_handler;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
-const IDT_SIZE: usize = 48;
-const IDT_MAX_DESCRIPTORS: usize = 256;
-
-const EXCEPTION_SIZE: usize = 32;
-const STR_EXCEPTION: [&'static str; EXCEPTION_SIZE] = [
-	"Divide-by-zero",
-	"Debug",
-	"Non-maskable Interrupt",
-	"Breakpoint",
-	"Overflow",
-	"Bound Range Exceeded",
-	"Invalid Opcode",
-	"Device Not Available",
-	"Double Fault",
-	"Coprocessor Segment Overrun",
-	"Invalid TSS",
-	"Segment Not Present",
-	"Stack-Segment Fault",
-	"General Protection Fault",
-	"Page Fault",
-	"Reserved",
-	"x87 Floating-Point Exception",
-	"Alignment Check",
-	"Machine Check",
-	"SIMD Floating-Point Exception",
-	"Virtualization Exception",
-	"Control Protection Exception",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Reserved",
-	"Hypervisor Injection Exception",
-	"VMM Communication Exception",
-	"Security Exception",
-	"Reserved"
-];
 
 extern "C" {
 	static mut isr_stub_table: [u32; IDT_SIZE];

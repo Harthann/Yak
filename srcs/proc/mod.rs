@@ -141,6 +141,6 @@ pub fn change_kernel_stack(addr: VirtAddr) {
 				get_paddr!(addr),
 				PAGE_WRITABLE | PAGE_GLOBAL
 			);
-		refresh_tlb!();
+		crate::refresh_tlb!();
 	}
 }

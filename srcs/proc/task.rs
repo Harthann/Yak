@@ -74,7 +74,7 @@ impl Task {
 					get_paddr!(MASTER_PROCESS.kernel_stack.offset),
 					PAGE_WRITABLE
 				);
-			refresh_tlb!();
+			crate::refresh_tlb!();
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
 				0x1000,

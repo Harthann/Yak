@@ -1,6 +1,7 @@
 //! Handler for vga buffer
 
-use crate::{io, Command};
+use crate::x86::io;
+use crate::Command;
 use core::fmt;
 use core::fmt::Write;
 use core::panic::PanicInfo;

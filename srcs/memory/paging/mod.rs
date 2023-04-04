@@ -39,7 +39,7 @@ pub fn init_paging() {
 			bitmap::physmap_as_mut().get_page().unwrap();
 		// Use identity mapping to setup kernel page
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
-		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
+		let init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab
 			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		refresh_tlb!();
@@ -126,27 +126,5 @@ macro_rules! get_vaddr {
 	};
 }
 
-macro_rules! refresh_tlb {
-	() => {
-		core::arch::asm!("mov eax, cr3", "mov cr3, eax")
-	};
-}
-
-#[allow(unused)]
-macro_rules! enable_paging {
-	($page_directory:expr) => (core::arch::asm!("mov eax, {p}",
-		"mov cr3, eax",
-		"mov eax, cr0",
-		"or eax, 0x80000001",
-		"mov cr0, eax",
-		p = in(reg) (&$page_directory as *const _) as usize););
-}
-
-#[allow(unused)]
-macro_rules! disable_paging {
-	() => {
-		core::arch::asm!("mov ebx, cr0", "and ebx, ~(1 << 31)", "mov cr0, ebx")
-	};
-}
-
-pub(crate) use {get_paddr, get_vaddr, refresh_tlb};
+pub(crate) use crate::refresh_tlb;
+pub(crate) use {get_paddr, get_vaddr};

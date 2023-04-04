@@ -8,8 +8,9 @@ use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_kill;
 use crate::vec::Vec;
-use crate::vga_buffer::{hexdump, screenclear};
-use crate::{io, kprint, kprintln};
+use crate::vga_buffer::screenclear;
+use crate::x86::io;
+use crate::{kprint, kprintln};
 
 const NB_CMDS: usize = 13;
 
@@ -34,9 +35,8 @@ const KNOWN_CMD: [&str; NB_CMDS] = [
 ];
 
 fn kill(command: Vec<String>) {
-	let mut count: usize = 0;
 	let mut wstatus: i32 = 0;
-	let mut pid: Pid = 0;
+	let pid: Pid;
 
 	if command.len() != 2 {
 		kprintln!("Invalid argument.");
@@ -167,13 +167,12 @@ fn hexdump_parser(command: Vec<String>) {
 		return;
 	}
 
-	hexdump(args[0] as *const u8, args[1]);
+	crate::vga_buffer::hexdump(args[0] as *const u8, args[1]);
 }
 
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
 fn keymap(command: Vec<String>) {
-	let mut count: usize = 0;
 
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");
@@ -196,7 +195,7 @@ extern "C" {
 }
 
 fn interrupt(command: Vec<String>) {
-	let mut arg: usize = 0;
+	let arg: usize;
 
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");

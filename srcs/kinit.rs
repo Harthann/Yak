@@ -77,7 +77,6 @@ mod string;
 mod vec;
 #[macro_use]
 mod syscalls;
-mod io;
 mod pic;
 mod proc;
 mod user;
@@ -88,6 +87,7 @@ mod errno;
 mod sound;
 mod spin;
 mod utils;
+mod x86;
 #[macro_use]
 mod debug;
 

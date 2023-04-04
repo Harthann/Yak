@@ -21,6 +21,7 @@ RUST_SRCS		=	main.rs \
 					task.rs \
 					signal.rs \
 					queue.rs \
+					kinit.rs\
 					errno.rs \
 					debug.rs\
 					$(SYSCALL_SRCS) \

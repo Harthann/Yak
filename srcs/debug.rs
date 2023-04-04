@@ -18,7 +18,7 @@ impl fmt::Write for DWriter {
 	/// Send to SERIAL_COM2 all bytes from s
 	fn write_str(&mut self, s: &str) -> fmt::Result {
 		for i in s.bytes() {
-			crate::io::outb(SERIAL_COM2, i);
+			crate::x86::io::outb(SERIAL_COM2, i);
 		}
 		Ok(())
 	}

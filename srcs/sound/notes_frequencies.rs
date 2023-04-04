@@ -1,3 +1,4 @@
+#![allow(non_upper_case_globals)]
 pub const C2: f32 = 65.41;
 pub const Cs2: f32 = 69.30;
 pub const Db2: f32 = Cs2;
