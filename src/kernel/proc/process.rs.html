@@ -250,7 +250,7 @@
 
 <span class="kw">pub</span> <span class="kw">type</span> <span class="ident">Pid</span> <span class="op">=</span> <span class="ident">Id</span>;
 
-<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>)]</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">PartialEq</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">Status</span> {
 	<span class="ident">Disable</span>,
 	<span class="ident">Run</span>,
