@@ -1,7 +1,7 @@
 //! Keyboard handler and key mapping
 
 use crate::kprint;
-use crate::io;
+use crate::x86_64::io;
 use crate::vga_buffer;
 use crate::vga_buffer::NB_SCREEN;
 

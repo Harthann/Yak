@@ -3,7 +3,7 @@
 use core::arch::asm;
 
 use crate::{kprint, kprintln, hexdump, screenclear};
-use crate::io;
+use crate::x86_64::io;
 use crate::string::String;
 use crate::memory::allocator;
 

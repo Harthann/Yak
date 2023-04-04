@@ -2,7 +2,7 @@
 
 use core::fmt;
 use core::panic::PanicInfo;
-use crate::io;
+use crate::x86_64::io;
 use crate::Command;
 
 pub mod color;

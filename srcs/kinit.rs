@@ -36,7 +36,6 @@ mod vec;
 mod string;
 mod interrupts;
 mod syscalls;
-mod io;
 mod vga_buffer;
 mod pic;
 mod proc;

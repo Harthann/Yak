@@ -1,4 +1,5 @@
 pub mod port;
+pub mod io;
 
 #[allow(dead_code)]
 pub fn io_wait() {
