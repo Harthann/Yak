@@ -88,6 +88,8 @@ mod errno;
 mod sound;
 mod spin;
 mod utils;
+#[macro_use]
+mod debug;
 
 #[cfg(test)]
 mod test;
