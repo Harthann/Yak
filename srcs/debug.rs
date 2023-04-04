@@ -35,8 +35,11 @@ macro_rules! dprint {
 macro_rules! dprintln {
 	() => ($crate::dprint!("\n"));
 	($($arg:tt)*) => (
-        unsafe {
-		$crate::dprint!("[{}] {}\n",crate::pic::handlers::JIFFIES ,format_args!($($arg)*));
+	unsafe {
+        let time = crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
+		$crate::dprint!("[{: >12.6}] {}\n",
+                        time / 1000.0,
+                        format_args!($($arg)*));
         }
 	)
 }
