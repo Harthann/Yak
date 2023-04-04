@@ -352,13 +352,13 @@
 			<span class="ident">userfunc_end</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> <span class="ident">userfunc</span> <span class="kw">as</span> <span class="ident">usize</span>
 		);
 	}
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">status</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">let</span> <span class="ident">ret</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::syscalls::exit::sys_waitpid</span>(<span class="op">-</span><span class="number">1</span>, <span class="kw-2">&amp;mut</span> <span class="ident">status</span>, <span class="number">0</span>);
-	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;pid ret: {}&quot;</span>, <span class="ident">ret</span>);
-	<span class="macro">crate::kprintln!</span>(
-		<span class="string">&quot;status: {}&quot;</span>,
-		<span class="macro">crate::syscalls::exit::__WEXITSTATUS!</span>(<span class="ident">status</span>)
-	);
+	<span class="comment">// 	let mut status: i32 = 0;</span>
+	<span class="comment">// 	let ret = crate::syscalls::exit::sys_waitpid(-1, &amp;mut status, 0);</span>
+	<span class="comment">// 	crate::kprintln!(&quot;pid ret: {}&quot;, ret);</span>
+	<span class="comment">// 	crate::kprintln!(</span>
+	<span class="comment">// 		&quot;status: {}&quot;,</span>
+	<span class="comment">// 		crate::syscalls::exit::__WEXITSTATUS!(status)</span>
+	<span class="comment">// 	);</span>
 	<span class="comment">// let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect(&quot;&quot;);</span>
 	<span class="comment">// let funclen = userfunc_end as usize - userfunc as usize;</span>
 	<span class="comment">//</span>

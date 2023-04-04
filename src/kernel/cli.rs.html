@@ -293,26 +293,22 @@
 <span id="287">287</span>
 <span id="288">288</span>
 <span id="289">289</span>
-<span id="290">290</span>
-<span id="291">291</span>
-<span id="292">292</span>
-<span id="293">293</span>
-<span id="294">294</span>
-<span id="295">295</span>
-<span id="296">296</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Command line interface (term)</span>
 
 <span class="kw">use</span> <span class="ident">core::arch::asm</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process::Process</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::string::String</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Pid</span>, <span class="ident">Process</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::string</span>::{<span class="ident">String</span>, <span class="ident">ToString</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::syscalls::exit::sys_waitpid</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::syscalls::signal::sys_kill</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vec::Vec</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vga_buffer</span>::{<span class="ident">hexdump</span>, <span class="ident">screenclear</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">io</span>, <span class="ident">kprint</span>, <span class="ident">kprintln</span>};
 
-<span class="kw">const</span> <span class="ident">NB_CMDS</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">12</span>;
+<span class="kw">const</span> <span class="ident">NB_CMDS</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">13</span>;
 
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">COMMANDS</span>: [<span class="kw">fn</span>(<span class="kw-2">&amp;</span><span class="ident">Command</span>); <span class="ident">NB_CMDS</span>] <span class="op">=</span> [
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">COMMANDS</span>: [<span class="kw">fn</span>(<span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>); <span class="ident">NB_CMDS</span>] <span class="op">=</span> [
 	<span class="ident">reboot</span>,
 	<span class="ident">halt</span>,
 	<span class="ident">hexdump_parser</span>,
@@ -324,39 +320,62 @@
 	<span class="ident">jiffies</span>,
 	<span class="ident">ps</span>,
 	<span class="ident">time</span>,
-	<span class="ident">play</span>
+	<span class="ident">play</span>,
+	<span class="ident">kill</span>
 ];
 <span class="kw">const</span> <span class="ident">KNOWN_CMD</span>: [<span class="kw-2">&amp;</span><span class="ident">str</span>; <span class="ident">NB_CMDS</span>] <span class="op">=</span> [
 	<span class="string">&quot;reboot&quot;</span>, <span class="string">&quot;halt&quot;</span>, <span class="string">&quot;hexdump&quot;</span>, <span class="string">&quot;keymap&quot;</span>, <span class="string">&quot;int&quot;</span>, <span class="string">&quot;clear&quot;</span>, <span class="string">&quot;help&quot;</span>, <span class="string">&quot;shutdown&quot;</span>,
-	<span class="string">&quot;jiffies&quot;</span>, <span class="string">&quot;ps&quot;</span>, <span class="string">&quot;time&quot;</span>, <span class="string">&quot;play&quot;</span>
+	<span class="string">&quot;jiffies&quot;</span>, <span class="string">&quot;ps&quot;</span>, <span class="string">&quot;time&quot;</span>, <span class="string">&quot;play&quot;</span>, <span class="string">&quot;kill&quot;</span>
 ];
 
-<span class="kw">fn</span> <span class="ident">reboot</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">kill</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wstatus</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="number">0</span>;
+	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pid</span>: <span class="ident">Pid</span> <span class="op">=</span> <span class="number">0</span>;
+
+	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: kill [pid]&quot;</span>);
+		<span class="kw">return</span>;
+	}
+
+	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">res</span>) <span class="op">=</span> <span class="ident">atou</span>(<span class="ident">command</span>[<span class="number">1</span>].<span class="ident">as_str</span>()) {
+		<span class="ident">pid</span> <span class="op">=</span> <span class="ident">res</span> <span class="kw">as</span> <span class="ident">Pid</span>;
+	} <span class="kw">else</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: kill [pid]&quot;</span>);
+		<span class="kw">return</span>;
+	}
+
+	<span class="kw">let</span> <span class="ident">res</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="ident">sys_kill</span>(<span class="ident">pid</span>, <span class="number">9</span>); <span class="comment">// SIGKILL</span>
+	<span class="kw">if</span> <span class="ident">res</span> <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;[Error]: {}&quot;</span>, <span class="ident">res</span>);
+		<span class="kw">return</span>;
+	}
+	<span class="ident">sys_waitpid</span>(<span class="ident">pid</span>, <span class="kw-2">&amp;mut</span> <span class="ident">wstatus</span>, <span class="number">0</span>);
+}
+
+<span class="kw">fn</span> <span class="ident">reboot</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="ident">io::outb</span>(<span class="number">0x64</span>, <span class="number">0xfe</span>);
 }
 
-<span class="kw">fn</span> <span class="ident">play</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
-	<span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">command</span>;
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">fn</span> <span class="ident">play</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">sound</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="string">&quot;Unknown&quot;</span>;
 
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="comment">// Ignore first iteration since it&#39;s command name</span>
-		<span class="kw">if</span> <span class="ident">iter</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> <span class="op">&amp;&amp;</span> <span class="ident">count</span> <span class="op">==</span> <span class="number">1</span> {
-			<span class="ident">sound</span> <span class="op">=</span> <span class="ident">iter</span>;
-		}
-		<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="number">2</span> {
+		<span class="ident">sound</span> <span class="op">=</span> <span class="ident">command</span>[<span class="number">1</span>].<span class="ident">as_str</span>();
 	}
+	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;sound: {}&quot;</span>, <span class="ident">sound</span>);
 	<span class="ident"><span class="kw">crate</span>::sound::play</span>(<span class="ident">sound</span>);
 }
 
-<span class="kw">fn</span> <span class="ident">jiffies</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">jiffies</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">unsafe</span> {
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Jiffies: {}&quot;</span>, <span class="ident"><span class="kw">crate</span>::pic::JIFFIES</span>);
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">time</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">time</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">unsafe</span> {
 		<span class="ident"><span class="kw">crate</span>::pic::pit::TIME_ELAPSED</span> <span class="op">=</span>
 			<span class="ident"><span class="kw">crate</span>::pic::JIFFIES</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident"><span class="kw">crate</span>::pic::pit::SYSTEM_FRACTION</span>;
@@ -367,28 +386,28 @@
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">halt</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">halt</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">unsafe</span> {
 		<span class="macro">asm!</span>(<span class="string">&quot;hlt&quot;</span>);
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">clear</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="macro">screenclear!</span>();
 }
 
-<span class="kw">fn</span> <span class="ident">help</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">help</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="macro">kprintln!</span>(<span class="string">&quot;Available commands:&quot;</span>);
 	<span class="kw">for</span> <span class="ident">i</span> <span class="kw">in</span> <span class="ident">KNOWN_CMD</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;    {}&quot;</span>, <span class="ident">i</span>);
 	}
 }
 
-<span class="kw">fn</span> <span class="ident">shutdown</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">shutdown</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="ident">io::outb</span>(<span class="number">0xf4</span>, <span class="number">0x10</span>);
 }
 
-<span class="kw">fn</span> <span class="ident">ps</span>(<span class="kw">_</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
+<span class="kw">fn</span> <span class="ident">ps</span>(<span class="kw">_</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">unsafe</span> { <span class="ident">Process::print_all_process</span>() };
 }
 
@@ -416,75 +435,52 @@
 	<span class="ident">string</span>.<span class="ident">parse</span>::<span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>().<span class="ident">ok</span>()
 }
 
-<span class="kw">fn</span> <span class="ident">hexdump_parser</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
-	<span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">command</span>;
-
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">fn</span> <span class="ident">hexdump_parser</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">args</span>: [<span class="ident">usize</span>; <span class="number">2</span>] <span class="op">=</span> [<span class="number">0</span>, <span class="number">0</span>];
 
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="kw">if</span> <span class="ident">iter</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-		}
-	}
-
-	<span class="kw">if</span> <span class="ident">count</span> <span class="op">!</span><span class="op">=</span> <span class="number">3</span> {
+	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">3</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: hexdump [addr] [size]&quot;</span>);
 		<span class="kw">return</span>;
 	}
 
-	<span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="kw">if</span> <span class="ident">iter</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span> <span class="number">0</span> {
-				<span class="kw">match</span> <span class="ident">atou</span>(<span class="ident">iter</span>) {
-					<span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">args</span>[<span class="ident">count</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">-</span> <span class="number">1</span>] <span class="op">=</span> <span class="ident">x</span>,
-					<span class="kw">_</span> =&gt; {
-						<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
-						<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: hexdump [addr] [size]&quot;</span>);
-						<span class="kw">return</span>;
-					}
-				}
-			}
-			<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-		}
+	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">res</span>) <span class="op">=</span> <span class="ident">atou</span>(<span class="ident">command</span>[<span class="number">1</span>].<span class="ident">as_str</span>()) {
+		<span class="ident">args</span>[<span class="number">0</span>] <span class="op">=</span> <span class="ident">res</span>;
+	} <span class="kw">else</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: hexdump [addr] [size]&quot;</span>);
+		<span class="kw">return</span>;
 	}
+
+	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">res</span>) <span class="op">=</span> <span class="ident">atou</span>(<span class="ident">command</span>[<span class="number">2</span>].<span class="ident">as_str</span>()) {
+		<span class="ident">args</span>[<span class="number">1</span>] <span class="op">=</span> <span class="ident">res</span>;
+	} <span class="kw">else</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: hexdump [addr] [size]&quot;</span>);
+		<span class="kw">return</span>;
+	}
+
 	<span class="ident">hexdump</span>(<span class="ident">args</span>[<span class="number">0</span>] <span class="kw">as</span> <span class="kw-2">*const</span> <span class="ident">u8</span>, <span class="ident">args</span>[<span class="number">1</span>]);
 }
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::keyboard</span>::{<span class="ident">KEYMAP</span>, <span class="ident">KEYMAP_FR</span>, <span class="ident">KEYMAP_US</span>};
 
-<span class="kw">fn</span> <span class="ident">keymap</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
-	<span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">command</span>;
+<span class="kw">fn</span> <span class="ident">keymap</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="kw">if</span> <span class="ident">iter</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-		}
-	}
-
-	<span class="kw">if</span> <span class="ident">count</span> <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
+	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: keymap {{us, fr}}&quot;</span>);
 		<span class="kw">return</span>;
 	}
 
-	<span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span> <span class="number">0</span> {
-			<span class="kw">if</span> <span class="ident">iter</span> <span class="op">==</span> <span class="string">&quot;us&quot;</span> {
-				<span class="kw">unsafe</span> { <span class="ident">KEYMAP</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">KEYMAP_US</span> };
-			} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">iter</span> <span class="op">==</span> <span class="string">&quot;fr&quot;</span> {
-				<span class="kw">unsafe</span> { <span class="ident">KEYMAP</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">KEYMAP_FR</span> };
-			} <span class="kw">else</span> {
-				<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
-				<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: keymap {{us, fr}}&quot;</span>);
-			}
-			<span class="kw">return</span>;
-		}
-		<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+	<span class="kw">if</span> <span class="ident">command</span>[<span class="number">1</span>] <span class="op">==</span> <span class="string">&quot;us&quot;</span> {
+		<span class="kw">unsafe</span> { <span class="ident">KEYMAP</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">KEYMAP_US</span> };
+	} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">command</span>[<span class="number">1</span>] <span class="op">==</span> <span class="string">&quot;fr&quot;</span> {
+		<span class="kw">unsafe</span> { <span class="ident">KEYMAP</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">KEYMAP_FR</span> };
+	} <span class="kw">else</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: keymap {{us, fr}}&quot;</span>);
 	}
 }
 
@@ -492,40 +488,23 @@
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">int</span>(<span class="ident">nb</span>: <span class="ident">u8</span>);
 }
 
-<span class="kw">fn</span> <span class="ident">interrupt</span>(<span class="ident">command</span>: <span class="kw-2">&amp;</span><span class="ident">Command</span>) {
-	<span class="kw">let</span> <span class="ident">cmd</span> <span class="op">=</span> <span class="kw-2">&amp;</span><span class="ident">command</span>.<span class="ident">command</span>;
-
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">fn</span> <span class="ident">interrupt</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arg</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="kw">if</span> <span class="ident">iter</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-		}
-	}
-
-	<span class="kw">if</span> <span class="ident">count</span> <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
+	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: int [nb]&quot;</span>);
 		<span class="kw">return</span>;
 	}
 
-	<span class="ident">count</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">for</span> <span class="ident">iter</span> <span class="kw">in</span> <span class="ident">cmd</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]) {
-		<span class="kw">if</span> <span class="ident">iter</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
-			<span class="kw">if</span> <span class="ident">count</span> <span class="op">&gt;</span> <span class="number">0</span> {
-				<span class="kw">match</span> <span class="ident">atou</span>(<span class="ident">iter</span>) {
-					<span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">arg</span> <span class="op">=</span> <span class="ident">x</span>,
-					<span class="kw">_</span> =&gt; {
-						<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
-						<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: int [nb]&quot;</span>);
-						<span class="kw">return</span>;
-					}
-				}
-			}
-			<span class="ident">count</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
-		}
+	<span class="kw">if</span> <span class="kw">let</span> <span class="prelude-val">Some</span>(<span class="ident">res</span>) <span class="op">=</span> <span class="ident">atou</span>(<span class="ident">command</span>[<span class="number">1</span>].<span class="ident">as_str</span>()) {
+		<span class="ident">arg</span> <span class="op">=</span> <span class="ident">res</span>;
+	} <span class="kw">else</span> {
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
+		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: hexdump [addr] [size]&quot;</span>);
+		<span class="kw">return</span>;
 	}
+
 	<span class="kw">if</span> <span class="ident">arg</span> <span class="op">&gt;</span> <span class="number">255</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: int [nb]&quot;</span>);
@@ -560,7 +539,7 @@
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">j</span> <span class="op">=</span> <span class="number">0</span>;
 		<span class="kw">while</span> <span class="ident">j</span> <span class="op">&lt;</span> <span class="ident">KNOWN_CMD</span>.<span class="ident">len</span>() {
 			<span class="kw">let</span> <span class="ident">cmd</span>: <span class="kw-2">&amp;</span><span class="ident">str</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">split</span>(<span class="string">&quot; &quot;</span>).<span class="ident">nth</span>(<span class="number">0</span>)<span class="question-mark">?</span>;
-			<span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">cmd</span>) <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="ident">KNOWN_CMD</span>[<span class="ident">j</span>]) {
+			<span class="kw">if</span> <span class="prelude-val">Some</span>(<span class="ident">cmd</span>) <span class="op">==</span> <span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span><span class="ident">KNOWN_CMD</span>[<span class="ident">j</span>].<span class="ident">to_string</span>()) {
 				<span class="kw">return</span> <span class="prelude-val">Some</span>(<span class="ident">j</span>);
 			}
 			<span class="ident">j</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
@@ -584,7 +563,14 @@
 		} <span class="kw">else</span> <span class="kw">if</span> <span class="ident">charcode</span> <span class="op">==</span> <span class="string">&#39;\n&#39;</span> {
 			<span class="macro">crate::kprint!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">charcode</span>);
 			<span class="kw">match</span> <span class="self">self</span>.<span class="ident">is_known</span>() {
-				<span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; <span class="ident">COMMANDS</span>[<span class="ident">x</span>](<span class="kw-2">&amp;</span><span class="self">self</span>),
+				<span class="prelude-val">Some</span>(<span class="ident">x</span>) =&gt; {
+					<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">split</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Vec::new</span>();
+					<span class="kw">let</span> <span class="ident">splited</span> <span class="op">=</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">split</span>(<span class="kw-2">&amp;</span>[<span class="string">&#39; &#39;</span>, <span class="string">&#39;\t&#39;</span>, <span class="string">&#39;\0&#39;</span>][..]);
+					<span class="kw">for</span> <span class="ident">arg</span> <span class="kw">in</span> <span class="ident">splited</span> {
+						<span class="ident">split</span>.<span class="ident">push</span>(<span class="ident">arg</span>.<span class="ident">to_string</span>());
+					}
+					<span class="ident">COMMANDS</span>[<span class="ident">x</span>](<span class="ident">split</span>);
+				},
 				<span class="kw">_</span> =&gt; {
 					<span class="kw">if</span> <span class="self">self</span>.<span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">0</span> {
 						<span class="macro">kprintln!</span>(<span class="string">&quot;Unknown command. Type `help` to list available commands&quot;</span>);
