@@ -32,7 +32,7 @@ swap_task:
 	mov cr3, eax
 	jmp .jiffies
 
-	.get_kernel_kstack
+	.get_kernel_kstack:
 	mov eax, esp
 	mov esp, KSTACK_ADDR + 1
 
