@@ -56,33 +56,10 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	// TODO: free those when process ends ?
 	let page_dir: &mut PageDirectory = PageDirectory::new();
-	let handler_page_tab: &mut PageTable = PageTable::new();
 	let process_heap: &mut PageTable = PageTable::new();
 	let process_stack: &mut PageTable = PageTable::new();
 	let process_kernel_stack: &mut PageTable = PageTable::new();
 	crate::kprintln!("kernel_pt_paddr: {:#x?}", kernel_pt_paddr);
-	// Reference page table
-	handler_page_tab.new_index_frame(
-		USER_HEAP_ADDR as usize >> 22,
-		get_paddr!(process_heap as *const _),
-		PAGE_WRITABLE | PAGE_USER
-	);
-	handler_page_tab.new_index_frame(
-		USER_STACK_ADDR as usize >> 22,
-		get_paddr!(process_stack as *const _),
-		PAGE_WRITABLE | PAGE_USER
-	);
-	handler_page_tab.new_index_frame(768, kernel_pt_paddr, PAGE_USER);
-	handler_page_tab.new_index_frame(
-		KSTACK_ADDR as usize >> 22,
-		get_paddr!(process_kernel_stack as *const _),
-		PAGE_WRITABLE | PAGE_USER
-	);
-	handler_page_tab.new_index_frame(
-		1023,
-		get_paddr!(handler_page_tab as *const _),
-		PAGE_WRITABLE | PAGE_USER
-	);
 
 	// Setup heap + prg
 	page_dir.set_entry(
@@ -113,7 +90,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	);
 	page_dir.set_entry(
 		1023,
-		get_paddr!(handler_page_tab as *const _)
+		get_paddr!(page_dir as *const _)
 			| PAGE_WRITABLE
 			| PAGE_PRESENT
 			| PAGE_USER

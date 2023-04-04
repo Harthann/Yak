@@ -18,66 +18,47 @@ pub const PAGE_USER: u32 = 0b100;
 pub const PAGE_WRITABLE: u32 = 0b10;
 pub const PAGE_PRESENT: u32 = 0b1;
 
-// Initiliaze the paging:
-// - setup a page_table at the index 768 containing kernel code paddrs and
-// page_directoy paddr
-// - reset the initial page_table at index 0 and setup the page to index every
-// page_tables in memory
-// - initialize the bitmap of page tables
-// - refresh tlb to clear the cache of the CPU
+/// Initialize the paging:
+/// + setup a page_table at the index 768 containing kernel code paddrs and
+/// page_directoy paddr
+/// + reset the initial page_table at index 0 and setup the page_directory
+/// to index every page_tables in memory
+/// + initialize the bitmap of page tables
+/// + refresh tlb to clear the cache of the CPU
 pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr =
 			(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 		multiboot::claim_multiboot();
+		// Claim page_directory
 		bitmap::physmap_as_mut()
 			.claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
 
 		// Init paging map
 		let kernel_pt_paddr: PhysAddr =
 			bitmap::physmap_as_mut().get_page().unwrap();
-		let handler_pt_paddr: PhysAddr =
-			bitmap::physmap_as_mut().get_page().unwrap();
+		// Use identity mapping to setup kernel page
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab
 			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
-		init_page_tab
-			.set_entry(1023, handler_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		refresh_tlb!();
-
-		// Setup handler page table
+		// Final mapping
 		let kernel_page_tab: &mut PageTable =
 			&mut *(get_vaddr!(0, 768) as *mut _);
-		let mut handler_page_tab: &mut PageTable =
-			&mut *(get_vaddr!(0, 1023) as *mut _);
 		kernel_page_tab.init();
-		handler_page_tab
-			.set_entry(0, init_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
-		handler_page_tab.set_entry(
-			768,
-			kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
-		);
-		handler_page_tab.set_entry(
-			1023,
-			handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
-		);
-		page_directory.set_entry(0, 0);
 		page_directory.set_entry(
 			768,
 			kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
 		);
+		// Recursive mapping
 		page_directory.set_entry(
 			1023,
-			handler_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
+			pd_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
 		);
-		refresh_tlb!();
-
 		// Remove init page
-		init_page_tab = page_directory.get_page_table(0);
-		handler_page_tab = page_directory.get_page_table(1023);
 		init_page_tab.clear();
-		handler_page_tab.set_entry(0, 0);
+		page_directory.set_entry(0, 0);
 		refresh_tlb!();
 	}
 }
