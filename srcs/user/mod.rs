@@ -163,13 +163,13 @@ pub fn test_user_page() {
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-	let mut status: i32 = 0;
-	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
-	crate::kprintln!("pid ret: {}", ret);
-	crate::kprintln!(
-		"status: {}",
-		crate::syscalls::exit::__WEXITSTATUS!(status)
-	);
+	// 	let mut status: i32 = 0;
+	// 	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
+	// 	crate::kprintln!("pid ret: {}", ret);
+	// 	crate::kprintln!(
+	// 		"status: {}",
+	// 		crate::syscalls::exit::__WEXITSTATUS!(status)
+	// 	);
 	// let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
 	// let funclen = userfunc_end as usize - userfunc as usize;
 	//
