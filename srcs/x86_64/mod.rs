@@ -1,6 +1,7 @@
 pub mod port;
 pub mod io;
 pub mod paging;
+pub mod interrupt;
 
 #[allow(dead_code)]
 pub fn io_wait() {

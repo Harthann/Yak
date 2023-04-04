@@ -143,7 +143,6 @@ pub extern "C" fn kinit() {
 
 	setup_pic8259();
 	/* Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching */
-	pic::set_pit(pic::pit::CHANNEL_0, pic::pit::ACC_LOBHIB, pic::pit::MODE_2, 0x00ff);
     pic::set_irq0_in_ms(1.0);
 
 	/* Reserve some spaces to push things before main */
