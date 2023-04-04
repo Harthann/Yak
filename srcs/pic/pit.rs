@@ -1,4 +1,4 @@
-use crate::x86_64::port::{PortWriteOnly, Port};
+use crate::x86_64::port::{PortWriteOnly};
 /*
 ** I/O port     Usage
 ** 0x40         Channel 0 data port (read/write)
