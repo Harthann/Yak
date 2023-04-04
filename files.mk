@@ -20,6 +20,7 @@ RUST_SRCS		=	main.rs \
 					task.rs \
 					signal.rs \
 					queue.rs \
+					kinit.rs\
 					$(SYSCALL_SRCS)
 
 SYSCALL_SRCS	=	exit.rs \
