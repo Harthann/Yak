@@ -2,15 +2,14 @@
 
 use core::arch::asm;
 
-use crate::vec::Vec;
-use crate::string::ToString;
 use crate::memory::allocator;
-use crate::proc::process::{Process, Pid};
-use crate::string::String;
-use crate::vga_buffer::{hexdump, screenclear};
-use crate::{io, kprint, kprintln};
+use crate::proc::process::{Pid, Process};
+use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_kill;
+use crate::vec::Vec;
+use crate::vga_buffer::{hexdump, screenclear};
+use crate::{io, kprint, kprintln};
 
 const NB_CMDS: usize = 13;
 
