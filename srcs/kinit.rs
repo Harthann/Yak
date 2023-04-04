@@ -88,6 +88,8 @@ mod sound;
 mod spin;
 mod utils;
 mod x86;
+#[macro_use]
+mod debug;
 
 #[cfg(test)]
 mod test;

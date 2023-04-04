@@ -23,8 +23,10 @@ RUST_SRCS		=	main.rs \
 					queue.rs \
 					kinit.rs\
 					errno.rs \
+					debug.rs\
 					$(SYSCALL_SRCS) \
 					$(SOUNDS)
+
 
 SYSCALL_SRCS	=	exit.rs \
 					signal.rs \
