@@ -82,8 +82,8 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 impl<T: ?Sized, const INT: bool> fmt::Debug for Mutex<T, INT> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self.try_lock() {
-			Some(guard) => write!(f, "Mutex ({:#p}:{}) {{ <Not locked> }}", self, "TEST"),
-			None => write!(f, "Mutex ({:#p}:{}) {{ <locked> }}", self, "TEST")
+			Some(guard) => write!(f, "Mutex ({:#p}) {{ <Not locked> }}", self),
+			None => write!(f, "Mutex ({:#p}) {{ <locked> }}", self)
 		}
 	}
 }
