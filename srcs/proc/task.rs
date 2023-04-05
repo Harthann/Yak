@@ -57,6 +57,7 @@ impl Task {
 			cr3 = out(reg) task.regs.cr3,
 			eflags = out(reg) task.regs.eflags);
 			MASTER_PROCESS.state = Status::Run;
+			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
 			MASTER_PROCESS.kernel_stack =
 				<MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 			page_directory.claim_index_page_table(

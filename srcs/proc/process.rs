@@ -115,8 +115,8 @@ impl Process {
 		self.heap = <MemoryZone as Heap>::init_no_allocator(size, flags, kphys);
 	}
 
-	pub fn setup_kernel_stack(&mut self, size: usize, flags: u32, kphys: bool) {
-		self.kernel_stack = <MemoryZone as Stack>::init(size, flags, kphys);
+	pub fn setup_kernel_stack(&mut self, flags: u32) {
+		self.kernel_stack = <MemoryZone as Stack>::init(0x1000 * 2, flags, false);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {

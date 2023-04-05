@@ -22,11 +22,7 @@ pub fn sys_fork() -> Pid {
 
 		let mut process: Process = Process::new();
 		process.init(parent);
-		process.setup_kernel_stack(
-			parent.kernel_stack.size,
-			parent.kernel_stack.flags,
-			parent.kernel_stack.kphys
-		);
+		process.setup_kernel_stack(parent.kernel_stack.flags);
 		process.setup_stack(
 			parent.stack.size,
 			parent.stack.flags,

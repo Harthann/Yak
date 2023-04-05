@@ -18,6 +18,9 @@ use crate::memory::allocator::Box;
 
 use crate::KSTACK_ADDR;
 
+#[cfg(test)]
+pub mod test;
+
 extern "C" {
 	fn jump_usermode(func: VirtAddr);
 	fn userfunc();
@@ -34,7 +37,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	let mut process: Process = Process::new();
 	process.init(parent);
-	process.setup_kernel_stack(0x1000, PAGE_WRITABLE | PAGE_USER, false);
+	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
 	process.setup_stack(0x1000, PAGE_WRITABLE | PAGE_USER, false);
 	process.setup_heap(
 		(size - (size % 0x1000)) + 0x1000,
@@ -48,8 +51,6 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	new_task.process = process;
 
-	crate::kprintln!("where is my user stack: {:#x?}", process.stack.offset);
-
 	// TODO: free those when process ends ?
 	let page_dir: &mut PageDirectory = process.setup_pagination();
 
@@ -57,17 +58,13 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
 	new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 	new_task.regs.esp -= 4;
-	crate::kprintln!(
-		"write at the addr: {:#x}",
-		process.stack.offset + process.stack.size as u32 - 4
-	);
+
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) USER_HEAP_ADDR);
 	new_task.regs.esp = USER_STACK_ADDR - 7;
 	new_task.regs.eip = jump_usermode as VirtAddr;
 
-	crate::kprintln!("future regs: {:#x?}", new_task.regs);
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid

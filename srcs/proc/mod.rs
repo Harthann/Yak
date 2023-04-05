@@ -62,11 +62,7 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
-	process.setup_kernel_stack(
-		parent.kernel_stack.size,
-		parent.kernel_stack.flags,
-		parent.kernel_stack.kphys
-	);
+	process.setup_kernel_stack(parent.kernel_stack.flags);
 	process.setup_stack(
 		parent.stack.size,
 		parent.stack.flags,

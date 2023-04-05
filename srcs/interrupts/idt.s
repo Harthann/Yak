@@ -38,7 +38,7 @@ isr_common_stub:
 
 	.get_kernel_kstack:
 	mov eax, esp
-	mov esp, KSTACK_ADDR + 1
+	mov esp, KSTACK_ADDR + 1 - 0x1000; take the lower kstack to handle exception
 
 	push dword[eax + regs.ss]
 	push dword[eax + regs.useresp]
