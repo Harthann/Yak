@@ -43,10 +43,6 @@ impl Task {
 	}
 
 	pub unsafe fn init(&mut self, regs: Registers, process: &mut Process) {
-		self.regs.eip = wrapper_fn as VirtAddr;
-		self.regs.eflags = regs.eflags;
-		self.regs.cr3 = regs.cr3;
-		self.process = process;
 		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
 	}
 
@@ -65,7 +61,7 @@ impl Task {
 				<MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 			page_directory.claim_index_page_table(
 				KSTACK_ADDR as usize >> 22,
-				PAGE_WRITABLE | PAGE_GLOBAL
+				PAGE_WRITABLE
 			);
 			page_directory
 				.get_page_table(KSTACK_ADDR as usize >> 22)
@@ -205,7 +201,6 @@ use crate::proc::change_kernel_stack;
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
-//	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?

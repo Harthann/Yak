@@ -51,7 +51,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	crate::kprintln!("where is my user stack: {:#x?}", process.stack.offset);
 
 	// TODO: free those when process ends ?
-	let page_dir: &mut PageDirectory = process.setup_pagination(true);
+	let page_dir: &mut PageDirectory = process.setup_pagination();
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
@@ -68,6 +68,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	crate::kprintln!("USER_HEAD_ADDR: {:#x?}", USER_HEAP_ADDR);
 	crate::kprintln!("USER_STACK_ADDR: {:#x?}", USER_STACK_ADDR);
 	new_task.regs.eip = jump_usermode as VirtAddr;
+
+	crate::kprintln!("future regs: {:#x?}", new_task.regs);
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid
@@ -80,13 +82,13 @@ pub fn test_user_page() {
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-		let mut status: i32 = 0;
-		let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
-		crate::kprintln!("pid ret: {}", ret);
-		crate::kprintln!(
-			"status: {}",
-			crate::syscalls::exit::__WEXITSTATUS!(status)
-		);
+	let mut status: i32 = 0;
+	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
+	crate::kprintln!("pid ret: {}", ret);
+	crate::kprintln!(
+		"status: {}",
+		crate::syscalls::exit::__WEXITSTATUS!(status)
+	);
 	// let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
 	// let funclen = userfunc_end as usize - userfunc as usize;
 	//

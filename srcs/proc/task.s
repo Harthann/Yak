@@ -84,15 +84,15 @@ switch_task:
 	cmp ebx, ecx
 	je .get_regs ; if cr3 is kernel don't swap
 
-	mov eax, [eax + regs.ds] ; reload the original data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
-
 	mov cr3, ebx
 
 	.get_regs:
+		mov eax, [eax + regs.ds] ; reload the original data segment descriptor
+		mov ds, ax
+		mov es, ax
+		mov fs, ax
+		mov gs, ax
+
 		mov eax, KSTACK_ADDR + 1; reajust ptr with kstack
 		sub eax, regs_size
 

@@ -8,6 +8,7 @@ use crate::{VirtAddr, KSTACK_ADDR};
 use crate::memory::paging::{PAGE_GLOBAL, PAGE_WRITABLE};
 
 use crate::memory::paging::page_directory;
+use crate::memory::paging::page_directory::PageDirectory;
 
 pub mod process;
 pub mod signal;
@@ -62,12 +63,22 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
-	process.setup_kernel_stack(0x1000, parent.stack.flags, parent.stack.kphys);
-	process.setup_stack(0x1000, parent.stack.flags, parent.stack.kphys);
+	process.setup_kernel_stack(
+		parent.kernel_stack.size,
+		parent.kernel_stack.flags,
+		parent.kernel_stack.kphys
+	);
+	process.setup_stack(
+		parent.stack.size,
+		parent.stack.flags,
+		parent.stack.kphys
+	);
 	parent.childs.push(Box::new(process));
+
 	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
-	new_task.init(running_task.regs, process);
+
+	new_task.process = process;
 	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
@@ -101,6 +112,8 @@ pub unsafe extern "C" fn exec_fn(
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
 	new_task.regs.esp -= 4;
+	new_task.regs.eip = wrapper_fn as VirtAddr;
+	new_task.regs.cr3 = running_task.regs.cr3;
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid

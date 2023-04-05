@@ -22,10 +22,11 @@ impl PageDirectory {
 			match page_directory.get_page_frame(flags) {
 				Ok(offset) => {
 					let page_dir: &'static mut Self = &mut *(offset as *mut _);
+					page_dir.clear();
 					page_dir.set_entry(1023, get_paddr!(offset) | flags);
 					page_dir
 				},
-				Err(()) => todo!(),
+				Err(()) => todo!()
 			}
 		}
 	}
@@ -382,6 +383,15 @@ impl PageDirectory {
 	// Return the virtual address of the page directory
 	pub fn get_vaddr(&self) -> VirtAddr {
 		self as *const Self as VirtAddr
+	}
+
+	fn clear(&mut self) {
+		let mut i: usize = 0;
+
+		while i < 1024 {
+			self.set_entry(i, 0);
+			i += 1;
+		}
 	}
 }
 

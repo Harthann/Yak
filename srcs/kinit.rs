@@ -124,7 +124,7 @@ use main::kmain;
 pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
-const STACK_ADDR: VirtAddr = 0xffafffff;
+const STACK_ADDR: VirtAddr = 0xff0fffff;
 
 // Kernel initialisation
 #[no_mangle]

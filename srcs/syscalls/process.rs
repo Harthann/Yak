@@ -6,7 +6,7 @@ use crate::memory::paging::page_table::PageTable;
 
 use crate::wrappers::{_cli, _sti};
 
-use crate::memory::paging::{PAGE_PRESENT, PAGE_WRITABLE, PAGE_USER};
+use crate::memory::paging::{PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE};
 
 use crate::memory::allocator::Box;
 
@@ -47,8 +47,7 @@ pub fn sys_fork() -> Pid {
 
 		new_task.process = process;
 
-		let page_dir: &mut PageDirectory =
-			process.setup_pagination(parent.stack.flags & PAGE_USER != 0);
+		let page_dir: &mut PageDirectory = process.setup_pagination();
 
 		new_task.regs = running_task.regs;
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
