@@ -117,5 +117,5 @@ switch_task:
 		push dword[eax + regs.eip]; jump directly on eip
 		mov eax, dword[eax + regs.eax]
 
-		; sti in wrappers
+		sti
 		ret

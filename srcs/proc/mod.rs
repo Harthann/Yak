@@ -41,7 +41,6 @@ pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 		"
 	mov eax, [esp + 4]
 	add esp, 8
-	sti
 	call eax
 	cli
 	mov esp, 0xffc00000

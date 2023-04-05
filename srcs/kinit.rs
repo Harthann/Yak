@@ -157,7 +157,7 @@ pub extern "C" fn kinit() {
 	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
 	// This setup should be done using frequency, but for readability and ease of use, this is done
 	// with time between each interrupt in ms.
-	pic::set_irq0_in_ms(1.0);
+	pic::set_irq0_in_ms(10.0);
 
 	// Reserve some spaces to push things before main
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };

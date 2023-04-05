@@ -148,7 +148,6 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
-		reg.eip += 2; // skip int 0x80 on ret
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize
 			|| int_no > PIC2_IRQ_OFFSET as usize + 7

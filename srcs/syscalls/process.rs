@@ -20,7 +20,6 @@ pub fn sys_fork() -> Pid {
 		let running_task: &mut Task = Task::get_running_task();
 		let parent: &mut Process = Process::get_running_process();
 
-		crate::kprintln!("parent pid: {}", parent.pid);
 		let mut process: Process = Process::new();
 		process.init(parent);
 		process.setup_kernel_stack(
@@ -39,7 +38,6 @@ pub fn sys_fork() -> Pid {
 			parent.heap.kphys
 		);
 		process.copy_mem(parent);
-		crate::kprintln!("flags: {:#x?}", process.stack.flags);
 		parent.childs.push(Box::new(process));
 
 		let process: &mut Process = parent.childs.last_mut().unwrap();
@@ -53,8 +51,6 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 		new_task.regs.eax = 0; // New forked process return 0
-
-		crate::kprintln!("new_task: {:#x?}", new_task.regs);
 
 		TASKLIST.push(new_task);
 		_sti();

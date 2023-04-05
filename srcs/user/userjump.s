@@ -18,13 +18,16 @@ jump_usermode:; jump_usermode(func: VirtAddr)
 	push (4 * 8) | 3 ; code selector (ring 3 code with bottom 2 bits set for ring 3)
 
 	push ebx ; func
-	sti
 	iret
 
 userfunc:
 	mov eax, 2
 	int 0x80
+	cmp eax, 0
+	je .loop_child
 	mov ebx, eax
 	mov eax, 1
 	int 0x80
+	.loop_child:
+		jmp .loop_child
 userfunc_end:

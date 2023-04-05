@@ -65,8 +65,6 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) USER_HEAP_ADDR);
 	new_task.regs.esp = USER_STACK_ADDR - 7;
-	crate::kprintln!("USER_HEAD_ADDR: {:#x?}", USER_HEAP_ADDR);
-	crate::kprintln!("USER_STACK_ADDR: {:#x?}", USER_STACK_ADDR);
 	new_task.regs.eip = jump_usermode as VirtAddr;
 
 	crate::kprintln!("future regs: {:#x?}", new_task.regs);
@@ -89,14 +87,4 @@ pub fn test_user_page() {
 		"status: {}",
 		crate::syscalls::exit::__WEXITSTATUS!(status)
 	);
-	// let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
-	// let funclen = userfunc_end as usize - userfunc as usize;
-	//
-	// unsafe {
-	// core::ptr::copy_nonoverlapping(userfunc as *const u8, userpage as *mut u8, funclen);
-	// }
-	// mem::print_pdentry(1);
-	// unsafe {
-	// jump_usermode(0x400000);
-	// }
 }
