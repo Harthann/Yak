@@ -2,7 +2,6 @@ use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
 use crate::wrappers::{cli, hlt, sti};
 use crate::{kprint, kprintln, string};
-use crate::spin::Mutex;
 
 // Temporary sleep function until a proper sleep is implemented and teste
 pub fn sleep(microseconds: usize) {
@@ -15,7 +14,6 @@ pub fn sleep(microseconds: usize) {
 		}
 	}
 }
-
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {

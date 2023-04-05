@@ -24,7 +24,7 @@ pub struct MutexGuard<'a, T: ?Sized + 'a, const INT: bool> {
 }
 
 impl<T, const INT: bool> Mutex<T, INT> {
-    /// Create a new mutex with the given data stored inside
+	/// Create a new mutex with the given data stored inside
 	pub const fn new(data: T) -> Mutex<T, INT> {
 		Mutex { lock: AtomicBool::new(false), data: UnsafeCell::new(data) }
 	}
@@ -33,9 +33,9 @@ unsafe impl<T: ?Sized + Send, const INT: bool> Sync for Mutex<T, INT> {}
 unsafe impl<T: ?Sized + Send, const INT: bool> Send for Mutex<T, INT> {}
 
 impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
-    /// Loop until the inner lock as the value false then write true on it.
-    /// Once the value as been written the mutex is successfully locked.
-    /// If `const INT` as been set to `true`, interrupt flag is clear
+	/// Loop until the inner lock as the value false then write true on it.
+	/// Once the value as been written the mutex is successfully locked.
+	/// If `const INT` as been set to `true`, interrupt flag is clear
 	fn obtain_lock(&self) {
 		while self.lock.compare_and_swap(false, true, Ordering::Acquire)
 			!= false
@@ -49,19 +49,19 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 		}
 	}
 
-    /// Lock the mutex if available otherwise wait until a lock is successfull
-    /// If feature `mutex_debug` is enable, self if written to the debug output
-    ///
-    /// The returned value can be dereference to access the data, once the guard falls
-    /// out of scope, mutex will be unlocked
+	/// Lock the mutex if available otherwise wait until a lock is successfull
+	/// If feature `mutex_debug` is enable, self if written to the debug output
+	///
+	/// The returned value can be dereference to access the data, once the guard falls
+	/// out of scope, mutex will be unlocked
 	pub fn lock(&self) -> MutexGuard<T, INT> {
-	    #[cfg(feature = "mutex_debug")]
-        crate::dprintln!("{:?}", self);
+		#[cfg(feature = "mutex_debug")]
+		crate::dprintln!("{:?}", self);
 		self.obtain_lock();
 		MutexGuard { lock: &self.lock, data: unsafe { &mut *self.data.get() } }
 	}
 
-    /// Try to lock the mutex. Returning a Guard if successfull
+	/// Try to lock the mutex. Returning a Guard if successfull
 	pub fn try_lock(&self) -> Option<MutexGuard<T, INT>> {
 		if self.lock.compare_and_swap(false, true, Ordering::Acquire) == false {
 			if INT == true {
@@ -75,7 +75,6 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 			None
 		}
 	}
-
 }
 
 // Note this will probably cause deadlock since write need to lock a mutex
