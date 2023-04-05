@@ -17,6 +17,13 @@ pub fn sleep(microseconds: usize) {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
+//	let mut pid = 0;
+//	unsafe {
+//		core::arch::asm!("mov eax, 2",
+//			"int 0x80",
+//			"mov {}, eax", out(reg) pid);
+//	}
+//	kprintln!("pid: {}", pid);
 	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);

@@ -59,6 +59,12 @@ swap_task:
 	mov al, 0x20
 	out dx, al
 
+	mov ax, 0x10    ; load the kernel data segment descriptor
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+
 	mov eax, esp
 
 	; (regs: &mut Registers)
@@ -77,6 +83,12 @@ switch_task:
 	mov ecx, cr3
 	cmp ebx, ecx
 	je .get_regs ; if cr3 is kernel don't swap
+
+	mov eax, [eax + regs.ds] ; reload the original data segment descriptor
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
 
 	mov cr3, ebx
 

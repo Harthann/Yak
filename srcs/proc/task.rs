@@ -205,6 +205,7 @@ use crate::proc::change_kernel_stack;
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
+//	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?

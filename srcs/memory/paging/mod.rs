@@ -63,12 +63,6 @@ pub fn init_paging() {
 	}
 }
 
-pub fn print_pdentry(index: usize) {
-	unsafe {
-		crate::kprintln!("{}", page_directory.entries[index]);
-	}
-}
-
 pub fn kalloc_pages(nb: usize, flags: u32) -> Result<VirtAddr, ()> {
 	unsafe { Ok(page_directory.kget_page_frames(nb, flags)?) }
 }

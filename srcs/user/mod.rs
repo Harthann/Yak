@@ -24,8 +24,8 @@ extern "C" {
 	fn userfunc_end();
 }
 
-const USER_HEAP_ADDR: VirtAddr = 0x0800000;
-const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
+pub const USER_HEAP_ADDR: VirtAddr = 0x0800000;
+pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
@@ -50,68 +50,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	crate::kprintln!("where is my user stack: {:#x?}", process.stack.offset);
 
-	let kernel_pt_paddr: PhysAddr =
-		get_paddr!(page_directory.get_page_table(768).get_vaddr());
-	crate::kprintln!("kernel_pt_paddr: {:#x}", kernel_pt_paddr);
-
 	// TODO: free those when process ends ?
-	let page_dir: &mut PageDirectory = PageDirectory::new();
-	let process_heap: &mut PageTable = PageTable::new();
-	let process_stack: &mut PageTable = PageTable::new();
-	let process_kernel_stack: &mut PageTable = PageTable::new();
-	crate::kprintln!("kernel_pt_paddr: {:#x?}", kernel_pt_paddr);
-
-	// Setup heap + prg
-	page_dir.set_entry(
-		USER_HEAP_ADDR as usize >> 22,
-		get_paddr!(process_heap as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
-	);
-	// Setup stack
-	page_dir.set_entry(
-		USER_STACK_ADDR as usize >> 22,
-		get_paddr!(process_stack as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
-	);
-	page_dir.set_entry(
-		768,
-		kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
-	);
-	page_dir.set_entry(
-		KSTACK_ADDR as usize >> 22,
-		get_paddr!(process_kernel_stack as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
-	);
-	page_dir.set_entry(
-		1023,
-		get_paddr!(page_dir as *const _)
-			| PAGE_WRITABLE
-			| PAGE_PRESENT
-			| PAGE_USER
-	);
-
-	// Setup stack and heap
-	process_heap.new_index_frame(
-		(USER_HEAP_ADDR as usize & 0x3ff000) >> 12,
-		get_paddr!(process.heap.offset),
-		PAGE_WRITABLE | PAGE_USER
-	);
-	process_stack.new_index_frame(
-		(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
-		get_paddr!(process.stack.offset),
-		PAGE_WRITABLE | PAGE_USER
-	);
-	process_kernel_stack.new_index_frame(
-		(KSTACK_ADDR as usize & 0x3ff000) >> 12,
-		get_paddr!(process.kernel_stack.offset),
-		PAGE_WRITABLE | PAGE_USER
-	);
+	let page_dir: &mut PageDirectory = process.setup_pagination(true);
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
@@ -140,13 +80,13 @@ pub fn test_user_page() {
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-	// 	let mut status: i32 = 0;
-	// 	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
-	// 	crate::kprintln!("pid ret: {}", ret);
-	// 	crate::kprintln!(
-	// 		"status: {}",
-	// 		crate::syscalls::exit::__WEXITSTATUS!(status)
-	// 	);
+		let mut status: i32 = 0;
+		let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
+		crate::kprintln!("pid ret: {}", ret);
+		crate::kprintln!(
+			"status: {}",
+			crate::syscalls::exit::__WEXITSTATUS!(status)
+		);
 	// let userpage = mem::alloc_pages_at_addr(0x400000, 1, PAGE_WRITABLE | PAGE_USER).expect("");
 	// let funclen = userfunc_end as usize - userfunc as usize;
 	//

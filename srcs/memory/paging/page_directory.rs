@@ -13,22 +13,30 @@ use crate::memory::paging::{
 
 #[repr(transparent)]
 pub struct PageDirectory {
-	pub entries: [PageDirectoryEntry; 1024]
+	entries: [PageDirectoryEntry; 1024]
 }
 
 impl PageDirectory {
-	pub fn new() -> &'static mut Self {
+	pub fn new(flags: u32) -> &'static mut Self {
 		unsafe {
-			let res = page_directory.get_page_frame(PAGE_WRITABLE);
-			if !res.is_ok() {
-				todo!();
+			match page_directory.get_page_frame(flags) {
+				Ok(offset) => {
+					let page_dir: &'static mut Self = &mut *(offset as *mut _);
+					page_dir.set_entry(1023, get_paddr!(offset) | flags);
+					page_dir
+				},
+				Err(()) => todo!(),
 			}
-			&mut *(res.unwrap() as *mut _)
 		}
 	}
 
+	// TODO: Remove pub and add a public cleaner setter
 	pub fn set_entry(&mut self, index: usize, value: u32) {
 		self.entries[index] = value.into();
+	}
+
+	pub fn get_entry(&self, index: usize) -> PageDirectoryEntry {
+		self.entries[index]
 	}
 
 	pub fn kget_page_frames_at_addr(
@@ -40,7 +48,7 @@ impl PageDirectory {
 		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 
-		if self.entries[pd_index].get_present() == 0 {
+		if self.get_entry(pd_index).get_present() == 0 {
 			self.claim_index_page_tables(pd_index, (nb / 1024) + 1, flags)?;
 		}
 		self.kclaim_index_page_frames(pd_index, pt_index, nb, flags)?;
@@ -56,7 +64,7 @@ impl PageDirectory {
 		let pd_index: usize = (vaddr >> 22) as usize;
 		let pt_index: usize = ((vaddr & 0x3ff000) >> 12) as usize;
 
-		if self.entries[pd_index].get_present() == 0 {
+		if self.get_entry(pd_index).get_present() == 0 {
 			self.claim_index_page_tables(pd_index, (nb / 1024) + 1, flags)?;
 		}
 		self.claim_index_page_frames(pd_index, pt_index, nb, flags)?;
@@ -79,7 +87,7 @@ impl PageDirectory {
 			return Err(());
 		}
 		while i < 1023 && available != nb {
-			if self.entries[i].get_present() == 1 {
+			if self.get_entry(i).get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
 					if self.get_page_table(i).entries[j].get_present() == 0 {
@@ -122,7 +130,7 @@ impl PageDirectory {
 			return Err(());
 		}
 		while i < 1023 && available != nb {
-			if self.entries[i].get_present() == 1 {
+			if self.get_entry(i).get_present() == 1 {
 				j = 0;
 				while j < 1024 && available != nb {
 					if self.get_page_table(i).entries[j].get_present() == 0 {
@@ -155,7 +163,7 @@ impl PageDirectory {
 		let mut i: usize = 0;
 
 		while i < 1023 {
-			if self.entries[i].get_present() == 1 {
+			if self.get_entry(i).get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
 				if res.is_ok() {
 					return Ok(get_vaddr!(i, res.unwrap()));
@@ -224,13 +232,9 @@ impl PageDirectory {
 	) -> Result<usize, ()> {
 		unsafe {
 			let paddr: PhysAddr = bitmap::physmap_as_mut().get_page()?;
-			let page_tab: &mut PageTable = self.get_page_table(1023);
-			page_tab.set_entry(index, paddr | PAGE_WRITABLE | PAGE_PRESENT);
+			self.set_entry(index, paddr | flags | PAGE_PRESENT);
 			refresh_tlb!();
-			let new: &mut PageTable = self.get_page_table(index);
-			new.clear();
-			self.entries[index] = (paddr | flags | PAGE_PRESENT).into();
-			refresh_tlb!();
+			self.get_page_table(index).clear();
 			Ok(index)
 		}
 	}
@@ -240,7 +244,7 @@ impl PageDirectory {
 		let mut i: usize = 0;
 
 		while i < 1024 {
-			if self.entries[i].get_present() == 0 {
+			if self.get_entry(i).get_present() == 0 {
 				return self.claim_index_page_table(i, flags);
 			}
 			i += 1;
@@ -262,10 +266,10 @@ impl PageDirectory {
 		let mut i: usize = 0;
 
 		while i < 1024 {
-			if self.entries[i].get_present() == 0 {
+			if self.get_entry(i).get_present() == 0 {
 				let mut j: usize = i + 1;
 				while j < 1024
-					&& self.entries[j].get_present() == 0
+					&& self.get_entry(j).get_present() == 0
 					&& j - i != nb
 				{
 					j += 1;
@@ -355,13 +359,12 @@ impl PageDirectory {
 	// Remove a page table at specified index
 	pub fn remove_page_table(&mut self, index: usize) -> Result<(), ()> {
 		unsafe {
-			if self.entries[index].get_present() == 1 {
+			if self.get_entry(index).get_present() == 1 {
 				let page_table: &mut PageTable = self.get_page_table(index);
 				page_table.clear();
 				bitmap::physmap_as_mut()
-					.free_page(self.entries[index].get_paddr());
-				self.entries[index] = (0x00000002 as u32).into();
-				self.get_page_table(1023).entries[index];
+					.free_page(self.get_entry(index).get_paddr());
+				self.set_entry(index, 0);
 				refresh_tlb!();
 				return Ok(());
 			} else {

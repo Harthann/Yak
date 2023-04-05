@@ -148,6 +148,7 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(reg);
+		reg.eip += 2; // skip int 0x80 on ret
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize
 			|| int_no > PIC2_IRQ_OFFSET as usize + 7
@@ -166,8 +167,15 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 	if process.state == Status::Disable || process.state == Status::Zombie {
 		crate::proc::task::schedule_task();
 	}
+	let copy_regs: &mut Registers =
+		&mut *(((process.kernel_stack.offset + 0x1000)
+			- core::mem::size_of::<Registers>() as u32) as *mut _);
+	*copy_regs = *reg;
 	_rst();
-	switch_task(reg);
+	switch_task(
+		(crate::KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32)
+			as *mut _
+	);
 }
 
 pub unsafe fn init_idt() {
