@@ -23,7 +23,12 @@ opt-level = "z"
 # You can add feature by naming them in default
 # These feature need to be declare
 # e.g: default = ["multitasking"]
-default = ["multitasking"]
+default = ["multitasking", "debug_features"]
 
 # Declare feature multitasking, depends on nothing
 multitasking = []
+
+# List all debug features you want to enable
+debug_features = ["mutex_debug"]
+
+mutex_debug = []
