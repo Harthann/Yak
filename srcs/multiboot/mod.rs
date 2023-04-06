@@ -67,10 +67,11 @@ pub unsafe fn claim_multiboot() {
 
 				while i < entry_number {
 					if (*mmap_entry).mtype == 2 {
+                        crate::dprintln!("{} {}", (*mmap_entry).baseaddr as PhysAddr/ 4096, (*mmap_entry).length as usize / 4096);
 						bitmap::physmap_as_mut().claim_range(
 							(*mmap_entry).baseaddr as PhysAddr,
 							(*mmap_entry).length as usize / 4096
-						);
+						).expect("Unexpected Error claiming multiboot");
 					}
 					mmap_entry = mmap_entry.add(1);
 					i += 1;
