@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Mutex",""],["MutexGuard",""]]};
+window.SIDEBAR_ITEMS = {"struct":[["Mutex","Mutex structure to prevent data races"],["MutexGuard","MutexGuard that provide data mutable access"]]};
