@@ -24,7 +24,8 @@ RUST_SRCS		=	main.rs \
 					errno.rs \
 					debug.rs\
 					$(SYSCALL_SRCS) \
-					$(SOUNDS)
+					$(SOUNDS) \
+					bitmap.rs
 
 
 SYSCALL_SRCS	=	exit.rs \
