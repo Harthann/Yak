@@ -126,8 +126,8 @@ use crate::wrappers::{_cli, _rst};
 pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 	_cli();
 	let mut task = Task::get_running_task();
-	task.regs = *reg;
-	let process: &crate::proc::process::Process = &*task.process;
+	task.regs = *reg; // dump registers for fork syscall
+	let process: &mut crate::proc::process::Process = &mut *task.process;
 	let int_no: usize = reg.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(
@@ -164,13 +164,17 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 	}
 	reg.int_no = u32::MAX; // identifier for switch_task
 	if process.state == Status::Disable || process.state == Status::Zombie {
+//		crate::kprintln!("oh fucking god");
 		crate::proc::task::schedule_task();
 	}
 	let copy_regs: &mut Registers =
-		&mut *(((process.kernel_stack.offset + 0x1000)
+		&mut *(((process.kernel_stack.offset +
+			process.kernel_stack.size as u32)
 			- core::mem::size_of::<Registers>() as u32) as *mut _);
 	*copy_regs = *reg;
+	crate::kprintln!("exception end: {:#x?}", *copy_regs);
 	_rst();
+	crate::proc::change_kernel_stack(process);
 	switch_task(
 		(crate::KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32)
 			as *mut _

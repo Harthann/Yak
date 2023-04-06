@@ -34,7 +34,6 @@ isr_common_stub:
 	je .get_kernel_kstack ; if cr3 is kernel don't swap
 
 	mov cr3, eax
-	jmp .kernel_ds
 
 	.get_kernel_kstack:
 	mov eax, esp
@@ -58,7 +57,6 @@ isr_common_stub:
 	push dword[eax + regs.cr3]
 	push dword[eax + regs.ds]
 
-	.kernel_ds:
 	mov ax, 0x10    ; load the kernel data segment descriptor
 	mov ds, ax
 	mov es, ax

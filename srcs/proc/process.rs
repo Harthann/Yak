@@ -273,11 +273,14 @@ impl Process {
 			get_paddr!(self.stack.offset),
 			PAGE_WRITABLE | PAGE_USER
 		);
-		process_kernel_stack.new_index_frame(
-			(KSTACK_ADDR as usize & 0x3ff000) >> 12,
-			get_paddr!(self.kernel_stack.offset),
-			PAGE_WRITABLE | PAGE_USER
-		);
+		let nb_page = self.kernel_stack.size / 0x1000;
+		for i in 0..nb_page {
+			process_kernel_stack.new_index_frame(
+				((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) & 0x3ff000) >> 12,
+				get_paddr!(self.kernel_stack.offset + (0x1000 * i) as u32),
+				PAGE_WRITABLE | PAGE_USER
+			);
+		}
 		refresh_tlb!();
 		page_dir
 	}

@@ -42,10 +42,6 @@ impl Task {
 		}
 	}
 
-	pub unsafe fn init(&mut self, regs: Registers, process: &mut Process) {
-		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
-	}
-
 	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
@@ -58,19 +54,20 @@ impl Task {
 			eflags = out(reg) task.regs.eflags);
 			MASTER_PROCESS.state = Status::Run;
 			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
-			MASTER_PROCESS.kernel_stack =
-				<MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
 			page_directory.claim_index_page_table(
 				KSTACK_ADDR as usize >> 22,
 				PAGE_WRITABLE
 			);
-			page_directory
-				.get_page_table(KSTACK_ADDR as usize >> 22)
-				.new_index_frame(
-					(KSTACK_ADDR as usize & 0x3ff000) >> 12,
-					get_paddr!(MASTER_PROCESS.kernel_stack.offset),
-					PAGE_WRITABLE
-				);
+			let nb_page = MASTER_PROCESS.kernel_stack.size / 0x1000;
+			for i in 0..nb_page {
+				page_directory
+					.get_page_table((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) >> 22)
+					.new_index_frame(
+						((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) & 0x3ff000) >> 12,
+						get_paddr!(MASTER_PROCESS.kernel_stack.offset + (0x1000 * i) as u32),
+						PAGE_WRITABLE
+					);
+			}
 			refresh_tlb!();
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
@@ -191,6 +188,7 @@ unsafe fn do_signal(task: &mut Task) {
 #[no_mangle]
 pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
+	crate::kprintln!("save_task: {:#x?}", regs);
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
 	TASKLIST.push(old_task);
@@ -202,26 +200,31 @@ use crate::proc::change_kernel_stack;
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
+	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?
 		if (*new_task.process).signals.len() > 0 {
+//			crate::kprintln!("unschedule");
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to last bytes on kstack to target
 			let copy_regs: &mut Registers =
-				&mut *((((*new_task.process).kernel_stack.offset + 0x1000)
+				&mut *((((*new_task.process).kernel_stack.offset +
+					(*new_task.process).kernel_stack.size as u32)
 					- core::mem::size_of::<Registers>() as u32) as *mut _);
 			*copy_regs = new_task.regs;
+			crate::kprintln!("next regs: {:#x?}", *copy_regs);
 			_rst();
-			change_kernel_stack((*new_task.process).kernel_stack.offset);
+			change_kernel_stack(&mut *new_task.process);
 			switch_task(
 				(KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32)
 					as *mut _
 			);
 			// never goes there
 		}
+//		crate::kprintln!("skip");
 		let skipped_task: Task = TASKLIST.pop();
 		TASKLIST.push(skipped_task);
 	}

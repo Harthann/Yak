@@ -30,6 +30,7 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	let task: Task = TASKLIST.pop();
 	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
+	crate::kprintln!("_exit");
 	schedule_task();
 	// Never goes there
 }
@@ -43,7 +44,7 @@ pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 	add esp, 8
 	call eax
 	cli
-	mov esp, 0xffc00000
+	mov esp, 0xffbfffff + 1
 	push eax
 	call _exit",
 		options(noreturn)
@@ -109,6 +110,7 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.esp -= 4;
 	new_task.regs.eip = wrapper_fn as VirtAddr;
 	new_task.regs.cr3 = running_task.regs.cr3;
+	new_task.regs.ds = running_task.regs.ds;
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid
@@ -140,15 +142,18 @@ macro_rules! exec_fn {
 }
 
 #[inline(always)]
-pub fn change_kernel_stack(addr: VirtAddr) {
+pub fn change_kernel_stack(process: &mut Process) {
 	unsafe {
-		page_directory
-			.get_page_table((KSTACK_ADDR >> 22) as usize)
-			.new_index_frame(
-				((KSTACK_ADDR & 0x3ff000) as usize) >> 12,
-				get_paddr!(addr),
-				PAGE_WRITABLE | PAGE_GLOBAL
-			);
+		let nb_page = process.kernel_stack.size / 0x1000;
+		for i in 0..nb_page {
+			page_directory
+				.get_page_table((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) >> 22)
+				.new_index_frame(
+					((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) & 0x3ff000) >> 12,
+					get_paddr!(process.kernel_stack.offset + (0x1000 * i) as u32),
+					PAGE_WRITABLE
+				);
+		}
 		refresh_tlb!();
 	}
 }

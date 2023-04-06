@@ -24,10 +24,19 @@ userfunc:
 	mov eax, 2
 	int 0x80
 	cmp eax, 0
-	je .loop_child
+	jne .wait_child
+
+	mov ebx, 42
+	mov eax, 1
+	int 0x80
+
+	.wait_child:
+	mov edx, 0
+	mov ecx, 0
+	mov ebx, eax
+	mov eax, 7
+	int 0x80
 	mov ebx, eax
 	mov eax, 1
 	int 0x80
-	.loop_child:
-		jmp .loop_child
 userfunc_end:

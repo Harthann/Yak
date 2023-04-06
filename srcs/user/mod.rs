@@ -32,7 +32,7 @@ pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
-	// 	let running_task: &mut Task = Task::get_running_task();
+	let running_task: &mut Task = Task::get_running_task();
 	let parent: &mut Process = Process::get_running_process();
 
 	let mut process: Process = Process::new();
@@ -64,6 +64,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 		func = in(reg) USER_HEAP_ADDR);
 	new_task.regs.esp = USER_STACK_ADDR - 7;
 	new_task.regs.eip = jump_usermode as VirtAddr;
+	new_task.regs.ds = running_task.regs.ds;
 
 	TASKLIST.push(new_task);
 	_sti();

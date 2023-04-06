@@ -141,8 +141,6 @@ fn test_fork_userspace() {
 	}
 }
 
-/*
-TODO: PageFault
 global_asm!(r#"
 .globl userfunc_5
 .globl end_userfunc_5
@@ -150,13 +148,13 @@ userfunc_5:
 	mov eax, 2
 	int 0x80
 	cmp eax, 0
-	jne .wait_child
+	jne .wait_child_5
 
 	mov ebx, 42
 	mov eax, 1
 	int 0x80
 
-	.wait_child:
+	.wait_child_5:
 	mov edx, 0
 	mov ecx, 0
 	mov ebx, eax
@@ -188,4 +186,3 @@ fn test_fork2_userspace() {
 		assert_eq!(__WEXITSTATUS!(status), pid + 1);
 	}
 }
-*/
