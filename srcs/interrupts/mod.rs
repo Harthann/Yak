@@ -118,7 +118,7 @@ fn page_fault_handler(reg: &Registers) {
 	crate::kprintln!("{:#x?}", reg);
 }
 
-use crate::wrappers::{_cli, _rst};
+use crate::wrappers::{_cli, _rst, hlt};
 
 // [https://wiki.osdev.org/Interrupts_tutorial]
 // TODO: lock mutex before write and int
@@ -126,7 +126,7 @@ use crate::wrappers::{_cli, _rst};
 pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
 	let mut task = Task::get_running_task();
-	task.regs = *regs;
+	task.regs = *regs; // dump regs for syscall (e.g: fork)
 	let process: &mut crate::proc::process::Process = &mut *task.process;
 	let int_no: usize = regs.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
@@ -144,10 +144,10 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 		}
 		if int_no != 3 && int_no != 1 {
 			// TODO: HOW TO GET IF IT'S A TRAP OR NOT
-			core::arch::asm!("hlt");
+			hlt!();
 		}
 	} else if int_no == 0x80 {
-		syscall_handler(&mut task.regs);
+		syscall_handler(regs);
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize
 			|| int_no > PIC2_IRQ_OFFSET as usize + 7
@@ -157,11 +157,12 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 				int_no,
 				regs
 			);
-			core::arch::asm!("hlt");
+			hlt!();
 		} else {
 			crate::pic::handler(regs, int_no);
 		}
 	}
+	task.regs = *regs; // get back registers if updated by syscall (e.g: waitpid)
 	task.regs.int_no = u32::MAX; // identifier for switch_task
 	crate::kprintln!("exception end: {:#x?}", task.regs);
 }
