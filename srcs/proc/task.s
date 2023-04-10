@@ -59,11 +59,12 @@ swap_task:
 	mov al, 0x20
 	out dx, al
 
-	mov ax, 0x10    ; load the kernel data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
+	load_kernel_segments
+;	mov ax, 0x10    ; load the kernel data segment descriptor
+;	mov ds, ax
+;	mov es, ax
+;	mov fs, ax
+;	mov gs, ax
 
 	mov eax, esp
 
@@ -110,7 +111,7 @@ switch_task:
 		mov eax, dword[eax + regs.eax]
 		add esp, 8 ; int_no and err_code
 
-		sti
+		; no sti: iretd enable interrupt itself
 		iretd
 
 	.new_task:

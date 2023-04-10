@@ -58,11 +58,12 @@ isr_common_stub:
 	push dword[eax + regs.cr3]
 	push dword[eax + regs.ds]
 
-	mov ax, 0x10    ; load the kernel data segment descriptor
-	mov ds, ax
-	mov es, ax
-	mov fs, ax
-	mov gs, ax
+	load_kernel_segments
+;	mov ax, 0x10    ; load the kernel data segment descriptor
+;	mov ds, ax
+;	mov es, ax
+;	mov fs, ax
+;	mov gs, ax
 
 	mov eax, esp
 
