@@ -116,7 +116,8 @@ impl Process {
 	}
 
 	pub fn setup_kernel_stack(&mut self, flags: u32) {
-		self.kernel_stack = <MemoryZone as Stack>::init(0x1000 * 2, flags, false);
+		self.kernel_stack =
+			<MemoryZone as Stack>::init(0x1000 * 2, flags, false);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
@@ -276,7 +277,8 @@ impl Process {
 		let nb_page = self.kernel_stack.size / 0x1000;
 		for i in 0..nb_page {
 			process_kernel_stack.new_index_frame(
-				((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) & 0x3ff000) >> 12,
+				((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000)
+					& 0x3ff000) >> 12,
 				get_paddr!(self.kernel_stack.offset + (0x1000 * i) as u32),
 				PAGE_WRITABLE | PAGE_USER
 			);

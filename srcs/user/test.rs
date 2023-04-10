@@ -1,12 +1,13 @@
 use core::arch::global_asm;
 
+use crate::print_fn;
 use crate::proc::process::Process;
-use crate::user::exec_fn_userspace;
 use crate::syscalls::exit::{sys_waitpid, __WEXITSTATUS};
 use crate::syscalls::signal::sys_kill;
-use crate::print_fn;
+use crate::user::exec_fn_userspace;
 
-global_asm!(r#"
+global_asm!(
+	r#"
 .globl userfunc_1
 .globl end_userfunc_1
 userfunc_1:
@@ -14,9 +15,10 @@ userfunc_1:
 	mov eax, 1
 	int 0x80
 end_userfunc_1:
-"#);
+"#
+);
 
-extern {
+extern "C" {
 	fn userfunc_1();
 	fn end_userfunc_1();
 }
@@ -37,15 +39,17 @@ fn simple_test_userspace() {
 	}
 }
 
-global_asm!(r#"
+global_asm!(
+	r#"
 .globl userfunc_2
 .globl end_userfunc_2
 userfunc_2:
 	jmp userfunc_2
 end_userfunc_2:
-"#);
+"#
+);
 
-extern {
+extern "C" {
 	fn userfunc_2();
 	fn end_userfunc_2();
 }
@@ -71,7 +75,8 @@ fn test_kill_userspace() {
 	}
 }
 
-global_asm!(r#"
+global_asm!(
+	r#"
 .globl userfunc_3
 .globl end_userfunc_3
 userfunc_3:
@@ -81,9 +86,10 @@ userfunc_3:
 	mov eax, 1
 	int 0x80
 end_userfunc_3:
-"#);
+"#
+);
 
-extern {
+extern "C" {
 	fn userfunc_3();
 	fn end_userfunc_3();
 }
@@ -104,7 +110,8 @@ fn test_getppid_userspace() {
 	}
 }
 
-global_asm!(r#"
+global_asm!(
+	r#"
 .globl userfunc_4
 .globl end_userfunc_4
 userfunc_4:
@@ -114,9 +121,10 @@ userfunc_4:
 	mov eax, 1
 	int 0x80
 end_userfunc_4:
-"#);
+"#
+);
 
-extern {
+extern "C" {
 	fn userfunc_4();
 	fn end_userfunc_4();
 }
@@ -141,7 +149,8 @@ fn test_fork_userspace() {
 	}
 }
 
-global_asm!(r#"
+global_asm!(
+	r#"
 .globl userfunc_5
 .globl end_userfunc_5
 userfunc_5:
@@ -164,9 +173,10 @@ userfunc_5:
 	mov eax, 1
 	int 0x80
 end_userfunc_5:
-"#);
+"#
+);
 
-extern {
+extern "C" {
 	fn userfunc_5();
 	fn end_userfunc_5();
 }

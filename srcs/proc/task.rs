@@ -61,10 +61,17 @@ impl Task {
 			let nb_page = MASTER_PROCESS.kernel_stack.size / 0x1000;
 			for i in 0..nb_page {
 				page_directory
-					.get_page_table((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) >> 22)
+					.get_page_table(
+						(KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000)
+							>> 22
+					)
 					.new_index_frame(
-						((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) & 0x3ff000) >> 12,
-						get_paddr!(MASTER_PROCESS.kernel_stack.offset + (0x1000 * i) as u32),
+						((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000)
+							& 0x3ff000) >> 12,
+						get_paddr!(
+							MASTER_PROCESS.kernel_stack.offset
+								+ (0x1000 * i) as u32
+						),
 						PAGE_WRITABLE
 					);
 			}
@@ -199,7 +206,7 @@ use crate::proc::change_kernel_stack;
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
-//	crate::kprintln!("schedule_task");
+	// 	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -210,8 +217,8 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to last bytes on kstack to target
 			let copy_regs: &mut Registers =
-				&mut *(((process.kernel_stack.offset +
-					process.kernel_stack.size as u32)
+				&mut *(((process.kernel_stack.offset
+					+ process.kernel_stack.size as u32)
 					- core::mem::size_of::<Registers>() as u32) as *mut _);
 			*copy_regs = new_task.regs;
 			change_kernel_stack(process);
@@ -222,7 +229,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			);
 			// never goes there
 		}
-//		crate::kprintln!("skip");
+		// 		crate::kprintln!("skip");
 		let skipped_task: Task = TASKLIST.pop();
 		TASKLIST.push(skipped_task);
 	}
