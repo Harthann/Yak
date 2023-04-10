@@ -57,7 +57,6 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
 		_cli();
 		loop {
-			crate::kprintln!("wait loop");
 			let res =
 				Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
@@ -86,12 +85,10 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				task.state = TaskStatus::Interruptible;
 				let save = cli_count;
 				cli_count = 0;
-				crate::kprintln!("go to scheduler");
 				sti!();
 				hlt!(); // wait for scheduler
 				cli!(); // unblocked here
 				cli_count = save;
-				crate::kprintln!("wait continue");
 			}
 		}
 	}

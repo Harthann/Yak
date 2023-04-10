@@ -32,6 +32,7 @@ swap_task:
 
 	.get_kernel_kstack:
 	mov eax, esp
+
 	mov esp, KSTACK_ADDR + 1
 
 	push dword[eax + regs.ss]

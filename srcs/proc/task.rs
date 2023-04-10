@@ -205,7 +205,6 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		let process: &mut Process = &mut *new_task.process;
 		// TODO: IF SIGNAL JUMP ?
 		if process.signals.len() > 0 {
-//			crate::kprintln!("unschedule");
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
@@ -215,7 +214,6 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 					process.kernel_stack.size as u32)
 					- core::mem::size_of::<Registers>() as u32) as *mut _);
 			*copy_regs = new_task.regs;
-			crate::kprintln!("next regs: {:#x?}", *copy_regs);;
 			change_kernel_stack(process);
 			_rst();
 			switch_task(

@@ -30,7 +30,6 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	let task: Task = TASKLIST.pop();
 	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
-	crate::kprintln!("_exit");
 	schedule_task();
 	// Never goes there
 }

@@ -164,7 +164,6 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	}
 	task.regs = *regs; // get back registers if updated by syscall (e.g: waitpid)
 	task.regs.int_no = u32::MAX; // identifier for switch_task
-	crate::kprintln!("exception end: {:#x?}", task.regs);
 	_rst();
 }
 
