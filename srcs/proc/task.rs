@@ -188,7 +188,7 @@ unsafe fn do_signal(task: &mut Task) {
 #[no_mangle]
 pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
-	crate::kprintln!("save_task: {:#x?}", regs);
+//	crate::kprintln!("save_task: {:#x?}", regs);
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
 	TASKLIST.push(old_task);
@@ -200,7 +200,7 @@ use crate::proc::change_kernel_stack;
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
-	crate::kprintln!("schedule_task");
+//	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?

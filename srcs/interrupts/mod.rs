@@ -123,12 +123,12 @@ use crate::wrappers::{_cli, _rst};
 // [https://wiki.osdev.org/Interrupts_tutorial]
 // TODO: lock mutex before write and int
 #[no_mangle]
-pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
+pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
 	let mut task = Task::get_running_task();
-	task.regs = *reg; // dump registers for fork syscall
+	task.regs = *regs;
 	let process: &mut crate::proc::process::Process = &mut *task.process;
-	let int_no: usize = reg.int_no as usize;
+	let int_no: usize = regs.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(
 			"\n{} exception (code: {}):",
@@ -137,9 +137,9 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 		);
 		match int_no {
 			// TODO: enum exceptions
-			14 => page_fault_handler(reg),
+			14 => page_fault_handler(regs),
 			_ => {
-				crate::kprintln!("{:#x?}", reg);
+				crate::kprintln!("{:#x?}", regs);
 			}
 		}
 		if int_no != 3 && int_no != 1 {
@@ -147,7 +147,7 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 			core::arch::asm!("hlt");
 		}
 	} else if int_no == 0x80 {
-		syscall_handler(reg);
+		syscall_handler(&mut task.regs);
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize
 			|| int_no > PIC2_IRQ_OFFSET as usize + 7
@@ -155,30 +155,15 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 			crate::kprintln!(
 				"\nUnknown exception (code: {}):\n{:#x?}",
 				int_no,
-				reg
+				regs
 			);
 			core::arch::asm!("hlt");
 		} else {
-			crate::pic::handler(reg, int_no);
+			crate::pic::handler(regs, int_no);
 		}
 	}
-	reg.int_no = u32::MAX; // identifier for switch_task
-	if process.state == Status::Disable || process.state == Status::Zombie {
-//		crate::kprintln!("oh fucking god");
-		crate::proc::task::schedule_task();
-	}
-	let copy_regs: &mut Registers =
-		&mut *(((process.kernel_stack.offset +
-			process.kernel_stack.size as u32)
-			- core::mem::size_of::<Registers>() as u32) as *mut _);
-	*copy_regs = *reg;
-	crate::kprintln!("exception end: {:#x?}", *copy_regs);
-	_rst();
-	crate::proc::change_kernel_stack(process);
-	switch_task(
-		(crate::KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32)
-			as *mut _
-	);
+	task.regs.int_no = u32::MAX; // identifier for switch_task
+	crate::kprintln!("exception end: {:#x?}", task.regs);
 }
 
 pub unsafe fn init_idt() {

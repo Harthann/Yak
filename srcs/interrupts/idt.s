@@ -10,6 +10,7 @@ global isr_common_stub
 extern irq_0
 extern page_directory
 extern exception_handler
+extern schedule_task
 
 isr_stub_table:
 	%assign i 0
@@ -64,9 +65,13 @@ isr_common_stub:
 	mov gs, ax
 
 	mov eax, esp
-	push eax        ; push pointer to regs
 
+	; (regs: &mut Registers)
+	push eax
 	call exception_handler
+	pop eax
+
+	call schedule_task
 	; Never goes here
 
 isr_stub_syscall dd isr_stub_128
