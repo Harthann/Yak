@@ -92,7 +92,6 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				cli!(); // unblocked here
 				cli_count = save;
 				crate::kprintln!("wait continue");
-				crate::kprintln!("wait loolz");
 			}
 		}
 	}

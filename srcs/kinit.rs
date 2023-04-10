@@ -144,7 +144,7 @@ pub extern "C" fn kinit() {
 
 	Task::init_multitasking(STACK_ADDR, heap as u32);
 
-	gdt::tss::init_tss(KSTACK_ADDR);
+	gdt::tss::init_tss(KSTACK_ADDR + 1);
 	reload_tss!();
 
 	// init tracker after init first process

@@ -32,7 +32,7 @@ _start:
 
 section .text
 high_kernel:
-	load_kernel_segments
+	reload_cs
 
 	mov esp, stack_top
 	extern	kinit

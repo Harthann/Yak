@@ -17,6 +17,15 @@ extern gdt_desc
 	mov gs, ax
 %endmacro
 
+%macro reload_cs 0
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+	mov ss, ax
+%endmacro
+
 ; paging
 %macro setup_page_table 2
 	mov eax, 0x0

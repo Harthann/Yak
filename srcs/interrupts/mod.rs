@@ -1,6 +1,6 @@
 //! Setup interrupts and exception handler
 
-use crate::proc::process::Status;
+use crate::proc::process::{Process, Status};
 use crate::proc::task::{schedule_task, switch_task, Task};
 use crate::syscalls::syscall_handler;
 
@@ -127,7 +127,7 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
 	let mut task = Task::get_running_task();
 	task.regs = *regs; // dump regs for syscall (e.g: fork)
-	let process: &mut crate::proc::process::Process = &mut *task.process;
+	let process: &mut Process = &mut *task.process;
 	let int_no: usize = regs.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(
@@ -165,6 +165,7 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	task.regs = *regs; // get back registers if updated by syscall (e.g: waitpid)
 	task.regs.int_no = u32::MAX; // identifier for switch_task
 	crate::kprintln!("exception end: {:#x?}", task.regs);
+	_rst();
 }
 
 pub unsafe fn init_idt() {

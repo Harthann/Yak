@@ -60,11 +60,6 @@ swap_task:
 	out dx, al
 
 	load_kernel_segments
-;	mov ax, 0x10    ; load the kernel data segment descriptor
-;	mov ds, ax
-;	mov es, ax
-;	mov fs, ax
-;	mov gs, ax
 
 	mov eax, esp
 
@@ -88,7 +83,7 @@ switch_task:
 	mov cr3, ebx
 
 	.get_regs:
-		mov eax, [eax + regs.ds] ; reload the original data segment descriptor
+		mov eax, dword[eax + regs.ds] ; reload the original data segment descriptor
 		mov ds, ax
 		mov es, ax
 		mov fs, ax
@@ -112,7 +107,7 @@ switch_task:
 		add esp, 8 ; int_no and err_code
 
 		; no sti: iretd enable interrupt itself
-		iretd
+		iret
 
 	.new_task:
 		push dword[eax + regs.eip]; jump directly on eip
