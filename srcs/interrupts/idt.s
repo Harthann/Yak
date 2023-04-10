@@ -48,7 +48,7 @@ isr_common_stub:
 	push dword[eax + regs.err_code]
 	push dword[eax + regs.int_no]
 
-	mov dword[eax + regs.esp], esp
+	mov dword[eax + regs.esp], esp ; Update esp because if we trigger a pic interrupt inside exception the esp registers will be corrupted
 	push dword[eax + regs.eax]
 	push dword[eax + regs.ecx]
 	push dword[eax + regs.edx]
