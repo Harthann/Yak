@@ -15,8 +15,11 @@ use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
+#[no_mangle]
+pub static mut tmp_registers: Registers = Registers::new();
+
 extern "C" {
-	pub fn switch_task(regs: *const Registers) -> !;
+	pub fn switch_task() -> !;
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -197,16 +200,18 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
+//    crate::kprintln!("save_task: {:#x?}", *regs);
 	TASKLIST.push(old_task);
 	_rst();
 }
+
+
 
 use crate::proc::change_kernel_stack;
 
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
-	// 	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -215,18 +220,13 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
-			// Copy registers to last bytes on kstack to target
-			let copy_regs: &mut Registers =
-				&mut *(((process.kernel_stack.offset
-					+ process.kernel_stack.size as u32)
-					- core::mem::size_of::<Registers>() as u32) as *mut _);
-			*copy_regs = new_task.regs;
+//	        crate::kprintln!("schedule_task pid: {}", process.pid);
+			// Copy registers to shared memory
+            tmp_registers = new_task.regs;
+//            crate::kprintln!("switch to: {:#x?}", tmp_registers);
 			change_kernel_stack(process);
 			_rst();
-			switch_task(
-				(KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32)
-					as *mut _
-			);
+            core::arch::asm!("jmp switch_task");
 			// never goes there
 		}
 		// 		crate::kprintln!("skip");

@@ -32,34 +32,11 @@ isr_common_stub:
 	mov eax, page_directory - KERNEL_BASE
 	mov ebx, cr3
 	cmp eax, ebx
-	je .get_kernel_kstack ; if cr3 is kernel don't swap
+	je .load_kernel_segments ; if cr3 is kernel don't swap
 
 	mov cr3, eax
 
-	.get_kernel_kstack:
-	mov eax, esp
-	mov esp, KSTACK_ADDR + 1 - 0x1000 ; take the lower kstack to handle exception
-
-	push dword[eax + regs.ss]
-	push dword[eax + regs.useresp]
-	push dword[eax + regs.eflags]
-	push dword[eax + regs.cs]
-	push dword[eax + regs.eip]
-	push dword[eax + regs.err_code]
-	push dword[eax + regs.int_no]
-
-	mov dword[eax + regs.esp], esp ; Update esp because if we trigger a pic interrupt inside exception the esp registers will be corrupted
-	push dword[eax + regs.eax]
-	push dword[eax + regs.ecx]
-	push dword[eax + regs.edx]
-	push dword[eax + regs.ebx]
-	push dword[eax + regs.esp]
-	push dword[eax + regs.ebp]
-	push dword[eax + regs.esi]
-	push dword[eax + regs.edi]
-	push dword[eax + regs.cr3]
-	push dword[eax + regs.ds]
-
+	.load_kernel_segments:
 	load_kernel_segments
 
 	mov eax, esp

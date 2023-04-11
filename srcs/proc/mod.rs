@@ -41,6 +41,7 @@ pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 		"
 	mov eax, [esp + 4]
 	add esp, 8
+    sti
 	call eax
 	cli
 	mov esp, 0xffbfffff + 1
@@ -140,6 +141,7 @@ macro_rules! exec_fn {
 	}
 }
 
+// don't refresh tlb - let it for switch_task
 #[inline(always)]
 pub fn change_kernel_stack(process: &mut Process) {
 	unsafe {
@@ -158,6 +160,6 @@ pub fn change_kernel_stack(process: &mut Process) {
 					PAGE_WRITABLE
 				);
 		}
-		refresh_tlb!();
+        refresh_tlb!();
 	}
 }

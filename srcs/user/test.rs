@@ -63,7 +63,6 @@ fn test_kill_userspace() {
 			userfunc_2 as u32,
 			end_userfunc_2 as usize - userfunc_2 as usize
 		);
-		crate::main::sleep(10); // TODO: replace
 		assert_eq!(Process::get_nb_process(), 2);
 		let res: i32 = sys_kill(pid, 9);
 		assert_eq!(res, 0);
