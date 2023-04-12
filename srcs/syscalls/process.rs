@@ -6,7 +6,7 @@ use crate::memory::paging::page_table::PageTable;
 
 use crate::memory::paging::{PAGE_PRESENT, PAGE_WRITABLE};
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 
 pub fn sys_fork() -> Pid {
 	//! Create a new process from the calling process,

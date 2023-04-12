@@ -10,7 +10,7 @@ use color::{Color, ColorCode};
 mod cursor;
 use cursor::Cursor;
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 use crate::spin::Mutex;
 
 #[derive(Debug, Clone)]

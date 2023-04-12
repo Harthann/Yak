@@ -73,8 +73,6 @@ mod main;
 mod memory;
 mod interrupts;
 mod multiboot;
-mod string;
-mod vec;
 #[macro_use]
 mod syscalls;
 mod io;
@@ -91,6 +89,12 @@ mod utils;
 #[macro_use]
 mod debug;
 
+mod alloc;
+
+use alloc::vec;
+use alloc::string;
+use alloc::boxed;
+
 #[cfg(test)]
 mod test;
 
@@ -100,8 +104,8 @@ use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
 
-#[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+#[global_allocator]
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
 // Code from boot section
