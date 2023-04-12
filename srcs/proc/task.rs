@@ -204,8 +204,6 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_rst();
 }
 
-
-
 use crate::proc::change_kernel_stack;
 
 #[no_mangle]
@@ -220,11 +218,11 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
-            tmp_registers = new_task.regs;
+			tmp_registers = new_task.regs;
 			change_kernel_stack(process);
-            // Avoid using stack below that
+			// Avoid using stack below that
 			_rst();
-            core::arch::asm!("jmp switch_task");
+			core::arch::asm!("jmp switch_task");
 			// never goes there
 		}
 		let skipped_task: Task = TASKLIST.pop();

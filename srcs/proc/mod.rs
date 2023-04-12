@@ -160,6 +160,6 @@ pub fn change_kernel_stack(process: &mut Process) {
 					PAGE_WRITABLE
 				);
 		}
-        refresh_tlb!();
+		refresh_tlb!();
 	}
 }

@@ -30,7 +30,7 @@ pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 
 /// Returns 0 on success, otherwise, returns a negative value corresponding to errno
 pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
-    _cli();
+	_cli();
 	if pid > 0 {
 		// Send to a specific process
 		unsafe {
@@ -59,7 +59,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 			} else {
 				let res = Signal::send_to_pid(pid, sender_pid, signal_type, 0);
 				if res.is_err() {
-				    _sti();
+					_sti();
 					return -(res.err().unwrap() as i32);
 				}
 				_sti();
