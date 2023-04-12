@@ -13,7 +13,7 @@ pub struct Time {
 
 impl fmt::Display for Time {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}/{}/{}{} {}:{}:{}", self.day, self.month, self.century, self.year, self.hours, self.minutes, self.seconds)
+        write!(f, "{:02}/{:02}/{}{} {:02}:{:02}:{:02}", self.day, self.month, self.century, self.year, self.hours, self.minutes, self.seconds)
     }
 }
 
