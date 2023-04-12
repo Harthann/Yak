@@ -11,8 +11,8 @@ const SECTOR_NUMBER: usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
 pub static mut PHYSMAP: Bitmaps = Bitmaps::new();
 
 pub struct Bitmaps {
-	maps: [Sector; SECTOR_NUMBER],
-    pub used: usize
+	maps:     [Sector; SECTOR_NUMBER],
+	pub used: usize
 }
 
 impl Bitmaps {
@@ -29,15 +29,19 @@ impl Bitmaps {
 			return Err(i);
 		}
 		self.maps[i as usize] |= 1 << shift;
-        self.used += 1;
+		self.used += 1;
 		Ok((i * SECTOR_SIZE + (shift as usize) * PAGE_SIZE) as PhysAddr)
 	}
 
 	// This function only aim to claim starting memory and thus ignore if memory is already claim
-	pub fn claim_range(&mut self, addr: PhysAddr, range: usize) -> Result<PhysAddr, usize> {
+	pub fn claim_range(
+		&mut self,
+		addr: PhysAddr,
+		range: usize
+	) -> Result<PhysAddr, usize> {
 		let mut i: usize = 0;
 		while i < range {
-            crate::dprintln!("{:#x}", addr as usize + i * 4096);
+			crate::dprintln!("{:#x}", addr as usize + i * 4096);
 			self.claim(addr + (i * PAGE_SIZE) as u32)?;
 			i += 1;
 		}
@@ -77,7 +81,7 @@ impl Bitmaps {
 		shift = saved_shift;
 		while count > 0 {
 			self.maps[i] |= 1 << shift;
-            self.used += 1;
+			self.used += 1;
 			shift += 1;
 			if shift == 8 {
 				shift = 0;
@@ -105,7 +109,7 @@ impl Bitmaps {
 			shift += 1;
 		}
 		self.maps[i] |= 1 << shift;
-        self.used += 1;
+		self.used += 1;
 		Ok((i * SECTOR_SIZE + (shift as usize) * PAGE_SIZE) as PhysAddr)
 	}
 
@@ -114,39 +118,40 @@ impl Bitmaps {
 		let i: usize = (addr / SECTOR_SIZE as u32) as usize;
 		let shift: u8 = (addr % SECTOR_SIZE as u32 / PAGE_SIZE as u32) as u8;
 		self.maps[i] &= 0xff ^ (1 << shift);
-        self.used -= 1;
+		self.used -= 1;
 	}
 }
 
 pub fn physmap_as_mut() -> &'static mut Bitmaps {
-   unsafe { return &mut PHYSMAP; }
+	unsafe {
+		return &mut PHYSMAP;
+	}
 }
 
 use core::fmt;
 impl fmt::Debug for Bitmaps {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Bitmaps")
-         .field("Page size (bytes)", &PAGE_SIZE)
-         .field("Sector size (bytes)", &SECTOR_SIZE)
-         .field("Sector nb", &SECTOR_NUMBER)
-         .field("Used pages", &self.used)
-         .finish()
+		f.debug_struct("Bitmaps")
+			.field("Page size (bytes)", &PAGE_SIZE)
+			.field("Sector size (bytes)", &SECTOR_SIZE)
+			.field("Sector nb", &SECTOR_NUMBER)
+			.field("Used pages", &self.used)
+			.finish()
 	}
 }
 
 #[cfg(test)]
 #[test_case]
 fn bitmap_claim() {
-use crate::page_directory;
-    crate::print_fn!();
-    unsafe {
+	use crate::page_directory;
+	crate::print_fn!();
+	unsafe {
 
-        //let tmp = PHYSMAP.used;
+		// let tmp = PHYSMAP.used;
 
-        // At start the kernel claim kernel code and memory pages to initialize the bitmap
-        // claim occur from adress 0x0 to pd_addr / 0x1000 + 1024
-        //let pd_addr = page_directory.get_vaddr() & 0x3ff000 as PhysAddr;
-        //let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as usize;
-    }
-
+		// At start the kernel claim kernel code and memory pages to initialize the bitmap
+		// claim occur from adress 0x0 to pd_addr / 0x1000 + 1024
+		// let pd_addr = page_directory.get_vaddr() & 0x3ff000 as PhysAddr;
+		// let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as usize;
+	}
 }
