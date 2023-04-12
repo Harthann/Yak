@@ -23,6 +23,7 @@ RUST_SRCS		=	main.rs \
 					queue.rs \
 					errno.rs \
 					debug.rs\
+					cmos.rs\
 					$(SYSCALL_SRCS) \
 					$(SOUNDS)
 

@@ -77,6 +77,7 @@ doc:
 
 boot:			$(NAME) $(DIR_LOGS)
 				$(RUN_PREFIX) $(QEMU) -soundhw pcspk\
+									  -rtc base=localtime\
 									  -no-reboot\
 									  -d int\
 									  -drive format=raw,file=$(NAME)\

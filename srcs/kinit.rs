@@ -88,6 +88,7 @@ mod errno;
 mod sound;
 mod spin;
 mod utils;
+mod cmos;
 #[macro_use]
 mod debug;
 
