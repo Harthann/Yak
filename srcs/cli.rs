@@ -35,7 +35,7 @@ const KNOWN_CMD: [&str; NB_CMDS] = [
 
 fn kill(command: Vec<String>) {
 	let mut wstatus: i32 = 0;
-    let pid: Pid;
+	let pid: Pid;
 
 	if command.len() != 2 {
 		kprintln!("Invalid argument.");
@@ -193,7 +193,7 @@ extern "C" {
 }
 
 fn interrupt(command: Vec<String>) {
-    let arg: usize;
+	let arg: usize;
 
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");

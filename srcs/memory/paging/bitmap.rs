@@ -117,8 +117,11 @@ impl Bitmaps {
 	pub fn free_page(&mut self, addr: PhysAddr) {
 		let i: usize = (addr / SECTOR_SIZE as u32) as usize;
 		let shift: u8 = (addr % SECTOR_SIZE as u32 / PAGE_SIZE as u32) as u8;
-		self.maps[i] &= 0xff ^ (1 << shift);
-		self.used -= 1;
+		// If pages is in fact used, free it
+		if self.maps[i] & (1 << shift) == (1 << shift) {
+			self.used -= 1;
+			self.maps[i] &= 0xff ^ (1 << shift);
+		}
 	}
 }
 
@@ -141,17 +144,124 @@ impl fmt::Debug for Bitmaps {
 }
 
 #[cfg(test)]
-#[test_case]
-fn bitmap_claim() {
-	use crate::page_directory;
-	crate::print_fn!();
-	unsafe {
+mod test {
+	use crate::memory::paging::bitmap::{
+		physmap_as_mut,
+		PAGE_SIZE,
+		SECTOR_SIZE
+	};
+	use crate::memory::PhysAddr;
 
-		// let tmp = PHYSMAP.used;
+	#[test_case]
+	fn bitmap_claim() {
+		use crate::page_directory;
+		crate::print_fn!();
+		let mut physmap = physmap_as_mut();
+		let mut x: usize = 0x100000;
+		let used = physmap.used;
 
-		// At start the kernel claim kernel code and memory pages to initialize the bitmap
-		// claim occur from adress 0x0 to pd_addr / 0x1000 + 1024
-		// let pd_addr = page_directory.get_vaddr() & 0x3ff000 as PhysAddr;
-		// let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as usize;
+		unsafe {
+			let pd_addr = page_directory.get_vaddr() & 0x3ff000 as PhysAddr;
+			let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as u32;
+
+			// At start the kernel claim kernel code and memory pages to initialize the bitmap
+			// claim occur at adress 0x0 and from 0x100000 to pd_addr / 0x1000 + 1024
+			assert_eq!(physmap.claim(0x0), Err(0));
+			assert_eq!(used, physmap.used);
+			loop {
+				match physmap.claim(x as u32) {
+					Err(index) => {
+						assert_eq!(index, x / SECTOR_SIZE);
+						assert_eq!(used, physmap.used);
+					},
+					Ok(addr) => {
+						assert_eq!(
+							addr,
+							0x100000 + nmb_claim_pages * PAGE_SIZE as u32
+						);
+						break;
+					}
+				}
+				x += PAGE_SIZE;
+			}
+			assert_eq!(used + 1, physmap.used);
+			physmap.free_page(x as u32);
+			assert_eq!(used, physmap.used);
+		}
+	}
+
+	#[test_case]
+	fn bitmap_claim_range() {
+		use crate::page_directory;
+		crate::print_fn!();
+		let mut physmap = physmap_as_mut();
+		let mut x: usize = 0x100000;
+		let mut used = physmap.used;
+
+		unsafe {
+			let pd_addr = page_directory.get_vaddr() & 0x3ff000 as PhysAddr;
+			let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as usize;
+
+			let res = physmap.claim_range(x as u32, nmb_claim_pages);
+			assert_eq!(res, Err(x as usize / SECTOR_SIZE as usize));
+			assert_eq!(used, physmap.used);
+
+			x += nmb_claim_pages * PAGE_SIZE;
+			let res = physmap.claim_range(x as u32, 10);
+			assert_eq!(res, Ok(x as u32));
+			assert_eq!(used + 10, physmap.used);
+		}
+
+		for i in 0..10 {
+			used = physmap.used;
+			physmap.free_page((x + i * PAGE_SIZE) as u32);
+			assert_eq!(used - 1, physmap.used);
+		}
+	}
+
+	#[test_case]
+	fn bitmap_get_page() {
+		crate::print_fn!();
+		let mut physmap = physmap_as_mut();
+		let mut addresses: [u32; 50] = [0; 50];
+		let mut used = physmap.used;
+
+		for i in 0..50 {
+			used = physmap.used;
+			match physmap.get_page() {
+				Err(index) => {
+					panic!("Failed to get pages at index: {:?}", index)
+				},
+				Ok(addr) => addresses[i] = addr
+			}
+			assert_eq!(used + 1, physmap.used);
+		}
+		for i in addresses {
+			used = physmap.used;
+			physmap.free_page(i);
+			assert_eq!(used - 1, physmap.used);
+		}
+	}
+
+	#[test_case]
+	fn bitmap_get_pages() {
+		crate::print_fn!();
+		let mut physmap = physmap_as_mut();
+		let mut used = physmap.used;
+
+		let addr = match physmap.get_pages(50) {
+			Err(index) => panic!("Failed to get pages at index: {:?}", index),
+			Ok(addr) => addr
+		};
+		assert_eq!(used + 50, physmap.used);
+		for i in 0..50 {
+			used = physmap.used;
+			physmap.free_page((addr + i * PAGE_SIZE as u32) as u32);
+			assert_eq!(used - 1, physmap.used);
+		}
+		// Here page is already free so the counter shouldn't be decremented
+		used = physmap.used;
+		physmap.free_page(addr);
+		assert_eq!(used, physmap.used);
 	}
 }
