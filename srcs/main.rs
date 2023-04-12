@@ -19,9 +19,8 @@ pub fn sleep(microseconds: usize) {
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
 
-    kprintln!("{}", crate::cmos::get_time());
+	kprintln!("{}", crate::cmos::get_time());
 	kprintln!("Hello World of {}!", 42);
-
 
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(

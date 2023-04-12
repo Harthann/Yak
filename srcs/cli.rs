@@ -25,7 +25,7 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	jiffies,
 	ps,
 	uptime,
-    date,
+	date,
 	play,
 	kill
 ];
@@ -95,7 +95,7 @@ fn uptime(_: Vec<String>) {
 }
 
 fn date(_: Vec<String>) {
-    crate::kprintln!("{}", crate::cmos::get_time());
+	crate::kprintln!("{}", crate::cmos::get_time());
 }
 
 fn halt(_: Vec<String>) {

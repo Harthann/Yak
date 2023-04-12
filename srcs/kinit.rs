@@ -84,11 +84,11 @@ mod user;
 mod vga_buffer;
 #[macro_use]
 mod wrappers;
+mod cmos;
 mod errno;
 mod sound;
 mod spin;
 mod utils;
-mod cmos;
 #[macro_use]
 mod debug;
 
