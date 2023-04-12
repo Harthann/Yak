@@ -200,7 +200,6 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
-//    crate::kprintln!("save_task: {:#x?}", *regs);
 	TASKLIST.push(old_task);
 	_rst();
 }
@@ -220,16 +219,14 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
-//	        crate::kprintln!("schedule_task pid: {}", process.pid);
 			// Copy registers to shared memory
             tmp_registers = new_task.regs;
-//            crate::kprintln!("switch to: {:#x?}", tmp_registers);
 			change_kernel_stack(process);
+            // Avoid using stack below that
 			_rst();
             core::arch::asm!("jmp switch_task");
 			// never goes there
 		}
-		// 		crate::kprintln!("skip");
 		let skipped_task: Task = TASKLIST.pop();
 		TASKLIST.push(skipped_task);
 	}
