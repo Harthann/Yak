@@ -66,7 +66,7 @@ impl Task {
 			page_directory.claim_index_page_table(
 				KSTACK_ADDR as usize >> 22,
 				PAGE_WRITABLE | PAGE_GLOBAL
-			);
+			).expect("Failed to claim pages");
 			page_directory
 				.get_page_table(KSTACK_ADDR as usize >> 22)
 				.new_index_frame(

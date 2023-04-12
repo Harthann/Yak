@@ -1,4 +1,3 @@
-use crate::spin::Mutex;
 use core::fmt;
 use core::fmt::Write;
 
@@ -35,12 +34,9 @@ macro_rules! dprint {
 macro_rules! dprintln {
 	() => ($crate::dprint!("\n"));
 	($($arg:tt)*) => (
-	unsafe {
-        let time = crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
 		$crate::dprint!("[{: >12.6}] {}\n",
-                        time / 1000.0,
-                        format_args!($($arg)*));
-        }
+                        crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION / 1000.0,
+                        format_args!($($arg)*))
 	)
 }
 
