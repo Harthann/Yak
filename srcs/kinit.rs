@@ -10,6 +10,7 @@
 #![feature(lang_items)]
 #![feature(c_variadic)]
 #![feature(asm_const)]
+#![feature(alloc_error_handler)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -89,7 +90,8 @@ mod utils;
 #[macro_use]
 mod debug;
 
-mod alloc;
+extern crate alloc;
+//mod alloc;
 
 use alloc::vec;
 use alloc::string;
@@ -107,6 +109,11 @@ use pic::setup_pic8259;
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 #[global_allocator]
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
+#[alloc_error_handler]
+pub fn rust_oom(layout: core::alloc::Layout) -> ! {
+    panic!("Failed to allocate memory: {}", layout.size())
+}
 
 // Code from boot section
 #[allow(dead_code)]
