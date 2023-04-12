@@ -121,7 +121,6 @@ impl Partition {
 pub fn play(sound: &str) {
 	let known_sound = ["overworld"];
 
-    crate::kprintln!("arg: {:?}", sound);
 	match sound {
 		"overworld" => Partition::overworld().play(),
 		_ => {
