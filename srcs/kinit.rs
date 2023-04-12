@@ -91,11 +91,9 @@ mod utils;
 mod debug;
 
 extern crate alloc;
-//mod alloc;
+// mod alloc;
 
-use alloc::vec;
-use alloc::string;
-use alloc::boxed;
+use alloc::{boxed, string, vec};
 
 #[cfg(test)]
 mod test;
@@ -112,7 +110,7 @@ static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
 #[alloc_error_handler]
 pub fn rust_oom(layout: core::alloc::Layout) -> ! {
-    panic!("Failed to allocate memory: {}", layout.size())
+	panic!("Failed to allocate memory: {}", layout.size())
 }
 
 // Code from boot section

@@ -232,12 +232,12 @@ impl Command {
 	}
 
 	fn append(&mut self, x: char) -> Result<(), ()> {
-        if self.command.len() < MAX_CMD_LENGTH {
-		    self.command.push(x);
-            return Ok(());
-        } else {
-            Err(())
-        }
+		if self.command.len() < MAX_CMD_LENGTH {
+			self.command.push(x);
+			return Ok(());
+		} else {
+			Err(())
+		}
 	}
 
 	pub fn len(&self) -> usize {

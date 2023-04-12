@@ -75,9 +75,9 @@ type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
 #[link_section = ".vga_buffer"]
 static mut VGA_BUFFER: Buffer = [[ScreenChar {
-    ascii_code: 0x20,
+	ascii_code: 0x20,
 	color_code: ColorCode::new(Color::White, Color::Black)
-    }; BUFFER_WIDTH]; BUFFER_HEIGHT];
+}; BUFFER_WIDTH]; BUFFER_HEIGHT];
 pub static WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
 	screen_index: 0,
 	cursor:       Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
