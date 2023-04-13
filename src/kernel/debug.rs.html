@@ -51,12 +51,7 @@
 <span id="45">45</span>
 <span id="46">46</span>
 <span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::Mutex</span>;
-<span class="kw">use</span> <span class="ident">core::fmt</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
 <span class="kw">use</span> <span class="ident">core::fmt::Write</span>;
 
 <span class="kw">const</span> <span class="ident">SERIAL_COM1</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">0x3f8</span>;
@@ -92,12 +87,9 @@
 <span class="macro">macro_rules!</span> <span class="ident">dprintln</span> {
 	() =&gt; (<span class="macro-nonterminal">$</span><span class="macro">crate::dprint!</span>(<span class="string">&quot;\n&quot;</span>));
 	($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>:<span class="ident">tt</span>)<span class="kw-2">*</span>) =&gt; (
-	<span class="kw">unsafe</span> {
-        <span class="kw">let</span> <span class="ident">time</span> <span class="op">=</span> <span class="ident"><span class="kw">crate</span>::pic::JIFFIES</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident"><span class="kw">crate</span>::pic::pit::SYSTEM_FRACTION</span>;
 		<span class="macro-nonterminal">$</span><span class="macro">crate::dprint!</span>(<span class="string">&quot;[{: &gt;12.6}] {}\n&quot;</span>,
-                        <span class="macro-nonterminal">time</span> <span class="op">/</span> <span class="number">1000.0</span>,
-                        <span class="macro">format_args!</span>($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>)<span class="kw-2">*</span>));
-        }
+                        <span class="macro-nonterminal">crate::pic::JIFFIES</span> <span class="kw">as</span> <span class="ident">f64</span> <span class="op">*</span> <span class="ident"><span class="kw">crate</span>::pic::pit::SYSTEM_FRACTION</span> <span class="op">/</span> <span class="number">1000.0</span>,
+                        <span class="macro">format_args!</span>($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">arg</span>)<span class="kw-2">*</span>))
 	)
 }
 

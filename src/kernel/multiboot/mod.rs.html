@@ -141,6 +141,13 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
 </pre><pre class="rust"><code><span class="doccomment">//!  This module aim to parse mutliboot specification</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::kprintln</span>;
@@ -210,10 +217,17 @@
 
 				<span class="kw">while</span> <span class="ident">i</span> <span class="op">&lt;</span> <span class="ident">entry_number</span> {
 					<span class="kw">if</span> (<span class="kw-2">*</span><span class="ident">mmap_entry</span>).<span class="ident">mtype</span> <span class="op">==</span> <span class="number">2</span> {
-						<span class="ident">bitmap::physmap_as_mut</span>().<span class="ident">claim_range</span>(
-							(<span class="kw-2">*</span><span class="ident">mmap_entry</span>).<span class="ident">baseaddr</span> <span class="kw">as</span> <span class="ident">PhysAddr</span>,
+						<span class="macro">crate::dprintln!</span>(
+							<span class="string">&quot;{} {}&quot;</span>,
+							(<span class="kw-2">*</span><span class="ident">mmap_entry</span>).<span class="ident">baseaddr</span> <span class="kw">as</span> <span class="ident">PhysAddr</span> <span class="op">/</span> <span class="number">4096</span>,
 							(<span class="kw-2">*</span><span class="ident">mmap_entry</span>).<span class="ident">length</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">/</span> <span class="number">4096</span>
 						);
+						<span class="ident">bitmap::physmap_as_mut</span>()
+							.<span class="ident">claim_range</span>(
+								(<span class="kw-2">*</span><span class="ident">mmap_entry</span>).<span class="ident">baseaddr</span> <span class="kw">as</span> <span class="ident">PhysAddr</span>,
+								(<span class="kw-2">*</span><span class="ident">mmap_entry</span>).<span class="ident">length</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">/</span> <span class="number">4096</span>
+							)
+							.<span class="ident">expect</span>(<span class="string">&quot;Unexpected Error claiming multiboot&quot;</span>);
 					}
 					<span class="ident">mmap_entry</span> <span class="op">=</span> <span class="ident">mmap_entry</span>.<span class="ident">add</span>(<span class="number">1</span>);
 					<span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;

@@ -140,7 +140,7 @@
 <span id="134">134</span>
 <span id="135">135</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::main::sleep</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::pic::pit</span>::{<span class="ident">play_sound</span>, <span class="ident">speaker_off</span>, <span class="ident">speaker_on</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::pic::pit</span>::{<span class="ident">speaker_off</span>, <span class="ident">speaker_on</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vec::Vec</span>;
 
 <span class="kw">mod</span> <span class="ident">notes_frequencies</span>;
@@ -193,7 +193,7 @@
 		<span class="ident">note_tempo</span>: <span class="ident">NoteTempo</span>,
 		<span class="ident">note_type</span>: <span class="ident">NoteType</span>
 	) -&gt; <span class="kw-2">&amp;mut</span> <span class="self">Self</span> {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">duration</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">note_tempo</span> {
+		<span class="kw">let</span> <span class="ident">duration</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">note_tempo</span> {
 			<span class="ident">NoteTempo::WHOLE</span> =&gt; <span class="self">self</span>.<span class="ident">whole_note_duration</span>,
 			<span class="ident">NoteTempo::HALF</span> =&gt; <span class="self">self</span>.<span class="ident">half_note_duration</span>,
 			<span class="ident">NoteTempo::QUARTER</span> =&gt; <span class="self">self</span>.<span class="ident">quarter_note_duration</span>,
@@ -220,7 +220,7 @@
 		<span class="ident">frequencies</span>: (<span class="ident">f32</span>, <span class="ident">f32</span>, <span class="ident">f32</span>),
 		<span class="ident">note_tempo</span>: <span class="ident">NoteTempo</span>
 	) {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">duration</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">note_tempo</span> {
+		<span class="kw">let</span> <span class="ident">duration</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">note_tempo</span> {
 			<span class="ident">NoteTempo::WHOLE</span> =&gt; <span class="self">self</span>.<span class="ident">whole_note_duration</span>,
 			<span class="ident">NoteTempo::HALF</span> =&gt; <span class="self">self</span>.<span class="ident">half_note_duration</span>,
 			<span class="ident">NoteTempo::QUARTER</span> =&gt; <span class="self">self</span>.<span class="ident">quarter_note_duration</span>,
@@ -239,7 +239,7 @@
 		<span class="ident">note_tempo</span>: <span class="ident">NoteTempo</span>,
 		<span class="ident">div</span>: <span class="ident">usize</span>
 	) {
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">duration</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">note_tempo</span> {
+		<span class="kw">let</span> <span class="ident">duration</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">note_tempo</span> {
 			<span class="ident">NoteTempo::WHOLE</span> =&gt; <span class="self">self</span>.<span class="ident">whole_note_duration</span>,
 			<span class="ident">NoteTempo::HALF</span> =&gt; <span class="self">self</span>.<span class="ident">half_note_duration</span>,
 			<span class="ident">NoteTempo::QUARTER</span> =&gt; <span class="self">self</span>.<span class="ident">quarter_note_duration</span>,

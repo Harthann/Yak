@@ -235,6 +235,8 @@
 <span id="229">229</span>
 <span id="230">230</span>
 <span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::ptr</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::interrupts::Registers</span>;
@@ -300,10 +302,12 @@
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">Status::Run</span>;
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">kernel_stack</span> <span class="op">=</span>
 				<span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Stack</span><span class="op">&gt;</span><span class="ident">::init</span>(<span class="number">0x1000</span>, <span class="ident">PAGE_WRITABLE</span>, <span class="bool-val">false</span>);
-			<span class="ident">page_directory</span>.<span class="ident">claim_index_page_table</span>(
-				<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-				<span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_GLOBAL</span>
-			);
+			<span class="ident">page_directory</span>
+				.<span class="ident">claim_index_page_table</span>(
+					<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
+					<span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_GLOBAL</span>
+				)
+				.<span class="ident">expect</span>(<span class="string">&quot;Failed to claim pages&quot;</span>);
 			<span class="ident">page_directory</span>
 				.<span class="ident">get_page_table</span>(<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>)
 				.<span class="ident">new_index_frame</span>(

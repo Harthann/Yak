@@ -303,9 +303,6 @@
 <span id="297">297</span>
 <span id="298">298</span>
 <span id="299">299</span>
-<span id="300">300</span>
-<span id="301">301</span>
-<span id="302">302</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Command line interface (term)</span>
 
 <span class="kw">use</span> <span class="ident">core::arch::asm</span>;
@@ -344,9 +341,8 @@
 ];
 
 <span class="kw">fn</span> <span class="ident">kill</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">wstatus</span>: <span class="ident">i32</span> <span class="op">=</span> <span class="number">0</span>;
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">pid</span>: <span class="ident">Pid</span> <span class="op">=</span> <span class="number">0</span>;
+	<span class="kw">let</span> <span class="ident">pid</span>: <span class="ident">Pid</span>;
 
 	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid argument.&quot;</span>);
@@ -487,8 +483,6 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::keyboard</span>::{<span class="ident">KEYMAP</span>, <span class="ident">KEYMAP_FR</span>, <span class="ident">KEYMAP_US</span>};
 
 <span class="kw">fn</span> <span class="ident">keymap</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">count</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
-
 	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Usage: keymap {{us, fr}}&quot;</span>);
@@ -510,7 +504,7 @@
 }
 
 <span class="kw">fn</span> <span class="ident">interrupt</span>(<span class="ident">command</span>: <span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">String</span><span class="op">&gt;</span>) {
-	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">arg</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0</span>;
+	<span class="kw">let</span> <span class="ident">arg</span>: <span class="ident">usize</span>;
 
 	<span class="kw">if</span> <span class="ident">command</span>.<span class="ident">len</span>() <span class="op">!</span><span class="op">=</span> <span class="number">2</span> {
 		<span class="macro">kprintln!</span>(<span class="string">&quot;Invalid number of arguments.&quot;</span>);
