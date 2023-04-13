@@ -19,11 +19,17 @@ use sys_macros::Poc;
 #[derive(Poc)]
 struct poc;
 
+#[sys_macros::poc_insertion]
+fn insertion_poc() {
+    crate::kprintln!("Insertion poc core");
+}
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
 
     poc::poc();
+    insertion_poc();
 	kprintln!("Hello World of {}!", 42);
 
 	change_color!(Color::Red, Color::White);

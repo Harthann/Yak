@@ -24,8 +24,10 @@ RUST_SRCS		=	main.rs \
 					errno.rs \
 					debug.rs\
 					$(SYSCALL_SRCS) \
+					$(MACROS_SRCS) \
 					$(SOUNDS)
 
+MACROS_SRCS = lib.rs
 
 SYSCALL_SRCS	=	exit.rs \
 					signal.rs \
