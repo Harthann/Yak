@@ -90,8 +90,8 @@ mod utils;
 #[macro_use]
 mod debug;
 
-pub extern crate sys_macros;
 extern crate alloc;
+pub extern crate sys_macros;
 // mod alloc;
 
 use alloc::{boxed, string, vec};

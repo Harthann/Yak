@@ -33,11 +33,14 @@ pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
     };
     // Extract function name from ItemFn
     let fn_name = fn_item.sig.ident.to_string();
+    let args_name = _args.to_string();
+
     // Create Block from code
     let function_head = quote! {
         {
         crate::kprintln!("==================================");
         crate::kprintln!("Entering the function {}", #fn_name);
+        crate::kprintln!("Received arg {}", #args_name);
         }
     };
     let function_tail = quote! {
@@ -46,6 +49,7 @@ pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
         crate::kprintln!("==================================");
         }
     };
+    // stmts is a vec containing Block of code. Each blocks represent one line of code
     // Insert head block at start of the function blocks
     fn_item.block.stmts.insert(0, syn::parse(function_head.into()).unwrap());
     // Insert tail block at end of the function blocks
@@ -56,3 +60,12 @@ pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
     item.into_token_stream().into()
 }
 
+#[proc_macro]
+pub fn proc_macro_poc(input: TokenStream) -> TokenStream {
+    let code = quote! {
+        fn proc_macro_poc() {
+            crate::kprintln!("This is basic proc macro poc");
+        }
+    };
+    code.into()
+}

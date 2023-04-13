@@ -8,7 +8,7 @@ pub fn simple_exec() -> usize {
 	2
 }
 
-#[test_case]
+#[test]
 fn test_exec_fn_no_args() {
 	print_fn!();
 	unsafe {
