@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":[["CMOS_CMD",""],["CMOS_DATA",""]],"fn":[["get_RTC_register",""],["get_time","Ask cmos for actual date and time Current implementation isn’t either optimal or completely precise"]],"macro":[["from_bcd",""]],"struct":[["Time",""]]};
