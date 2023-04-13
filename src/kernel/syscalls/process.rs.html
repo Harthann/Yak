@@ -79,7 +79,7 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_PRESENT</span>, <span class="ident">PAGE_WRITABLE</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator::Box</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
 
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sys_fork</span>() -&gt; <span class="ident">Pid</span> {
 	<span class="doccomment">//! Create a new process from the calling process,</span>

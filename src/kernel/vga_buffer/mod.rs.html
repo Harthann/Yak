@@ -325,6 +325,11 @@
 <span id="319">319</span>
 <span id="320">320</span>
 <span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
+<span id="324">324</span>
+<span id="325">325</span>
+<span id="326">326</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Handler for vga buffer</span>
 
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">io</span>, <span class="ident">Command</span>};
@@ -337,7 +342,7 @@
 <span class="kw">mod</span> <span class="ident">cursor</span>;
 <span class="kw">use</span> <span class="ident">cursor::Cursor</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator::Box</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::Mutex</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
@@ -400,16 +405,21 @@
 
 <span class="kw">type</span> <span class="ident">Buffer</span> <span class="op">=</span> [[<span class="ident">ScreenChar</span>; <span class="ident">BUFFER_WIDTH</span>]; <span class="ident">BUFFER_HEIGHT</span>];
 
+<span class="attribute">#[<span class="ident">link_section</span> <span class="op">=</span> <span class="string">&quot;.vga_buffer&quot;</span>]</span>
+<span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">VGA_BUFFER</span>: <span class="ident">Buffer</span> <span class="op">=</span> [[<span class="ident">ScreenChar</span> {
+	<span class="ident">ascii_code</span>: <span class="number">0x20</span>,
+	<span class="ident">color_code</span>: <span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>)
+}; <span class="ident">BUFFER_WIDTH</span>]; <span class="ident">BUFFER_HEIGHT</span>];
 <span class="kw">pub</span> <span class="kw">static</span> <span class="ident">WRITER</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Writer</span>, <span class="bool-val">true</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Mutex</span>::<span class="op">&lt;</span><span class="ident">Writer</span>, <span class="bool-val">true</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">Writer</span> {
 	<span class="ident">screen_index</span>: <span class="number">0</span>,
 	<span class="ident">cursor</span>:       <span class="ident">Cursor::new</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>)),
-	<span class="ident">vga_buffer</span>:   <span class="kw">unsafe</span> { <span class="ident">Box</span>::<span class="op">&lt;</span><span class="ident">Buffer</span><span class="op">&gt;</span><span class="ident">::from_raw</span>(<span class="ident">VGABUFF_OFFSET</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>) }
+	<span class="ident">vga_buffer</span>:   <span class="kw">unsafe</span> { <span class="kw-2">&amp;mut</span> <span class="ident">VGA_BUFFER</span> }
 });
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Writer</span> {
 	<span class="ident">screen_index</span>: <span class="ident">usize</span>,
 	<span class="ident">cursor</span>:       <span class="ident">Cursor</span>,
-	<span class="ident">vga_buffer</span>:   <span class="ident">Box</span><span class="op">&lt;</span><span class="ident">Buffer</span><span class="op">&gt;</span>
+	<span class="ident">vga_buffer</span>:   <span class="kw-2">&amp;</span><span class="lifetime">&#39;static</span> <span class="kw-2">mut</span> <span class="ident">Buffer</span>
 }
 
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Send</span> <span class="kw">for</span> <span class="ident">Writer</span> {}

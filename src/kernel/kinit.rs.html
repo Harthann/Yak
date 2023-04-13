@@ -178,6 +178,15 @@
 <span id="172">172</span>
 <span id="173">173</span>
 <span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">feature</span>(<span class="ident">const_mut_refs</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">naked_functions</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">fmt_internals</span>)]</span>
@@ -190,6 +199,7 @@
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">lang_items</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">c_variadic</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">asm_const</span>)]</span>
+<span class="attribute">#![<span class="ident">feature</span>(<span class="ident">alloc_error_handler</span>)]</span>
 <span class="attribute">#![<span class="ident">no_std</span>]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>
 <span class="attribute">#![<span class="ident">allow</span>(<span class="ident">incomplete_features</span>)]</span>
@@ -253,8 +263,6 @@
 <span class="kw">mod</span> <span class="ident">memory</span>;
 <span class="kw">mod</span> <span class="ident">interrupts</span>;
 <span class="kw">mod</span> <span class="ident">multiboot</span>;
-<span class="kw">mod</span> <span class="ident">string</span>;
-<span class="kw">mod</span> <span class="ident">vec</span>;
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">syscalls</span>;
 <span class="kw">mod</span> <span class="ident">io</span>;
@@ -271,6 +279,11 @@
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">debug</span>;
 
+<span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
+<span class="comment">// mod alloc;</span>
+
+<span class="kw">use</span> <span class="ident">alloc</span>::{<span class="ident">boxed</span>, <span class="ident">string</span>, <span class="ident">vec</span>};
+
 <span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">test</span>)]</span>
 <span class="kw">mod</span> <span class="ident">test</span>;
 
@@ -280,9 +293,14 @@
 <span class="kw">use</span> <span class="ident">memory::paging</span>::{<span class="ident">init_paging</span>, <span class="ident">page_directory</span>};
 <span class="kw">use</span> <span class="ident">pic::setup_pic8259</span>;
 
-<span class="attribute">#[<span class="ident">global_allocator</span>]</span>
 <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">ALLOCATOR</span>: <span class="ident">LinkedListAllocator</span> <span class="op">=</span> <span class="ident">LinkedListAllocator::new</span>();
+<span class="attribute">#[<span class="ident">global_allocator</span>]</span>
 <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">KALLOCATOR</span>: <span class="ident">LinkedListAllocator</span> <span class="op">=</span> <span class="ident">LinkedListAllocator::new</span>();
+
+<span class="attribute">#[<span class="ident">alloc_error_handler</span>]</span>
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">rust_oom</span>(<span class="ident">layout</span>: <span class="ident">core::alloc::Layout</span>) -&gt; <span class="op">!</span> {
+	<span class="macro">panic!</span>(<span class="string">&quot;Failed to allocate memory: {}&quot;</span>, <span class="ident">layout</span>.<span class="ident">size</span>())
+}
 
 <span class="comment">// Code from boot section</span>
 <span class="attribute">#[<span class="ident">allow</span>(<span class="ident">dead_code</span>)]</span>

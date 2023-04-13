@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"macro":[["__impl_slice_eq1",""]],"struct":[["Vec",""]]};
