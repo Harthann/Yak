@@ -44,7 +44,6 @@ pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
     sti
 	call eax
 	cli
-	mov esp, 0xffbfffff + 1
 	push eax
 	call _exit",
 		options(noreturn)
@@ -63,7 +62,7 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
-	process.setup_kernel_stack(parent.kernel_stack.flags);
+//	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
 		parent.stack.size,
 		parent.stack.flags,
@@ -79,6 +78,7 @@ pub unsafe extern "C" fn exec_fn(
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
 		(process.stack.offset + process.stack.size as u32) - sum as u32;
+	new_task.regs.esp -= 4;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;
