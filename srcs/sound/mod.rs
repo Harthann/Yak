@@ -1,5 +1,5 @@
 use crate::main::sleep;
-use crate::pic::pit::{play_sound, speaker_off, speaker_on};
+use crate::pic::pit::{speaker_off, speaker_on};
 use crate::vec::Vec;
 
 mod notes_frequencies;
@@ -52,7 +52,7 @@ impl Partition {
 		note_tempo: NoteTempo,
 		note_type: NoteType
 	) -> &mut Self {
-		let mut duration: usize = match note_tempo {
+		let duration: usize = match note_tempo {
 			NoteTempo::WHOLE => self.whole_note_duration,
 			NoteTempo::HALF => self.half_note_duration,
 			NoteTempo::QUARTER => self.quarter_note_duration,
@@ -79,7 +79,7 @@ impl Partition {
 		frequencies: (f32, f32, f32),
 		note_tempo: NoteTempo
 	) {
-		let mut duration: usize = match note_tempo {
+		let duration: usize = match note_tempo {
 			NoteTempo::WHOLE => self.whole_note_duration,
 			NoteTempo::HALF => self.half_note_duration,
 			NoteTempo::QUARTER => self.quarter_note_duration,
@@ -98,7 +98,7 @@ impl Partition {
 		note_tempo: NoteTempo,
 		div: usize
 	) {
-		let mut duration: usize = match note_tempo {
+		let duration: usize = match note_tempo {
 			NoteTempo::WHOLE => self.whole_note_duration,
 			NoteTempo::HALF => self.half_note_duration,
 			NoteTempo::QUARTER => self.quarter_note_duration,

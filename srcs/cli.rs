@@ -36,9 +36,8 @@ const KNOWN_CMD: [&str; NB_CMDS] = [
 ];
 
 fn kill(command: Vec<String>) {
-	let mut count: usize = 0;
 	let mut wstatus: i32 = 0;
-	let mut pid: Pid = 0;
+	let pid: Pid;
 
 	if command.len() != 2 {
 		kprintln!("Invalid argument.");
@@ -179,8 +178,6 @@ fn hexdump_parser(command: Vec<String>) {
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
 fn keymap(command: Vec<String>) {
-	let mut count: usize = 0;
-
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: keymap {{us, fr}}");
@@ -202,7 +199,7 @@ extern "C" {
 }
 
 fn interrupt(command: Vec<String>) {
-	let mut arg: usize = 0;
+	let arg: usize;
 
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");

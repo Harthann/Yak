@@ -30,16 +30,21 @@ pub fn init_paging() {
 		let pd_paddr: PhysAddr =
 			(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
 		multiboot::claim_multiboot();
+		bitmap::physmap_as_mut()
+			.claim(0x0)
+			.expect("Failed to claim first page");
 		// Claim page_directory
 		bitmap::physmap_as_mut()
-			.claim_range(0x0, ((pd_paddr / 0x1000) + 1024) as usize);
+			.claim_range(0x100000, ((pd_paddr / 0x1000) + 1024) as usize)
+			.expect("Failed to claim code pages");
 
 		// Init paging map
-		let kernel_pt_paddr: PhysAddr =
-			bitmap::physmap_as_mut().get_page().unwrap();
+		let kernel_pt_paddr: PhysAddr = bitmap::physmap_as_mut()
+			.get_page()
+			.expect("Failed to get kernel page table");
 		// Use identity mapping to setup kernel page
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
-		let mut init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
+		let init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab
 			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		refresh_tlb!();

@@ -16,7 +16,7 @@ impl Partition {
 		partition.add_note(G5, NoteTempo::QUARTER, NoteType::BASE);
 		partition.add_note(G4, NoteTempo::QUARTER, NoteType::BASE);
 
-		for i in 0..2 {
+		for _ in 0..2 {
 			partition.add_note(C5, NoteTempo::EIGTH, NoteType::DOTTED);
 			partition.add_note(G4, NoteTempo::EIGTH, NoteType::DOTTED);
 			partition.add_note(E4, NoteTempo::EIGTH, NoteType::BASE);
@@ -38,7 +38,7 @@ impl Partition {
 		}
 
 		// B
-		for i in 0..2 {
+		for _ in 0..2 {
 			partition.add_note(Rest, NoteTempo::EIGTH, NoteType::BASE);
 			partition.add_note(G5, NoteTempo::SIXTEENTH, NoteType::BASE);
 			partition.add_note(Gb5, NoteTempo::SIXTEENTH, NoteType::BASE);
@@ -138,7 +138,7 @@ impl Partition {
 		partition.add_note(G4, NoteTempo::QUARTER, NoteType::BASE);
 
 		// A'
-		for i in 0..2 {
+		for _ in 0..2 {
 			partition.add_note(C5, NoteTempo::EIGTH, NoteType::DOTTED);
 			partition.add_note(G4, NoteTempo::EIGTH, NoteType::DOTTED);
 			partition.add_note(E4, NoteTempo::EIGTH, NoteType::BASE);
@@ -160,7 +160,7 @@ impl Partition {
 		}
 
 		// D
-		for i in 0..2 {
+		for _ in 0..2 {
 			partition.add_note(E5, NoteTempo::SIXTEENTH, NoteType::BASE);
 			partition.add_note(C5, NoteTempo::EIGTH, NoteType::BASE);
 			partition.add_note(G4, NoteTempo::EIGTH, NoteType::DOTTED);
