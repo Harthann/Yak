@@ -1,7 +1,7 @@
 use core::fmt;
 use core::ptr::copy_nonoverlapping;
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{Heap, MemoryZone, Stack};
 use crate::vec::Vec;

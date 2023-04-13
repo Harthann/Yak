@@ -12,6 +12,7 @@ use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
 
 const NB_CMDS: usize = 13;
+const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	reboot,
@@ -72,7 +73,7 @@ fn play(command: Vec<String>) {
 	}
 	crate::kprintln!("sound: {}", sound);
 	unsafe {
-		crate::exec_fn!(crate::sound::play, sound);
+		crate::sound::play(sound);
 	}
 }
 
@@ -230,8 +231,13 @@ impl Command {
 		Command { command: String::new() }
 	}
 
-	fn append(&mut self, x: char) -> Result<(), allocator::AllocError> {
-		self.command.try_push(x)
+	fn append(&mut self, x: char) -> Result<(), ()> {
+		if self.command.len() < MAX_CMD_LENGTH {
+			self.command.push(x);
+			return Ok(());
+		} else {
+			Err(())
+		}
 	}
 
 	pub fn len(&self) -> usize {

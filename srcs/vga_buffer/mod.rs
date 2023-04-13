@@ -10,7 +10,7 @@ use color::{Color, ColorCode};
 mod cursor;
 use cursor::Cursor;
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 use crate::spin::Mutex;
 
 #[derive(Debug, Clone)]
@@ -73,16 +73,21 @@ pub static SCREENS: Mutex<[Screen; NB_SCREEN], true> =
 
 type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
+#[link_section = ".vga_buffer"]
+static mut VGA_BUFFER: Buffer = [[ScreenChar {
+	ascii_code: 0x20,
+	color_code: ColorCode::new(Color::White, Color::Black)
+}; BUFFER_WIDTH]; BUFFER_HEIGHT];
 pub static WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
 	screen_index: 0,
 	cursor:       Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
-	vga_buffer:   unsafe { Box::<Buffer>::from_raw(VGABUFF_OFFSET as *mut _) }
+	vga_buffer:   unsafe { &mut VGA_BUFFER }
 });
 
 pub struct Writer {
 	screen_index: usize,
 	cursor:       Cursor,
-	vga_buffer:   Box<Buffer>
+	vga_buffer:   &'static mut Buffer
 }
 
 unsafe impl Send for Writer {}

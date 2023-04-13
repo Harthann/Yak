@@ -14,7 +14,7 @@ use crate::memory::paging::page_directory;
 use crate::memory::paging::page_directory::PageDirectory;
 use crate::memory::paging::page_table::PageTable;
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 
 use crate::KSTACK_ADDR;
 

@@ -10,6 +10,7 @@
 #![feature(lang_items)]
 #![feature(c_variadic)]
 #![feature(asm_const)]
+#![feature(alloc_error_handler)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -73,8 +74,6 @@ mod main;
 mod memory;
 mod interrupts;
 mod multiboot;
-mod string;
-mod vec;
 #[macro_use]
 mod syscalls;
 mod io;
@@ -91,6 +90,11 @@ mod utils;
 #[macro_use]
 mod debug;
 
+extern crate alloc;
+// mod alloc;
+
+use alloc::{boxed, string, vec};
+
 #[cfg(test)]
 mod test;
 
@@ -100,9 +104,14 @@ use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
 
-#[global_allocator]
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+#[global_allocator]
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
+
+#[alloc_error_handler]
+pub fn rust_oom(layout: core::alloc::Layout) -> ! {
+	panic!("Failed to allocate memory: {}", layout.size())
+}
 
 // Code from boot section
 #[allow(dead_code)]
