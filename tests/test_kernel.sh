@@ -15,6 +15,7 @@ fi
 #	Build iso file using test binary and grub
 grub-mkrescue -o $2 iso
 
+mkdir -p logs
 echo "" > logs/kernel.log
 
 qemu-system-i386 -d int \
