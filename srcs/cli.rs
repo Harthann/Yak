@@ -11,7 +11,7 @@ use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
 
-const NB_CMDS: usize = 13;
+const NB_CMDS: usize = 14;
 const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
@@ -25,13 +25,14 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	shutdown,
 	jiffies,
 	ps,
-	time,
+	uptime,
+	date,
 	play,
 	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "time", "play", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "kill"
 ];
 
 fn kill(command: Vec<String>) {
@@ -83,7 +84,7 @@ fn jiffies(_: Vec<String>) {
 	}
 }
 
-fn time(_: Vec<String>) {
+fn uptime(_: Vec<String>) {
 	unsafe {
 		crate::pic::pit::TIME_ELAPSED =
 			crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
@@ -92,6 +93,10 @@ fn time(_: Vec<String>) {
 			((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
 		crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
 	}
+}
+
+fn date(_: Vec<String>) {
+	crate::kprintln!("{}", crate::cmos::get_time());
 }
 
 fn halt(_: Vec<String>) {
