@@ -1,9 +1,6 @@
 pub mod bump;
 pub mod linked_list;
 
-mod boxed;
-pub use boxed::Box;
-
 mod global;
 pub use global::Global;
 

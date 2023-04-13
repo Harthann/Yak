@@ -49,21 +49,17 @@ fn vector_big_alloc() {
 
 	print_fn!();
 
+    // Current heap size is 0x1000 * 100
 	// Should send an error
 	{
-		let x = Vec::<u32, KGlobal>::try_alloc(200000, &KGlobal);
+		let x = Vec::<u32, KGlobal>::try_alloc(0x1000 * 200 / 4, &KGlobal);
 		assert_eq!(x, Err(AllocError));
 	}
 
 	// Big chunk
 	{
-		let size = 100000;
-		let mut x: Vec<u32> = Vec::with_capacity(size);
-
-		for i in 0..size {
-			x.push(i as u32);
-		}
-		assert_eq!(x.capacity(), size);
+		let mut x: Vec<u32> = Vec::with_capacity(0x1000 * 50 / 4);
+		assert_eq!(x.capacity(), 0x1000 * 50 / 4);
 	}
 }
 

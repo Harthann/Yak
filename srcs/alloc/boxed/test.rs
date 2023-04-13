@@ -1,4 +1,4 @@
-use crate::memory::allocator::boxed::Box;
+use crate::boxed::Box;
 use crate::print_fn;
 
 #[test_case]
