@@ -11,7 +11,7 @@ use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
 
-const NB_CMDS: usize = 13;
+const NB_CMDS: usize = 14;
 const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
@@ -25,19 +25,19 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	shutdown,
 	jiffies,
 	ps,
-	time,
+	uptime,
+	date,
 	play,
 	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "time", "play", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "kill"
 ];
 
 fn kill(command: Vec<String>) {
-	let mut count: usize = 0;
 	let mut wstatus: i32 = 0;
-	let mut pid: Pid = 0;
+	let pid: Pid;
 
 	if command.len() != 2 {
 		kprintln!("Invalid argument.");
@@ -83,7 +83,7 @@ fn jiffies(_: Vec<String>) {
 	}
 }
 
-fn time(_: Vec<String>) {
+fn uptime(_: Vec<String>) {
 	unsafe {
 		crate::pic::pit::TIME_ELAPSED =
 			crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
@@ -92,6 +92,10 @@ fn time(_: Vec<String>) {
 			((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
 		crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
 	}
+}
+
+fn date(_: Vec<String>) {
+	crate::kprintln!("{}", crate::cmos::get_time());
 }
 
 fn halt(_: Vec<String>) {
@@ -174,8 +178,6 @@ fn hexdump_parser(command: Vec<String>) {
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
 fn keymap(command: Vec<String>) {
-	let mut count: usize = 0;
-
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");
 		kprintln!("Usage: keymap {{us, fr}}");
@@ -197,7 +199,7 @@ extern "C" {
 }
 
 fn interrupt(command: Vec<String>) {
-	let mut arg: usize = 0;
+	let arg: usize;
 
 	if command.len() != 2 {
 		kprintln!("Invalid number of arguments.");

@@ -56,7 +56,9 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 	/// out of scope, mutex will be unlocked
 	pub fn lock(&self) -> MutexGuard<T, INT> {
 		#[cfg(feature = "mutex_debug")]
-		crate::dprintln!("{:?}", self);
+		unsafe {
+			crate::dprintln!("{:?}", self)
+		};
 		self.obtain_lock();
 		MutexGuard { lock: &self.lock, data: unsafe { &mut *self.data.get() } }
 	}
@@ -81,7 +83,7 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 impl<T: ?Sized, const INT: bool> fmt::Debug for Mutex<T, INT> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self.try_lock() {
-			Some(guard) => write!(f, "Mutex ({:#p}) {{ <Not locked> }}", self),
+			Some(_guard) => write!(f, "Mutex ({:#p}) {{ <Not locked> }}", self),
 			None => write!(f, "Mutex ({:#p}) {{ <locked> }}", self)
 		}
 	}

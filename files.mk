@@ -23,9 +23,11 @@ RUST_SRCS		=	main.rs \
 					queue.rs \
 					errno.rs \
 					debug.rs\
+					cmos.rs\
 					$(SYSCALL_SRCS) \
 					$(MACROS_SRCS) \
-					$(SOUNDS)
+					$(SOUNDS) \
+					bitmap.rs
 
 MACROS_SRCS = lib.rs
 
