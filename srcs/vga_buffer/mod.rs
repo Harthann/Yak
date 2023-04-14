@@ -68,8 +68,6 @@ const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
 pub const NB_SCREEN: usize = 3;
-pub static SCREENS: Mutex<[Screen; NB_SCREEN], true> =
-	Mutex::new([Screen::new(), Screen::new(), Screen::new()]);
 
 type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
@@ -173,20 +171,16 @@ impl Writer {
 		self.cursor.enable();
 	}
 
-	pub fn change_screen(&mut self, nb: usize) {
-		let mut screen_guard = SCREENS.lock();
-		// Should copy vga to current buffer index
+    pub fn save(&self, screen: &mut Screen) {
+        screen.buffer.copy_from_slice(self.vga_buffer);
+		screen.cursor = self.cursor;
+    }
+
+	pub fn render(&mut self, screen: &mut Screen) {
 		self.cursor.disable();
 
-		screen_guard[self.screen_index]
-			.buffer
-			.copy_from_slice(self.vga_buffer.as_mut());
-		screen_guard[self.screen_index].cursor = self.cursor;
-
-		self.screen_index = nb;
-		self.vga_buffer
-			.copy_from_slice(screen_guard[self.screen_index].buffer.as_mut());
-		self.cursor = screen_guard[self.screen_index].cursor;
+		self.vga_buffer.copy_from_slice(screen.buffer.as_mut());
+		self.cursor = screen.cursor;
 
 		self.cursor.update();
 		self.cursor.enable();
@@ -306,16 +300,16 @@ macro_rules! change_color {
 	};
 }
 
-macro_rules! clihandle {
-	($arg:expr) => {
-		unsafe {
-			let screen_number = crate::vga_buffer::WRITER.lock().get_screen();
-			$crate::vga_buffer::SCREENS.lock()[screen_number]
-				.get_command()
-				.handle($arg);
-		}
-	};
-}
+//macro_rules! clihandle {
+//	($arg:expr) => {
+//		unsafe {
+//			let screen_number = crate::vga_buffer::WRITER.lock().get_screen();
+//			$crate::vga_buffer::SCREENS.lock()[screen_number]
+//				.get_command()
+//				.handle($arg);
+//		}
+//	};
+//}
 
 macro_rules! screenclear {
 	() => {
@@ -323,4 +317,4 @@ macro_rules! screenclear {
 	};
 }
 
-pub(crate) use {change_color, clihandle, screenclear};
+pub(crate) use {change_color, screenclear};

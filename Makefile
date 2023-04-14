@@ -86,6 +86,17 @@ boot:			$(NAME) $(DIR_LOGS)
 									  -device isa-debug-exit,iobase=0xf4,iosize=0x04\
 									  -display curses 2> $(DIR_LOGS)/qemu.log $(RUN_SUFFIX)
 
+nboot:			$(NAME) $(DIR_LOGS)
+				$(RUN_PREFIX) $(QEMU) -soundhw pcspk\
+									  -rtc base=localtime\
+									  -no-reboot\
+									  -d int\
+									  -drive format=raw,file=$(NAME)\
+									  -serial file:$(DIR_LOGS)/kernel.log\
+									  -serial file:$(DIR_LOGS)/debug_kernel.log\
+									  -device isa-debug-exit,iobase=0xf4,iosize=0x04\
+									   2> $(DIR_LOGS)/qemu.log $(RUN_SUFFIX)
+
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
 				$(RUN_PREFIX) $(QEMU) -s -S -drive format=raw,file=$(NAME) -serial file:kernel.log &\

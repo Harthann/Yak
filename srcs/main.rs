@@ -29,5 +29,6 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
 	kprint!("$> ");
+    unsafe { crate::exec_fn!(crate::cli::cli); }
 	loop {}
 }
