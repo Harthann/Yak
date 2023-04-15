@@ -25,9 +25,11 @@ RUST_SRCS		=	main.rs \
 					debug.rs\
 					cmos.rs\
 					$(SYSCALL_SRCS) \
+					$(MACROS_SRCS) \
 					$(SOUNDS) \
 					bitmap.rs
 
+MACROS_SRCS = lib.rs
 
 SYSCALL_SRCS	=	exit.rs \
 					signal.rs \

@@ -18,6 +18,7 @@ opt-level = "z"
 
 #	Dependencies
 [dependencies]
+sys_macros = { path= "srcs/sys_macros"}
 
 [features]
 # You can add feature by naming them in default
