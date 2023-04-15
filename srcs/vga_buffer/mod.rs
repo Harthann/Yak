@@ -67,8 +67,6 @@ const VGABUFF_OFFSET: usize = 0xc00b8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
-pub const NB_SCREEN: usize = 3;
-
 type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
 #[link_section = ".vga_buffer"]
