@@ -1,6 +1,6 @@
 //! Processus, Tasks and Signals
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};

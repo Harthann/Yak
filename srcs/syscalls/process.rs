@@ -8,7 +8,7 @@ use crate::wrappers::{_cli, _sti};
 
 use crate::memory::paging::{PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE};
 
-use crate::memory::allocator::Box;
+use crate::boxed::Box;
 
 pub fn sys_fork() -> Pid {
 	//! Create a new process from the calling process,

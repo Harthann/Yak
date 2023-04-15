@@ -9,6 +9,12 @@ SECTIONS {
 		*(.gdt)
 	}
 
+	. = KERNEL_BASE + 0xb8000;
+	.vga_buffer : AT(ADDR(.vga_buffer) - KERNEL_BASE)
+	{
+		*(.vga_buffer)
+	}
+
 	. = 0x100000;
 	.boot BLOCK(4k) : ALIGN(4k)
 	{
