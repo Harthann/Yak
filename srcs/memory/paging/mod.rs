@@ -52,25 +52,14 @@ pub fn init_paging() {
 		let kernel_page_tab: &mut PageTable =
 			&mut *(get_vaddr!(0, 768) as *mut _);
 		kernel_page_tab.init();
-		page_directory.set_entry(
-			768,
-			kernel_pt_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
-		);
+		page_directory
+			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		// Recursive mapping
-		page_directory.set_entry(
-			1023,
-			pd_paddr | PAGE_GLOBAL | PAGE_WRITABLE | PAGE_PRESENT
-		);
+		page_directory.set_entry(1023, pd_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		// Remove init page
 		init_page_tab.clear();
 		page_directory.set_entry(0, 0);
 		refresh_tlb!();
-	}
-}
-
-pub fn print_pdentry(index: usize) {
-	unsafe {
-		crate::kprintln!("{}", page_directory.entries[index]);
 	}
 }
 

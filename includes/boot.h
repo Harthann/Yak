@@ -9,7 +9,15 @@
 ; gdt
 extern gdt_desc
 
-%macro reload_segments 0
+%macro load_kernel_segments 0
+	mov ax, 0x10
+	mov ds, ax
+	mov es, ax
+	mov fs, ax
+	mov gs, ax
+%endmacro
+
+%macro reload_cs 0
 	mov ax, 0x10
 	mov ds, ax
 	mov es, ax

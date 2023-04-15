@@ -15,8 +15,11 @@ use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
+#[no_mangle]
+pub static mut tmp_registers: Registers = Registers::new();
+
 extern "C" {
-	pub fn switch_task(regs: *const Registers) -> !;
+	pub fn switch_task() -> !;
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
@@ -42,41 +45,24 @@ impl Task {
 		}
 	}
 
-	pub unsafe fn init(&mut self, regs: Registers, process: &mut Process) {
-		self.regs.eip = wrapper_fn as VirtAddr;
-		self.regs.eflags = regs.eflags;
-		self.regs.cr3 = regs.cr3;
-		self.process = process;
-		self.regs.esp = process.stack.offset + (process.stack.size - 4) as u32;
-	}
-
 	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
-			core::arch::asm!("
-			mov {cr3}, cr3
-			pushf
-			mov {eflags}, [esp]
-			popf",
-			cr3 = out(reg) task.regs.cr3,
-			eflags = out(reg) task.regs.eflags);
+			core::arch::asm!(
+				"mov {cr3}, cr3",
+				"pushf",
+				"mov {eflags}, [esp]",
+				"popf",
+				cr3 = out(reg) task.regs.cr3,
+				eflags = out(reg) task.regs.eflags
+			);
 			MASTER_PROCESS.state = Status::Run;
-			MASTER_PROCESS.kernel_stack =
-				<MemoryZone as Stack>::init(0x1000, PAGE_WRITABLE, false);
-			page_directory
-				.claim_index_page_table(
-					KSTACK_ADDR as usize >> 22,
-					PAGE_WRITABLE | PAGE_GLOBAL
-				)
-				.expect("Failed to claim pages");
-			page_directory
-				.get_page_table(KSTACK_ADDR as usize >> 22)
-				.new_index_frame(
-					(KSTACK_ADDR as usize & 0x3ff000) >> 12,
-					get_paddr!(MASTER_PROCESS.kernel_stack.offset),
-					PAGE_WRITABLE
-				);
-			refresh_tlb!();
+			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
+			page_directory.claim_index_page_table(
+				KSTACK_ADDR as usize >> 22,
+				PAGE_WRITABLE
+			);
+			change_kernel_stack(&MASTER_PROCESS);
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
 				0x1000,
@@ -126,15 +112,16 @@ impl Task {
 #[naked]
 #[no_mangle]
 unsafe extern "C" fn wrapper_handler() {
-	core::arch::asm!("
-	mov eax, [esp]
-	add esp, 4
-	call eax
-	mov esp, {}
-	cli
-	jmp _end_handler",
-	const KSTACK_ADDR,
-	options(noreturn));
+	core::arch::asm!(
+		"mov eax, [esp]",
+		"add esp, 4",
+		"call eax",
+		"mov esp, {}",
+		"cli",
+		"jmp _end_handler",
+		const KSTACK_ADDR,
+		options(noreturn),
+	);
 	// Never goes there
 }
 
@@ -209,22 +196,18 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 	_cli();
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
+		let process: &mut Process = &mut *new_task.process;
 		// TODO: IF SIGNAL JUMP ?
-		if (*new_task.process).signals.len() > 0 {
+		if process.signals.len() > 0 {
 			do_signal(new_task);
 		}
 		if new_task.state != TaskStatus::Interruptible {
-			// Copy registers to last bytes on kstack to target
-			let copy_regs: &mut Registers =
-				&mut *((((*new_task.process).kernel_stack.offset + 0x1000)
-					- core::mem::size_of::<Registers>() as u32) as *mut _);
-			*copy_regs = new_task.regs;
+			// Copy registers to shared memory
+			tmp_registers = new_task.regs;
+			change_kernel_stack(process);
+			// Avoid using stack below that
 			_rst();
-			change_kernel_stack((*new_task.process).kernel_stack.offset);
-			switch_task(
-				(KSTACK_ADDR + 1 - core::mem::size_of::<Registers>() as u32)
-					as *mut _
-			);
+			core::arch::asm!("jmp switch_task");
 			// never goes there
 		}
 		let skipped_task: Task = TASKLIST.pop();

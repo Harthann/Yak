@@ -20,14 +20,13 @@ pub fn syscall_handler(reg: &mut Registers) {
 	if reg.eax > 448 {
 		todo!(); // problem
 	}
-	crate::kprintln!("syscall with reg: {:#x?}", reg);
 	// TODO: wrapper syscall
 	match reg.eax {
 		_ if reg.eax == Syscall::exit as u32 => sys_exit(reg.ebx as _),
 		_ if reg.eax == Syscall::fork as u32 => reg.eax = sys_fork() as u32,
 		_ if reg.eax == Syscall::waitpid as u32 => {
 			reg.eax =
-				sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32
+				sys_waitpid(reg.ebx as _, reg.ecx as _, reg.edx as _) as u32;
 		},
 		_ if reg.eax == Syscall::getpid as u32 => reg.eax = sys_getpid() as u32,
 		_ if reg.eax == Syscall::getuid as u32 => reg.eax = sys_getuid() as u32,

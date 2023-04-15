@@ -13,6 +13,20 @@ use crate::proc::Id;
 
 use crate::errno::ErrNo;
 
+use crate::memory::paging::page_directory::PageDirectory;
+use crate::memory::paging::page_table::PageTable;
+use crate::memory::paging::{
+	page_directory,
+	PAGE_GLOBAL,
+	PAGE_PRESENT,
+	PAGE_USER,
+	PAGE_WRITABLE
+};
+use crate::memory::PhysAddr;
+
+use crate::user::{USER_HEAP_ADDR, USER_STACK_ADDR};
+use crate::KSTACK_ADDR;
+
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
@@ -101,20 +115,25 @@ impl Process {
 		self.heap = <MemoryZone as Heap>::init_no_allocator(size, flags, kphys);
 	}
 
-	pub fn setup_kernel_stack(&mut self, size: usize, flags: u32, kphys: bool) {
-		self.kernel_stack = <MemoryZone as Stack>::init(size, flags, kphys);
+	pub fn setup_kernel_stack(&mut self, flags: u32) {
+		self.kernel_stack = <MemoryZone as Stack>::init(0x1000, flags, false);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
 		copy_nonoverlapping(
-			parent.stack.offset as *mut u8,
+			parent.stack.offset as *const u8,
 			self.stack.offset as *mut u8,
 			self.stack.size
 		);
 		copy_nonoverlapping(
-			parent.heap.offset as *mut u8,
+			parent.heap.offset as *const u8,
 			self.heap.offset as *mut u8,
 			self.heap.size
+		);
+		copy_nonoverlapping(
+			parent.kernel_stack.offset as *const u8,
+			self.kernel_stack.offset as *mut u8,
+			self.kernel_stack.size
 		);
 	}
 
@@ -207,6 +226,60 @@ impl Process {
 		} else {
 			todo!();
 		}
+	}
+
+	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
+		let parent: &Process = &(*self.parent);
+		let kernel_pt_paddr: PhysAddr =
+			get_paddr!(page_directory.get_page_table(768).get_vaddr());
+
+		let page_dir: &'static mut PageDirectory =
+			PageDirectory::new(PAGE_WRITABLE | PAGE_USER);
+		let process_heap: &'static mut PageTable = PageTable::new();
+		let process_stack: &'static mut PageTable = PageTable::new();
+		let process_kernel_stack: &'static mut PageTable = PageTable::new();
+		// Setup heap + prg
+		page_dir.set_entry(
+			USER_HEAP_ADDR as usize >> 22,
+			get_paddr!(process_heap as *const _)
+				| parent.heap.flags
+				| PAGE_USER | PAGE_PRESENT
+		);
+		// Setup stack
+		page_dir.set_entry(
+			USER_STACK_ADDR as usize >> 22,
+			get_paddr!(process_stack as *const _)
+				| parent.stack.flags
+				| PAGE_USER | PAGE_PRESENT
+		);
+		page_dir.set_entry(
+			768,
+			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+		);
+		page_dir.set_entry(
+			KSTACK_ADDR as usize >> 22,
+			get_paddr!(process_kernel_stack as *const _)
+				| parent.kernel_stack.flags
+				| PAGE_USER | PAGE_PRESENT
+		);
+		// Setup stack and heap
+		process_heap.new_index_frame(
+			(USER_HEAP_ADDR as usize & 0x3ff000) >> 12,
+			get_paddr!(self.heap.offset),
+			PAGE_WRITABLE | PAGE_USER
+		);
+		process_stack.new_index_frame(
+			(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
+			get_paddr!(self.stack.offset),
+			PAGE_WRITABLE | PAGE_USER
+		);
+		process_kernel_stack.new_index_frame(
+			(KSTACK_ADDR as usize & 0x3ff000) >> 12,
+			get_paddr!(self.kernel_stack.offset),
+			PAGE_WRITABLE | PAGE_USER
+		);
+		refresh_tlb!();
+		page_dir
 	}
 
 	pub unsafe fn get_nb_process() -> usize {

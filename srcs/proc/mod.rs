@@ -8,6 +8,7 @@ use crate::{VirtAddr, KSTACK_ADDR};
 use crate::memory::paging::{PAGE_GLOBAL, PAGE_WRITABLE};
 
 use crate::memory::paging::page_directory;
+use crate::memory::paging::page_directory::PageDirectory;
 
 pub mod process;
 pub mod signal;
@@ -37,15 +38,13 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 #[no_mangle]
 pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 	core::arch::asm!(
-		"
-	mov eax, [esp + 4]
-	add esp, 8
-	sti
-	call eax
-	cli
-	mov esp, 0xffc00000
-	push eax
-	call _exit",
+		"mov eax, [esp + 4]",
+		"add esp, 8",
+		"sti",
+		"call eax",
+		"cli",
+		"push eax",
+		"call _exit",
 		options(noreturn)
 	);
 	// Never goes there
@@ -62,12 +61,18 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
-	process.setup_kernel_stack(0x1000, parent.stack.flags, parent.stack.kphys);
-	process.setup_stack(0x1000, parent.stack.flags, parent.stack.kphys);
+	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
+	process.setup_stack(
+		parent.stack.size,
+		parent.stack.flags,
+		parent.stack.kphys
+	);
 	parent.childs.push(Box::new(process));
+
 	let process: &mut Process = parent.childs.last_mut().unwrap();
 	let mut new_task: Task = Task::new();
-	new_task.init(running_task.regs, process);
+
+	new_task.process = process;
 	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
@@ -101,6 +106,9 @@ pub unsafe extern "C" fn exec_fn(
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
 	new_task.regs.esp -= 4;
+	new_task.regs.eip = wrapper_fn as VirtAddr;
+	new_task.regs.cr3 = running_task.regs.cr3;
+	new_task.regs.ds = running_task.regs.ds;
 	TASKLIST.push(new_task);
 	_sti();
 	process.pid
@@ -131,15 +139,16 @@ macro_rules! exec_fn {
 	}
 }
 
+// don't refresh tlb - let it for switch_task
 #[inline(always)]
-pub fn change_kernel_stack(addr: VirtAddr) {
+pub fn change_kernel_stack(process: &Process) {
 	unsafe {
 		page_directory
-			.get_page_table((KSTACK_ADDR >> 22) as usize)
+			.get_page_table((KSTACK_ADDR as usize) >> 22)
 			.new_index_frame(
-				((KSTACK_ADDR & 0x3ff000) as usize) >> 12,
-				get_paddr!(addr),
-				PAGE_WRITABLE | PAGE_GLOBAL
+				((KSTACK_ADDR as usize) & 0x3ff000) >> 12,
+				get_paddr!(process.kernel_stack.offset as u32),
+				PAGE_WRITABLE
 			);
 		refresh_tlb!();
 	}
