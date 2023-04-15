@@ -38,14 +38,13 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 #[no_mangle]
 pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 	core::arch::asm!(
-		"
-	mov eax, [esp + 4]
-	add esp, 8
-    sti
-	call eax
-	cli
-	push eax
-	call _exit",
+		"mov eax, [esp + 4]",
+		"add esp, 8",
+		"sti",
+		"call eax",
+		"cli",
+		"push eax",
+		"call _exit",
 		options(noreturn)
 	);
 	// Never goes there

@@ -27,7 +27,10 @@ RUST_SRCS		=	main.rs \
 					$(SYSCALL_SRCS) \
 					$(CLI_SRCS) \
 					$(SOUNDS) \
+					$(MACROS_SRCS) \
 					bitmap.rs
+
+MACROS_SRCS = lib.rs
 
 CLI_SRCS = mod.rs input.rs
 
