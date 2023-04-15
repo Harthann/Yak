@@ -57,7 +57,7 @@ pub unsafe extern "C" fn _start() {
 		"2:",
 		"mov ecx, ebx",
 		"or ecx, 3",
-		"mov DWORD PTR[offset page_table - {0} + eax * 4], ecx",
+		"mov DWORD PTR[page_table - {0} + eax * 4], ecx",
 		"add ebx, 0x1000",
 		"inc eax",
 		"cmp eax, 1024",
