@@ -41,7 +41,6 @@ impl Bitmaps {
 	) -> Result<PhysAddr, usize> {
 		let mut i: usize = 0;
 		while i < range {
-			unsafe { crate::dprintln!("{:#x}", addr as usize + i * 4096) };
 			self.claim(addr + (i * PAGE_SIZE) as u32)?;
 			i += 1;
 		}

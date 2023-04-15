@@ -67,11 +67,6 @@ pub unsafe fn claim_multiboot() {
 
 				while i < entry_number {
 					if (*mmap_entry).mtype == 2 {
-						crate::dprintln!(
-							"{} {}",
-							(*mmap_entry).baseaddr as PhysAddr / 4096,
-							(*mmap_entry).length as usize / 4096
-						);
 						bitmap::physmap_as_mut()
 							.claim_range(
 								(*mmap_entry).baseaddr as PhysAddr,
