@@ -24,7 +24,7 @@ const SCREEN: Screen = Screen::new();
 impl TermEmu {
      pub const fn new() -> Self {
         TermEmu {
-            screens:         [SCREEN; NB_SCREEN],
+            screens:         [SCREEN; NB_SCREEN as usize],
             current_screen: 0
         }
     }

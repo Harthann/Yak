@@ -34,9 +34,9 @@ pub extern "C" fn kmain() -> ! {
         let pid = unsafe {
             crate::exec_fn!(crate::cli::cli)
         };
-        crate::dprintln!("Term pid: {:?}", pid);
+        unsafe { crate::dprintln!("Term pid: {:?}", pid) };
         let mut status = 0;
         sys_waitpid(pid, &mut status, 0);
-        crate::dprintln!("Term has been killed");
+        unsafe { crate::dprintln!("Term has been killed") };
     }
 }
