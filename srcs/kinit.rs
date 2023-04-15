@@ -92,7 +92,7 @@ mod utils;
 mod debug;
 
 extern crate alloc;
-pub extern crate sys_macros;
+extern crate sys_macros;
 // mod alloc;
 
 use alloc::{boxed, string, vec};
