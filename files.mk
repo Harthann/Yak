@@ -1,4 +1,5 @@
 RUST_SRCS		=	main.rs \
+					boot.rs \
 					kinit.rs \
 					mod.rs \
 					io.rs \
@@ -45,8 +46,7 @@ INCLUDES	=		boot.h \
 					idt.h \
 					task.h
 
-BOOTSRCS		=	boot.s \
-					gdt.s \
+BOOTSRCS		=	gdt.s \
 					idt.s \
 					int.s \
 					userjump.s \

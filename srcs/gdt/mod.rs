@@ -5,7 +5,7 @@ use core::fmt;
 pub mod tss;
 pub use tss::{init_tss, Tss};
 
-pub const KERNEL_BASE: usize = 0xc0000000;
+use crate::boot::KERNEL_BASE;
 
 extern "C" {
 	pub fn gdt_start();
@@ -118,7 +118,7 @@ pub fn set_segment(index: usize, base: u32, limit: u32, flag: u8, access: u8) {
 #[macro_export]
 macro_rules! reload_gdt {
 	() => (
-		core::arch::asm!("lgdt [{}]", in(reg) (gdt_desc as usize + KERNEL_BASE));
+		core::arch::asm!("lgdt [{}]", in(reg) (gdt_desc as usize + crate::boot::KERNEL_BASE));
 		core::arch::asm!("ljmp $0x08, $2f",
 			"2:",
 			"movw $0x10, %ax",
