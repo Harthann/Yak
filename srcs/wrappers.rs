@@ -3,50 +3,36 @@
 #[no_mangle]
 pub static mut cli_count: usize = 0;
 
-#[naked]
-#[no_mangle]
-pub extern "C" fn _cli() {
+#[inline(always)]
+pub fn _cli() {
 	unsafe {
 		core::arch::asm!(
-			"
-		add dword ptr[cli_count], 1
-		cmp dword ptr[cli_count], 1
-		jne 1f
-		cli
-		1:
-		ret",
-			options(noreturn)
+			"cmp dword ptr[cli_count], 0",
+			"jne 1f",
+			"cli",
+			"1:",
+			"add dword ptr[cli_count], 1",
 		);
 	}
 }
 
-#[naked]
-#[no_mangle]
-pub extern "C" fn _sti() {
+#[inline(always)]
+pub fn _sti() {
 	unsafe {
 		core::arch::asm!(
-			"
-		sub dword ptr[cli_count], 1
-		cmp dword ptr[cli_count], 0
-		jne 2f
-		sti
-		2:
-		ret",
-			options(noreturn)
+			"sub dword ptr[cli_count], 1",
+			"cmp dword ptr[cli_count], 0",
+			"jne 2f",
+			"sti",
+			"2:",
 		);
 	}
 }
 
-#[naked]
-#[no_mangle]
-pub extern "C" fn _rst() {
+#[inline(always)]
+pub fn _rst() {
 	unsafe {
-		core::arch::asm!(
-			"
-		mov dword ptr[cli_count], 0
-		ret",
-			options(noreturn)
-		);
+		core::arch::asm!("mov dword ptr[cli_count], 0");
 	}
 }
 

@@ -62,7 +62,7 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
-//	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
+	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
 		parent.stack.size,
 		parent.stack.flags,
@@ -78,7 +78,6 @@ pub unsafe extern "C" fn exec_fn(
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
 		(process.stack.offset + process.stack.size as u32) - sum as u32;
-	new_task.regs.esp -= 4;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;
@@ -143,23 +142,15 @@ macro_rules! exec_fn {
 
 // don't refresh tlb - let it for switch_task
 #[inline(always)]
-pub fn change_kernel_stack(process: &mut Process) {
+pub fn change_kernel_stack(process: &Process) {
 	unsafe {
-		let nb_page = process.kernel_stack.size / 0x1000;
-		for i in 0..nb_page {
-			page_directory
-				.get_page_table(
-					(KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000) >> 22
-				)
-				.new_index_frame(
-					((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000)
-						& 0x3ff000) >> 12,
-					get_paddr!(
-						process.kernel_stack.offset + (0x1000 * i) as u32
-					),
-					PAGE_WRITABLE
-				);
-		}
+		page_directory
+			.get_page_table((KSTACK_ADDR as usize) >> 22)
+			.new_index_frame(
+				((KSTACK_ADDR as usize) & 0x3ff000) >> 12,
+				get_paddr!(process.kernel_stack.offset as u32),
+				PAGE_WRITABLE
+			);
 		refresh_tlb!();
 	}
 }

@@ -33,10 +33,6 @@ swap_task:
 	.jiffies:
 	add dword[JIFFIES], 1
 
-	mov dx, 0x20
-	mov al, 0x20
-	out dx, al
-
 	load_kernel_segments
 
 	mov eax, esp
@@ -66,6 +62,13 @@ switch_task:
 		mov es, bx
 		mov fs, bx
 		mov gs, bx
+
+		mov ebx, eax
+
+		mov al, 0x20
+		out 0x20, al
+
+		mov eax, ebx
 
 		mov edi, dword[eax + regs.edi]
 		mov esi, dword[eax + regs.esi]

@@ -61,24 +61,7 @@ impl Task {
 				KSTACK_ADDR as usize >> 22,
 				PAGE_WRITABLE
 			);
-			let nb_page = MASTER_PROCESS.kernel_stack.size / 0x1000;
-			for i in 0..nb_page {
-				page_directory
-					.get_page_table(
-						(KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000)
-							>> 22
-					)
-					.new_index_frame(
-						((KSTACK_ADDR as usize - (nb_page - i - 1) * 0x1000)
-							& 0x3ff000) >> 12,
-						get_paddr!(
-							MASTER_PROCESS.kernel_stack.offset
-								+ (0x1000 * i) as u32
-						),
-						PAGE_WRITABLE
-					);
-			}
-			refresh_tlb!();
+			change_kernel_stack(&MASTER_PROCESS);
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
 				0x1000,
