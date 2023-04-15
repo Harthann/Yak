@@ -48,13 +48,14 @@ impl Task {
 	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
-			core::arch::asm!("
-			mov {cr3}, cr3
-			pushf
-			mov {eflags}, [esp]
-			popf",
-			cr3 = out(reg) task.regs.cr3,
-			eflags = out(reg) task.regs.eflags);
+			core::arch::asm!(
+				"mov {cr3}, cr3",
+				"pushf",
+				"mov {eflags}, [esp]",
+				"popf",
+				cr3 = out(reg) task.regs.cr3,
+				eflags = out(reg) task.regs.eflags
+			);
 			MASTER_PROCESS.state = Status::Run;
 			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
 			page_directory.claim_index_page_table(
@@ -111,15 +112,16 @@ impl Task {
 #[naked]
 #[no_mangle]
 unsafe extern "C" fn wrapper_handler() {
-	core::arch::asm!("
-	mov eax, [esp]
-	add esp, 4
-	call eax
-	mov esp, {}
-	cli
-	jmp _end_handler",
-	const KSTACK_ADDR,
-	options(noreturn));
+	core::arch::asm!(
+		"mov eax, [esp]",
+		"add esp, 4",
+		"call eax",
+		"mov esp, {}",
+		"cli",
+		"jmp _end_handler",
+		const KSTACK_ADDR,
+		options(noreturn),
+	);
 	// Never goes there
 }
 
