@@ -4,6 +4,7 @@ name = "kfs"
 version = "0.0.5"
 edition = "2021"
 authors = ["lmartin <lmartin@student.42.fr>", "nieyraud <nieyraud@student.42.fr>"]
+build = "build.rs"
 
 [[bin]]
 name='kernel'
