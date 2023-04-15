@@ -1,6 +1,6 @@
 //! Setup interrupts and exception handler
 
-use crate::proc::process::Status;
+use crate::proc::process::{Process, Status};
 use crate::proc::task::{switch_task, Task};
 use crate::syscalls::syscall_handler;
 
@@ -118,17 +118,17 @@ fn page_fault_handler(reg: &Registers) {
 	crate::kprintln!("{:#x?}", reg);
 }
 
-use crate::wrappers::{_cli, _rst};
+use crate::wrappers::{_cli, _rst, hlt};
 
 // [https://wiki.osdev.org/Interrupts_tutorial]
 // TODO: lock mutex before write and int
 #[no_mangle]
-pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
+pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
 	let mut task = Task::get_running_task();
-	task.regs = *reg;
-	let process: &crate::proc::process::Process = &*task.process;
-	let int_no: usize = reg.int_no as usize;
+	task.regs = *regs; // dump regs for syscall (e.g: fork)
+	let process: &mut Process = &mut *task.process;
+	let int_no: usize = regs.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(
 			"\n{} exception (code: {}):",
@@ -137,17 +137,17 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 		);
 		match int_no {
 			// TODO: enum exceptions
-			14 => page_fault_handler(reg),
+			14 => page_fault_handler(regs),
 			_ => {
-				crate::kprintln!("{:#x?}", reg);
+				crate::kprintln!("{:#x?}", regs);
 			}
 		}
 		if int_no != 3 && int_no != 1 {
 			// TODO: HOW TO GET IF IT'S A TRAP OR NOT
-			core::arch::asm!("hlt");
+			hlt!();
 		}
 	} else if int_no == 0x80 {
-		syscall_handler(reg);
+		syscall_handler(regs);
 	} else {
 		if int_no < PIC1_IRQ_OFFSET as usize
 			|| int_no > PIC2_IRQ_OFFSET as usize + 7
@@ -155,19 +155,16 @@ pub unsafe extern "C" fn exception_handler(reg: &mut Registers) {
 			crate::kprintln!(
 				"\nUnknown exception (code: {}):\n{:#x?}",
 				int_no,
-				reg
+				regs
 			);
-			core::arch::asm!("hlt");
+			hlt!();
 		} else {
-			crate::pic::handler(reg, int_no);
+			crate::pic::handler(regs, int_no);
 		}
 	}
-	reg.int_no = u32::MAX; // identifier for switch_task
-	if process.state == Status::Disable || process.state == Status::Zombie {
-		crate::proc::task::schedule_task();
-	}
+	task.regs = *regs; // get back registers if updated by syscall (e.g: waitpid)
+	task.regs.int_no = u32::MAX; // identifier for switch_task
 	_rst();
-	switch_task(reg);
 }
 
 pub unsafe fn init_idt() {

@@ -52,6 +52,7 @@ pub fn sys_wait4(
 }
 
 // TODO: EINTR
+// + Make a func to get wstatus adress in userspace to kernel addr
 pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
 		_cli();
