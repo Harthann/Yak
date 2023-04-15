@@ -11,6 +11,7 @@
 #![feature(c_variadic)]
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
+#![feature(vec_into_raw_parts)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]

@@ -35,6 +35,14 @@ const KNOWN_CMD: [&str; NB_CMDS] = [
 	"jiffies", "ps", "uptime", "date", "play", "kill"
 ];
 
+pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
+    unsafe {
+        let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
+        COMMANDS[cmd_id](args);
+        crate::syscalls::exit::sys_exit(0);
+    }
+}
+
 fn kill(command: Vec<String>) {
 	let mut wstatus: i32 = 0;
 	let pid: Pid;
@@ -284,7 +292,11 @@ impl Command {
 					for arg in splited {
 						split.push(arg.to_string());
 					}
-					COMMANDS[x](split);
+                    let (ptr, len, cap) = split.into_raw_parts();
+                    let pid = unsafe { crate::exec_fn!(command_entry, x, ptr, len, cap)};
+                    let mut status = 0;
+                    sys_waitpid(pid, &mut status, 0);
+                    crate::kprintln!("Waited pid: {}", pid);
 				},
 				_ => {
 					if self.command.len() != 0 {

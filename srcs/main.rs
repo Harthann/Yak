@@ -14,6 +14,7 @@ pub fn sleep(microseconds: usize) {
 		}
 	}
 }
+use crate::syscalls::exit::sys_waitpid;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
@@ -28,7 +29,14 @@ pub extern "C" fn kmain() -> ! {
 	);
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
-	kprint!("$> ");
-    unsafe { crate::exec_fn!(crate::cli::cli); }
-	loop {}
+	loop {
+	    kprint!("$> ");
+        let pid = unsafe {
+            crate::exec_fn!(crate::cli::cli)
+        };
+        crate::dprintln!("Term pid: {:?}", pid);
+        let mut status = 0;
+        sys_waitpid(pid, &mut status, 0);
+        crate::dprintln!("Term has been killed");
+    }
 }
