@@ -324,7 +324,7 @@
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pic::handlers::JIFFIES</span>;
 
 <span class="kw">const</span> <span class="ident">KSTACK_ADDR</span>: <span class="ident">VirtAddr</span> <span class="op">=</span> <span class="number">0xffbfffff</span>;
-<span class="kw">const</span> <span class="ident">STACK_ADDR</span>: <span class="ident">VirtAddr</span> <span class="op">=</span> <span class="number">0xffafffff</span>;
+<span class="kw">const</span> <span class="ident">STACK_ADDR</span>: <span class="ident">VirtAddr</span> <span class="op">=</span> <span class="number">0xff0fffff</span>;
 
 <span class="comment">// Kernel initialisation</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
@@ -344,7 +344,7 @@
 
 	<span class="ident">Task::init_multitasking</span>(<span class="ident">STACK_ADDR</span>, <span class="ident">heap</span> <span class="kw">as</span> <span class="ident">u32</span>);
 
-	<span class="ident">gdt::tss::init_tss</span>(<span class="ident">KSTACK_ADDR</span>);
+	<span class="ident">gdt::tss::init_tss</span>(<span class="ident">KSTACK_ADDR</span> <span class="op">+</span> <span class="number">1</span>);
 	<span class="macro">reload_tss!</span>();
 
 	<span class="comment">// init tracker after init first process</span>
@@ -357,7 +357,7 @@
 	<span class="comment">// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching</span>
 	<span class="comment">// This setup should be done using frequency, but for readability and ease of use, this is done</span>
 	<span class="comment">// with time between each interrupt in ms.</span>
-	<span class="ident">pic::set_irq0_in_ms</span>(<span class="number">1.0</span>);
+	<span class="ident">pic::set_irq0_in_ms</span>(<span class="number">10.0</span>);
 
 	<span class="comment">// Reserve some spaces to push things before main</span>
 	<span class="kw">unsafe</span> { <span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov esp, {}&quot;</span>, <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">STACK_ADDR</span> <span class="op">-</span> <span class="number">256</span>) };

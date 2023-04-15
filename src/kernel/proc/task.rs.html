@@ -220,23 +220,6 @@
 <span id="214">214</span>
 <span id="215">215</span>
 <span id="216">216</span>
-<span id="217">217</span>
-<span id="218">218</span>
-<span id="219">219</span>
-<span id="220">220</span>
-<span id="221">221</span>
-<span id="222">222</span>
-<span id="223">223</span>
-<span id="224">224</span>
-<span id="225">225</span>
-<span id="226">226</span>
-<span id="227">227</span>
-<span id="228">228</span>
-<span id="229">229</span>
-<span id="230">230</span>
-<span id="231">231</span>
-<span id="232">232</span>
-<span id="233">233</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::ptr</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::interrupts::Registers</span>;
@@ -254,8 +237,11 @@
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">TASKLIST</span>: <span class="ident">Queue</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Queue::new</span>();
 
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">tmp_registers</span>: <span class="ident">Registers</span> <span class="op">=</span> <span class="ident">Registers::new</span>();
+
 <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">switch_task</span>(<span class="ident">regs</span>: <span class="kw-2">*const</span> <span class="ident">Registers</span>) -&gt; <span class="op">!</span>;
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">switch_task</span>() -&gt; <span class="op">!</span>;
 }
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>)]</span>
@@ -281,41 +267,24 @@
 		}
 	}
 
-	<span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">init</span>(<span class="kw-2">&amp;mut</span> <span class="self">self</span>, <span class="ident">regs</span>: <span class="ident">Registers</span>, <span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span>) {
-		<span class="self">self</span>.<span class="ident">regs</span>.<span class="ident">eip</span> <span class="op">=</span> <span class="ident">wrapper_fn</span> <span class="kw">as</span> <span class="ident">VirtAddr</span>;
-		<span class="self">self</span>.<span class="ident">regs</span>.<span class="ident">eflags</span> <span class="op">=</span> <span class="ident">regs</span>.<span class="ident">eflags</span>;
-		<span class="self">self</span>.<span class="ident">regs</span>.<span class="ident">cr3</span> <span class="op">=</span> <span class="ident">regs</span>.<span class="ident">cr3</span>;
-		<span class="self">self</span>.<span class="ident">process</span> <span class="op">=</span> <span class="ident">process</span>;
-		<span class="self">self</span>.<span class="ident">regs</span>.<span class="ident">esp</span> <span class="op">=</span> <span class="ident">process</span>.<span class="ident">stack</span>.<span class="ident">offset</span> <span class="op">+</span> (<span class="ident">process</span>.<span class="ident">stack</span>.<span class="ident">size</span> <span class="op">-</span> <span class="number">4</span>) <span class="kw">as</span> <span class="ident">u32</span>;
-	}
-
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">init_multitasking</span>(<span class="ident">stack_addr</span>: <span class="ident">VirtAddr</span>, <span class="ident">heap_addr</span>: <span class="ident">VirtAddr</span>) {
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">task</span> <span class="op">=</span> <span class="ident">Task::new</span>();
 		<span class="kw">unsafe</span> {
-			<span class="macro">core::arch::asm!</span>(<span class="string">&quot;
-			mov {cr3}, cr3
-			pushf
-			mov {eflags}, [esp]
-			popf&quot;</span>,
-			<span class="ident">cr3</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span>,
-			<span class="ident">eflags</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">eflags</span>);
+			<span class="macro">core::arch::asm!</span>(
+				<span class="string">&quot;mov {cr3}, cr3&quot;</span>,
+				<span class="string">&quot;pushf&quot;</span>,
+				<span class="string">&quot;mov {eflags}, [esp]&quot;</span>,
+				<span class="string">&quot;popf&quot;</span>,
+				<span class="ident">cr3</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span>,
+				<span class="ident">eflags</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">eflags</span>
+			);
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">Status::Run</span>;
-			<span class="ident">MASTER_PROCESS</span>.<span class="ident">kernel_stack</span> <span class="op">=</span>
-				<span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Stack</span><span class="op">&gt;</span><span class="ident">::init</span>(<span class="number">0x1000</span>, <span class="ident">PAGE_WRITABLE</span>, <span class="bool-val">false</span>);
-			<span class="ident">page_directory</span>
-				.<span class="ident">claim_index_page_table</span>(
-					<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-					<span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_GLOBAL</span>
-				)
-				.<span class="ident">expect</span>(<span class="string">&quot;Failed to claim pages&quot;</span>);
-			<span class="ident">page_directory</span>
-				.<span class="ident">get_page_table</span>(<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>)
-				.<span class="ident">new_index_frame</span>(
-					(<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>,
-					<span class="macro">get_paddr!</span>(<span class="ident">MASTER_PROCESS</span>.<span class="ident">kernel_stack</span>.<span class="ident">offset</span>),
-					<span class="ident">PAGE_WRITABLE</span>
-				);
-			<span class="macro">refresh_tlb!</span>();
+			<span class="ident">MASTER_PROCESS</span>.<span class="ident">setup_kernel_stack</span>(<span class="ident">PAGE_WRITABLE</span>);
+			<span class="ident">page_directory</span>.<span class="ident">claim_index_page_table</span>(
+				<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
+				<span class="ident">PAGE_WRITABLE</span>
+			);
+			<span class="ident">change_kernel_stack</span>(<span class="kw-2">&amp;</span><span class="ident">MASTER_PROCESS</span>);
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">stack</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Stack</span><span class="op">&gt;</span><span class="ident">::init_addr</span>(
 				<span class="ident">stack_addr</span>,
 				<span class="number">0x1000</span>,
@@ -365,15 +334,16 @@
 <span class="attribute">#[<span class="ident">naked</span>]</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">wrapper_handler</span>() {
-	<span class="macro">core::arch::asm!</span>(<span class="string">&quot;
-	mov eax, [esp]
-	add esp, 4
-	call eax
-	mov esp, {}
-	cli
-	jmp _end_handler&quot;</span>,
-	<span class="kw">const</span> <span class="ident">KSTACK_ADDR</span>,
-	<span class="ident">options</span>(<span class="ident">noreturn</span>));
+	<span class="macro">core::arch::asm!</span>(
+		<span class="string">&quot;mov eax, [esp]&quot;</span>,
+		<span class="string">&quot;add esp, 4&quot;</span>,
+		<span class="string">&quot;call eax&quot;</span>,
+		<span class="string">&quot;mov esp, {}&quot;</span>,
+		<span class="string">&quot;cli&quot;</span>,
+		<span class="string">&quot;jmp _end_handler&quot;</span>,
+		<span class="kw">const</span> <span class="ident">KSTACK_ADDR</span>,
+		<span class="ident">options</span>(<span class="ident">noreturn</span>),
+	);
 	<span class="comment">// Never goes there</span>
 }
 
@@ -448,22 +418,18 @@
 	<span class="ident">_cli</span>();
 	<span class="kw">loop</span> {
 		<span class="kw">let</span> <span class="ident">new_task</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Task</span> <span class="op">=</span> <span class="ident">Task::get_running_task</span>();
+		<span class="kw">let</span> <span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span><span class="ident">new_task</span>.<span class="ident">process</span>;
 		<span class="comment">// TODO: IF SIGNAL JUMP ?</span>
-		<span class="kw">if</span> (<span class="kw-2">*</span><span class="ident">new_task</span>.<span class="ident">process</span>).<span class="ident">signals</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
+		<span class="kw">if</span> <span class="ident">process</span>.<span class="ident">signals</span>.<span class="ident">len</span>() <span class="op">&gt;</span> <span class="number">0</span> {
 			<span class="ident">do_signal</span>(<span class="ident">new_task</span>);
 		}
 		<span class="kw">if</span> <span class="ident">new_task</span>.<span class="ident">state</span> <span class="op">!</span><span class="op">=</span> <span class="ident">TaskStatus::Interruptible</span> {
-			<span class="comment">// Copy registers to last bytes on kstack to target</span>
-			<span class="kw">let</span> <span class="ident">copy_regs</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Registers</span> <span class="op">=</span>
-				<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>((((<span class="kw-2">*</span><span class="ident">new_task</span>.<span class="ident">process</span>).<span class="ident">kernel_stack</span>.<span class="ident">offset</span> <span class="op">+</span> <span class="number">0x1000</span>)
-					<span class="op">-</span> <span class="ident">core::mem::size_of</span>::<span class="op">&lt;</span><span class="ident">Registers</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">u32</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
-			<span class="kw-2">*</span><span class="ident">copy_regs</span> <span class="op">=</span> <span class="ident">new_task</span>.<span class="ident">regs</span>;
+			<span class="comment">// Copy registers to shared memory</span>
+			<span class="ident">tmp_registers</span> <span class="op">=</span> <span class="ident">new_task</span>.<span class="ident">regs</span>;
+			<span class="ident">change_kernel_stack</span>(<span class="ident">process</span>);
+			<span class="comment">// Avoid using stack below that</span>
 			<span class="ident">_rst</span>();
-			<span class="ident">change_kernel_stack</span>((<span class="kw-2">*</span><span class="ident">new_task</span>.<span class="ident">process</span>).<span class="ident">kernel_stack</span>.<span class="ident">offset</span>);
-			<span class="ident">switch_task</span>(
-				(<span class="ident">KSTACK_ADDR</span> <span class="op">+</span> <span class="number">1</span> <span class="op">-</span> <span class="ident">core::mem::size_of</span>::<span class="op">&lt;</span><span class="ident">Registers</span><span class="op">&gt;</span>() <span class="kw">as</span> <span class="ident">u32</span>)
-					<span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>
-			);
+			<span class="macro">core::arch::asm!</span>(<span class="string">&quot;jmp switch_task&quot;</span>);
 			<span class="comment">// never goes there</span>
 		}
 		<span class="kw">let</span> <span class="ident">skipped_task</span>: <span class="ident">Task</span> <span class="op">=</span> <span class="ident">TASKLIST</span>.<span class="ident">pop</span>();

@@ -194,6 +194,7 @@
 <span id="188">188</span>
 <span id="189">189</span>
 <span id="190">190</span>
+<span id="191">191</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Pid</span>, <span class="ident">Process</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{<span class="ident">Signal</span>, <span class="ident">SignalType</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::task</span>::{<span class="ident">Task</span>, <span class="ident">TaskStatus</span>};
@@ -248,6 +249,7 @@
 }
 
 <span class="comment">// TODO: EINTR</span>
+<span class="comment">// + Make a func to get wstatus adress in userspace to kernel addr</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sys_waitpid</span>(<span class="ident">pid</span>: <span class="ident">Pid</span>, <span class="ident">wstatus</span>: <span class="kw-2">*mut</span> <span class="ident">i32</span>, <span class="ident">options</span>: <span class="ident">u32</span>) -&gt; <span class="ident">Pid</span> {
 	<span class="kw">unsafe</span> {
 		<span class="ident">_cli</span>();

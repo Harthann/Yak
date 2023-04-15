@@ -59,25 +59,15 @@
 <span id="53">53</span>
 <span id="54">54</span>
 <span id="55">55</span>
-<span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
-<span id="62">62</span>
-<span id="63">63</span>
-<span id="64">64</span>
-<span id="65">65</span>
-<span id="66">66</span>
-<span id="67">67</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Pid</span>, <span class="ident">Process</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::task</span>::{<span class="ident">Task</span>, <span class="ident">TASKLIST</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_directory::PageDirectory</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_table::PageTable</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_PRESENT</span>, <span class="ident">PAGE_WRITABLE</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::wrappers</span>::{<span class="ident">_cli</span>, <span class="ident">_sti</span>};
+
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_PRESENT</span>, <span class="ident">PAGE_USER</span>, <span class="ident">PAGE_WRITABLE</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
 
@@ -87,54 +77,40 @@
 	<span class="doccomment">//!</span>
 	<span class="doccomment">//! Heap contains the prg and the heap allocated</span>
 	<span class="kw">unsafe</span> {
+		<span class="ident">_cli</span>();
 		<span class="kw">let</span> <span class="ident">running_task</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Task</span> <span class="op">=</span> <span class="ident">Task::get_running_task</span>();
 		<span class="kw">let</span> <span class="ident">parent</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="ident">Process::get_running_process</span>();
 
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">process</span>: <span class="ident">Process</span> <span class="op">=</span> <span class="ident">Process::new</span>();
 		<span class="ident">process</span>.<span class="ident">init</span>(<span class="ident">parent</span>);
+		<span class="ident">process</span>.<span class="ident">setup_kernel_stack</span>(<span class="ident">parent</span>.<span class="ident">kernel_stack</span>.<span class="ident">flags</span>);
+		<span class="ident">process</span>.<span class="ident">setup_stack</span>(
+			<span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">size</span>,
+			<span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">flags</span>,
+			<span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">kphys</span>
+		);
+		<span class="ident">process</span>.<span class="ident">setup_heap</span>(
+			<span class="ident">parent</span>.<span class="ident">heap</span>.<span class="ident">size</span>,
+			<span class="ident">parent</span>.<span class="ident">heap</span>.<span class="ident">flags</span>,
+			<span class="ident">parent</span>.<span class="ident">heap</span>.<span class="ident">kphys</span>
+		);
 		<span class="ident">process</span>.<span class="ident">copy_mem</span>(<span class="ident">parent</span>);
 		<span class="ident">parent</span>.<span class="ident">childs</span>.<span class="ident">push</span>(<span class="ident">Box::new</span>(<span class="ident">process</span>));
+
 		<span class="kw">let</span> <span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="ident">parent</span>.<span class="ident">childs</span>.<span class="ident">last_mut</span>().<span class="ident">unwrap</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_task</span>: <span class="ident">Task</span> <span class="op">=</span> <span class="ident">Task::new</span>();
-		<span class="ident">new_task</span>.<span class="ident">regs</span> <span class="op">=</span> <span class="ident">running_task</span>.<span class="ident">regs</span>;
+
 		<span class="ident">new_task</span>.<span class="ident">process</span> <span class="op">=</span> <span class="ident">process</span>;
 
-		<span class="kw">let</span> <span class="ident">page_dir</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageDirectory</span> <span class="op">=</span> <span class="ident">PageDirectory::new</span>();
-		<span class="kw">let</span> <span class="ident">handler_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="ident">PageTable::new</span>();
-		<span class="comment">// Reference page table</span>
-		<span class="ident">handler_page_tab</span>.<span class="ident">set_entry</span>(
-			<span class="number">0x0800000</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-			<span class="macro">get_paddr!</span>(<span class="ident">process</span>.<span class="ident">heap</span>.<span class="ident">offset</span>) <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
-		<span class="ident">handler_page_tab</span>.<span class="ident">set_entry</span>(
-			<span class="number">0xb000000</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-			<span class="macro">get_paddr!</span>(<span class="ident">process</span>.<span class="ident">stack</span>.<span class="ident">offset</span>) <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
-		<span class="ident">handler_page_tab</span>.<span class="ident">set_entry</span>(
-			<span class="number">1023</span>,
-			<span class="macro">get_paddr!</span>(<span class="ident">handler_page_tab</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">_</span>)
-				<span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
-		<span class="comment">// Setup heap + prg</span>
-		<span class="ident">page_dir</span>.<span class="ident">set_entry</span>(
-			<span class="number">0x08000000</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-			<span class="macro">get_paddr!</span>(<span class="ident">process</span>.<span class="ident">heap</span>.<span class="ident">offset</span>) <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
-		<span class="comment">// Setup stack</span>
-		<span class="ident">page_dir</span>.<span class="ident">set_entry</span>(
-			<span class="number">0xb0000000</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-			<span class="macro">get_paddr!</span>(<span class="ident">process</span>.<span class="ident">stack</span>.<span class="ident">offset</span>) <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
-		<span class="ident">page_dir</span>.<span class="ident">set_entry</span>(
-			<span class="number">1023</span>,
-			<span class="macro">get_paddr!</span>(<span class="ident">handler_page_tab</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">_</span>)
-				<span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
+		<span class="kw">let</span> <span class="ident">page_dir</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageDirectory</span> <span class="op">=</span> <span class="ident">process</span>.<span class="ident">setup_pagination</span>();
 
-		<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span> <span class="op">=</span> (<span class="ident">page_dir</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">u32</span>;
+		<span class="ident">new_task</span>.<span class="ident">regs</span> <span class="op">=</span> <span class="ident">running_task</span>.<span class="ident">regs</span>;
+		<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">int_no</span> <span class="op">=</span> <span class="ident">u32::MAX</span>; <span class="comment">// trigger for switch_task</span>
+		<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span> <span class="op">=</span> <span class="macro">get_paddr!</span>(<span class="ident">page_dir</span> <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">_</span>);
 		<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">eax</span> <span class="op">=</span> <span class="number">0</span>; <span class="comment">// New forked process return 0</span>
 
 		<span class="ident">TASKLIST</span>.<span class="ident">push</span>(<span class="ident">new_task</span>);
+		<span class="ident">_sti</span>();
 		<span class="ident">process</span>.<span class="ident">pid</span>
 	}
 }

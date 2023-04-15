@@ -78,6 +78,11 @@
 <span id="72">72</span>
 <span id="73">73</span>
 <span id="74">74</span>
+<span id="75">75</span>
+<span id="76">76</span>
+<span id="77">77</span>
+<span id="78">78</span>
+<span id="79">79</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Pid</span>, <span class="ident">Process</span>, <span class="ident">MASTER_PROCESS</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{
 	<span class="ident">get_signal_type</span>,
@@ -110,25 +115,28 @@
 
 <span class="doccomment">/// Returns 0 on success, otherwise, returns a negative value corresponding to errno</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">sys_kill</span>(<span class="ident">pid</span>: <span class="ident">Pid</span>, <span class="ident">signal</span>: <span class="ident">i32</span>) -&gt; <span class="ident">i32</span> {
+	<span class="ident">_cli</span>();
 	<span class="kw">if</span> <span class="ident">pid</span> <span class="op">&gt;</span> <span class="number">0</span> {
 		<span class="comment">// Send to a specific process</span>
 		<span class="kw">unsafe</span> {
 			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">MASTER_PROCESS</span>.<span class="ident">search_from_pid</span>(<span class="ident">pid</span>);
 			<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_err</span>() {
+				<span class="ident">_sti</span>();
 				<span class="kw">return</span> <span class="op">-</span>(<span class="ident">res</span>.<span class="ident">err</span>().<span class="ident">unwrap</span>() <span class="kw">as</span> <span class="ident">i32</span>);
 			}
 			<span class="kw">let</span> <span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="ident">res</span>.<span class="ident">unwrap</span>();
 			<span class="kw">if</span> <span class="ident">signal</span> <span class="op">==</span> <span class="number">0</span> {
+				<span class="ident">_sti</span>();
 				<span class="kw">return</span> <span class="number">0</span>; <span class="comment">// kill check for pid presence if signal is 0</span>
 			}
 			<span class="kw">let</span> <span class="ident">sender_pid</span> <span class="op">=</span> <span class="ident">Process::get_running_process</span>().<span class="ident">pid</span>;
 			<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">get_signal_type</span>(<span class="ident">signal</span>);
 			<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_err</span>() {
+				<span class="ident">_sti</span>();
 				<span class="kw">return</span> <span class="op">-</span>(<span class="ident">res</span>.<span class="ident">err</span>().<span class="ident">unwrap</span>() <span class="kw">as</span> <span class="ident">i32</span>);
 			}
 			<span class="kw">let</span> <span class="ident">signal_type</span> <span class="op">=</span> <span class="ident">res</span>.<span class="ident">unwrap</span>();
 			<span class="kw">if</span> <span class="ident">signal_type</span> <span class="op">==</span> <span class="ident">SignalType::SIGKILL</span> {
-				<span class="ident">_cli</span>();
 				<span class="ident">Task::remove_task_from_process</span>(<span class="ident">process</span>);
 				<span class="ident">process</span>.<span class="ident">zombify</span>(<span class="macro">__W_STOPCODE!</span>(<span class="ident">signal_type</span> <span class="kw">as</span> <span class="ident">i32</span>));
 				<span class="ident">_sti</span>();
@@ -136,8 +144,10 @@
 			} <span class="kw">else</span> {
 				<span class="kw">let</span> <span class="ident">res</span> <span class="op">=</span> <span class="ident">Signal::send_to_pid</span>(<span class="ident">pid</span>, <span class="ident">sender_pid</span>, <span class="ident">signal_type</span>, <span class="number">0</span>);
 				<span class="kw">if</span> <span class="ident">res</span>.<span class="ident">is_err</span>() {
+					<span class="ident">_sti</span>();
 					<span class="kw">return</span> <span class="op">-</span>(<span class="ident">res</span>.<span class="ident">err</span>().<span class="ident">unwrap</span>() <span class="kw">as</span> <span class="ident">i32</span>);
 				}
+				<span class="ident">_sti</span>();
 				<span class="kw">return</span> <span class="number">0</span>;
 			}
 		}

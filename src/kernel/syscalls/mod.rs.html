@@ -514,7 +514,6 @@
 <span id="508">508</span>
 <span id="509">509</span>
 <span id="510">510</span>
-<span id="511">511</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Syscall handler and all implemented syscalls</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::interrupts::Registers</span>;
@@ -537,14 +536,13 @@
 	<span class="kw">if</span> <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">&gt;</span> <span class="number">448</span> {
 		<span class="macro">todo!</span>(); <span class="comment">// problem</span>
 	}
-	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;syscall with reg: {:#x?}&quot;</span>, <span class="ident">reg</span>);
 	<span class="comment">// TODO: wrapper syscall</span>
 	<span class="kw">match</span> <span class="ident">reg</span>.<span class="ident">eax</span> {
 		<span class="kw">_</span> <span class="kw">if</span> <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">==</span> <span class="ident">Syscall::exit</span> <span class="kw">as</span> <span class="ident">u32</span> =&gt; <span class="ident">sys_exit</span>(<span class="ident">reg</span>.<span class="ident">ebx</span> <span class="kw">as</span> <span class="kw">_</span>),
 		<span class="kw">_</span> <span class="kw">if</span> <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">==</span> <span class="ident">Syscall::fork</span> <span class="kw">as</span> <span class="ident">u32</span> =&gt; <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">=</span> <span class="ident">sys_fork</span>() <span class="kw">as</span> <span class="ident">u32</span>,
 		<span class="kw">_</span> <span class="kw">if</span> <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">==</span> <span class="ident">Syscall::waitpid</span> <span class="kw">as</span> <span class="ident">u32</span> =&gt; {
 			<span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">=</span>
-				<span class="ident">sys_waitpid</span>(<span class="ident">reg</span>.<span class="ident">ebx</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">reg</span>.<span class="ident">ecx</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">reg</span>.<span class="ident">edx</span> <span class="kw">as</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">u32</span>
+				<span class="ident">sys_waitpid</span>(<span class="ident">reg</span>.<span class="ident">ebx</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">reg</span>.<span class="ident">ecx</span> <span class="kw">as</span> <span class="kw">_</span>, <span class="ident">reg</span>.<span class="ident">edx</span> <span class="kw">as</span> <span class="kw">_</span>) <span class="kw">as</span> <span class="ident">u32</span>;
 		},
 		<span class="kw">_</span> <span class="kw">if</span> <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">==</span> <span class="ident">Syscall::getpid</span> <span class="kw">as</span> <span class="ident">u32</span> =&gt; <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">=</span> <span class="ident">sys_getpid</span>() <span class="kw">as</span> <span class="ident">u32</span>,
 		<span class="kw">_</span> <span class="kw">if</span> <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">==</span> <span class="ident">Syscall::getuid</span> <span class="kw">as</span> <span class="ident">u32</span> =&gt; <span class="ident">reg</span>.<span class="ident">eax</span> <span class="op">=</span> <span class="ident">sys_getuid</span>() <span class="kw">as</span> <span class="ident">u32</span>,

@@ -150,17 +150,6 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
-<span id="147">147</span>
-<span id="148">148</span>
-<span id="149">149</span>
-<span id="150">150</span>
-<span id="151">151</span>
-<span id="152">152</span>
-<span id="153">153</span>
-<span id="154">154</span>
-<span id="155">155</span>
-<span id="156">156</span>
-<span id="157">157</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bitmap</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_directory</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_table</span>;
@@ -215,25 +204,14 @@
 		<span class="kw">let</span> <span class="ident">kernel_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span>
 			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">get_vaddr!</span>(<span class="number">0</span>, <span class="number">768</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
 		<span class="ident">kernel_page_tab</span>.<span class="ident">init</span>();
-		<span class="ident">page_directory</span>.<span class="ident">set_entry</span>(
-			<span class="number">768</span>,
-			<span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_GLOBAL</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
+		<span class="ident">page_directory</span>
+			.<span class="ident">set_entry</span>(<span class="number">768</span>, <span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>);
 		<span class="comment">// Recursive mapping</span>
-		<span class="ident">page_directory</span>.<span class="ident">set_entry</span>(
-			<span class="number">1023</span>,
-			<span class="ident">pd_paddr</span> <span class="op">|</span> <span class="ident">PAGE_GLOBAL</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
-		);
+		<span class="ident">page_directory</span>.<span class="ident">set_entry</span>(<span class="number">1023</span>, <span class="ident">pd_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>);
 		<span class="comment">// Remove init page</span>
 		<span class="ident">init_page_tab</span>.<span class="ident">clear</span>();
 		<span class="ident">page_directory</span>.<span class="ident">set_entry</span>(<span class="number">0</span>, <span class="number">0</span>);
 		<span class="macro">refresh_tlb!</span>();
-	}
-}
-
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">print_pdentry</span>(<span class="ident">index</span>: <span class="ident">usize</span>) {
-	<span class="kw">unsafe</span> {
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;{}&quot;</span>, <span class="ident">page_directory</span>.<span class="ident">entries</span>[<span class="ident">index</span>]);
 	}
 }
 

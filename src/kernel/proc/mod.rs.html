@@ -150,6 +150,15 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
+<span id="155">155</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Processus, Tasks and Signals</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
@@ -160,6 +169,7 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_GLOBAL</span>, <span class="ident">PAGE_WRITABLE</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_directory</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_directory::PageDirectory</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">process</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">signal</span>;
@@ -189,15 +199,13 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">wrapper_fn</span>(<span class="ident">fn_addr</span>: <span class="ident">VirtAddr</span>) {
 	<span class="macro">core::arch::asm!</span>(
-		<span class="string">&quot;
-	mov eax, [esp + 4]
-	add esp, 8
-	sti
-	call eax
-	cli
-	mov esp, 0xffc00000
-	push eax
-	call _exit&quot;</span>,
+		<span class="string">&quot;mov eax, [esp + 4]&quot;</span>,
+		<span class="string">&quot;add esp, 8&quot;</span>,
+		<span class="string">&quot;sti&quot;</span>,
+		<span class="string">&quot;call eax&quot;</span>,
+		<span class="string">&quot;cli&quot;</span>,
+		<span class="string">&quot;push eax&quot;</span>,
+		<span class="string">&quot;call _exit&quot;</span>,
 		<span class="ident">options</span>(<span class="ident">noreturn</span>)
 	);
 	<span class="comment">// Never goes there</span>
@@ -214,12 +222,18 @@
 
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">process</span> <span class="op">=</span> <span class="ident">Process::new</span>();
 	<span class="ident">process</span>.<span class="ident">init</span>(<span class="ident">parent</span>);
-	<span class="ident">process</span>.<span class="ident">setup_kernel_stack</span>(<span class="number">0x1000</span>, <span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">flags</span>, <span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">kphys</span>);
-	<span class="ident">process</span>.<span class="ident">setup_stack</span>(<span class="number">0x1000</span>, <span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">flags</span>, <span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">kphys</span>);
+	<span class="ident">process</span>.<span class="ident">setup_kernel_stack</span>(<span class="ident">parent</span>.<span class="ident">kernel_stack</span>.<span class="ident">flags</span>); <span class="comment">// not needed</span>
+	<span class="ident">process</span>.<span class="ident">setup_stack</span>(
+		<span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">size</span>,
+		<span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">flags</span>,
+		<span class="ident">parent</span>.<span class="ident">stack</span>.<span class="ident">kphys</span>
+	);
 	<span class="ident">parent</span>.<span class="ident">childs</span>.<span class="ident">push</span>(<span class="ident">Box::new</span>(<span class="ident">process</span>));
+
 	<span class="kw">let</span> <span class="ident">process</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Process</span> <span class="op">=</span> <span class="ident">parent</span>.<span class="ident">childs</span>.<span class="ident">last_mut</span>().<span class="ident">unwrap</span>();
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">new_task</span>: <span class="ident">Task</span> <span class="op">=</span> <span class="ident">Task::new</span>();
-	<span class="ident">new_task</span>.<span class="ident">init</span>(<span class="ident">running_task</span>.<span class="ident">regs</span>, <span class="ident">process</span>);
+
+	<span class="ident">new_task</span>.<span class="ident">process</span> <span class="op">=</span> <span class="ident">process</span>;
 	<span class="comment">// init_fn_task - Can&#39;t move to another function ??</span>
 	<span class="kw">let</span> <span class="ident">sum</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="ident">args_size</span>.<span class="ident">iter</span>().<span class="ident">sum</span>();
 	<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">esp</span> <span class="op">=</span>
@@ -253,6 +267,9 @@
 		<span class="ident">esp</span> <span class="op">=</span> <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">esp</span>,
 		<span class="ident">func</span> <span class="op">=</span> <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">func</span>);
 	<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">esp</span> <span class="op">-</span><span class="op">=</span> <span class="number">4</span>;
+	<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">eip</span> <span class="op">=</span> <span class="ident">wrapper_fn</span> <span class="kw">as</span> <span class="ident">VirtAddr</span>;
+	<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span> <span class="op">=</span> <span class="ident">running_task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span>;
+	<span class="ident">new_task</span>.<span class="ident">regs</span>.<span class="ident">ds</span> <span class="op">=</span> <span class="ident">running_task</span>.<span class="ident">regs</span>.<span class="ident">ds</span>;
 	<span class="ident">TASKLIST</span>.<span class="ident">push</span>(<span class="ident">new_task</span>);
 	<span class="ident">_sti</span>();
 	<span class="ident">process</span>.<span class="ident">pid</span>
@@ -283,15 +300,16 @@
 	}
 }
 
+<span class="comment">// don&#39;t refresh tlb - let it for switch_task</span>
 <span class="attribute">#[<span class="ident">inline</span>(<span class="ident">always</span>)]</span>
-<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_kernel_stack</span>(<span class="ident">addr</span>: <span class="ident">VirtAddr</span>) {
+<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">change_kernel_stack</span>(<span class="ident">process</span>: <span class="kw-2">&amp;</span><span class="ident">Process</span>) {
 	<span class="kw">unsafe</span> {
 		<span class="ident">page_directory</span>
-			.<span class="ident">get_page_table</span>((<span class="ident">KSTACK_ADDR</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="ident">usize</span>)
+			.<span class="ident">get_page_table</span>((<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>)
 			.<span class="ident">new_index_frame</span>(
-				((<span class="ident">KSTACK_ADDR</span> <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>,
-				<span class="macro">get_paddr!</span>(<span class="ident">addr</span>),
-				<span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_GLOBAL</span>
+				((<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span>) <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">12</span>,
+				<span class="macro">get_paddr!</span>(<span class="ident">process</span>.<span class="ident">kernel_stack</span>.<span class="ident">offset</span> <span class="kw">as</span> <span class="ident">u32</span>),
+				<span class="ident">PAGE_WRITABLE</span>
 			);
 		<span class="macro">refresh_tlb!</span>();
 	}
