@@ -1,6 +1,6 @@
 //! Keyboard handler and key mapping
 
-use crate::{io, vga_buffer};
+use crate::{io};
 
 const PRESSED: usize = 0;
 const RELEASED: usize = 1;
@@ -121,23 +121,25 @@ pub enum SpecialKeyFlag {
 
 macro_rules! setflag {
 	($a:expr) => {
-		unsafe { SPECIAL_KEYS |= (1 << $a as u8) }
+		SPECIAL_KEYS.fetch_or(1 << $a as u8, Ordering::Relaxed);
 	};
 }
 
 macro_rules! getflag {
 	($a:expr) => {
-		unsafe { SPECIAL_KEYS & (1 << $a as u8) != 0 }
+		SPECIAL_KEYS.load(Ordering::Relaxed) & (1 << $a as u8) != 0
 	};
 }
 
 macro_rules! unsetflag {
 	($a:expr) => {
-		unsafe { SPECIAL_KEYS ^= (1 << $a as u8) }
+		SPECIAL_KEYS.fetch_xor(1 << $a as u8, Ordering::Relaxed);
+//		SPECIAL_KEYS.update(|value| value ^ (1 << $a as u8));
 	};
 }
 
-static mut SPECIAL_KEYS: u8 = 0;
+use core::sync::atomic::{AtomicU8, Ordering};
+static SPECIAL_KEYS: AtomicU8 = AtomicU8::new(0);
 
 fn is_special(key: u8) -> bool {
 	key == 54
@@ -213,7 +215,7 @@ pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 
 	unsafe {
 		match keyboard_to_ascii(keycode) {
-			Some(ascii) => Some((Input::Ascii(ascii), SPECIAL_KEYS)),
+			Some(ascii) => Some((Input::Ascii(ascii), SPECIAL_KEYS.load(Ordering::Relaxed))),
 			None => {
 				let special_keys: &SpecialKeys =
 					unsafe { &KEYMAP.special_keys };
@@ -278,24 +280,24 @@ pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 						match keycode {
 							_ if keycode == special_keys.up[PRESSED] => Some((
 								Input::Tcaps(Termcaps::ArrowUP),
-								SPECIAL_KEYS
+								SPECIAL_KEYS.load(Ordering::Relaxed)
 							)),
 							_ if keycode == special_keys.down[PRESSED] => {
 								Some((
 									Input::Tcaps(Termcaps::ArrowDOWN),
-									SPECIAL_KEYS
+									SPECIAL_KEYS.load(Ordering::Relaxed)
 								))
 							},
 							_ if keycode == special_keys.left[PRESSED] => {
 								Some((
 									Input::Tcaps(Termcaps::ArrowLEFT),
-									SPECIAL_KEYS
+									SPECIAL_KEYS.load(Ordering::Relaxed)
 								))
 							},
 							_ if keycode == special_keys.right[PRESSED] => {
 								Some((
 									Input::Tcaps(Termcaps::ArrowRIGHT),
-									SPECIAL_KEYS
+									SPECIAL_KEYS.load(Ordering::Relaxed)
 								))
 							},
 							_ => None
