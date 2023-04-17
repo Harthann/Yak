@@ -18,7 +18,7 @@ pub static INPUT_BUFFER: Mutex<Option<Queue<(Input, u8)>>, true> =
 #[derive(Clone, Default)]
 pub struct TermEmu {
 	screens:        [Screen; NB_SCREEN as usize],
-	current_screen: u8
+	current_screen: i8
 }
 
 const SCREEN: Screen = Screen::new();
@@ -36,7 +36,7 @@ impl TermEmu {
 				if spkey & (1 << SpecialKeyFlag::Ctrl as u8) != 0 {
 					if value.is_ascii_digit() {
 						self.change_screen(
-							value.to_digit(10).unwrap() as u8 - 1
+							value.to_digit(10).unwrap() as i8 - 1
 						);
 					}
 				} else {
@@ -49,8 +49,8 @@ impl TermEmu {
 		}
 	}
 
-	pub fn change_screen(&mut self, id: u8) {
-		if id >= 0 && id < NB_SCREEN {
+	pub fn change_screen(&mut self, id: i8) {
+		if id >= 0 && id < NB_SCREEN as i8 {
 			let mut guard = WRITER.lock();
 			guard.save(&mut self.screens[self.current_screen as usize]);
 			guard.render(&mut self.screens[id as usize]);

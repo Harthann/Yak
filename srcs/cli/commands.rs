@@ -45,7 +45,7 @@ pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 }
 
 fn memtrack(command: Vec<String>) {
-    static mut heap_state: crate::Tracker = crate::Tracker::new();
+    static mut HEAP_STATE: crate::Tracker = crate::Tracker::new();
 	if command.len() != 2 {
 		kprintln!("Invalid argument.");
 		kprintln!("Usage: memstate [start, stop]");
@@ -55,14 +55,14 @@ fn memtrack(command: Vec<String>) {
     match command[1].as_str() {
         "start" => {
             crate::kprintln!("Saving current heap usage");
-            unsafe { heap_state = crate::KTRACKER };
+            unsafe { HEAP_STATE = crate::KTRACKER };
         },
         "stop" => unsafe { 
             let mut current_state =crate::KTRACKER ;
-            current_state.allocation      -= heap_state.allocation;
-            current_state.allocated_bytes -= heap_state.allocated_bytes;
-            current_state.freed           -= heap_state.freed;
-            current_state.freed_bytes     -= heap_state.freed_bytes;
+            current_state.allocation      -= HEAP_STATE.allocation;
+            current_state.allocated_bytes -= HEAP_STATE.allocated_bytes;
+            current_state.freed           -= HEAP_STATE.freed;
+            current_state.freed_bytes     -= HEAP_STATE.freed_bytes;
             crate::kprintln!("{}", current_state);
             crate::kprintln!("Leaks: {} bytes", current_state.allocated_bytes - current_state.freed_bytes);
         },
@@ -107,9 +107,7 @@ fn play(command: Vec<String>) {
 		sound = command[1].as_str();
 	}
 	crate::kprintln!("sound: {}", sound);
-	unsafe {
-		crate::sound::play(sound);
-	}
+    crate::sound::play(sound);
 }
 
 fn jiffies(_: Vec<String>) {

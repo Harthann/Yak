@@ -233,7 +233,7 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		$crate::kprint!("{}\n", format_args!($($arg)*));
+		$crate::kprint!("{}\n", format_args!($($arg)*))
 	)
 }
 

@@ -19,7 +19,7 @@ use crate::syscalls::exit::sys_waitpid;
 mod poc {
 	use sys_macros::Poc;
 	#[derive(Poc)]
-	struct poc;
+	struct Poc;
 
 	#[sys_macros::poc_insertion]
 	fn insertion_poc() {
@@ -35,7 +35,7 @@ mod poc {
 
 	pub fn test_macros() {
 		crate::kprintln!("Test drive macro:");
-		poc::poc();
+		Poc::poc();
 		crate::kprintln!("Test attribute macro:");
 		insertion_poc();
 		crate::kprintln!("Test attribute macro with argument:");

@@ -213,7 +213,6 @@ use crate::cli::{Input, Termcaps};
 pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 	let keycode: u8 = io::inb(0x60);
 
-	unsafe {
 		match keyboard_to_ascii(keycode) {
 			Some(ascii) => Some((Input::Ascii(ascii), SPECIAL_KEYS.load(Ordering::Relaxed))),
 			None => {
@@ -305,7 +304,6 @@ pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 					},
 					_ => None
 				}
-			}
 		}
 	}
 }

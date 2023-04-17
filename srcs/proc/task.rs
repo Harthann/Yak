@@ -61,7 +61,7 @@ impl Task {
 			page_directory.claim_index_page_table(
 				KSTACK_ADDR as usize >> 22,
 				PAGE_WRITABLE
-			);
+			).expect("Couldn't clain kstack page table");
 			change_kernel_stack(&MASTER_PROCESS);
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
