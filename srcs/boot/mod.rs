@@ -50,7 +50,7 @@ pub unsafe extern "C" fn _start() {
 		"mov eax, offset page_table - {0} | 3",
 		"mov ebx, offset page_directory - {0}",
 		"mov DWORD PTR[ebx], eax",
-		"mov DWORD PTR[ebx + 768 * 1024], eax",
+		"mov DWORD PTR[ebx + 768 * 4], eax",
 		// setup page_table entries
 		"mov eax, 0x0", 
 		"mov ebx, 0x0",
@@ -68,7 +68,7 @@ pub unsafe extern "C" fn _start() {
 		"mov eax, offset page_directory - {0}",
 		"mov cr3, eax",
 		"mov eax, cr0",
-		"or eax, 0x80010000",
+		"or eax, 0x80010001",
 		"mov cr0, eax",
 		// load gdt
 		"mov eax, offset gdt_desc",
@@ -98,7 +98,7 @@ unsafe fn high_kernel() {
 		"mov fs, ax",
 		"mov gs, ax",
 		"mov ss, ax",
-		"mov esp, stack + {0}",
+		"mov esp, offset stack + {0}",
 		"call kinit",
 		"hlt",
 		const STACK_SIZE,
