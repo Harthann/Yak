@@ -57,10 +57,6 @@ impl Tracker {
 	}
 }
 
-//impl fmt::Display for Tracker {
-//
-//}
-
 static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
@@ -108,7 +104,6 @@ use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
 
-static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 #[global_allocator]
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
