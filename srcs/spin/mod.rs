@@ -1,8 +1,8 @@
 use core::cell::UnsafeCell;
 use core::fmt;
 use core::ops::{Deref, DerefMut, Drop};
-use core::sync::atomic::{spin_loop_hint, AtomicBool, Ordering};
-
+use core::sync::atomic::{AtomicBool, Ordering};
+use core::hint::spin_loop;
 /// Mutex structure to prevent data races
 /// # Generic
 ///
@@ -48,8 +48,7 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 			.is_err()
 		{
 			while self.lock.load(Ordering::Relaxed) != false {
-				#[allow(deprecated)]
-				spin_loop_hint();
+				spin_loop();
 			}
 		}
 		if INT == true {
