@@ -59,13 +59,11 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
 	loop {
-	    kprint!("$> ");
-        let pid = unsafe {
-            crate::exec_fn!(crate::cli::cli)
-        };
-        unsafe { crate::dprintln!("Term pid: {:?}", pid) };
-        let mut status = 0;
-        sys_waitpid(pid, &mut status, 0);
-        unsafe { crate::dprintln!("Term has been killed") };
-    }
+		kprint!("$> ");
+		let pid = unsafe { crate::exec_fn!(crate::cli::cli) };
+		unsafe { crate::dprintln!("Term pid: {:?}", pid) };
+		let mut status = 0;
+		sys_waitpid(pid, &mut status, 0);
+		unsafe { crate::dprintln!("Term has been killed") };
+	}
 }

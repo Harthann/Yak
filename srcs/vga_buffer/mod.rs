@@ -23,8 +23,8 @@ pub struct Screen {
 unsafe impl Send for Screen {}
 
 impl Default for Screen {
-    fn default() -> Self {
-        Screen {
+	fn default() -> Self {
+		Screen {
 			cursor:  Cursor::new(
 				0,
 				0,
@@ -36,7 +36,7 @@ impl Default for Screen {
 			}; BUFFER_WIDTH]; BUFFER_HEIGHT],
 			command: Command::new()
 		}
-    }
+	}
 }
 
 impl Screen {
@@ -186,10 +186,10 @@ impl Writer {
 		self.cursor.enable();
 	}
 
-    pub fn save(&self, screen: &mut Screen) {
-        screen.buffer.copy_from_slice(self.vga_buffer);
+	pub fn save(&self, screen: &mut Screen) {
+		screen.buffer.copy_from_slice(self.vga_buffer);
 		screen.cursor = self.cursor;
-    }
+	}
 
 	pub fn render(&mut self, screen: &mut Screen) {
 		self.cursor.disable();
@@ -314,17 +314,6 @@ macro_rules! change_color {
 			.chcolor($crate::vga_buffer::color::ColorCode::new($fg, $bg))
 	};
 }
-
-//macro_rules! clihandle {
-//	($arg:expr) => {
-//		unsafe {
-//			let screen_number = crate::vga_buffer::WRITER.lock().get_screen();
-//			$crate::vga_buffer::SCREENS.lock()[screen_number]
-//				.get_command()
-//				.handle($arg);
-//		}
-//	};
-//}
 
 macro_rules! screenclear {
 	() => {

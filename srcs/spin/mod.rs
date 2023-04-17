@@ -37,10 +37,18 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 	/// Once the value as been written the mutex is successfully locked.
 	/// If `const INT` as been set to `true`, interrupt flag is clear
 	fn obtain_lock(&self) {
-		while self.lock.compare_exchange_weak(false, true, Ordering::Acquire, Ordering::Relaxed).is_err()
+		while self
+			.lock
+			.compare_exchange_weak(
+				false,
+				true,
+				Ordering::Acquire,
+				Ordering::Relaxed
+			)
+			.is_err()
 		{
 			while self.lock.load(Ordering::Relaxed) != false {
-                #[allow(deprecated)]
+				#[allow(deprecated)]
 				spin_loop_hint();
 			}
 		}
@@ -65,7 +73,11 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 
 	/// Try to lock the mutex. Returning a Guard if successfull
 	pub fn try_lock(&self) -> Option<MutexGuard<T, INT>> {
-		if self.lock.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_ok() {
+		if self
+			.lock
+			.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+			.is_ok()
+		{
 			if INT == true {
 				crate::wrappers::_cli();
 			}
