@@ -47,7 +47,9 @@ mod poc {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-    unsafe { crate::dprintln!("{}", crate::KTRACKER); }
+	unsafe {
+		crate::dprintln!("{}", crate::KTRACKER);
+	}
 	crate::user::test_user_page();
 
 	poc::test_macros();

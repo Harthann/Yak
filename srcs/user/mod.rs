@@ -5,18 +5,14 @@ use core::ptr::copy_nonoverlapping;
 use crate::wrappers::{_cli, _sti};
 
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
-use crate::memory::{VirtAddr};
+use crate::memory::VirtAddr;
 
 use crate::proc::process::{Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
-
 use crate::memory::paging::page_directory::PageDirectory;
 
-
 use crate::boxed::Box;
-
-
 
 #[cfg(test)]
 pub mod test;

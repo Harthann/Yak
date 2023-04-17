@@ -1,8 +1,8 @@
 use core::cell::UnsafeCell;
 use core::fmt;
+use core::hint::spin_loop;
 use core::ops::{Deref, DerefMut, Drop};
 use core::sync::atomic::{AtomicBool, Ordering};
-use core::hint::spin_loop;
 /// Mutex structure to prevent data races
 /// # Generic
 ///

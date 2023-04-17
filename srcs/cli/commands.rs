@@ -2,7 +2,6 @@
 
 use core::arch::asm;
 
-
 use crate::proc::process::{Pid, Process};
 use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
@@ -28,7 +27,7 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	uptime,
 	date,
 	play,
-    memtrack,
+	memtrack,
 	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
@@ -45,29 +44,32 @@ pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 }
 
 fn memtrack(command: Vec<String>) {
-    static mut HEAP_STATE: crate::Tracker = crate::Tracker::new();
+	static mut HEAP_STATE: crate::Tracker = crate::Tracker::new();
 	if command.len() != 2 {
 		kprintln!("Invalid argument.");
 		kprintln!("Usage: memstate [start, stop]");
 		return;
 	}
 
-    match command[1].as_str() {
-        "start" => {
-            crate::kprintln!("Saving current heap usage");
-            unsafe { HEAP_STATE = crate::KTRACKER };
-        },
-        "stop" => unsafe { 
-            let mut current_state =crate::KTRACKER ;
-            current_state.allocation      -= HEAP_STATE.allocation;
-            current_state.allocated_bytes -= HEAP_STATE.allocated_bytes;
-            current_state.freed           -= HEAP_STATE.freed;
-            current_state.freed_bytes     -= HEAP_STATE.freed_bytes;
-            crate::kprintln!("{}", current_state);
-            crate::kprintln!("Leaks: {} bytes", current_state.allocated_bytes - current_state.freed_bytes);
-        },
-        _ => crate::kprintln!("Invalid argument"),
-    }
+	match command[1].as_str() {
+		"start" => {
+			crate::kprintln!("Saving current heap usage");
+			unsafe { HEAP_STATE = crate::KTRACKER };
+		},
+		"stop" => unsafe {
+			let mut current_state = crate::KTRACKER;
+			current_state.allocation -= HEAP_STATE.allocation;
+			current_state.allocated_bytes -= HEAP_STATE.allocated_bytes;
+			current_state.freed -= HEAP_STATE.freed;
+			current_state.freed_bytes -= HEAP_STATE.freed_bytes;
+			crate::kprintln!("{}", current_state);
+			crate::kprintln!(
+				"Leaks: {} bytes",
+				current_state.allocated_bytes - current_state.freed_bytes
+			);
+		},
+		_ => crate::kprintln!("Invalid argument")
+	}
 }
 
 fn kill(command: Vec<String>) {
@@ -107,7 +109,7 @@ fn play(command: Vec<String>) {
 		sound = command[1].as_str();
 	}
 	crate::kprintln!("sound: {}", sound);
-    crate::sound::play(sound);
+	crate::sound::play(sound);
 }
 
 fn jiffies(_: Vec<String>) {
@@ -149,7 +151,9 @@ fn help(_: Vec<String>) {
 }
 
 fn shutdown(_: Vec<String>) {
-    unsafe { crate::dprintln!("{}", crate::KTRACKER); }
+	unsafe {
+		crate::dprintln!("{}", crate::KTRACKER);
+	}
 	io::outb(0xf4, 0x10);
 }
 

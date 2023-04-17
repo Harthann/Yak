@@ -1,7 +1,6 @@
 use crate::interrupts::Registers;
 use crate::pic::PIC1_IRQ_OFFSET;
 
-
 #[no_mangle]
 pub static mut JIFFIES: usize = 0;
 

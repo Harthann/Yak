@@ -10,7 +10,7 @@ use crate::utils::queue::Queue;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
 
-use crate::memory::paging::{PAGE_WRITABLE};
+use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
@@ -58,10 +58,12 @@ impl Task {
 			);
 			MASTER_PROCESS.state = Status::Run;
 			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
-			page_directory.claim_index_page_table(
-				KSTACK_ADDR as usize >> 22,
-				PAGE_WRITABLE
-			).expect("Couldn't clain kstack page table");
+			page_directory
+				.claim_index_page_table(
+					KSTACK_ADDR as usize >> 22,
+					PAGE_WRITABLE
+				)
+				.expect("Couldn't clain kstack page table");
 			change_kernel_stack(&MASTER_PROCESS);
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,

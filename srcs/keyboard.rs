@@ -1,6 +1,6 @@
 //! Keyboard handler and key mapping
 
-use crate::{io};
+use crate::io;
 
 const PRESSED: usize = 0;
 const RELEASED: usize = 1;
@@ -134,7 +134,7 @@ macro_rules! getflag {
 macro_rules! unsetflag {
 	($a:expr) => {
 		SPECIAL_KEYS.fetch_xor(1 << $a as u8, Ordering::Relaxed);
-//		SPECIAL_KEYS.update(|value| value ^ (1 << $a as u8));
+		// 		SPECIAL_KEYS.update(|value| value ^ (1 << $a as u8));
 	};
 }
 
@@ -193,7 +193,7 @@ fn keyboard_to_ascii(key: u8) -> Option<char> {
 		{
 			charcode = unsafe { KEYMAP.caps_keys[key as usize] as u8 };
 		}
-		// If key is not alphabetic, switch to cap_keys only if shift is pressed
+	// If key is not alphabetic, switch to cap_keys only if shift is pressed
 	} else if getflag!(SpecialKeyFlag::ShiftLeft)
 		|| getflag!(SpecialKeyFlag::ShiftRight)
 	{
@@ -213,97 +213,92 @@ use crate::cli::{Input, Termcaps};
 pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 	let keycode: u8 = io::inb(0x60);
 
-		match keyboard_to_ascii(keycode) {
-			Some(ascii) => Some((Input::Ascii(ascii), SPECIAL_KEYS.load(Ordering::Relaxed))),
-			None => {
-				let special_keys: &SpecialKeys =
-					unsafe { &KEYMAP.special_keys };
-				match keycode {
-					_ if keycode == special_keys.shift_l[PRESSED] => {
-						setflag!(SpecialKeyFlag::ShiftLeft);
-						None
-					},
-					_ if keycode == special_keys.shift_r[PRESSED] => {
-						setflag!(SpecialKeyFlag::ShiftRight);
-						None
-					},
-					_ if keycode == special_keys.ctrl[PRESSED] => {
-						setflag!(SpecialKeyFlag::Ctrl);
-						None
-					},
-					_ if keycode == special_keys.alt[PRESSED] => {
-						setflag!(SpecialKeyFlag::Opt);
-						None
-					},
-					_ if keycode == special_keys.special_l[PRESSED] => {
-						setflag!(SpecialKeyFlag::CmdLeft);
-						None
-					},
-					_ if keycode == special_keys.special_r[PRESSED] => {
-						setflag!(SpecialKeyFlag::CmdRight);
-						None
-					},
-					_ if keycode == special_keys.caps[PRESSED] => {
-						unsetflag!(SpecialKeyFlag::Caps);
-						None
-					},
+	match keyboard_to_ascii(keycode) {
+		Some(ascii) => {
+			Some((Input::Ascii(ascii), SPECIAL_KEYS.load(Ordering::Relaxed)))
+		},
+		None => {
+			let special_keys: &SpecialKeys = unsafe { &KEYMAP.special_keys };
+			match keycode {
+				_ if keycode == special_keys.shift_l[PRESSED] => {
+					setflag!(SpecialKeyFlag::ShiftLeft);
+					None
+				},
+				_ if keycode == special_keys.shift_r[PRESSED] => {
+					setflag!(SpecialKeyFlag::ShiftRight);
+					None
+				},
+				_ if keycode == special_keys.ctrl[PRESSED] => {
+					setflag!(SpecialKeyFlag::Ctrl);
+					None
+				},
+				_ if keycode == special_keys.alt[PRESSED] => {
+					setflag!(SpecialKeyFlag::Opt);
+					None
+				},
+				_ if keycode == special_keys.special_l[PRESSED] => {
+					setflag!(SpecialKeyFlag::CmdLeft);
+					None
+				},
+				_ if keycode == special_keys.special_r[PRESSED] => {
+					setflag!(SpecialKeyFlag::CmdRight);
+					None
+				},
+				_ if keycode == special_keys.caps[PRESSED] => {
+					unsetflag!(SpecialKeyFlag::Caps);
+					None
+				},
 
-					_ if keycode == special_keys.shift_l[RELEASED] => {
-						unsetflag!(SpecialKeyFlag::ShiftLeft);
-						None
-					},
-					_ if keycode == special_keys.shift_r[RELEASED] => {
-						unsetflag!(SpecialKeyFlag::ShiftRight);
-						None
-					},
-					_ if keycode == special_keys.ctrl[RELEASED] => {
-						unsetflag!(SpecialKeyFlag::Ctrl);
-						None
-					},
-					_ if keycode == special_keys.alt[RELEASED] => {
-						unsetflag!(SpecialKeyFlag::Opt);
-						None
-					},
-					_ if keycode == special_keys.special_l[RELEASED] => {
-						unsetflag!(SpecialKeyFlag::CmdLeft);
-						None
-					},
-					_ if keycode == special_keys.special_r[RELEASED] => {
-						unsetflag!(SpecialKeyFlag::CmdRight);
-						None
-					},
-					224 => {
-						let keycode: u8 = io::inb(0x60);
-						let special_keys: &SpecialKeys =
-							unsafe { &KEYMAP.special_keys };
-						match keycode {
-							_ if keycode == special_keys.up[PRESSED] => Some((
-								Input::Tcaps(Termcaps::ArrowUP),
-								SPECIAL_KEYS.load(Ordering::Relaxed)
-							)),
-							_ if keycode == special_keys.down[PRESSED] => {
-								Some((
-									Input::Tcaps(Termcaps::ArrowDOWN),
-									SPECIAL_KEYS.load(Ordering::Relaxed)
-								))
-							},
-							_ if keycode == special_keys.left[PRESSED] => {
-								Some((
-									Input::Tcaps(Termcaps::ArrowLEFT),
-									SPECIAL_KEYS.load(Ordering::Relaxed)
-								))
-							},
-							_ if keycode == special_keys.right[PRESSED] => {
-								Some((
-									Input::Tcaps(Termcaps::ArrowRIGHT),
-									SPECIAL_KEYS.load(Ordering::Relaxed)
-								))
-							},
-							_ => None
-						}
-					},
-					_ => None
-				}
+				_ if keycode == special_keys.shift_l[RELEASED] => {
+					unsetflag!(SpecialKeyFlag::ShiftLeft);
+					None
+				},
+				_ if keycode == special_keys.shift_r[RELEASED] => {
+					unsetflag!(SpecialKeyFlag::ShiftRight);
+					None
+				},
+				_ if keycode == special_keys.ctrl[RELEASED] => {
+					unsetflag!(SpecialKeyFlag::Ctrl);
+					None
+				},
+				_ if keycode == special_keys.alt[RELEASED] => {
+					unsetflag!(SpecialKeyFlag::Opt);
+					None
+				},
+				_ if keycode == special_keys.special_l[RELEASED] => {
+					unsetflag!(SpecialKeyFlag::CmdLeft);
+					None
+				},
+				_ if keycode == special_keys.special_r[RELEASED] => {
+					unsetflag!(SpecialKeyFlag::CmdRight);
+					None
+				},
+				224 => {
+					let keycode: u8 = io::inb(0x60);
+					let special_keys: &SpecialKeys =
+						unsafe { &KEYMAP.special_keys };
+					match keycode {
+						_ if keycode == special_keys.up[PRESSED] => Some((
+							Input::Tcaps(Termcaps::ArrowUP),
+							SPECIAL_KEYS.load(Ordering::Relaxed)
+						)),
+						_ if keycode == special_keys.down[PRESSED] => Some((
+							Input::Tcaps(Termcaps::ArrowDOWN),
+							SPECIAL_KEYS.load(Ordering::Relaxed)
+						)),
+						_ if keycode == special_keys.left[PRESSED] => Some((
+							Input::Tcaps(Termcaps::ArrowLEFT),
+							SPECIAL_KEYS.load(Ordering::Relaxed)
+						)),
+						_ if keycode == special_keys.right[PRESSED] => Some((
+							Input::Tcaps(Termcaps::ArrowRIGHT),
+							SPECIAL_KEYS.load(Ordering::Relaxed)
+						)),
+						_ => None
+					}
+				},
+				_ => None
+			}
 		}
 	}
 }

@@ -41,10 +41,13 @@ pub struct Tracker {
 
 use core::fmt;
 impl fmt::Display for Tracker {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Alloc: {} for {} bytes\nFreed: {} for {} bytes",
-               self.allocation, self.allocated_bytes, self.freed, self.freed_bytes)
-    }
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(
+			f,
+			"Alloc: {} for {} bytes\nFreed: {} for {} bytes",
+			self.allocation, self.allocated_bytes, self.freed, self.freed_bytes
+		)
+	}
 }
 
 impl Tracker {
@@ -61,7 +64,9 @@ impl Tracker {
 static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
-    unsafe { kprintln!("{}", KTRACKER); }
+	unsafe {
+		kprintln!("{}", KTRACKER);
+	}
 }
 
 // Modules import

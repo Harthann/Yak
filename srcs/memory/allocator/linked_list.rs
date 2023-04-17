@@ -24,11 +24,15 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 			if excess_size > 0 {
 				allocator.add_free_region(alloc_end, excess_size);
 			}
-            // Update allocation tracker
-            crate::KTRACKER.allocation += 1;
-            crate::KTRACKER.allocated_bytes += size;
-            #[cfg(feature = "alloc_debug")]
-            crate::dprintln!("Alloc: {:#x} bytes at {:p}", size, alloc_start as *mut u8);
+			// Update allocation tracker
+			crate::KTRACKER.allocation += 1;
+			crate::KTRACKER.allocated_bytes += size;
+			#[cfg(feature = "alloc_debug")]
+			crate::dprintln!(
+				"Alloc: {:#x} bytes at {:p}",
+				size,
+				alloc_start as *mut u8
+			);
 			alloc_start as *mut u8
 		} else {
 			core::ptr::null_mut()
@@ -40,11 +44,11 @@ unsafe impl GlobalAlloc for LinkedListAllocator {
 		let mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let (size, _) = LinkedListAllocator::size_align(layout);
-        // Update allocation tracker
-        crate::KTRACKER.freed += 1;
-        crate::KTRACKER.freed_bytes += size;
+		// Update allocation tracker
+		crate::KTRACKER.freed += 1;
+		crate::KTRACKER.freed_bytes += size;
 		#[cfg(feature = "alloc_debug")]
-        crate::dprintln!("Freed: {:#x} bytes at {:#p}", size, ptr);
+		crate::dprintln!("Freed: {:#x} bytes at {:#p}", size, ptr);
 		mut_self.add_free_region(ptr as VirtAddr, size)
 	}
 }
