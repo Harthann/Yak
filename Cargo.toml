@@ -33,3 +33,4 @@ multitasking = []
 debug_features = []
 
 mutex_debug = []
+alloc_debug = []

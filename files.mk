@@ -32,7 +32,7 @@ RUST_SRCS		=	main.rs \
 
 MACROS_SRCS = lib.rs
 
-CLI_SRCS = mod.rs input.rs
+CLI_SRCS = mod.rs input.rs commands.rs screen.rs
 
 SYSCALL_SRCS	=	exit.rs \
 					signal.rs \

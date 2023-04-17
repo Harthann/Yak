@@ -1,9 +1,6 @@
 pub mod bump;
 pub mod linked_list;
 
-mod global;
-pub use global::Global;
-
 pub mod kglobal;
 pub use kglobal::KGlobal;
 

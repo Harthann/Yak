@@ -30,11 +30,20 @@ pub extern "C" fn eh_personality() {}
 const GLOBAL_ALIGN: usize = 8;
 
 // Allocation tracking
+#[derive(Copy, Clone)]
 pub struct Tracker {
 	allocation:      usize,
 	allocated_bytes: usize,
 	freed:           usize,
 	freed_bytes:     usize
+}
+
+use core::fmt;
+impl fmt::Display for Tracker {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Alloc: {} for {} bytes\nFreed: {} for {} bytes",
+               self.allocation, self.allocated_bytes, self.freed, self.freed_bytes)
+    }
 }
 
 impl Tracker {
@@ -48,22 +57,14 @@ impl Tracker {
 	}
 }
 
-static mut TRACKER: Tracker = Tracker::new();
+//impl fmt::Display for Tracker {
+//
+//}
+
 static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
-	unsafe {
-		kprintln!(
-			"\nAllocation: {} for {} bytes",
-			KTRACKER.allocation,
-			KTRACKER.allocated_bytes
-		);
-		kprintln!(
-			"Free:       {} for {} bytes",
-			KTRACKER.freed,
-			KTRACKER.freed_bytes
-		);
-	}
+    unsafe { kprintln!("{}", KTRACKER); }
 }
 
 // Modules import
@@ -162,7 +163,6 @@ pub extern "C" fn kinit() {
 	// init tracker after init first process
 	unsafe {
 		KTRACKER = Tracker::new();
-		TRACKER = Tracker::new();
 	}
 
 	setup_pic8259();
