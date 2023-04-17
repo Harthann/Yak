@@ -12,6 +12,7 @@
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
 #![feature(vec_into_raw_parts)]
+#![feature(cell_update)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -128,7 +129,7 @@ use proc::task::Task;
 
 use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
 // use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
-use main::kmain;
+
 pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
@@ -177,5 +178,5 @@ pub extern "C" fn kinit() {
 	test_main();
 
 	#[cfg(not(test))]
-	kmain();
+	crate::main::kmain();
 }
