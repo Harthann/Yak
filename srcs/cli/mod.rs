@@ -12,9 +12,9 @@ use crate::vga_buffer::Screen;
 use crate::keyboard::{SpecialKeyFlag};
 
 pub const NB_SCREEN: u8 = 3;
-pub static INPUT_BUFFER: Mutex<Queue<(Input, u8)>, true> = Mutex::new(Queue::new());
+pub static INPUT_BUFFER: Mutex<Option<Queue<(Input, u8)>>, true> = Mutex::new(None);
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct TermEmu {
     screens:  [Screen; NB_SCREEN as usize],
     current_screen: u8
@@ -55,13 +55,16 @@ impl TermEmu {
     }
 }
 
+use crate::boxed::Box;
 pub fn cli() {
-    let mut emulator = TermEmu::new();
+    let mut emulator: Box<TermEmu> = Box::default();
+    *INPUT_BUFFER.lock() = Some(Queue::new());
+
     loop {
-        if INPUT_BUFFER.lock().is_empty() {
+        if INPUT_BUFFER.lock().as_ref().unwrap().is_empty() {
             unsafe { crate::wrappers::hlt!(); }
         } else {
-            let event = INPUT_BUFFER.lock().pop();
+            let event = INPUT_BUFFER.lock().as_mut().unwrap().pop();
             emulator.handle_event(event.0, event.1);
         }
     }

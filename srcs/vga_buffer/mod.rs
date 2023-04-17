@@ -22,6 +22,23 @@ pub struct Screen {
 
 unsafe impl Send for Screen {}
 
+impl Default for Screen {
+    fn default() -> Self {
+        Screen {
+			cursor:  Cursor::new(
+				0,
+				0,
+				ColorCode::new(Color::White, Color::Black)
+			),
+			buffer:  [[ScreenChar {
+				ascii_code: 0,
+				color_code: ColorCode::new(Color::White, Color::Black)
+			}; BUFFER_WIDTH]; BUFFER_HEIGHT],
+			command: Command::new()
+		}
+    }
+}
+
 impl Screen {
 	pub const fn new() -> Screen {
 		Screen {
