@@ -67,7 +67,7 @@ pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn proc_macro_poc(input: TokenStream) -> TokenStream {
+pub fn proc_macro_poc(_input: TokenStream) -> TokenStream {
 	let code = quote! {
 		fn proc_macro_poc() {
 			crate::kprintln!("This is basic proc macro poc");
