@@ -52,7 +52,7 @@ pub unsafe extern "C" fn _start() {
 		"mov DWORD PTR[ebx], eax",
 		"mov DWORD PTR[ebx + 768 * 4], eax",
 		// setup page_table entries
-		"mov eax, 0x0", 
+		"mov eax, 0x0",
 		"mov ebx, 0x0",
 		"2:",
 		"mov ecx, ebx",
