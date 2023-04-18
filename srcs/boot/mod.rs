@@ -73,18 +73,11 @@ pub unsafe extern "C" fn _start() {
 		// load gdt
 		"mov eax, offset gdt_desc",
 		"lgdt [eax]",
-		"jmp lol",
+		"jmp 0x08, offset high_kernel",
 		const KERNEL_BASE,
 		const STACK_SIZE,
 		options(noreturn)
 	);
-}
-
-#[no_mangle]
-#[naked]
-#[link_section = ".boot"]
-unsafe fn lol() {
-	core::arch::asm!("ljmp $0x08, $high_kernel", options(noreturn, att_syntax));
 }
 
 #[no_mangle]
