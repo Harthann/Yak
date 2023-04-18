@@ -28,6 +28,7 @@ RUST_SRCS		=	main.rs \
 					$(CLI_SRCS) \
 					$(SOUNDS) \
 					$(MACROS_SRCS) \
+					$(FILE_SYSTEM) \
 					bitmap.rs
 
 MACROS_SRCS = lib.rs
@@ -37,6 +38,8 @@ CLI_SRCS = mod.rs input.rs commands.rs screen.rs
 SYSCALL_SRCS	=	exit.rs \
 					signal.rs \
 					timer.rs
+
+FILE_SYSTEM = mod.rs
 
 SOUNDS = notes_frequencies.rs \
 		 note.rs \
