@@ -209,6 +209,17 @@ pub fn keyboard_event() -> bool {
 	io::inb(0x64) & 1 != 0
 }
 
+pub fn handle_event() -> u8 {
+	let keycode: u8 = io::inb(0x60);
+    match keyboard_to_ascii(keycode) {
+		Some(ascii) => {
+			ascii as u8
+		},
+		None => 0x0
+    }
+}
+
+/*
 use crate::cli::{Input, Termcaps};
 pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 	let keycode: u8 = io::inb(0x60);
@@ -302,3 +313,4 @@ pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 		}
 	}
 }
+*/
