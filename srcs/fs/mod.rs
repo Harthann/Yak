@@ -22,7 +22,10 @@ pub fn create(file: FileInfo) -> Result<(), FileError> {
             guard.push(file);
             Ok(())
         },
-        Some(_) => Err(FileError::Unknown())
+        Some(file) => {
+            crate::kprintln!("Found file {}", file.name);
+            Err(FileError::Unknown())
+        }
     }
 }
 

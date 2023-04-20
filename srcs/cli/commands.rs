@@ -328,7 +328,6 @@ impl Command {
 					};
 					let mut status = 0;
 					sys_waitpid(pid, &mut status, 0);
-					crate::kprintln!("Waited pid: {}", pid);
 				},
 				_ => {
 					if self.command.len() != 0 {

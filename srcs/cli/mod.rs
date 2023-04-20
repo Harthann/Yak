@@ -8,13 +8,11 @@ pub use input::{Input, Termcaps};
 mod commands;
 pub use commands::Command;
 
-mod io;
-
 use crate::keyboard::SpecialKeyFlag;
 use crate::vga_buffer::Screen;
 
 pub const NB_SCREEN: u8 = 3;
-pub static INPUT_BUFFER: Mutex<Option<Queue<u8>>, true> =
+pub static INPUT_BUFFER: Mutex<Option<Queue<(Input, u8)>>, true> =
 	Mutex::new(None);
 
 #[derive(Clone, Default)]
@@ -62,17 +60,18 @@ impl TermEmu {
 }
 
 use crate::boxed::Box;
-use crate::fs;
 pub fn cli() {
 	let mut emulator: Box<TermEmu> = Box::default();
 	*INPUT_BUFFER.lock() = Some(Queue::new());
-    let stdin: io::Stdin = io::Stdin::default();
-    crate::fs::create_from_raw("tty0/stdin", stdin).expect("Failed to create file");
-    let stdin  = crate::fs::open("tty0/stdin").expect("Failed to open stdin");
 
-    let mut event: [u8; 1] = [0];
 	loop {
-        fs::read(stdin, &mut event, 1).expect("Failed to read stdin");
-        crate::kprint!("{}", event[0] as char);
+		if INPUT_BUFFER.lock().as_ref().unwrap().is_empty() {
+			unsafe {
+				crate::wrappers::hlt!();
+			}
+		} else {
+			let event = INPUT_BUFFER.lock().as_mut().unwrap().pop();
+			emulator.handle_event(event.0, event.1);
+		}
 	}
 }
