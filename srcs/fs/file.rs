@@ -13,14 +13,19 @@ pub enum FileError {
     Unknown()
 }
 
-unsafe impl Sync for FileInfo {}
-unsafe impl Send for FileInfo {}
-unsafe impl Sync for File {}
-unsafe impl Send for File {}
+
+/// Contains all file information.
+/// Current informatin are only it's name and it's FileOperation trait object
+/// The op trait object can be store either by reference of Box. For the moment Box is choosen but
+/// this may change in the future. To make the trait obejct ThreadSafe Mutex is used.
+/// Arc is used to allow multiple reference on the object in a multithreaded environment
 pub struct FileInfo {
     pub name: String,
     pub op: Arc<Mutex<Box<dyn FileOperation>, false>>
 }
+// Sync/Send marker to indicate rust that FileInfo is thread safe
+unsafe impl Sync for FileInfo {}
+unsafe impl Send for FileInfo {}
 
 impl FileInfo {
     pub fn new(name: String, op: Box<dyn FileOperation>) -> Self {
@@ -32,18 +37,18 @@ impl FileInfo {
 
 }
 
+/// Currently this structure is only used to store op in the PROC_FILES vector
+/// fd fieald isn't used.
+/// TODO: This could be the structure returned by open containing fd, file size etc.... and could
+/// close fd and drop
 pub struct File {
     pub fd: usize,
     pub op: Arc<Mutex<Box<dyn FileOperation>, false>>
 }
+unsafe impl Sync for File {}
+unsafe impl Send for File {}
 
 impl File {
-    //pub fn new(fd: usize) -> Self {
-    //    Self {
-    //        fd: fd
-    //    }
-    //}
-
     #[inline]
     pub fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, FileError> {
         crate::fs::read(self.fd, dst, length)
@@ -57,6 +62,7 @@ impl File {
 
 impl Drop for File {
     fn drop(&mut self) {
+        // TODO Delete something? Close fd?
     }
 }
 
