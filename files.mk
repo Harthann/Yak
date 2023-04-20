@@ -25,6 +25,7 @@ RUST_SRCS		=	main.rs \
 					debug.rs\
 					cmos.rs\
 					$(SYSCALL_SRCS) \
+					$(FILE_SYSTEM) \
 					$(MACROS_SRCS) \
 					$(SOUNDS) \
 					bitmap.rs
@@ -34,6 +35,8 @@ MACROS_SRCS = lib.rs
 SYSCALL_SRCS	=	exit.rs \
 					signal.rs \
 					timer.rs
+
+FILE_SYSTEM = mod.rs test.rs file.rs
 
 SOUNDS = notes_frequencies.rs \
 		 note.rs \

@@ -90,6 +90,7 @@ mod spin;
 mod utils;
 #[macro_use]
 mod debug;
+mod fs;
 
 extern crate alloc;
 extern crate sys_macros;
