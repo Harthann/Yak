@@ -87,7 +87,7 @@ unsafe fn _start() {
 unsafe fn high_kernel() {
 	reload_cs!();
 	core::arch::asm!(
-		"mov esp, offset stack + {0}",
+		"mov esp, offset stack + {}",
 		"call kinit",
 		"hlt",
 		const STACK_SIZE,
@@ -143,7 +143,7 @@ macro_rules! setup_page_table {
 			"2:",
 			"mov ecx, ebx",
 			"or ecx, 3",
-			"mov DWORD PTR[page_table - {0} + eax * 4], ecx",
+			"mov DWORD PTR[page_table - {} + eax * 4], ecx",
 			"add ebx, 0x1000",
 			"inc eax",
 			"cmp eax, 1024",
@@ -159,7 +159,7 @@ macro_rules! setup_page_table {
 macro_rules! enable_paging {
 	() => {
 		core::arch::asm!(
-			"mov eax, offset page_directory - {0}",
+			"mov eax, offset page_directory - {}",
 			"mov cr3, eax",
 			"mov eax, cr0",
 			"or eax, 0x80010000",

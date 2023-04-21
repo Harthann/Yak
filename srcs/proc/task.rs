@@ -15,13 +15,6 @@ use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
 
-#[no_mangle]
-pub static mut tmp_registers: Registers = Registers::new();
-
-extern "C" {
-	pub fn switch_task() -> !;
-}
-
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TaskStatus {
 	Running,         // Normal state
@@ -180,6 +173,48 @@ unsafe fn do_signal(task: &mut Task) {
 	}
 }
 
+#[naked]
+#[no_mangle]
+unsafe fn swap_task() -> ! {
+	core::arch::asm!(
+		"pusha",
+
+		"mov eax, cr3",
+		"push eax",
+
+		"xor eax, eax",
+		"mov ax, ds",
+		"push eax",
+
+		"mov eax, offset page_directory - {}",
+		"mov ebx, cr3",
+		"cmp eax, ebx",
+		"je 2f", // if cr3 is kernel don't swap
+
+		"mov cr3, eax",
+
+		"2:",
+		"add DWORD PTR[JIFFIES], 1",
+
+		"mov eax, 0x10",
+		"mov ds, ax",
+		"mov es, ax",
+		"mov fs, ax",
+		"mov gs, ax",
+
+		"mov eax, esp",
+
+		// (regs: &Registers)
+		"push eax",
+		"call save_task",
+		"pop eax",
+
+		"call schedule_task", // never returns
+		const crate::boot::KERNEL_BASE,
+		options(noreturn)
+	)
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
@@ -205,11 +240,11 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
-			tmp_registers = new_task.regs;
+			let task: Registers = new_task.regs;
 			change_kernel_stack(process);
 			end_of_interrupts(0x20);
 			_rst();
-			switch_task();
+			switch_task(&task);
 			// never goes there
 		}
 		let skipped_task: Task = TASKLIST.pop();
@@ -217,15 +252,65 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 	}
 }
 
+unsafe fn switch_task(regs: &Registers) -> ! {
+	if regs.cr3 != get_paddr!((&page_directory) as *const _) {
+		load_cr3!(regs.cr3);
+	}
+	get_segments!(regs.ds);
+	if regs.int_no != u32::MAX { // new task
+		core::arch::asm!(
+			"mov esp, {esp}",
+			"push {eip}",
+			"ret", // Recover sti in wrappers
+			esp = in(reg) regs.esp,
+			eip = in(reg) regs.eip,
+			options(noreturn)
+		);
+	}
+	core::arch::asm!(
+		"mov esp, {}",
+		"sub esp, 32",
+		"popa",
+		"add esp, 8", // int_no and err_code
+		"iretd", // no sti: iretd enable interrupt itself
+		in(reg) regs.esp,
+		options(noreturn)
+	);
+}
+
+const STACK_SIZE: usize = 0x1000;
+
 #[no_mangle]
 #[link_section = ".bss"]
 /// Task stack
-static mut task_stack: [u8; 0x1000] = [0; 0x1000];
+static mut task_stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
 
 macro_rules! use_task_stack {
 	() => {
-		core::arch::asm!("mov esp, offset task_stack + 0x1000");
+		core::arch::asm!("mov esp, offset task_stack + {}", const STACK_SIZE);
 	};
 }
 
-use use_task_stack;
+macro_rules! load_cr3 {
+	($cr3: expr) => {
+		core::arch::asm!(
+			"mov cr3, {}",
+			in(reg) $cr3
+		);
+	}
+}
+
+macro_rules! get_segments {
+	($ds: expr) => {
+		core::arch::asm!(
+			"mov eax, {}",
+			"mov ds, ax",
+			"mov es, ax",
+			"mov fs, ax",
+			"mov gs, ax",
+			in(reg) $ds
+		);
+	}
+}
+
+use {use_task_stack, load_cr3, get_segments};
