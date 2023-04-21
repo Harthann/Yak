@@ -59,7 +59,7 @@ static header: multiboot_header = multiboot_header::new();
 /// - load gdt
 ///
 /// The function will then jump to higher half kernel after loading gdt
-pub unsafe extern "C" fn _start() {
+unsafe fn _start() {
 	core::arch::asm!(
 		"mov eax, offset multiboot_ptr - {0}", // Get multiboot struct from GRUB
 		"mov DWORD PTR[eax], ebx",
