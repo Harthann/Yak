@@ -1,8 +1,12 @@
+//! Define boot and kernel entrypoint
+
 use core::mem::size_of;
 
 use crate::reload_cs;
 
+/// Base address for higher half kernel
 pub const KERNEL_BASE: usize = 0xc0000000;
+/// Kernel init stack size at boot
 const STACK_SIZE: usize = 8192;
 
 /// Multiboot 1.6 Header
@@ -17,8 +21,10 @@ struct multiboot_header {
 	size:          u32
 }
 
+/// Multiboot magic number
 const MULTIBOOT_MAGIC: u32 = 0xe85250d6;
-const ARCH: u32 = 0; // protected mode
+/// Arch for multiboot: protected mode
+const ARCH: u32 = 0;
 
 impl multiboot_header {
 	const fn new() -> Self {
@@ -39,10 +45,20 @@ impl multiboot_header {
 
 #[no_mangle]
 #[link_section = ".multiboot_header"]
+/// multiboot header to define entrypoint inside linker script
 static header: multiboot_header = multiboot_header::new();
 
 #[no_mangle]
 #[link_section = ".boot"]
+/// Kernel entrypoint
+///
+/// The _start function begin from low address space and will setup:
+/// - multiboot pointer
+/// - basic stack
+/// - pagination (identity paging and higher half kernel paging)
+/// - load gdt
+///
+/// The function will then jump to higher half kernel after loading gdt
 pub unsafe extern "C" fn _start() {
 	core::arch::asm!(
 		"mov eax, offset multiboot_ptr - {0}", // Get multiboot struct from GRUB
@@ -63,6 +79,11 @@ pub unsafe extern "C" fn _start() {
 }
 
 #[no_mangle]
+/// Higher half kernel entrypoint
+///
+/// This is the first function called in higher half kernel
+/// The function is called from _start entrypoint and will finish the gdt loading
+/// Then it will setup stack and call the kinit function
 unsafe fn high_kernel() {
 	reload_cs!();
 	core::arch::asm!(
@@ -76,21 +97,28 @@ unsafe fn high_kernel() {
 
 #[no_mangle]
 #[link_section = ".data"]
+/// Address to the multiboot structure used by GRUB
 static multiboot_ptr: u32 = 0;
 
 #[no_mangle]
 #[link_section = ".bss"]
+/// Kernel stack
 static mut stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
 
 #[no_mangle]
 #[link_section = ".padata"]
+/// Kernel page directory
 pub static mut page_directory: [u32; 1024] = [0x2; 1024];
 
 #[no_mangle]
 #[link_section = ".padata"]
+/// Page table containing kernel code
 static mut page_table: [u32; 1024] = [0; 1024];
 
-
+/// Setup page tables in `page_directory`
+///
+/// The macro will setup a identity mapping and high `page_table` for higher
+/// half kernel
 macro_rules! setup_page_directory {
 	() => {
 		core::arch::asm!(
@@ -103,6 +131,10 @@ macro_rules! setup_page_directory {
 	}
 }
 
+/// Setup kernel page table
+///
+/// The macro will setup all `page_table` entries to present and writable with
+/// kernel code physical address
 macro_rules! setup_page_table {
 	() => {
 		core::arch::asm!(
@@ -123,6 +155,7 @@ macro_rules! setup_page_table {
 	};
 }
 
+/// Enable paging by loading `page_directory` into `cr3`
 macro_rules! enable_paging {
 	() => {
 		core::arch::asm!(
