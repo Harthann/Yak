@@ -63,13 +63,6 @@ switch_task:
 		mov fs, bx
 		mov gs, bx
 
-		mov ebx, eax
-
-		mov al, 0x20
-		out 0x20, al
-
-		mov eax, ebx
-
 		mov edi, dword[eax + regs.edi]
 		mov esi, dword[eax + regs.esi]
 		mov ebp, dword[eax + regs.ebp]

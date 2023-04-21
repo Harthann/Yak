@@ -190,9 +190,11 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 }
 
 use crate::proc::change_kernel_stack;
+use crate::pic::end_of_interrupts;
 
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
+	use_task_stack!();
 	_cli();
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
@@ -205,12 +207,25 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 			// Copy registers to shared memory
 			tmp_registers = new_task.regs;
 			change_kernel_stack(process);
-			// Avoid using stack below that
+			end_of_interrupts(0x20);
 			_rst();
-			core::arch::asm!("jmp switch_task");
+			switch_task();
 			// never goes there
 		}
 		let skipped_task: Task = TASKLIST.pop();
 		TASKLIST.push(skipped_task);
 	}
 }
+
+#[no_mangle]
+#[link_section = ".bss"]
+/// Task stack
+static mut task_stack: [u8; 0x1000] = [0; 0x1000];
+
+macro_rules! use_task_stack {
+	() => {
+		core::arch::asm!("mov esp, offset task_stack + 0x1000");
+	};
+}
+
+use use_task_stack;
