@@ -116,17 +116,29 @@ pub fn set_segment(index: usize, base: u32, limit: u32, flag: u8, access: u8) {
 }
 
 #[macro_export]
+macro_rules! reload_cs {
+	() => (
+		core::arch::asm!(
+			"mov ax, 0x10",
+			"mov ds, ax",
+			"mov es, ax",
+			"mov fs, ax",
+			"mov gs, ax",
+			"mov ss, ax",
+		);
+	);
+}
+
+#[macro_export]
 macro_rules! reload_gdt {
 	() => (
-		core::arch::asm!("lgdt [{}]", in(reg) (gdt_desc as usize + crate::boot::KERNEL_BASE));
-		core::arch::asm!("ljmp $0x08, $2f",
+		core::arch::asm!("lgdt [{}]", in(reg) ($crate::gdt_desc as usize + $crate::boot::KERNEL_BASE));
+		core::arch::asm!(
+			"ljmp $0x08, $2f",
 			"2:",
-			"movw $0x10, %ax",
-			"movw %ax, %ds",
-			"movw %ax, %es",
-			"movw %ax, %fs",
-			"movw %ax, %gs",
-			"movw %ax, %ss", options(att_syntax));
+			options(att_syntax)
+		);
+		$crate::reload_cs!();
 	);
 }
 
@@ -134,7 +146,10 @@ macro_rules! reload_gdt {
 macro_rules! reload_tss {
 	() => {
 		unsafe {
-			core::arch::asm!("mov ax, 0x38", "ltr ax");
+			core::arch::asm!(
+				"mov ax, 0x38",
+				"ltr ax"
+			);
 		}
 	};
 }
