@@ -48,7 +48,6 @@ INCLUDES	=		boot.h \
 
 BOOTSRCS		=	gdt.s \
 					idt.s \
-					int.s \
-					userjump.s
+					int.s
 
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)
