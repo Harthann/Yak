@@ -3,7 +3,7 @@ use crate::pic::handlers::irq_0;
 
 #[naked]
 #[no_mangle]
-unsafe fn isr_common_stub() {
+unsafe extern "C" fn isr_common_stub() {
 	core::arch::asm!(
 		"pusha",
 
@@ -42,12 +42,12 @@ unsafe fn isr_common_stub() {
 }
 
 #[no_mangle]
-static isr_stub_syscall: unsafe fn() = isr_stub_128;
+static isr_stub_syscall: unsafe extern "C" fn() = isr_stub_128;
 #[no_mangle]
-static irq_stub_0: unsafe fn() = irq_0;
+static irq_stub_0: unsafe extern "C" fn() = irq_0;
 
 #[no_mangle]
-static isr_stub_table: [unsafe fn(); 48] = [
+static isr_stub_table: [unsafe extern "C" fn(); 48] = [
 	isr_stub_0,
 	isr_stub_1,
 	isr_stub_2,
@@ -153,7 +153,7 @@ macro_rules! isr_err_stub {
 	($func: ident, $nb: expr) => {
 		#[naked]
 		#[no_mangle]
-		unsafe fn $func() {
+		unsafe extern "C" fn $func() {
 			core::arch::asm!(
 				"cli",
 				"push {}",
@@ -169,7 +169,7 @@ macro_rules! isr_no_err_stub {
 	($func: ident, $nb: expr) => {
 		#[naked]
 		#[no_mangle]
-		unsafe fn $func() {
+		unsafe extern "C" fn $func() {
 			core::arch::asm!(
 				"cli",
 				"push 0",

@@ -175,7 +175,7 @@ unsafe fn do_signal(task: &mut Task) {
 
 #[naked]
 #[no_mangle]
-unsafe fn swap_task() -> ! {
+unsafe extern "C" fn swap_task() -> ! {
 	core::arch::asm!(
 		"pusha",
 
@@ -239,7 +239,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 }
 
 #[no_mangle]
-unsafe fn find_task() -> ! {
+unsafe extern "C" fn find_task() -> ! {
 	_cli();
 	loop {
 		let new_task: &mut Task = Task::get_running_task();

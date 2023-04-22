@@ -11,7 +11,7 @@ const STACK_SIZE: usize = 8192;
 
 /// Multiboot 1.6 Header
 #[repr(packed)]
-struct multiboot_header {
+struct MultibootHeader {
 	magic:         u32,
 	architecture:  u32,
 	header_length: u32,
@@ -26,15 +26,15 @@ const MULTIBOOT_MAGIC: u32 = 0xe85250d6;
 /// Arch for multiboot: protected mode
 const ARCH: u32 = 0;
 
-impl multiboot_header {
+impl MultibootHeader {
 	const fn new() -> Self {
 		Self {
 			magic:         MULTIBOOT_MAGIC,
 			architecture:  ARCH,
-			header_length: size_of::<multiboot_header>() as u32,
+			header_length: size_of::<MultibootHeader>() as u32,
 			checksum:      (u32::MAX
 				- (MULTIBOOT_MAGIC
-					+ ARCH + size_of::<multiboot_header>() as u32))
+					+ ARCH + size_of::<MultibootHeader>() as u32))
 				+ 1,
 			r#type:        0,
 			flags:         0,
@@ -46,7 +46,7 @@ impl multiboot_header {
 #[no_mangle]
 #[link_section = ".multiboot_header"]
 /// multiboot header to define entrypoint inside linker script
-static header: multiboot_header = multiboot_header::new();
+static header: MultibootHeader = MultibootHeader::new();
 
 #[no_mangle]
 #[link_section = ".boot"]

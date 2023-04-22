@@ -30,7 +30,7 @@ pub const USER_HEAP_ADDR: VirtAddr = 0x0800000;
 pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
 #[naked]
-unsafe fn jump_usermode(func: VirtAddr) -> ! {
+unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 	core::arch::asm!(
 		"mov ebx, DWORD PTR[esp + 4]",
 		"mov ax, (5 * 8) | 3", // ring 3 data with bottom 2 bits set for ring 3
