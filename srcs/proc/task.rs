@@ -288,7 +288,7 @@ static mut task_stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
 
 macro_rules! use_task_stack {
 	() => {
-		core::arch::asm!("mov esp, offset task_stack + {}", const STACK_SIZE);
+		core::arch::asm!("mov esp, offset task_stack + {}", const STACK_SIZE - 0x100);
 	};
 }
 
