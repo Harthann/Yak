@@ -227,9 +227,19 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 use crate::pic::end_of_interrupts;
 use crate::proc::change_kernel_stack;
 
+#[naked]
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
-	use_task_stack!();
+	core::arch::asm!(
+		"mov esp, offset task_stack + {}",
+		"call find_task",
+		const STACK_SIZE,
+		options(noreturn)
+	);
+}
+
+#[no_mangle]
+unsafe fn find_task() -> ! {
 	_cli();
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
@@ -286,12 +296,6 @@ const STACK_SIZE: usize = 0x1000;
 /// Task stack
 static mut task_stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
 
-macro_rules! use_task_stack {
-	() => {
-		core::arch::asm!("mov esp, offset task_stack + {}", const STACK_SIZE);
-	};
-}
-
 macro_rules! load_cr3 {
 	($cr3: expr) => {
 		core::arch::asm!(
@@ -314,4 +318,4 @@ macro_rules! get_segments {
 	}
 }
 
-use {get_segments, load_cr3, use_task_stack};
+use {get_segments, load_cr3};
