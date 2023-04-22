@@ -1,7 +1,7 @@
 //! GDT and TSS setup/helpers
 
-use crate::kprintln;
-use core::fmt;
+
+
 pub mod tss;
 pub use tss::{init_tss, Tss};
 

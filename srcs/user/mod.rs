@@ -4,19 +4,19 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::wrappers::{_cli, _sti};
 
-use crate::memory::paging::{PAGE_PRESENT, PAGE_USER, PAGE_WRITABLE};
-use crate::memory::{PhysAddr, VirtAddr};
+use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
+use crate::memory::{VirtAddr};
 
 use crate::proc::process::{Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
-use crate::memory::paging::page_directory;
+
 use crate::memory::paging::page_directory::PageDirectory;
-use crate::memory::paging::page_table::PageTable;
+
 
 use crate::boxed::Box;
 
-use crate::KSTACK_ADDR;
+
 
 #[cfg(test)]
 pub mod test;

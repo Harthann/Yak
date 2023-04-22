@@ -5,12 +5,12 @@ use crate::memory::paging::page_directory;
 use crate::memory::{Heap, MemoryZone, Stack, VirtAddr};
 use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
-use crate::proc::wrapper_fn;
+
 use crate::utils::queue::Queue;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
 
-use crate::memory::paging::{PAGE_GLOBAL, PAGE_WRITABLE};
+use crate::memory::paging::{PAGE_WRITABLE};
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
 pub static mut TASKLIST: Queue<Task> = Queue::new();
@@ -54,7 +54,7 @@ impl Task {
 			page_directory.claim_index_page_table(
 				KSTACK_ADDR as usize >> 22,
 				PAGE_WRITABLE
-			);
+			).expect("Could not claim kernel stack page");
 			change_kernel_stack(&MASTER_PROCESS);
 			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
