@@ -3,10 +3,7 @@ use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
 
-
 use crate::wrappers::{_cli, _sti};
-
-
 
 use crate::boxed::Box;
 

@@ -1,7 +1,5 @@
 //! GDT and TSS setup/helpers
 
-
-
 pub mod tss;
 pub use tss::{init_tss, Tss};
 

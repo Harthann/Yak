@@ -1,6 +1,6 @@
 //! Setup interrupts and exception handler
 
-use crate::proc::process::{Process};
+use crate::proc::process::Process;
 use crate::proc::task::Task;
 use crate::syscalls::syscall_handler;
 
