@@ -130,7 +130,7 @@ use crate::interrupts::init_idt;
 
 use proc::task::Task;
 
-use crate::gdt::{gdt_desc, update_gdtr};
+use crate::gdt::{gdt_desc, GDTR};
 // use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 use main::kmain;
 pub use pic::handlers::JIFFIES;
@@ -149,7 +149,7 @@ pub extern "C" fn kinit() {
 
 	// Update gdtr with higher half kernel gdt addr
 	unsafe {
-		update_gdtr();
+		GDTR::update();
 		reload_gdt!();
 		init_idt();
 	}

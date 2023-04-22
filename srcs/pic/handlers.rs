@@ -20,7 +20,7 @@ extern "C" {
 
 #[naked]
 #[no_mangle]
-unsafe extern "C" fn irq_0() {
+pub unsafe fn irq_0() {
 	#[cfg(not(feature = "multitasking"))]
 	core::arch::asm!(
 		"

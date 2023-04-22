@@ -17,8 +17,10 @@ const WRITABLE: u8 = 0b00000010;
 const READABLE: u8 = 0b00000010;
 const NOT_FOR_CPU: u8 = 0b00000001;
 
+type Gdt = [SegmentDescriptor; 8];
+
 #[link_section = ".gdt"]
-static mut GDT: [SegmentDescriptor; 8] = [
+static mut GDT: Gdt = [
 	// null
 	SegmentDescriptor {
 		limit:			0x0,
@@ -89,18 +91,20 @@ static mut GDT: [SegmentDescriptor; 8] = [
 #[no_mangle]
 pub static mut gdt_desc: GDTR = GDTR {
 	size: unsafe { core::mem::size_of_val(&GDT) as u16 },
-	offset: unsafe { core::ptr::addr_of!(GDT) }
+	offset: unsafe { &GDT }
 };
 
 #[repr(packed)]
 pub struct GDTR {
 	size:   u16,
-	offset: *const [SegmentDescriptor; 8]
+	offset: *const Gdt
 }
 
-pub unsafe fn update_gdtr() {
-	let gdtr: &mut GDTR = &mut *(((&gdt_desc as *const _) as usize + KERNEL_BASE) as *mut _);
-	gdtr.offset = ((&GDT as *const _) as usize + KERNEL_BASE) as _;
+impl GDTR {
+	pub unsafe fn update() {
+		let gdtr: &mut GDTR = (&mut gdt_desc as *mut GDTR).cast::<u8>().add(KERNEL_BASE).cast::<GDTR>().as_mut().unwrap();
+		gdtr.offset = (&GDT as *const Gdt).cast::<u8>().add(KERNEL_BASE).cast::<Gdt>();
+	}
 }
 
 #[repr(packed)]
@@ -153,7 +157,7 @@ impl SegmentDescriptor {
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor {
 	unsafe {
 		let segments: *mut SegmentDescriptor =
-			((&GDT as *const _) as usize + KERNEL_BASE) as *mut _;
+			(&mut GDT as *mut Gdt).cast::<u8>().add(KERNEL_BASE).cast::<SegmentDescriptor>();
 		&mut *(segments.add(index))
 	}
 }

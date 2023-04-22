@@ -5,7 +5,7 @@ RUN apk update
 RUN apk add bash curl
 
 # Install compiler packages
-RUN apk add nasm gcc gdb
+RUN apk add gcc gdb
 
 # Create needed i386 ld and ar
 RUN echo -e '#!/bin/sh\nld -m elf_i386 $@' > /usr/bin/i386-elf-ld

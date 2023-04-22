@@ -4,6 +4,9 @@ use crate::proc::process::{Process, Status};
 use crate::proc::task::{Task};
 use crate::syscalls::syscall_handler;
 
+mod idt;
+pub mod int;
+
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
 const IDT_SIZE: usize = 48;
 const IDT_MAX_DESCRIPTORS: usize = 256;
