@@ -5,6 +5,7 @@
 #![feature(nonnull_slice_from_raw_parts)]
 #![feature(rustc_attrs)]
 #![feature(ptr_internals)]
+#![feature(const_size_of_val)]
 #![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]

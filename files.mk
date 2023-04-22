@@ -46,8 +46,7 @@ INCLUDES	=		boot.h \
 					idt.h \
 					task.h
 
-BOOTSRCS		=	gdt.s \
-					idt.s \
+BOOTSRCS		=	idt.s \
 					int.s
 
 BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)

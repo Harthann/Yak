@@ -7,22 +7,103 @@ pub use tss::{init_tss, Tss};
 
 use crate::boot::KERNEL_BASE;
 
-extern "C" {
-	pub fn gdt_start();
-	pub fn gdt_desc();
-}
+const PRESENT: u8 = 0b10000000;
+const USER: u8 = 0b01100000;
+const DATA: u8 = 0b00010000;
+const CODE: u8 = 0b00011000;
+const GROWS_UP: u8 = 0b00000000;
+const GROWS_DOWN: u8 = 0b00000100;
+const WRITABLE: u8 = 0b00000010;
+const READABLE: u8 = 0b00000010;
+const NOT_FOR_CPU: u8 = 0b00000001;
+
+#[link_section = ".gdt"]
+static mut GDT: [SegmentDescriptor; 8] = [
+	// null
+	SegmentDescriptor {
+		limit:			0x0,
+		base:			[0x0, 0x0, 0x0],
+		access:			0x0,
+		limit_flags:	0b00000000,
+		base_end:		0x0,
+	},
+	// kcode
+	SegmentDescriptor {
+		limit:			0xffff,
+		base:			[0x0, 0x0, 0x0],
+		access:			PRESENT | CODE | READABLE,
+		limit_flags:	0b11001111,
+		base_end:		0x0,
+	},
+	// kdata
+	SegmentDescriptor {
+		limit:			0xffff,
+		base:			[0x0, 0x0, 0x0],
+		access:			PRESENT | DATA | GROWS_UP | WRITABLE,
+		limit_flags:	0b11001111,
+		base_end:		0x0,
+	},
+	// kstack
+	SegmentDescriptor {
+		limit:			0x0,
+		base:			[0x0, 0x0, 0x0],
+		access:			PRESENT | DATA | GROWS_DOWN | WRITABLE | NOT_FOR_CPU,
+		limit_flags:	0b11000000,
+		base_end:		0x0,
+	},
+	// ucode
+	SegmentDescriptor {
+		limit:			0xffff,
+		base:			[0x0, 0x0, 0x0],
+		access:			PRESENT | USER | CODE | READABLE,
+		limit_flags:	0b11001111,
+		base_end:		0x0,
+	},
+	// udata
+	SegmentDescriptor {
+		limit:			0xffff,
+		base:			[0x0, 0x0, 0x0],
+		access:			PRESENT | USER | DATA | GROWS_UP | WRITABLE,
+		limit_flags:	0b11001111,
+		base_end:		0x0,
+	},
+	// ustack
+	SegmentDescriptor {
+		limit:			0x0,
+		base:			[0x0, 0x0, 0x0],
+		access:			PRESENT | USER | DATA | GROWS_DOWN | WRITABLE | NOT_FOR_CPU,
+		limit_flags:	0b11000000,
+		base_end:		0x0,
+	},
+	// task state
+	SegmentDescriptor {
+		limit:			0x0,
+		base:			[0x0, 0x0, 0x0],
+		access:			0b11101001,
+		limit_flags:	0b00000000,
+		base_end:		0x0,
+	},
+];
+
+#[link_section = ".gdt"]
+#[no_mangle]
+pub static mut gdt_desc: GDTR = GDTR {
+	size: unsafe { core::mem::size_of_val(&GDT) as u16 },
+	offset: unsafe { core::ptr::addr_of!(GDT) }
+};
 
 #[repr(packed)]
 pub struct GDTR {
 	size:   u16,
-	offset: u32
+	offset: *const [SegmentDescriptor; 8]
 }
 
 pub unsafe fn update_gdtr() {
-	let gdtr: &mut GDTR = &mut *((gdt_desc as usize + KERNEL_BASE) as *mut _);
-	gdtr.offset = (gdt_start as usize + KERNEL_BASE) as u32;
+	let gdtr: &mut GDTR = &mut *(((&gdt_desc as *const _) as usize + KERNEL_BASE) as *mut _);
+	gdtr.offset = ((&GDT as *const _) as usize + KERNEL_BASE) as _;
 }
 
+#[repr(packed)]
 pub struct SegmentDescriptor {
 	limit:       u16,
 	base:        [u8; 3],
@@ -68,41 +149,13 @@ impl SegmentDescriptor {
 	}
 }
 
-impl fmt::Display for SegmentDescriptor {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(
-			f,
-			"base: {:#010x}
-limit: {:#06x}
-access: {:#010b}
-limit_flags: {:#06b}",
-			self.get_base(),
-			self.limit,
-			self.access,
-			self.limit_flags
-		)
-	}
-}
-
-#[allow(dead_code)]
-pub fn print_gdt() {
-	let mut segments: *mut SegmentDescriptor =
-		(gdt_start as usize + KERNEL_BASE) as *mut _;
-	let mut id = 0;
-	let end = (gdt_desc as usize + KERNEL_BASE) as *mut SegmentDescriptor;
-	while segments < end {
-		let segment = unsafe { &*segments };
-		kprintln!("\nSegment {}:\n{}", id, segment);
-		segments = unsafe { segments.add(1) };
-		id += 1;
-	}
-}
-
 #[allow(dead_code)]
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor {
-	let segments: *mut SegmentDescriptor =
-		(gdt_start as usize + KERNEL_BASE) as *mut _;
-	unsafe { &mut *(segments.add(index)) }
+	unsafe {
+		let segments: *mut SegmentDescriptor =
+			((&GDT as *const _) as usize + KERNEL_BASE) as *mut _;
+		&mut *(segments.add(index))
+	}
 }
 
 #[allow(dead_code)]
@@ -132,7 +185,7 @@ macro_rules! reload_cs {
 #[macro_export]
 macro_rules! reload_gdt {
 	() => (
-		core::arch::asm!("lgdt [{}]", in(reg) ($crate::gdt_desc as usize + $crate::boot::KERNEL_BASE));
+		core::arch::asm!("lgdt [{}]", in(reg) ((&$crate::gdt_desc as *const _) as usize + $crate::boot::KERNEL_BASE));
 		core::arch::asm!(
 			"ljmp $0x08, $2f",
 			"2:",
