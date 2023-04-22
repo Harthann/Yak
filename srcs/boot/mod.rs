@@ -72,7 +72,7 @@ unsafe fn _start() {
 	enable_paging!();
 	core::arch::asm!(
 		"mov eax, offset gdt_desc",
-		"lgdt [eax]", // load gdt
+		"lgdt [eax]",                   // load gdt
 		"jmp 0x08, offset high_kernel", // long jump to higher half kernel
 		options(noreturn)
 	);
@@ -169,4 +169,4 @@ macro_rules! enable_paging {
 	};
 }
 
-use {setup_page_directory, setup_page_table, enable_paging};
+use {enable_paging, setup_page_directory, setup_page_table};

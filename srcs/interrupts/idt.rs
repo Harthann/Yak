@@ -95,7 +95,7 @@ static isr_stub_table: [unsafe fn(); 48] = [
 	isr_stub_44,
 	isr_stub_45,
 	isr_stub_46,
-	isr_stub_47,
+	isr_stub_47
 ];
 
 isr_no_err_stub!(isr_stub_0, 0);

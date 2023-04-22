@@ -255,7 +255,7 @@ pub unsafe fn int(nb: u8) {
 		252 => int_no!(252),
 		253 => int_no!(253),
 		254 => int_no!(254),
-		255 => int_no!(255),
+		255 => int_no!(255)
 	}
 }
 

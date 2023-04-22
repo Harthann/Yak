@@ -224,8 +224,8 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_rst();
 }
 
-use crate::proc::change_kernel_stack;
 use crate::pic::end_of_interrupts;
+use crate::proc::change_kernel_stack;
 
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
@@ -257,7 +257,8 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	get_segments!(regs.ds);
 	end_of_interrupts(0x20);
-	if regs.int_no != u32::MAX { // new task
+	if regs.int_no != u32::MAX {
+		// new task
 		core::arch::asm!(
 			"mov esp, {esp}",
 			"push {eip}",
@@ -313,4 +314,4 @@ macro_rules! get_segments {
 	}
 }
 
-use {use_task_stack, load_cr3, get_segments};
+use {get_segments, load_cr3, use_task_stack};

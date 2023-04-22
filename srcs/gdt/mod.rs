@@ -23,74 +23,77 @@ type Gdt = [SegmentDescriptor; 8];
 static mut GDT: Gdt = [
 	// null
 	SegmentDescriptor {
-		limit:			0x0,
-		base:			[0x0, 0x0, 0x0],
-		access:			0x0,
-		limit_flags:	0b00000000,
-		base_end:		0x0,
+		limit:       0x0,
+		base:        [0x0, 0x0, 0x0],
+		access:      0x0,
+		limit_flags: 0b00000000,
+		base_end:    0x0
 	},
 	// kcode
 	SegmentDescriptor {
-		limit:			0xffff,
-		base:			[0x0, 0x0, 0x0],
-		access:			PRESENT | CODE | READABLE,
-		limit_flags:	0b11001111,
-		base_end:		0x0,
+		limit:       0xffff,
+		base:        [0x0, 0x0, 0x0],
+		access:      PRESENT | CODE | READABLE,
+		limit_flags: 0b11001111,
+		base_end:    0x0
 	},
 	// kdata
 	SegmentDescriptor {
-		limit:			0xffff,
-		base:			[0x0, 0x0, 0x0],
-		access:			PRESENT | DATA | GROWS_UP | WRITABLE,
-		limit_flags:	0b11001111,
-		base_end:		0x0,
+		limit:       0xffff,
+		base:        [0x0, 0x0, 0x0],
+		access:      PRESENT | DATA | GROWS_UP | WRITABLE,
+		limit_flags: 0b11001111,
+		base_end:    0x0
 	},
 	// kstack
 	SegmentDescriptor {
-		limit:			0x0,
-		base:			[0x0, 0x0, 0x0],
-		access:			PRESENT | DATA | GROWS_DOWN | WRITABLE | NOT_FOR_CPU,
-		limit_flags:	0b11000000,
-		base_end:		0x0,
+		limit:       0x0,
+		base:        [0x0, 0x0, 0x0],
+		access:      PRESENT | DATA | GROWS_DOWN | WRITABLE | NOT_FOR_CPU,
+		limit_flags: 0b11000000,
+		base_end:    0x0
 	},
 	// ucode
 	SegmentDescriptor {
-		limit:			0xffff,
-		base:			[0x0, 0x0, 0x0],
-		access:			PRESENT | USER | CODE | READABLE,
-		limit_flags:	0b11001111,
-		base_end:		0x0,
+		limit:       0xffff,
+		base:        [0x0, 0x0, 0x0],
+		access:      PRESENT | USER | CODE | READABLE,
+		limit_flags: 0b11001111,
+		base_end:    0x0
 	},
 	// udata
 	SegmentDescriptor {
-		limit:			0xffff,
-		base:			[0x0, 0x0, 0x0],
-		access:			PRESENT | USER | DATA | GROWS_UP | WRITABLE,
-		limit_flags:	0b11001111,
-		base_end:		0x0,
+		limit:       0xffff,
+		base:        [0x0, 0x0, 0x0],
+		access:      PRESENT | USER | DATA | GROWS_UP | WRITABLE,
+		limit_flags: 0b11001111,
+		base_end:    0x0
 	},
 	// ustack
 	SegmentDescriptor {
-		limit:			0x0,
-		base:			[0x0, 0x0, 0x0],
-		access:			PRESENT | USER | DATA | GROWS_DOWN | WRITABLE | NOT_FOR_CPU,
-		limit_flags:	0b11000000,
-		base_end:		0x0,
+		limit:       0x0,
+		base:        [0x0, 0x0, 0x0],
+		access:      PRESENT
+			| USER | DATA
+			| GROWS_DOWN | WRITABLE
+			| NOT_FOR_CPU,
+		limit_flags: 0b11000000,
+		base_end:    0x0
 	},
 	// task state
 	SegmentDescriptor {
-		limit:			0x0,
-		base:			[0x0, 0x0, 0x0],
-		access:			0b11101001,
-		limit_flags:	0b00000000,
-		base_end:		0x0,
-	},
+		limit:       0x0,
+		base:        [0x0, 0x0, 0x0],
+		access:      0b11101001,
+		limit_flags: 0b00000000,
+		base_end:    0x0
+	}
 ];
 
 #[link_section = ".gdt"]
 #[no_mangle]
 pub static mut gdt_desc: GDTR = GDTR {
-	size: unsafe { core::mem::size_of_val(&GDT) as u16 },
+	size:   unsafe { core::mem::size_of_val(&GDT) as u16 },
 	offset: unsafe { &GDT }
 };
 
@@ -102,8 +105,16 @@ pub struct GDTR {
 
 impl GDTR {
 	pub unsafe fn update() {
-		let gdtr: &mut GDTR = (&mut gdt_desc as *mut GDTR).cast::<u8>().add(KERNEL_BASE).cast::<GDTR>().as_mut().unwrap();
-		gdtr.offset = (&GDT as *const Gdt).cast::<u8>().add(KERNEL_BASE).cast::<Gdt>();
+		let gdtr: &mut GDTR = (&mut gdt_desc as *mut GDTR)
+			.cast::<u8>()
+			.add(KERNEL_BASE)
+			.cast::<GDTR>()
+			.as_mut()
+			.unwrap();
+		gdtr.offset = (&GDT as *const Gdt)
+			.cast::<u8>()
+			.add(KERNEL_BASE)
+			.cast::<Gdt>();
 	}
 }
 
@@ -156,8 +167,10 @@ impl SegmentDescriptor {
 #[allow(dead_code)]
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor {
 	unsafe {
-		let segments: *mut SegmentDescriptor =
-			(&mut GDT as *mut Gdt).cast::<u8>().add(KERNEL_BASE).cast::<SegmentDescriptor>();
+		let segments: *mut SegmentDescriptor = (&mut GDT as *mut Gdt)
+			.cast::<u8>()
+			.add(KERNEL_BASE)
+			.cast::<SegmentDescriptor>();
 		&mut *(segments.add(index))
 	}
 }
@@ -174,7 +187,7 @@ pub fn set_segment(index: usize, base: u32, limit: u32, flag: u8, access: u8) {
 
 #[macro_export]
 macro_rules! reload_cs {
-	() => (
+	() => {
 		core::arch::asm!(
 			"mov ax, 0x10",
 			"mov ds, ax",
@@ -183,7 +196,7 @@ macro_rules! reload_cs {
 			"mov gs, ax",
 			"mov ss, ax",
 		);
-	);
+	};
 }
 
 #[macro_export]
@@ -203,10 +216,7 @@ macro_rules! reload_gdt {
 macro_rules! reload_tss {
 	() => {
 		unsafe {
-			core::arch::asm!(
-				"mov ax, 0x38",
-				"ltr ax"
-			);
+			core::arch::asm!("mov ax, 0x38", "ltr ax");
 		}
 	};
 }

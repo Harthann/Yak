@@ -1,7 +1,7 @@
 //! Setup interrupts and exception handler
 
 use crate::proc::process::{Process, Status};
-use crate::proc::task::{Task};
+use crate::proc::task::Task;
 use crate::syscalls::syscall_handler;
 
 mod idt;
