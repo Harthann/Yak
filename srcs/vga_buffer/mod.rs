@@ -27,12 +27,12 @@ impl Default for Screen {
 			cursor:  Cursor::new(
 				0,
 				0,
-				ColorCode::new(Color::White, Color::Black)
+				ColorCode::default()
 			),
-			buffer:  [[ScreenChar {
+			buffer:  [ScreenChar {
 				ascii_code: 0,
-				color_code: ColorCode::new(Color::White, Color::Black)
-			}; BUFFER_WIDTH]; BUFFER_HEIGHT],
+				color_code: ColorCode::default()
+			}; BUFFER_WIDTH * BUFFER_HEIGHT],
 			command: Command::new()
 		}
 	}
@@ -44,27 +44,28 @@ impl Screen {
 			cursor:  Cursor::new(
 				0,
 				0,
-				ColorCode::new(Color::White, Color::Black)
+				ColorCode::new_default()
 			),
-			buffer:  [[ScreenChar {
+			buffer:  [ScreenChar {
 				ascii_code: 0,
-				color_code: ColorCode::new(Color::White, Color::Black)
-			}; BUFFER_WIDTH]; BUFFER_HEIGHT],
+				color_code: ColorCode::new_default()
+			}; BUFFER_WIDTH * BUFFER_HEIGHT],
 			command: Command::new()
 		}
 	}
 
 	pub fn reset(&mut self) {
-		for i in 0..BUFFER_HEIGHT {
-			for j in 0..BUFFER_WIDTH {
-				self.buffer[i][j] = ScreenChar {
-					ascii_code: b' ',
-					color_code: ColorCode::new(Color::White, Color::Black)
-				};
-			}
-		}
-		self.cursor.set_pos(0, 0);
-		self.command.clear();
+        todo!()
+		//for i in 0..BUFFER_HEIGHT {
+		//	for j in 0..BUFFER_WIDTH {
+		//		self.buffer[i][j] = ScreenChar {
+		//			ascii_code: b' ',
+		//			color_code: ColorCode::default()
+		//		};
+		//	}
+		//}
+		//self.cursor.set_pos(0, 0);
+		//self.command.clear();
 	}
 
 	pub fn get_command(&mut self) -> &mut Command {
@@ -78,21 +79,27 @@ struct ScreenChar {
 	ascii_code: u8,
 	color_code: ColorCode
 }
+impl Default for ScreenChar {
+    fn default() -> Self {
+        Self { ascii_code: b' ', color_code: ColorCode::default() }
+    }
+}
 
 const VGABUFF_OFFSET: usize = 0xc00b8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
+const VGA_LEN: usize = BUFFER_WIDTH * BUFFER_HEIGHT;
 
-type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
+type Buffer = [ScreenChar; BUFFER_WIDTH * BUFFER_HEIGHT];
 
 #[link_section = ".vga_buffer"]
-static mut VGA_BUFFER: Buffer = [[ScreenChar {
+static mut VGA_BUFFER: Buffer = [ScreenChar {
 	ascii_code: 0x20,
 	color_code: ColorCode::new(Color::White, Color::Black)
-}; BUFFER_WIDTH]; BUFFER_HEIGHT];
+}; BUFFER_WIDTH * BUFFER_HEIGHT];
 pub static WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
 	screen_index: 0,
-	cursor:       Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
+	cursor:       Cursor::new(0, 0, ColorCode::new_default()),
 	vga_buffer:   unsafe { &mut VGA_BUFFER }
 });
 
@@ -110,64 +117,68 @@ impl Writer {
 		// Writing each byte to qemu serial port for external log
 		io::outb(0x3f8, byte);
 		match byte {
-			b'\n' => self.new_line(),
+			b'\n' => self.scroll_up(),
 			byte => {
-				let mut code = byte;
-				let mut pos: (usize, usize) = self.cursor.get_pos();
-				if byte == 0x08 {
-					if pos.0 != 0 {
-						pos.0 -= 1;
-					} else if pos.1 != 0 {
-						pos.1 -= 1;
-						pos.0 = 79;
-					}
-					code = 0x0;
-				} else if pos.0 >= BUFFER_WIDTH {
-					self.new_line();
-					pos = self.cursor.get_pos();
-				}
-				let screenchar = ScreenChar {
-					ascii_code: code,
+                let screenchar = ScreenChar {
+					ascii_code: byte,
 					color_code: self.cursor.get_color_code()
 				};
-				self.vga_buffer[pos.1][pos.0] = screenchar;
-				if byte != 0x08 {
-					pos.0 += 1;
-				}
-				self.cursor.set_pos(pos.0, pos.1);
-				self.cursor.update();
+				
+                if self.cursor.get_pos() >= VGA_LEN {
+                    self.scroll_up();
+                }
+
+                self.vga_buffer[self.cursor.get_pos()] = screenchar;
+                self.move_cursor(1);
 			}
 		}
 	}
 
-	// Move CURSOR one line lower and move all lines if needed
-	fn new_line(&mut self) {
-		let pos: (usize, usize) = self.cursor.get_pos();
-		let mut y = pos.1;
-		if pos.1 != BUFFER_HEIGHT - 1 {
-			y += 1;
+    pub fn del_byte(&mut self) {
+        let color = self.cursor.get_color_code();
+		self.move_cursor(-1);
+        self.vga_buffer[self.cursor.get_pos()] = ScreenChar {
+            ascii_code: b' ',
+            color_code: color
+        };
+    }
+
+    pub fn move_cursor(&mut self, x: i32) {
+        let mut pos: i32 = self.cursor.get_pos() as i32;
+        // It is safe to convert pos to i32 since it will be at most 2000
+        // let mut real_pos: i32 = (pos.1 * BUFFER_WIDTH + pos.0) as i32;
+        pos += x;
+        pos = pos.max(0);
+        pos = pos.min(VGA_LEN as i32);
+        // Convertion to usize is safe since pos is bound between 0 and VGA_LEN
+        self.cursor.set_pos(pos as usize);
+        self.cursor.update();
+    }
+
+	/// Move CURSOR one line lower and move all lines if needed
+	fn scroll_up(&mut self) {
+        let mut movement: i32 = (self.cursor.get_pos() % BUFFER_WIDTH) as i32;
+		if self.cursor.get_pos() < VGA_LEN - BUFFER_WIDTH {
+			movement = BUFFER_WIDTH as i32 - movement;
 		} else {
-			for row in 1..BUFFER_HEIGHT {
-				self.vga_buffer[row - 1] = self.vga_buffer[row];
-			}
-			self.clear_row(BUFFER_HEIGHT - 1);
+            if self.cursor.get_pos() / BUFFER_WIDTH == 25 {
+                movement = BUFFER_WIDTH as i32;
+            }
+            self.vga_buffer.copy_within(BUFFER_WIDTH..VGA_LEN, 0);
+            self.vga_buffer[VGA_LEN-BUFFER_WIDTH..VGA_LEN].fill(ScreenChar::default());
+            movement = -movement;
 		}
-		self.cursor.set_pos(0, y);
+        self.move_cursor(movement);
 	}
 
-	// Simply replace all row by spaces to visualy clear it
+	/// Simply replace all row by spaces to visualy clear it
 	pub fn clear_row(&mut self, row: usize) {
-		for i in 0..BUFFER_WIDTH {
-			let screenchar = ScreenChar {
-				ascii_code: 0x20,
-				color_code: ColorCode::new(Color::White, Color::Black)
-			};
-			self.vga_buffer[row][i] = screenchar;
-		}
+        self.vga_buffer[row * BUFFER_WIDTH..(row + 1) * BUFFER_WIDTH]
+            .fill(ScreenChar::default());
 	}
 
 	pub fn clear(&mut self) {
-		todo!();
+        self.vga_buffer.fill(ScreenChar::default());
 	}
 
 	// Write string to vga using write_byte functions if printable, else print a square
@@ -177,6 +188,7 @@ impl Writer {
 			match byte {
 				// printable ASCII byte or newline
 				0x20..=0x7e | b'\n' => self.write_byte(byte),
+                0x08 => self.del_byte(),
 				// not part of printable ASCII range
 				_ => self.write_byte(0xfe)
 			}
@@ -198,13 +210,13 @@ impl Writer {
 
 		self.cursor.update();
 		self.cursor.enable();
-		if self.cursor.get_pos() == (0, 0) {
+		if self.cursor.get_pos() == 0 {
 			self.write_string("$> ");
 		}
 	}
 
 	pub fn get_screen(&mut self) -> usize {
-		self.screen_index
+        todo!();
 	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
@@ -240,13 +252,14 @@ macro_rules! kprintln {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
+    unsafe { crate::dprintln!("{}", info); }
 	WRITER
 		.lock()
 		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("{}", info);
 	WRITER
 		.lock()
-		.chcolor(ColorCode::new(Color::White, Color::Black));
+		.chcolor(ColorCode::default());
 	loop {}
 }
 
@@ -263,7 +276,7 @@ fn panic(info: &PanicInfo) -> ! {
 	unsafe {
 		WRITER
 			.lock()
-			.chcolor(ColorCode::new(Color::White, Color::Black))
+			.chcolor(ColorCode::default())
 	};
 	io::outb(0xf4, 0x11);
 	loop {}

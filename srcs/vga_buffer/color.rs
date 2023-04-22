@@ -27,4 +27,15 @@ impl ColorCode {
 	pub const fn new(foreground: Color, background: Color) -> ColorCode {
 		ColorCode((background as u8) << 4 | (foreground as u8))
 	}
+    pub const fn new_default() -> Self {
+        Self((Color::Black as u8) << 4 | (Color::White as u8))
+    }
+}
+
+impl Default for ColorCode {
+    fn default() -> Self {
+        Self (
+            (Color::Black as u8) << 4 | (Color::White as u8)
+        )
+    }
 }

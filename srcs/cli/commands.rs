@@ -263,17 +263,19 @@ fn interrupt(command: Vec<String>) {
 
 #[derive(Debug, Clone)]
 pub struct Command {
-	pub command: String
+	pub command: String,
+    pub index: usize
 }
 
 impl Command {
 	pub const fn new() -> Command {
-		Command { command: String::new() }
+		Command { command: String::new(), index: 0 }
 	}
 
-	fn append(&mut self, x: char) -> Result<(), ()> {
+	fn insert(&mut self, x: char) -> Result<(), ()> {
 		if self.command.len() < MAX_CMD_LENGTH {
-			self.command.push(x);
+			self.command.insert(self.index, x);
+            self.index += 1;
 			return Ok(());
 		} else {
 			Err(())
@@ -286,6 +288,7 @@ impl Command {
 
 	pub fn clear(&mut self) {
 		self.command.clear();
+        self.index = 0;
 	}
 
 	pub fn is_known(&self) -> Option<usize> {
@@ -302,17 +305,22 @@ impl Command {
 
 	pub fn handle(&mut self, charcode: char) {
 		if charcode == '\x08' {
-			if self.command.len() != 0 {
-				crate::vga_buffer::WRITER.lock().write_byte(0x08);
+			if self.command.len() != 0 && self.index != 0 {
+			    self.command.remove(self.index - 1);
+                let tmp: &str = &self.command[self.index - 1..self.command.len()];
+                self.index -= 1;
+                crate::kprint!("{delbyte}{string} {delbyte}", string = tmp, delbyte = '\x08');
+				crate::vga_buffer::WRITER.lock().move_cursor(-(tmp.len() as i32));
 			}
-			self.command.pop();
 		} else if charcode >= ' ' && charcode <= '~' {
-			crate::kprint!("{}", charcode);
-			if self.append(charcode).is_err() {
+			if self.insert(charcode).is_err() {
 				kprintln!("Can't handle longer command, clearing buffer");
 				kprint!("$> ");
 				self.clear();
 			}
+            let tmp: &str = &self.command[self.index - 1..self.command.len()];
+			crate::kprint!("{}", tmp);
+			crate::vga_buffer::WRITER.lock().move_cursor(-(tmp.len() as i32) + 1);
 		} else if charcode == '\n' {
 			crate::kprint!("{}", charcode);
 			match self.is_known() {

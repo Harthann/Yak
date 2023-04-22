@@ -45,6 +45,26 @@ impl TermEmu {
 						.handle(value);
 				}
 			},
+            Input::Tcaps(value) => {
+                match value {
+                    Termcaps::ArrowLEFT => {
+                        if self.screens[self.current_screen as usize].get_command().index != 0 {
+                            self.screens[self.current_screen as usize]
+                                .get_command().index -= 1;
+                            WRITER.lock().move_cursor(-1);
+                        }
+                    },
+                    Termcaps::ArrowRIGHT => {
+                        if self.screens[self.current_screen as usize].get_command().index != self.screens[self.current_screen as usize].get_command().len() {
+                            self.screens[self.current_screen as usize]
+                                .get_command().index += 1;
+                            WRITER.lock().move_cursor(1);
+                        }
+                    }
+                    _ => {}
+                }
+                unsafe { crate::dprintln!("{:?}", value); }
+            },
 			_ => {}
 		}
 	}
