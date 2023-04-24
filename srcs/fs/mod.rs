@@ -53,7 +53,7 @@ pub fn delete(name: &str) {
 	}
 	// If this is not done, SYSFILES will still have memory allocated
 	// And so test will fail for memory leaks
-	// This shrinrk can save memory as well on running kernel
+	// This shrink can save memory as well on running kernel
 	// But this can cost tiny bit of performance
 	if guard.is_empty() {
 		guard.shrink_to_fit();
