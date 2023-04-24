@@ -2,7 +2,6 @@
 
 use core::arch::asm;
 
-
 use crate::proc::process::{Pid, Process};
 use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;

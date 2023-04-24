@@ -102,11 +102,11 @@ use alloc::{boxed, string, vec};
 mod test;
 
 // Modules used function and variable
+use crate::main::kmain;
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
-use crate::main::kmain;
 
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 #[global_allocator]
