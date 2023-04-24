@@ -3,7 +3,7 @@
 extern crate proc_macro;
 use proc_macro::TokenStream;
 
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn;
 
 #[proc_macro_derive(Poc)]
@@ -22,6 +22,28 @@ pub fn poc_derive(input: TokenStream) -> TokenStream {
 }
 
 use proc_macro::*;
+#[proc_macro_attribute]
+pub fn test(_args: TokenStream, input: TokenStream) -> TokenStream {
+	let mut item: syn::Item = syn::parse(input).unwrap();
+	let fn_item = match &mut item {
+		syn::Item::Fn(fn_item) => fn_item,
+		_ => panic!("expected fn")
+	};
+	// Extract function name from ItemFn
+	let fn_name = fn_item.sig.ident.to_string();
+
+	// Create Block from code
+	let function_head = quote! { crate::kprint!("{:40}", #fn_name); };
+	fn_item
+		.block
+		.stmts
+		.insert(0, syn::parse(function_head.into()).unwrap());
+	let input: TokenStream = item.into_token_stream().into();
+
+	let mut gen: TokenStream = quote!(#[test_case]).into_token_stream().into();
+	gen.extend(input);
+	gen
+}
 
 #[proc_macro_attribute]
 pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
