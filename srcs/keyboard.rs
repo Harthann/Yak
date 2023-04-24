@@ -119,8 +119,8 @@ pub enum SpecialKeyFlag {
 	Caps       = 6
 }
 
+use crate::utils::flags::{FlagOp, Flags};
 use core::sync::atomic::{AtomicU8, Ordering};
-use crate::utils::flags::{Flags, FlagOp};
 static SPECIAL_KEYS: Flags<AtomicU8> = Flags::new(0);
 
 fn is_special(key: u8) -> bool {
@@ -169,15 +169,15 @@ fn keyboard_to_ascii(key: u8) -> Option<char> {
 
 	// If key is alphabetic, check if shift or caps are on
 	if charcode >= b'a' && charcode <= b'z' {
-        if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8) ||
-            SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8) ||
-            SPECIAL_KEYS.is_enable(SpecialKeyFlag::Caps as u8)
+		if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8)
+			|| SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8)
+			|| SPECIAL_KEYS.is_enable(SpecialKeyFlag::Caps as u8)
 		{
 			charcode = unsafe { KEYMAP.caps_keys[key as usize] as u8 };
 		}
 	// If key is not alphabetic, switch to cap_keys only if shift is pressed
-	} else if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8) ||
-            SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8)
+	} else if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8)
+		|| SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8)
 	{
 		{
 			charcode = unsafe { KEYMAP.caps_keys[key as usize] as u8 };

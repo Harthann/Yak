@@ -264,7 +264,7 @@ fn interrupt(command: Vec<String>) {
 #[derive(Debug, Clone)]
 pub struct Command {
 	pub command: String,
-    pub index: usize
+	pub index:   usize
 }
 
 impl Command {
@@ -275,7 +275,7 @@ impl Command {
 	fn insert(&mut self, x: char) -> Result<(), ()> {
 		if self.command.len() < MAX_CMD_LENGTH {
 			self.command.insert(self.index, x);
-            self.index += 1;
+			self.index += 1;
 			return Ok(());
 		} else {
 			Err(())
@@ -288,7 +288,7 @@ impl Command {
 
 	pub fn clear(&mut self) {
 		self.command.clear();
-        self.index = 0;
+		self.index = 0;
 	}
 
 	pub fn is_known(&self) -> Option<usize> {
@@ -306,11 +306,18 @@ impl Command {
 	pub fn handle(&mut self, charcode: char) {
 		if charcode == '\x08' {
 			if self.command.len() != 0 && self.index != 0 {
-			    self.command.remove(self.index - 1);
-                let tmp: &str = &self.command[self.index - 1..self.command.len()];
-                self.index -= 1;
-                crate::kprint!("{delbyte}{string} {delbyte}", string = tmp, delbyte = '\x08');
-				crate::vga_buffer::WRITER.lock().move_cursor(-(tmp.len() as i32));
+				self.command.remove(self.index - 1);
+				let tmp: &str =
+					&self.command[self.index - 1..self.command.len()];
+				self.index -= 1;
+				crate::kprint!(
+					"{delbyte}{string} {delbyte}",
+					string = tmp,
+					delbyte = '\x08'
+				);
+				crate::vga_buffer::WRITER
+					.lock()
+					.move_cursor(-(tmp.len() as i32));
 			}
 		} else if charcode >= ' ' && charcode <= '~' {
 			if self.insert(charcode).is_err() {
@@ -318,9 +325,11 @@ impl Command {
 				kprint!("$> ");
 				self.clear();
 			}
-            let tmp: &str = &self.command[self.index - 1..self.command.len()];
+			let tmp: &str = &self.command[self.index - 1..self.command.len()];
 			crate::kprint!("{}", tmp);
-			crate::vga_buffer::WRITER.lock().move_cursor(-(tmp.len() as i32) + 1);
+			crate::vga_buffer::WRITER
+				.lock()
+				.move_cursor(-(tmp.len() as i32) + 1);
 		} else if charcode == '\n' {
 			crate::kprint!("{}", charcode);
 			match self.is_known() {

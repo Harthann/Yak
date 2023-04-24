@@ -3,15 +3,13 @@ use crate::vga_buffer::{ColorCode, BUFFER_WIDTH};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Cursor {
-    pos:        usize,
+	pos:        usize,
 	color_code: ColorCode
 }
 
 impl Cursor {
 	pub const fn new(x: usize, y: usize, color_code: ColorCode) -> Cursor {
-		Cursor {
-            pos: y * BUFFER_WIDTH + x,
-            color_code: color_code }
+		Cursor { pos: y * BUFFER_WIDTH + x, color_code: color_code }
 	}
 
 	pub fn update(&self) {
@@ -45,10 +43,10 @@ impl Cursor {
 	}
 
 	pub fn get_pos(&self) -> usize {
-        self.pos
+		self.pos
 	}
 
 	pub fn set_pos(&mut self, x: usize) {
-        self.pos = x;
+		self.pos = x;
 	}
 }

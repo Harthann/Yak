@@ -24,11 +24,7 @@ unsafe impl Send for Screen {}
 impl Default for Screen {
 	fn default() -> Self {
 		Screen {
-			cursor:  Cursor::new(
-				0,
-				0,
-				ColorCode::default()
-			),
+			cursor:  Cursor::new(0, 0, ColorCode::default()),
 			buffer:  [ScreenChar {
 				ascii_code: 0,
 				color_code: ColorCode::default()
@@ -41,11 +37,7 @@ impl Default for Screen {
 impl Screen {
 	pub const fn new() -> Screen {
 		Screen {
-			cursor:  Cursor::new(
-				0,
-				0,
-				ColorCode::new_default()
-			),
+			cursor:  Cursor::new(0, 0, ColorCode::new_default()),
 			buffer:  [ScreenChar {
 				ascii_code: 0,
 				color_code: ColorCode::new_default()
@@ -55,17 +47,17 @@ impl Screen {
 	}
 
 	pub fn reset(&mut self) {
-        todo!()
-		//for i in 0..BUFFER_HEIGHT {
-		//	for j in 0..BUFFER_WIDTH {
-		//		self.buffer[i][j] = ScreenChar {
-		//			ascii_code: b' ',
-		//			color_code: ColorCode::default()
-		//		};
-		//	}
+		todo!()
+		// for i in 0..BUFFER_HEIGHT {
+		// 	for j in 0..BUFFER_WIDTH {
+		// 		self.buffer[i][j] = ScreenChar {
+		// 			ascii_code: b' ',
+		// 			color_code: ColorCode::default()
+		// 		};
+		// 	}
 		//}
-		//self.cursor.set_pos(0, 0);
-		//self.command.clear();
+		// self.cursor.set_pos(0, 0);
+		// self.command.clear();
 	}
 
 	pub fn get_command(&mut self) -> &mut Command {
@@ -80,9 +72,9 @@ struct ScreenChar {
 	color_code: ColorCode
 }
 impl Default for ScreenChar {
-    fn default() -> Self {
-        Self { ascii_code: b' ', color_code: ColorCode::default() }
-    }
+	fn default() -> Self {
+		Self { ascii_code: b' ', color_code: ColorCode::default() }
+	}
 }
 
 const VGABUFF_OFFSET: usize = 0xc00b8000;
@@ -119,66 +111,65 @@ impl Writer {
 		match byte {
 			b'\n' => self.scroll_up(),
 			byte => {
-                let screenchar = ScreenChar {
+				let screenchar = ScreenChar {
 					ascii_code: byte,
 					color_code: self.cursor.get_color_code()
 				};
-				
-                if self.cursor.get_pos() >= VGA_LEN {
-                    self.scroll_up();
-                }
 
-                self.vga_buffer[self.cursor.get_pos()] = screenchar;
-                self.move_cursor(1);
+				if self.cursor.get_pos() >= VGA_LEN {
+					self.scroll_up();
+				}
+
+				self.vga_buffer[self.cursor.get_pos()] = screenchar;
+				self.move_cursor(1);
 			}
 		}
 	}
 
-    pub fn del_byte(&mut self) {
-        let color = self.cursor.get_color_code();
+	pub fn del_byte(&mut self) {
+		let color = self.cursor.get_color_code();
 		self.move_cursor(-1);
-        self.vga_buffer[self.cursor.get_pos()] = ScreenChar {
-            ascii_code: b' ',
-            color_code: color
-        };
-    }
+		self.vga_buffer[self.cursor.get_pos()] =
+			ScreenChar { ascii_code: b' ', color_code: color };
+	}
 
-    pub fn move_cursor(&mut self, x: i32) {
-        let mut pos: i32 = self.cursor.get_pos() as i32;
-        // It is safe to convert pos to i32 since it will be at most 2000
-        // let mut real_pos: i32 = (pos.1 * BUFFER_WIDTH + pos.0) as i32;
-        pos += x;
-        pos = pos.max(0);
-        pos = pos.min(VGA_LEN as i32);
-        // Convertion to usize is safe since pos is bound between 0 and VGA_LEN
-        self.cursor.set_pos(pos as usize);
-        self.cursor.update();
-    }
+	pub fn move_cursor(&mut self, x: i32) {
+		let mut pos: i32 = self.cursor.get_pos() as i32;
+		// It is safe to convert pos to i32 since it will be at most 2000
+		// let mut real_pos: i32 = (pos.1 * BUFFER_WIDTH + pos.0) as i32;
+		pos += x;
+		pos = pos.max(0);
+		pos = pos.min(VGA_LEN as i32);
+		// Convertion to usize is safe since pos is bound between 0 and VGA_LEN
+		self.cursor.set_pos(pos as usize);
+		self.cursor.update();
+	}
 
 	/// Move CURSOR one line lower and move all lines if needed
 	fn scroll_up(&mut self) {
-        let mut movement: i32 = (self.cursor.get_pos() % BUFFER_WIDTH) as i32;
+		let mut movement: i32 = (self.cursor.get_pos() % BUFFER_WIDTH) as i32;
 		if self.cursor.get_pos() < VGA_LEN - BUFFER_WIDTH {
 			movement = BUFFER_WIDTH as i32 - movement;
 		} else {
-            if self.cursor.get_pos() / BUFFER_WIDTH == 25 {
-                movement = BUFFER_WIDTH as i32;
-            }
-            self.vga_buffer.copy_within(BUFFER_WIDTH..VGA_LEN, 0);
-            self.vga_buffer[VGA_LEN-BUFFER_WIDTH..VGA_LEN].fill(ScreenChar::default());
-            movement = -movement;
+			if self.cursor.get_pos() / BUFFER_WIDTH == 25 {
+				movement = BUFFER_WIDTH as i32;
+			}
+			self.vga_buffer.copy_within(BUFFER_WIDTH..VGA_LEN, 0);
+			self.vga_buffer[VGA_LEN - BUFFER_WIDTH..VGA_LEN]
+				.fill(ScreenChar::default());
+			movement = -movement;
 		}
-        self.move_cursor(movement);
+		self.move_cursor(movement);
 	}
 
 	/// Simply replace all row by spaces to visualy clear it
 	pub fn clear_row(&mut self, row: usize) {
-        self.vga_buffer[row * BUFFER_WIDTH..(row + 1) * BUFFER_WIDTH]
-            .fill(ScreenChar::default());
+		self.vga_buffer[row * BUFFER_WIDTH..(row + 1) * BUFFER_WIDTH]
+			.fill(ScreenChar::default());
 	}
 
 	pub fn clear(&mut self) {
-        self.vga_buffer.fill(ScreenChar::default());
+		self.vga_buffer.fill(ScreenChar::default());
 	}
 
 	// Write string to vga using write_byte functions if printable, else print a square
@@ -188,7 +179,7 @@ impl Writer {
 			match byte {
 				// printable ASCII byte or newline
 				0x20..=0x7e | b'\n' => self.write_byte(byte),
-                0x08 => self.del_byte(),
+				0x08 => self.del_byte(),
 				// not part of printable ASCII range
 				_ => self.write_byte(0xfe)
 			}
@@ -216,7 +207,7 @@ impl Writer {
 	}
 
 	pub fn get_screen(&mut self) -> usize {
-        todo!();
+		todo!();
 	}
 
 	pub fn chcolor(&mut self, new_color: ColorCode) {
@@ -252,14 +243,14 @@ macro_rules! kprintln {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    unsafe { crate::dprintln!("{}", info); }
+	unsafe {
+		crate::dprintln!("{}", info);
+	}
 	WRITER
 		.lock()
 		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("{}", info);
-	WRITER
-		.lock()
-		.chcolor(ColorCode::default());
+	WRITER.lock().chcolor(ColorCode::default());
 	loop {}
 }
 
@@ -273,11 +264,7 @@ fn panic(info: &PanicInfo) -> ! {
 	};
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::default())
-	};
+	unsafe { WRITER.lock().chcolor(ColorCode::default()) };
 	io::outb(0xf4, 0x11);
 	loop {}
 }
