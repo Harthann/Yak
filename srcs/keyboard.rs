@@ -119,27 +119,9 @@ pub enum SpecialKeyFlag {
 	Caps       = 6
 }
 
-macro_rules! setflag {
-	($a:expr) => {
-		SPECIAL_KEYS.fetch_or(1 << $a as u8, Ordering::Relaxed);
-	};
-}
-
-macro_rules! getflag {
-	($a:expr) => {
-		SPECIAL_KEYS.load(Ordering::Relaxed) & (1 << $a as u8) != 0
-	};
-}
-
-macro_rules! unsetflag {
-	($a:expr) => {
-		SPECIAL_KEYS.fetch_xor(1 << $a as u8, Ordering::Relaxed);
-		// 		SPECIAL_KEYS.update(|value| value ^ (1 << $a as u8));
-	};
-}
-
 use core::sync::atomic::{AtomicU8, Ordering};
-static SPECIAL_KEYS: AtomicU8 = AtomicU8::new(0);
+use crate::utils::flags::{Flags, FlagOp};
+static SPECIAL_KEYS: Flags<AtomicU8> = Flags::new(0);
 
 fn is_special(key: u8) -> bool {
 	key == 54
@@ -187,15 +169,15 @@ fn keyboard_to_ascii(key: u8) -> Option<char> {
 
 	// If key is alphabetic, check if shift or caps are on
 	if charcode >= b'a' && charcode <= b'z' {
-		if (getflag!(SpecialKeyFlag::ShiftLeft)
-			|| getflag!(SpecialKeyFlag::ShiftRight))
-			^ getflag!(SpecialKeyFlag::Caps)
+        if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8) ||
+            SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8) ||
+            SPECIAL_KEYS.is_enable(SpecialKeyFlag::Caps as u8)
 		{
 			charcode = unsafe { KEYMAP.caps_keys[key as usize] as u8 };
 		}
 	// If key is not alphabetic, switch to cap_keys only if shift is pressed
-	} else if getflag!(SpecialKeyFlag::ShiftLeft)
-		|| getflag!(SpecialKeyFlag::ShiftRight)
+	} else if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8) ||
+            SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8)
 	{
 		{
 			charcode = unsafe { KEYMAP.caps_keys[key as usize] as u8 };
@@ -215,62 +197,62 @@ pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 
 	match keyboard_to_ascii(keycode) {
 		Some(ascii) => {
-			Some((Input::Ascii(ascii), SPECIAL_KEYS.load(Ordering::Relaxed)))
+			Some((Input::Ascii(ascii), SPECIAL_KEYS.0.load(Ordering::Relaxed)))
 		},
 		None => {
 			let special_keys: &SpecialKeys = unsafe { &KEYMAP.special_keys };
 			match keycode {
 				_ if keycode == special_keys.shift_l[PRESSED] => {
-					setflag!(SpecialKeyFlag::ShiftLeft);
+					SPECIAL_KEYS.enable(SpecialKeyFlag::ShiftLeft as u8);
 					None
 				},
 				_ if keycode == special_keys.shift_r[PRESSED] => {
-					setflag!(SpecialKeyFlag::ShiftRight);
+					SPECIAL_KEYS.enable(SpecialKeyFlag::ShiftRight as u8);
 					None
 				},
 				_ if keycode == special_keys.ctrl[PRESSED] => {
-					setflag!(SpecialKeyFlag::Ctrl);
+					SPECIAL_KEYS.enable(SpecialKeyFlag::Ctrl as u8);
 					None
 				},
 				_ if keycode == special_keys.alt[PRESSED] => {
-					setflag!(SpecialKeyFlag::Opt);
+					SPECIAL_KEYS.enable(SpecialKeyFlag::Opt as u8);
 					None
 				},
 				_ if keycode == special_keys.special_l[PRESSED] => {
-					setflag!(SpecialKeyFlag::CmdLeft);
+					SPECIAL_KEYS.enable(SpecialKeyFlag::CmdLeft as u8);
 					None
 				},
 				_ if keycode == special_keys.special_r[PRESSED] => {
-					setflag!(SpecialKeyFlag::CmdRight);
+					SPECIAL_KEYS.enable(SpecialKeyFlag::CmdRight as u8);
 					None
 				},
 				_ if keycode == special_keys.caps[PRESSED] => {
-					unsetflag!(SpecialKeyFlag::Caps);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::Caps as u8);
 					None
 				},
 
 				_ if keycode == special_keys.shift_l[RELEASED] => {
-					unsetflag!(SpecialKeyFlag::ShiftLeft);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::ShiftLeft as u8);
 					None
 				},
 				_ if keycode == special_keys.shift_r[RELEASED] => {
-					unsetflag!(SpecialKeyFlag::ShiftRight);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::ShiftRight as u8);
 					None
 				},
 				_ if keycode == special_keys.ctrl[RELEASED] => {
-					unsetflag!(SpecialKeyFlag::Ctrl);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::Ctrl as u8);
 					None
 				},
 				_ if keycode == special_keys.alt[RELEASED] => {
-					unsetflag!(SpecialKeyFlag::Opt);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::Opt as u8);
 					None
 				},
 				_ if keycode == special_keys.special_l[RELEASED] => {
-					unsetflag!(SpecialKeyFlag::CmdLeft);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::CmdLeft as u8);
 					None
 				},
 				_ if keycode == special_keys.special_r[RELEASED] => {
-					unsetflag!(SpecialKeyFlag::CmdRight);
+					SPECIAL_KEYS.disable(SpecialKeyFlag::CmdRight as u8);
 					None
 				},
 				224 => {
@@ -280,19 +262,19 @@ pub fn handle_event() -> Option<(crate::cli::Input, u8)> {
 					match keycode {
 						_ if keycode == special_keys.up[PRESSED] => Some((
 							Input::Tcaps(Termcaps::ArrowUP),
-							SPECIAL_KEYS.load(Ordering::Relaxed)
+							SPECIAL_KEYS.0.load(Ordering::Relaxed)
 						)),
 						_ if keycode == special_keys.down[PRESSED] => Some((
 							Input::Tcaps(Termcaps::ArrowDOWN),
-							SPECIAL_KEYS.load(Ordering::Relaxed)
+							SPECIAL_KEYS.0.load(Ordering::Relaxed)
 						)),
 						_ if keycode == special_keys.left[PRESSED] => Some((
 							Input::Tcaps(Termcaps::ArrowLEFT),
-							SPECIAL_KEYS.load(Ordering::Relaxed)
+							SPECIAL_KEYS.0.load(Ordering::Relaxed)
 						)),
 						_ if keycode == special_keys.right[PRESSED] => Some((
 							Input::Tcaps(Termcaps::ArrowRIGHT),
-							SPECIAL_KEYS.load(Ordering::Relaxed)
+							SPECIAL_KEYS.0.load(Ordering::Relaxed)
 						)),
 						_ => None
 					}
