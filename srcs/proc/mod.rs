@@ -5,10 +5,10 @@ use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
 
-use crate::memory::paging::{PAGE_GLOBAL, PAGE_WRITABLE};
+use crate::memory::paging::{PAGE_WRITABLE};
 
 use crate::memory::paging::page_directory;
-use crate::memory::paging::page_directory::PageDirectory;
+
 
 pub mod process;
 pub mod signal;

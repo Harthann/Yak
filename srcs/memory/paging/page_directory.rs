@@ -7,8 +7,7 @@ use crate::memory::paging::{
 	get_paddr,
 	get_vaddr,
 	refresh_tlb,
-	PAGE_PRESENT,
-	PAGE_WRITABLE
+	PAGE_PRESENT
 };
 
 #[repr(transparent)]

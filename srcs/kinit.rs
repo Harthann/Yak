@@ -106,6 +106,7 @@ use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
+use crate::main::kmain;
 
 static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 #[global_allocator]
@@ -132,7 +133,7 @@ use proc::task::Task;
 
 use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
 // use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
-use main::kmain;
+
 pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
