@@ -13,20 +13,13 @@ pub enum FileError {
 	Unknown()
 }
 
-pub enum FileType {
-    Raw,
-    Socket,
-    Pipe
-}
-
 /// Contains all file information.
 /// Current informatin are only it's name and it's FileOperation trait object
 /// The op trait object can be store either by reference of Box. For the moment Box is choosen but
 /// this may change in the future. To make the trait object ThreadSafe Mutex is used.
 /// Arc is used to allow multiple reference on the object in a multithreaded environment
 pub struct FileInfo {
-	pub name:  String,
-    pub ftype: FileType,
+	pub name: String,
 	pub op:   Arc<Mutex<Box<dyn FileOperation>, false>>
 }
 // Sync/Send marker to indicate rust that FileInfo is thread safe
@@ -34,8 +27,8 @@ unsafe impl Sync for FileInfo {}
 unsafe impl Send for FileInfo {}
 
 impl FileInfo {
-	pub fn new(name: String, ftype: FileType, op: Box<dyn FileOperation>) -> Self {
-		Self { name, ftype, op: Arc::new(Mutex::new(op)) }
+	pub fn new(name: String, op: Box<dyn FileOperation>) -> Self {
+		Self { name: name, op: Arc::new(Mutex::new(op)) }
 	}
 }
 
@@ -45,7 +38,7 @@ impl FileInfo {
 /// close fd and drop
 pub struct File {
 	pub fd: usize,
-	//pub op: Arc<Mutex<Box<dyn FileOperation>, false>>
+	pub op: Arc<Mutex<Box<dyn FileOperation>, false>>
 }
 unsafe impl Sync for File {}
 unsafe impl Send for File {}

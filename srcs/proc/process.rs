@@ -25,14 +25,11 @@ use crate::memory::PhysAddr;
 
 use crate::user::{USER_HEAP_ADDR, USER_STACK_ADDR};
 use crate::KSTACK_ADDR;
-use crate::fs::File;
 
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
 pub type Pid = Id;
-
-const FD_PER_PROCESS: usize = 32;
 
 #[derive(Debug, PartialEq)]
 pub enum Status {
@@ -52,11 +49,9 @@ pub struct Process {
 	pub kernel_stack:    MemoryZone,
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
-    pub fds:             [Option<File>; FD_PER_PROCESS],
 	pub owner:           Id
 }
 
-const DEFAULT: Option<File> = None;
 impl Process {
 	pub const fn new() -> Self {
 		Self {
@@ -69,7 +64,6 @@ impl Process {
 			kernel_stack:    MemoryZone::new(),
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
-            fds:             [DEFAULT; FD_PER_PROCESS],
 			owner:           0
 		}
 	}
