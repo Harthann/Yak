@@ -251,7 +251,7 @@
 
 <span class="kw">const</span> <span class="ident">PIC_EOI</span>: <span class="ident">u8</span> <span class="op">=</span> <span class="number">0x20</span>; <span class="comment">// End of Interrupts command code</span>
 
-<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="attribute">#[<span class="ident">inline</span>]</span>
 <span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">end_of_interrupts</span>(<span class="ident">irq</span>: <span class="ident">usize</span>) {
 	<span class="kw">if</span> <span class="ident">irq</span> <span class="op">&gt;</span><span class="op">=</span> <span class="number">8</span> {
 		<span class="comment">// Slave interrupt request</span>

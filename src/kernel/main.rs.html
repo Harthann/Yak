@@ -114,7 +114,7 @@
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">kmain</span>() -&gt; <span class="op">!</span> {
-	<span class="ident"><span class="kw">crate</span>::user::test_user_page</span>();
+	<span class="comment">// 	crate::user::test_user_page();</span>
 
 	<span class="ident">poc::test_macros</span>();
 	<span class="macro">kprintln!</span>(<span class="string">&quot;Hello World of {}!&quot;</span>, <span class="number">42</span>);

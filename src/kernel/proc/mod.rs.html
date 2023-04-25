@@ -158,7 +158,6 @@
 <span id="152">152</span>
 <span id="153">153</span>
 <span id="154">154</span>
-<span id="155">155</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Processus, Tasks and Signals</span>
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
@@ -166,10 +165,9 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::wrappers</span>::{<span class="ident">_cli</span>, <span class="ident">_rst</span>, <span class="ident">_sti</span>};
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">VirtAddr</span>, <span class="ident">KSTACK_ADDR</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_GLOBAL</span>, <span class="ident">PAGE_WRITABLE</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::PAGE_WRITABLE</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_directory</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_directory::PageDirectory</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">process</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">signal</span>;

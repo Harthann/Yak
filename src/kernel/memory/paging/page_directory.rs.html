@@ -504,24 +504,12 @@
 <span id="498">498</span>
 <span id="499">499</span>
 <span id="500">500</span>
-<span id="501">501</span>
-<span id="502">502</span>
-<span id="503">503</span>
-<span id="504">504</span>
-<span id="505">505</span>
-<span id="506">506</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">bitmap</span>, <span class="ident">page_directory</span>, <span class="ident">PageTable</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">PhysAddr</span>, <span class="ident">VirtAddr</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{
-	<span class="ident">get_paddr</span>,
-	<span class="ident">get_vaddr</span>,
-	<span class="ident">refresh_tlb</span>,
-	<span class="ident">PAGE_PRESENT</span>,
-	<span class="ident">PAGE_WRITABLE</span>
-};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">get_paddr</span>, <span class="ident">get_vaddr</span>, <span class="ident">refresh_tlb</span>, <span class="ident">PAGE_PRESENT</span>};
 
 <span class="attribute">#[<span class="ident">repr</span>(<span class="ident">transparent</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">PageDirectory</span> {

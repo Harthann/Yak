@@ -429,7 +429,7 @@
 	<span class="kw">fn</span> <span class="ident">bitmap_claim</span>() {
 		<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::page_directory</span>;
 		<span class="macro">crate::print_fn!</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
+		<span class="kw">let</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">x</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x100000</span>;
 		<span class="kw">let</span> <span class="ident">used</span> <span class="op">=</span> <span class="ident">physmap</span>.<span class="ident">used</span>;
 
@@ -467,7 +467,7 @@
 	<span class="kw">fn</span> <span class="ident">bitmap_claim_range</span>() {
 		<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::page_directory</span>;
 		<span class="macro">crate::print_fn!</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
+		<span class="kw">let</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">x</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x100000</span>;
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">used</span> <span class="op">=</span> <span class="ident">physmap</span>.<span class="ident">used</span>;
 
@@ -495,7 +495,7 @@
 	<span class="attribute">#[<span class="ident">test_case</span>]</span>
 	<span class="kw">fn</span> <span class="ident">bitmap_get_page</span>() {
 		<span class="macro">crate::print_fn!</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
+		<span class="kw">let</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">addresses</span>: [<span class="ident">u32</span>; <span class="number">50</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="number">50</span>];
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">used</span> <span class="op">=</span> <span class="ident">physmap</span>.<span class="ident">used</span>;
 
@@ -519,7 +519,7 @@
 	<span class="attribute">#[<span class="ident">test_case</span>]</span>
 	<span class="kw">fn</span> <span class="ident">bitmap_get_pages</span>() {
 		<span class="macro">crate::print_fn!</span>();
-		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
+		<span class="kw">let</span> <span class="ident">physmap</span> <span class="op">=</span> <span class="ident">physmap_as_mut</span>();
 		<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">used</span> <span class="op">=</span> <span class="ident">physmap</span>.<span class="ident">used</span>;
 
 		<span class="kw">let</span> <span class="ident">addr</span> <span class="op">=</span> <span class="kw">match</span> <span class="ident">physmap</span>.<span class="ident">get_pages</span>(<span class="number">50</span>) {

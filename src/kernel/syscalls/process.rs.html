@@ -56,18 +56,12 @@
 <span id="50">50</span>
 <span id="51">51</span>
 <span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Pid</span>, <span class="ident">Process</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::task</span>::{<span class="ident">Task</span>, <span class="ident">TASKLIST</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_directory::PageDirectory</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::page_table::PageTable</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::wrappers</span>::{<span class="ident">_cli</span>, <span class="ident">_sti</span>};
-
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_PRESENT</span>, <span class="ident">PAGE_USER</span>, <span class="ident">PAGE_WRITABLE</span>};
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
 

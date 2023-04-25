@@ -220,6 +220,113 @@
 <span id="214">214</span>
 <span id="215">215</span>
 <span id="216">216</span>
+<span id="217">217</span>
+<span id="218">218</span>
+<span id="219">219</span>
+<span id="220">220</span>
+<span id="221">221</span>
+<span id="222">222</span>
+<span id="223">223</span>
+<span id="224">224</span>
+<span id="225">225</span>
+<span id="226">226</span>
+<span id="227">227</span>
+<span id="228">228</span>
+<span id="229">229</span>
+<span id="230">230</span>
+<span id="231">231</span>
+<span id="232">232</span>
+<span id="233">233</span>
+<span id="234">234</span>
+<span id="235">235</span>
+<span id="236">236</span>
+<span id="237">237</span>
+<span id="238">238</span>
+<span id="239">239</span>
+<span id="240">240</span>
+<span id="241">241</span>
+<span id="242">242</span>
+<span id="243">243</span>
+<span id="244">244</span>
+<span id="245">245</span>
+<span id="246">246</span>
+<span id="247">247</span>
+<span id="248">248</span>
+<span id="249">249</span>
+<span id="250">250</span>
+<span id="251">251</span>
+<span id="252">252</span>
+<span id="253">253</span>
+<span id="254">254</span>
+<span id="255">255</span>
+<span id="256">256</span>
+<span id="257">257</span>
+<span id="258">258</span>
+<span id="259">259</span>
+<span id="260">260</span>
+<span id="261">261</span>
+<span id="262">262</span>
+<span id="263">263</span>
+<span id="264">264</span>
+<span id="265">265</span>
+<span id="266">266</span>
+<span id="267">267</span>
+<span id="268">268</span>
+<span id="269">269</span>
+<span id="270">270</span>
+<span id="271">271</span>
+<span id="272">272</span>
+<span id="273">273</span>
+<span id="274">274</span>
+<span id="275">275</span>
+<span id="276">276</span>
+<span id="277">277</span>
+<span id="278">278</span>
+<span id="279">279</span>
+<span id="280">280</span>
+<span id="281">281</span>
+<span id="282">282</span>
+<span id="283">283</span>
+<span id="284">284</span>
+<span id="285">285</span>
+<span id="286">286</span>
+<span id="287">287</span>
+<span id="288">288</span>
+<span id="289">289</span>
+<span id="290">290</span>
+<span id="291">291</span>
+<span id="292">292</span>
+<span id="293">293</span>
+<span id="294">294</span>
+<span id="295">295</span>
+<span id="296">296</span>
+<span id="297">297</span>
+<span id="298">298</span>
+<span id="299">299</span>
+<span id="300">300</span>
+<span id="301">301</span>
+<span id="302">302</span>
+<span id="303">303</span>
+<span id="304">304</span>
+<span id="305">305</span>
+<span id="306">306</span>
+<span id="307">307</span>
+<span id="308">308</span>
+<span id="309">309</span>
+<span id="310">310</span>
+<span id="311">311</span>
+<span id="312">312</span>
+<span id="313">313</span>
+<span id="314">314</span>
+<span id="315">315</span>
+<span id="316">316</span>
+<span id="317">317</span>
+<span id="318">318</span>
+<span id="319">319</span>
+<span id="320">320</span>
+<span id="321">321</span>
+<span id="322">322</span>
+<span id="323">323</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::ptr</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::interrupts::Registers</span>;
@@ -227,22 +334,15 @@
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">Heap</span>, <span class="ident">MemoryZone</span>, <span class="ident">Stack</span>, <span class="ident">VirtAddr</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::process</span>::{<span class="ident">Process</span>, <span class="ident">Status</span>, <span class="ident">MASTER_PROCESS</span>, <span class="ident">NEXT_PID</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::signal</span>::{<span class="ident">SignalHandler</span>, <span class="ident">SignalType</span>};
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::wrapper_fn</span>;
+
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::queue::Queue</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vec::Vec</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::wrappers</span>::{<span class="ident">_cli</span>, <span class="ident">_rst</span>};
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging</span>::{<span class="ident">PAGE_GLOBAL</span>, <span class="ident">PAGE_WRITABLE</span>};
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::paging::PAGE_WRITABLE</span>;
 <span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">KALLOCATOR</span>, <span class="ident">KSTACK_ADDR</span>};
 
 <span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">TASKLIST</span>: <span class="ident">Queue</span><span class="op">&lt;</span><span class="ident">Task</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Queue::new</span>();
-
-<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
-<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">tmp_registers</span>: <span class="ident">Registers</span> <span class="op">=</span> <span class="ident">Registers::new</span>();
-
-<span class="kw">extern</span> <span class="string">&quot;C&quot;</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">switch_task</span>() -&gt; <span class="op">!</span>;
-}
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Copy</span>, <span class="ident">Clone</span>, <span class="ident">PartialEq</span>, <span class="ident">Debug</span>)]</span>
 <span class="kw">pub</span> <span class="kw">enum</span> <span class="ident">TaskStatus</span> {
@@ -280,10 +380,12 @@
 			);
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">Status::Run</span>;
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">setup_kernel_stack</span>(<span class="ident">PAGE_WRITABLE</span>);
-			<span class="ident">page_directory</span>.<span class="ident">claim_index_page_table</span>(
-				<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
-				<span class="ident">PAGE_WRITABLE</span>
-			);
+			<span class="ident">page_directory</span>
+				.<span class="ident">claim_index_page_table</span>(
+					<span class="ident">KSTACK_ADDR</span> <span class="kw">as</span> <span class="ident">usize</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
+					<span class="ident">PAGE_WRITABLE</span>
+				)
+				.<span class="ident">expect</span>(<span class="string">&quot;Could not claim kernel stack page&quot;</span>);
 			<span class="ident">change_kernel_stack</span>(<span class="kw-2">&amp;</span><span class="ident">MASTER_PROCESS</span>);
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">stack</span> <span class="op">=</span> <span class="op">&lt;</span><span class="ident">MemoryZone</span> <span class="kw">as</span> <span class="ident">Stack</span><span class="op">&gt;</span><span class="ident">::init_addr</span>(
 				<span class="ident">stack_addr</span>,
@@ -402,6 +504,48 @@
 	}
 }
 
+<span class="attribute">#[<span class="ident">naked</span>]</span>
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">swap_task</span>() -&gt; <span class="op">!</span> {
+	<span class="macro">core::arch::asm!</span>(
+		<span class="string">&quot;pusha&quot;</span>,
+
+		<span class="string">&quot;mov eax, cr3&quot;</span>,
+		<span class="string">&quot;push eax&quot;</span>,
+
+		<span class="string">&quot;xor eax, eax&quot;</span>,
+		<span class="string">&quot;mov ax, ds&quot;</span>,
+		<span class="string">&quot;push eax&quot;</span>,
+
+		<span class="string">&quot;mov eax, offset page_directory - {}&quot;</span>,
+		<span class="string">&quot;mov ebx, cr3&quot;</span>,
+		<span class="string">&quot;cmp eax, ebx&quot;</span>,
+		<span class="string">&quot;je 2f&quot;</span>, <span class="comment">// if cr3 is kernel don&#39;t swap</span>
+
+		<span class="string">&quot;mov cr3, eax&quot;</span>,
+
+		<span class="string">&quot;2:&quot;</span>,
+		<span class="string">&quot;add DWORD PTR[JIFFIES], 1&quot;</span>,
+
+		<span class="string">&quot;mov eax, 0x10&quot;</span>,
+		<span class="string">&quot;mov ds, ax&quot;</span>,
+		<span class="string">&quot;mov es, ax&quot;</span>,
+		<span class="string">&quot;mov fs, ax&quot;</span>,
+		<span class="string">&quot;mov gs, ax&quot;</span>,
+
+		<span class="string">&quot;mov eax, esp&quot;</span>,
+
+		<span class="comment">// (regs: &amp;Registers)</span>
+		<span class="string">&quot;push eax&quot;</span>,
+		<span class="string">&quot;call save_task&quot;</span>,
+		<span class="string">&quot;pop eax&quot;</span>,
+
+		<span class="string">&quot;call schedule_task&quot;</span>, <span class="comment">// never returns</span>
+		<span class="kw">const</span> <span class="ident"><span class="kw">crate</span>::boot::KERNEL_BASE</span>,
+		<span class="ident">options</span>(<span class="ident">noreturn</span>)
+	)
+}
+
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">save_task</span>(<span class="ident">regs</span>: <span class="kw-2">&amp;</span><span class="ident">Registers</span>) {
 	<span class="ident">_cli</span>();
@@ -411,10 +555,22 @@
 	<span class="ident">_rst</span>();
 }
 
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::pic::end_of_interrupts</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::proc::change_kernel_stack</span>;
 
+<span class="attribute">#[<span class="ident">naked</span>]</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">schedule_task</span>() -&gt; <span class="op">!</span> {
+	<span class="macro">core::arch::asm!</span>(
+		<span class="string">&quot;mov esp, offset task_stack + {}&quot;</span>,
+		<span class="string">&quot;call find_task&quot;</span>,
+		<span class="kw">const</span> <span class="ident">STACK_SIZE</span>,
+		<span class="ident">options</span>(<span class="ident">noreturn</span>)
+	);
+}
+
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">find_task</span>() -&gt; <span class="op">!</span> {
 	<span class="ident">_cli</span>();
 	<span class="kw">loop</span> {
 		<span class="kw">let</span> <span class="ident">new_task</span>: <span class="kw-2">&amp;mut</span> <span class="ident">Task</span> <span class="op">=</span> <span class="ident">Task::get_running_task</span>();
@@ -425,17 +581,75 @@
 		}
 		<span class="kw">if</span> <span class="ident">new_task</span>.<span class="ident">state</span> <span class="op">!</span><span class="op">=</span> <span class="ident">TaskStatus::Interruptible</span> {
 			<span class="comment">// Copy registers to shared memory</span>
-			<span class="ident">tmp_registers</span> <span class="op">=</span> <span class="ident">new_task</span>.<span class="ident">regs</span>;
+			<span class="kw">let</span> <span class="ident">task</span>: <span class="ident">Registers</span> <span class="op">=</span> <span class="ident">new_task</span>.<span class="ident">regs</span>;
 			<span class="ident">change_kernel_stack</span>(<span class="ident">process</span>);
-			<span class="comment">// Avoid using stack below that</span>
 			<span class="ident">_rst</span>();
-			<span class="macro">core::arch::asm!</span>(<span class="string">&quot;jmp switch_task&quot;</span>);
+			<span class="ident">switch_task</span>(<span class="kw-2">&amp;</span><span class="ident">task</span>);
 			<span class="comment">// never goes there</span>
 		}
 		<span class="kw">let</span> <span class="ident">skipped_task</span>: <span class="ident">Task</span> <span class="op">=</span> <span class="ident">TASKLIST</span>.<span class="ident">pop</span>();
 		<span class="ident">TASKLIST</span>.<span class="ident">push</span>(<span class="ident">skipped_task</span>);
 	}
 }
+
+<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">switch_task</span>(<span class="ident">regs</span>: <span class="kw-2">&amp;</span><span class="ident">Registers</span>) -&gt; <span class="op">!</span> {
+	<span class="kw">if</span> <span class="ident">regs</span>.<span class="ident">cr3</span> <span class="op">!</span><span class="op">=</span> <span class="macro">get_paddr!</span>((<span class="kw-2">&amp;</span><span class="ident">page_directory</span>) <span class="kw">as</span> <span class="kw-2">*const</span> <span class="kw">_</span>) {
+		<span class="macro">load_cr3!</span>(<span class="ident">regs</span>.<span class="ident">cr3</span>);
+	}
+	<span class="macro">get_segments!</span>(<span class="ident">regs</span>.<span class="ident">ds</span>);
+	<span class="ident">end_of_interrupts</span>(<span class="number">0x20</span>);
+	<span class="kw">if</span> <span class="ident">regs</span>.<span class="ident">int_no</span> <span class="op">!</span><span class="op">=</span> <span class="ident">u32::MAX</span> {
+		<span class="comment">// new task</span>
+		<span class="macro">core::arch::asm!</span>(
+			<span class="string">&quot;mov esp, {esp}&quot;</span>,
+			<span class="string">&quot;push {eip}&quot;</span>,
+			<span class="string">&quot;ret&quot;</span>, <span class="comment">// Recover sti in wrappers</span>
+			<span class="ident">esp</span> <span class="op">=</span> <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">regs</span>.<span class="ident">esp</span>,
+			<span class="ident">eip</span> <span class="op">=</span> <span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">regs</span>.<span class="ident">eip</span>,
+			<span class="ident">options</span>(<span class="ident">noreturn</span>)
+		);
+	}
+	<span class="macro">core::arch::asm!</span>(
+		<span class="string">&quot;mov esp, {}&quot;</span>,
+		<span class="string">&quot;sub esp, 32&quot;</span>,
+		<span class="string">&quot;popa&quot;</span>,
+		<span class="string">&quot;add esp, 8&quot;</span>, <span class="comment">// int_no and err_code</span>
+		<span class="string">&quot;iretd&quot;</span>, <span class="comment">// no sti: iretd enable interrupt itself</span>
+		<span class="kw">in</span>(<span class="ident">reg</span>) <span class="ident">regs</span>.<span class="ident">esp</span>,
+		<span class="ident">options</span>(<span class="ident">noreturn</span>)
+	);
+}
+
+<span class="kw">const</span> <span class="ident">STACK_SIZE</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">0x1000</span>;
+
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="attribute">#[<span class="ident">link_section</span> <span class="op">=</span> <span class="string">&quot;.bss&quot;</span>]</span>
+<span class="doccomment">/// Task stack</span>
+<span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">task_stack</span>: [<span class="ident">u8</span>; <span class="ident">STACK_SIZE</span>] <span class="op">=</span> [<span class="number">0</span>; <span class="ident">STACK_SIZE</span>];
+
+<span class="macro">macro_rules!</span> <span class="ident">load_cr3</span> {
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">cr3</span>: <span class="ident">expr</span>) =&gt; {
+		<span class="macro">core::arch::asm!</span>(
+			<span class="string">&quot;mov cr3, {}&quot;</span>,
+			<span class="kw">in</span>(<span class="ident">reg</span>) <span class="macro-nonterminal">$</span><span class="macro-nonterminal">cr3</span>
+		);
+	}
+}
+
+<span class="macro">macro_rules!</span> <span class="ident">get_segments</span> {
+	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ds</span>: <span class="ident">expr</span>) =&gt; {
+		<span class="macro">core::arch::asm!</span>(
+			<span class="string">&quot;mov eax, {}&quot;</span>,
+			<span class="string">&quot;mov ds, ax&quot;</span>,
+			<span class="string">&quot;mov es, ax&quot;</span>,
+			<span class="string">&quot;mov fs, ax&quot;</span>,
+			<span class="string">&quot;mov gs, ax&quot;</span>,
+			<span class="kw">in</span>(<span class="ident">reg</span>) <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ds</span>
+		);
+	}
+}
+
+<span class="kw">use</span> {<span class="ident">get_segments</span>, <span class="ident">load_cr3</span>};
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-current-crate="kernel" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.64.0-nightly (c80c4b8fd 2022-06-26)" ></div>
 </body></html>
