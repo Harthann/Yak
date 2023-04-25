@@ -3,18 +3,6 @@ use crate::vga_buffer::color::Color;
 use crate::wrappers::{cli, hlt, sti};
 use crate::{kprint, kprintln, string};
 
-// Temporary sleep function until a proper sleep is implemented and teste
-pub fn sleep(microseconds: usize) {
-	unsafe {
-		let tmp = crate::pic::JIFFIES;
-		while crate::pic::JIFFIES < tmp + microseconds {
-			sti!();
-			hlt!();
-			cli!();
-		}
-	}
-}
-
 mod poc {
 	use sys_macros::Poc;
 	#[derive(Poc)]

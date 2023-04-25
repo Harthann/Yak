@@ -11,7 +11,7 @@ extern save_task
 extern schedule_task
 extern tmp_registers
 
-extern JIFFIES
+extern jiffies_inc
 
 swap_task:
 	pusha
@@ -31,7 +31,8 @@ swap_task:
 	mov cr3, eax
 
 	.jiffies:
-	add dword[JIFFIES], 1
+	;add dword[JIFFIES], 1
+	call jiffies_inc
 
 	load_kernel_segments
 

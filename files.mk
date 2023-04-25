@@ -16,6 +16,7 @@ RUST_SRCS		=	main.rs \
 					tss.rs \
 					handlers.rs \
 					pit.rs \
+					time.rs \
 					wrappers.rs \
 					process.rs \
 					task.rs \

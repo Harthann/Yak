@@ -78,6 +78,7 @@ mod multiboot;
 mod syscalls;
 mod io;
 mod pic;
+mod time;
 mod proc;
 mod user;
 mod vga_buffer;
@@ -131,8 +132,6 @@ use proc::task::Task;
 
 use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
 // use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
-use main::kmain;
-pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xff0fffff;
@@ -181,5 +180,5 @@ pub extern "C" fn kinit() {
 	test_main();
 
 	#[cfg(not(test))]
-	kmain();
+	main::kmain();
 }
