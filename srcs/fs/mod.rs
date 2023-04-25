@@ -10,6 +10,8 @@ mod test;
 mod file;
 pub use file::*;
 
+mod socket;
+
 // Contain all file system. This will be probably converted to a BST or something like that
 // FileInfo will have to contain permission, file type information etc etc
 static SYSFILES: Mutex<Vec<FileInfo>, true> = Mutex::new(Vec::new());
@@ -38,9 +40,10 @@ pub fn create(file: FileInfo) -> Result<(), FileError> {
 /// creation
 pub fn create_from_raw<T: FileOperation + 'static>(
 	name: &str,
+    ftype: FileType,
 	buffer: T
 ) -> Result<(), FileError> {
-	let file: FileInfo = FileInfo::new(String::from(name), Box::new(buffer));
+	let file: FileInfo = FileInfo::new(String::from(name), ftype, Box::new(buffer));
 	create(file)
 }
 
