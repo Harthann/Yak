@@ -17,7 +17,6 @@ use crate::memory::paging::page_directory::PageDirectory;
 use crate::memory::paging::page_table::PageTable;
 use crate::memory::paging::{
 	page_directory,
-	PAGE_GLOBAL,
 	PAGE_PRESENT,
 	PAGE_USER,
 	PAGE_WRITABLE

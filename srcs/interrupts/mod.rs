@@ -1,8 +1,11 @@
 //! Setup interrupts and exception handler
 
-use crate::proc::process::{Process, Status};
-use crate::proc::task::{switch_task, Task};
+use crate::proc::process::Process;
+use crate::proc::task::Task;
 use crate::syscalls::syscall_handler;
+
+mod idt;
+pub mod int;
 
 const GDT_OFFSET_KERNEL_CODE: u16 = 0x08;
 const IDT_SIZE: usize = 48;
@@ -127,7 +130,7 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
 	let mut task = Task::get_running_task();
 	task.regs = *regs; // dump regs for syscall (e.g: fork)
-	let process: &mut Process = &mut *task.process;
+	let _process: &mut Process = &mut *task.process;
 	let int_no: usize = regs.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(

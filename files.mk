@@ -1,4 +1,5 @@
 RUST_SRCS		=	main.rs \
+					boot.rs \
 					kinit.rs \
 					mod.rs \
 					io.rs \
@@ -41,15 +42,3 @@ SOUNDS = notes_frequencies.rs \
 		 mii.rs
 
 KERNELSRCS		=	$(foreach file, $(RUST_SRCS), $(shell find $(DIR_SRCS) -name $(file) -type f))
-INCLUDES	=		boot.h \
-					idt.h \
-					task.h
-
-BOOTSRCS		=	boot.s \
-					gdt.s \
-					idt.s \
-					int.s \
-					userjump.s \
-					task.s
-
-BOOTOBJS		=	$(BOOTSRCS:%.s=$(DIR_OBJS)/%.o)

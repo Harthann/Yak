@@ -18,7 +18,7 @@ SECTIONS {
 	. = 0x100000;
 	.boot BLOCK(4k) : ALIGN(4k)
 	{
-		*(.multiboot_header)
+		KEEP(*(.multiboot_header))
 		*(.boot)
 	}
 

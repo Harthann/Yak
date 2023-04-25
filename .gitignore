@@ -1,7 +1,5 @@
 *.swp
 *.swo
-*.o
-*.d
 kfs*
 *.bin
 iso/
@@ -11,5 +9,4 @@ iso/
 /target
 .bash_history
 Cargo.lock
-libboot.a
 logs

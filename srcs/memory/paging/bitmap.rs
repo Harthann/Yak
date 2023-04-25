@@ -156,7 +156,7 @@ mod test {
 	fn bitmap_claim() {
 		use crate::page_directory;
 		crate::print_fn!();
-		let mut physmap = physmap_as_mut();
+		let physmap = physmap_as_mut();
 		let mut x: usize = 0x100000;
 		let used = physmap.used;
 
@@ -194,7 +194,7 @@ mod test {
 	fn bitmap_claim_range() {
 		use crate::page_directory;
 		crate::print_fn!();
-		let mut physmap = physmap_as_mut();
+		let physmap = physmap_as_mut();
 		let mut x: usize = 0x100000;
 		let mut used = physmap.used;
 
@@ -222,7 +222,7 @@ mod test {
 	#[test_case]
 	fn bitmap_get_page() {
 		crate::print_fn!();
-		let mut physmap = physmap_as_mut();
+		let physmap = physmap_as_mut();
 		let mut addresses: [u32; 50] = [0; 50];
 		let mut used = physmap.used;
 
@@ -246,7 +246,7 @@ mod test {
 	#[test_case]
 	fn bitmap_get_pages() {
 		crate::print_fn!();
-		let mut physmap = physmap_as_mut();
+		let physmap = physmap_as_mut();
 		let mut used = physmap.used;
 
 		let addr = match physmap.get_pages(50) {
