@@ -91,6 +91,7 @@ mod spin;
 mod utils;
 #[macro_use]
 mod debug;
+mod fs;
 
 extern crate alloc;
 extern crate sys_macros;
@@ -102,6 +103,7 @@ use alloc::{boxed, string, vec};
 mod test;
 
 // Modules used function and variable
+use crate::main::kmain;
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
@@ -132,7 +134,7 @@ use proc::task::Task;
 
 use crate::gdt::{gdt_desc, GDTR};
 // use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
-use main::kmain;
+
 pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
