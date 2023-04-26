@@ -1,6 +1,6 @@
 use crate::boxed::Box;
 use crate::fs;
-use crate::fs::FileError;
+use crate::fs::ErrNo;
 
 // Test buffer to implement FileOperation
 struct Buffer {
@@ -14,7 +14,7 @@ impl Buffer {
 
 // Actual FileOperation impl
 impl fs::FileOperation for Buffer {
-	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, FileError> {
+	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
 		for i in 0..length {
 			if i >= self.buffer.len() || i >= dst.len() {
 				return Ok(i);
@@ -24,7 +24,7 @@ impl fs::FileOperation for Buffer {
 		Ok(length)
 	}
 
-	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, FileError> {
+	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 		for i in 0..length {
 			if i >= self.buffer.len() || i >= src.len() {
 				return Ok(i);

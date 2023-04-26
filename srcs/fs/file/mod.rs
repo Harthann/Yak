@@ -2,15 +2,11 @@ use crate::boxed::Box;
 use crate::spin::Mutex;
 use crate::string::String;
 use alloc::sync::Arc;
+use crate::errno::ErrNo;
 
 pub trait FileOperation {
-	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, FileError>;
-	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, FileError>;
-}
-
-#[derive(Debug)]
-pub enum FileError {
-	Unknown()
+	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo>;
+	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo>;
 }
 
 /// Contains all file information.
@@ -49,7 +45,7 @@ impl File {
 		&self,
 		dst: &mut [u8],
 		length: usize
-	) -> Result<usize, FileError> {
+	) -> Result<usize, ErrNo> {
 		crate::fs::read(self.fd, dst, length)
 	}
 
@@ -58,7 +54,7 @@ impl File {
 		&mut self,
 		src: &[u8],
 		length: usize
-	) -> Result<usize, FileError> {
+	) -> Result<usize, ErrNo> {
 		crate::fs::write(self.fd, src, length)
 	}
 }

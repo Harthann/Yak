@@ -3,6 +3,7 @@ use crate::spin::Mutex;
 use crate::string::String;
 use crate::vec::Vec;
 use alloc::sync::Arc;
+use crate::errno::ErrNo;
 
 #[cfg(test)]
 mod test;
@@ -12,22 +13,22 @@ pub use file::*;
 
 // Contain all file system. This will be probably converted to a BST or something like that
 // FileInfo will have to contain permission, file type information etc etc
-static SYSFILES: Mutex<Vec<FileInfo>, true> = Mutex::new(Vec::new());
+static SYSFILES: Mutex<Vec<Arc<FileInfo>>, true> = Mutex::new(Vec::new());
 
 /// Take information on a file and add it to SYSFILES if it does not exist
-/// FileError is return if file already found.
-pub fn create(file: FileInfo) -> Result<(), FileError> {
+/// ErrNo is return if file already found.
+pub fn create(file: FileInfo) -> Result<(), ErrNo> {
 	let mut guard = SYSFILES.lock();
 
 	let found_file = guard.iter().find(|elem| elem.name == file.name);
 	match found_file {
 		None => {
-			guard.push(file);
+			guard.push(Arc::new(file));
 			Ok(())
 		},
 		Some(file) => {
 			crate::kprintln!("Found file {}", file.name);
-			Err(FileError::Unknown())
+			Err(ErrNo::EEXIST)
 		}
 	}
 }
@@ -39,7 +40,7 @@ pub fn create(file: FileInfo) -> Result<(), FileError> {
 pub fn create_from_raw<T: FileOperation + 'static>(
 	name: &str,
 	buffer: T
-) -> Result<(), FileError> {
+) -> Result<(), ErrNo> {
 	let file: FileInfo = FileInfo::new(String::from(name), Box::new(buffer));
 	create(file)
 }
@@ -66,20 +67,22 @@ static PROC_FILES: Mutex<[Option<File>; 32], false> = Mutex::new([DEFAULT; 32]);
 
 /// Look for a file given it's name in SYSFILES and open it.
 /// Open files list is common between processses, this will change in later version
-pub fn open(name: &str) -> Result<usize, FileError> {
+pub fn open(name: &str) -> Result<usize, ErrNo> {
 	let guard = SYSFILES.lock();
 
+    // Error if file does not exist
 	let found_file = guard
 		.iter()
 		.find(|elem| elem.name == name)
-		.ok_or(FileError::Unknown())?;
+		.ok_or(ErrNo::ENOENT)?;
 	let file: File = File { fd: 0, op: Arc::clone(&found_file.op) };
 	let mut guard = PROC_FILES.lock();
 
+    // Error if file table already full
 	let index = guard
 		.iter()
 		.position(|elem| elem.is_none())
-		.ok_or(FileError::Unknown())?;
+		.ok_or(ErrNo::EMFILE)?;
 	guard[index] = Some(file);
 	return Ok(index);
 }
@@ -97,9 +100,9 @@ pub fn read(
 	fd: usize,
 	dst: &mut [u8],
 	length: usize
-) -> Result<usize, FileError> {
+) -> Result<usize, ErrNo> {
 	let mut guard = PROC_FILES.lock();
-	let file = guard[fd].as_mut().ok_or(FileError::Unknown())?;
+	let file = guard[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let guard2 = file.op.lock();
 	guard2.read(dst, length)
 }
@@ -107,9 +110,9 @@ pub fn read(
 /// This function mimic the linux write syscall. Look for a file in file lists and call it's
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
-pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, FileError> {
+pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 	let mut guard = PROC_FILES.lock();
-	let file = guard[fd].as_mut().ok_or(FileError::Unknown())?;
+	let file = guard[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let mut guard2 = file.op.lock();
 	guard2.write(src, length)
 }
