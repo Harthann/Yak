@@ -4,6 +4,8 @@ use crate::string::String;
 use alloc::sync::Arc;
 use crate::errno::ErrNo;
 
+pub mod socket;
+
 pub trait FileOperation {
 	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo>;
 	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo>;

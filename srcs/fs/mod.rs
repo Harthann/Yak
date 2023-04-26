@@ -122,3 +122,31 @@ pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 	let mut guard2 = file.op.lock();
 	guard2.write(src, length)
 }
+
+// SOCKET HELPERS
+use file::socket::{SocketProtocol, SocketType, SocketDomain};
+pub fn socket_pair(domain: SocketDomain, stype: SocketType, protocol: SocketProtocol, sockets: &mut [usize; 2]) -> Result<usize, ErrNo> {
+    let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
+	let socket1: FileInfo = FileInfo::new(String::from("socketfs"), Box::new(socket.0));
+	let socket2: FileInfo = FileInfo::new(String::from("socketfs"), Box::new(socket.1));
+
+    let curr_process = Process::get_running_process();
+
+    // Open first socket
+	let index = curr_process.fds
+		.iter()
+		.position(|elem| elem.is_none())
+		.ok_or(ErrNo::EMFILE)?;
+	curr_process.fds[index] = Some(Arc::new(socket1));
+
+    // Open second socket
+	let index2 = curr_process.fds
+		.iter()
+		.position(|elem| elem.is_none())
+		.ok_or(ErrNo::EMFILE)?;
+	curr_process.fds[index2] = Some(Arc::new(socket2));
+
+    sockets[0] = index;
+    sockets[1] = index2;
+    Ok(0)
+}

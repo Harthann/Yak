@@ -68,7 +68,7 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
-            fds:             [DEFAULT_FILE; 32],
+            fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
 			owner:           0
