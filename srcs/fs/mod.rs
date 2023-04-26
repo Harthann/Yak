@@ -61,9 +61,9 @@ pub fn delete(name: &str) {
 	}
 }
 
-const DEFAULT: Option<File> = None;
+const DEFAULT: Option<Arc<FileInfo>> = None;
 // This static is temporari, file array should be bind to each process individually
-static PROC_FILES: Mutex<[Option<File>; 32], false> = Mutex::new([DEFAULT; 32]);
+static PROC_FILES: Mutex<[Option<Arc<FileInfo>>; 32], false> = Mutex::new([DEFAULT; 32]);
 
 /// Look for a file given it's name in SYSFILES and open it.
 /// Open files list is common between processses, this will change in later version
@@ -75,7 +75,6 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 		.iter()
 		.find(|elem| elem.name == name)
 		.ok_or(ErrNo::ENOENT)?;
-	let file: File = File { fd: 0, op: Arc::clone(&found_file.op) };
 	let mut guard = PROC_FILES.lock();
 
     // Error if file table already full
@@ -83,7 +82,7 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 		.iter()
 		.position(|elem| elem.is_none())
 		.ok_or(ErrNo::EMFILE)?;
-	guard[index] = Some(file);
+	guard[index] = Some(Arc::clone(&found_file));
 	return Ok(index);
 }
 

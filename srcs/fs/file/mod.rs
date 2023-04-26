@@ -28,39 +28,3 @@ impl FileInfo {
 	}
 }
 
-/// Currently this structure is only used to store op in the PROC_FILES vector
-/// fd field isn't used.
-/// TODO: This could be the structure returned by open containing fd, file size etc.... and could
-/// close fd and drop
-pub struct File {
-	pub fd: usize,
-	pub op: Arc<Mutex<Box<dyn FileOperation>, false>>
-}
-unsafe impl Sync for File {}
-unsafe impl Send for File {}
-
-impl File {
-	#[inline]
-	pub fn read(
-		&self,
-		dst: &mut [u8],
-		length: usize
-	) -> Result<usize, ErrNo> {
-		crate::fs::read(self.fd, dst, length)
-	}
-
-	#[inline]
-	pub fn write(
-		&mut self,
-		src: &[u8],
-		length: usize
-	) -> Result<usize, ErrNo> {
-		crate::fs::write(self.fd, src, length)
-	}
-}
-
-impl Drop for File {
-	fn drop(&mut self) {
-		// TODO Delete something? Close fd?
-	}
-}
