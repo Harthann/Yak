@@ -5,6 +5,8 @@ use crate::vec::Vec;
 use alloc::sync::Arc;
 use crate::errno::ErrNo;
 
+use crate::proc::process::MAX_FD;
+
 #[cfg(test)]
 mod test;
 
@@ -61,10 +63,6 @@ pub fn delete(name: &str) {
 	}
 }
 
-const DEFAULT: Option<Arc<FileInfo>> = None;
-// This static is temporari, file array should be bind to each process individually
-static PROC_FILES: Mutex<[Option<Arc<FileInfo>>; 32], false> = Mutex::new([DEFAULT; 32]);
-
 /// Look for a file given it's name in SYSFILES and open it.
 /// Open files list is common between processses, this will change in later version
 pub fn open(name: &str) -> Result<usize, ErrNo> {
@@ -75,43 +73,52 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 		.iter()
 		.find(|elem| elem.name == name)
 		.ok_or(ErrNo::ENOENT)?;
-	let mut guard = PROC_FILES.lock();
+	let curr_process = Process::get_running_process();
 
     // Error if file table already full
-	let index = guard
+	let index = curr_process.fds
 		.iter()
 		.position(|elem| elem.is_none())
 		.ok_or(ErrNo::EMFILE)?;
-	guard[index] = Some(Arc::clone(&found_file));
+	curr_process.fds[index] = Some(Arc::clone(&found_file));
 	return Ok(index);
 }
 
 /// Close a file given it's file descriptor. This does not delete the file from the system
 pub fn close(fd: usize) {
 	// TODO drop_in_place?
-	PROC_FILES.lock()[fd] = None;
+    if fd < MAX_FD {
+	    let curr_process = Process::get_running_process();
+        curr_process.fds[fd] = None;
+    }
 }
 
 /// This function mimic the linux read syscall. Look for a file in file lists and call it's
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
-pub fn read(
-	fd: usize,
-	dst: &mut [u8],
-	length: usize
-) -> Result<usize, ErrNo> {
-	let mut guard = PROC_FILES.lock();
-	let file = guard[fd].as_mut().ok_or(ErrNo::EBADF)?;
+pub fn read(fd: usize, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
+    if fd >= MAX_FD {
+        return Err(ErrNo::EBADF);
+    }
+
+	let curr_process = Process::get_running_process();
+
+	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let guard2 = file.op.lock();
 	guard2.read(dst, length)
 }
 
+use crate::proc::process::Process;
 /// This function mimic the linux write syscall. Look for a file in file lists and call it's
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
 pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
-	let mut guard = PROC_FILES.lock();
-	let file = guard[fd].as_mut().ok_or(ErrNo::EBADF)?;
+    if fd >= MAX_FD {
+        return Err(ErrNo::EBADF);
+    }
+
+	let curr_process = Process::get_running_process();
+	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let mut guard2 = file.op.lock();
 	guard2.write(src, length)
 }

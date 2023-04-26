@@ -24,7 +24,10 @@ unsafe impl Send for FileInfo {}
 
 impl FileInfo {
 	pub fn new(name: String, op: Box<dyn FileOperation>) -> Self {
-		Self { name: name, op: Arc::new(Mutex::new(op)) }
+		Self {
+            name,
+            op: Arc::new(Mutex::new(op))
+        }
 	}
 }
 
