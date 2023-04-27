@@ -1,4 +1,4 @@
-#[derive(Copy, Clone, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum ErrNo {
 	EPERM           = 1,   // Operation not permitted
 	ENOENT          = 2,   // No such file or directory
@@ -124,6 +124,13 @@ pub enum ErrNo {
 	// Should never be seen by user programs
 	ERESTARTSYS     = 512,
 	ERESTARTNOINTR  = 513
+}
+
+use core::fmt;
+impl fmt::Debug for ErrNo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "ErrNo: [{:?}] {}", *self as usize, strerror(*self))
+    }
 }
 
 pub fn strerror(errno: ErrNo) -> &'static str {
