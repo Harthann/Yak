@@ -109,6 +109,9 @@ impl Socket {
 				// for later use woffset to know how much as been written and not lock waiting
 				// input
 				while buffer[0].lock().len() < *roffset + reading {
+                    unsafe {
+                    crate::dprintln!("Halting read, need {}bytes", *roffset + reading);
+                    }
 					unsafe { hlt!() };
 				}
 				let guard = &mut buffer[0].lock();
