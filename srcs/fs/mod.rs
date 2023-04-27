@@ -1,12 +1,11 @@
 use crate::boxed::Box;
+use crate::errno::ErrNo;
 use crate::spin::Mutex;
 use crate::string::String;
 use crate::vec::Vec;
 use alloc::sync::Arc;
-use crate::errno::ErrNo;
 
 use crate::proc::process::MAX_FD;
-
 
 /// TODO! Allow each syscalls that open an fd to return an object that implement close on drop to
 /// avoid leaks due to unused close. This will make also use of full rust capabilities and lifetime
@@ -72,15 +71,16 @@ pub fn delete(name: &str) {
 pub fn open(name: &str) -> Result<usize, ErrNo> {
 	let guard = SYSFILES.lock();
 
-    // Error if file does not exist
+	// Error if file does not exist
 	let found_file = guard
 		.iter()
 		.find(|elem| elem.name == name)
 		.ok_or(ErrNo::ENOENT)?;
 	let curr_process = Process::get_running_process();
 
-    // Error if file table already full
-	let index = curr_process.fds
+	// Error if file table already full
+	let index = curr_process
+		.fds
 		.iter()
 		.position(|elem| elem.is_none())
 		.ok_or(ErrNo::EMFILE)?;
@@ -91,19 +91,19 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 /// Close a file given it's file descriptor. This does not delete the file from the system
 pub fn close(fd: usize) {
 	// TODO drop_in_place?
-    if fd < MAX_FD {
-	    let curr_process = Process::get_running_process();
-        curr_process.fds[fd] = None;
-    }
+	if fd < MAX_FD {
+		let curr_process = Process::get_running_process();
+		curr_process.fds[fd] = None;
+	}
 }
 
 /// This function mimic the linux read syscall. Look for a file in file lists and call it's
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
 pub fn read(fd: usize, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
-    if fd >= MAX_FD {
-        return Err(ErrNo::EBADF);
-    }
+	if fd >= MAX_FD {
+		return Err(ErrNo::EBADF);
+	}
 
 	let curr_process = Process::get_running_process();
 
@@ -117,9 +117,9 @@ use crate::proc::process::Process;
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
 pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
-    if fd >= MAX_FD {
-        return Err(ErrNo::EBADF);
-    }
+	if fd >= MAX_FD {
+		return Err(ErrNo::EBADF);
+	}
 
 	let curr_process = Process::get_running_process();
 	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
@@ -128,31 +128,40 @@ pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 }
 
 // SOCKET HELPERS
-use file::socket::{SocketProtocol, SocketType, SocketDomain};
+use file::socket::{SocketDomain, SocketProtocol, SocketType};
 /// Create and open a pair of socket given it's domain, type and protocol.
 /// Fd are written to sockets array. Prototype is made to match linux syscall
-pub fn socket_pair(domain: SocketDomain, stype: SocketType, protocol: SocketProtocol, sockets: &mut [usize; 2]) -> Result<usize, ErrNo> {
-    let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
-	let socket1: FileInfo = FileInfo::new(String::from("socketfs"), Box::new(socket.0));
-	let socket2: FileInfo = FileInfo::new(String::from("socketfs"), Box::new(socket.1));
+pub fn socket_pair(
+	domain: SocketDomain,
+	stype: SocketType,
+	protocol: SocketProtocol,
+	sockets: &mut [usize; 2]
+) -> Result<usize, ErrNo> {
+	let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
+	let socket1: FileInfo =
+		FileInfo::new(String::from("socketfs"), Box::new(socket.0));
+	let socket2: FileInfo =
+		FileInfo::new(String::from("socketfs"), Box::new(socket.1));
 
-    let curr_process = Process::get_running_process();
+	let curr_process = Process::get_running_process();
 
-    // Open first socket
-	let index = curr_process.fds
+	// Open first socket
+	let index = curr_process
+		.fds
 		.iter()
 		.position(|elem| elem.is_none())
 		.ok_or(ErrNo::EMFILE)?;
 	curr_process.fds[index] = Some(Arc::new(socket1));
 
-    // Open second socket
-	let index2 = curr_process.fds
+	// Open second socket
+	let index2 = curr_process
+		.fds
 		.iter()
 		.position(|elem| elem.is_none())
 		.ok_or(ErrNo::EMFILE)?;
 	curr_process.fds[index2] = Some(Arc::new(socket2));
 
-    sockets[0] = index;
-    sockets[1] = index2;
-    Ok(0)
+	sockets[0] = index;
+	sockets[1] = index2;
+	Ok(0)
 }

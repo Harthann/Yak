@@ -51,7 +51,7 @@ pub struct Process {
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
-    pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
+	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
 	pub owner:           Id
@@ -68,7 +68,7 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
-            fds:             [DEFAULT_FILE; MAX_FD],
+			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
 			owner:           0

@@ -1,8 +1,8 @@
 use crate::boxed::Box;
+use crate::errno::ErrNo;
 use crate::spin::Mutex;
 use crate::string::String;
 use alloc::sync::Arc;
-use crate::errno::ErrNo;
 
 pub mod socket;
 
@@ -26,10 +26,6 @@ unsafe impl Send for FileInfo {}
 
 impl FileInfo {
 	pub fn new(name: String, op: Box<dyn FileOperation>) -> Self {
-		Self {
-            name,
-            op: Arc::new(Mutex::new(op))
-        }
+		Self { name, op: Arc::new(Mutex::new(op)) }
 	}
 }
-
