@@ -5,12 +5,19 @@ use crate::spin::Mutex;
 use alloc::sync::Arc;
 use core::cell::RefCell;
 
+/// Represent the different domains of a socket.
+/// AF_UNIX bind the socket to the system as file.
+/// AF_INET bind the socket to a network connect. Not Yet Implemented
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone)]
 pub enum SocketDomain {
     AF_UNIX,
     AF_INET
 }
+/// Represent the type of the socket.
+/// SOCK_RAW: Not yet implemented
+/// SOCK_DGRAM: Partially implemented
+/// SOCK_STREAM: Not yet implemented
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone)]
 pub enum SocketType {
@@ -18,6 +25,9 @@ pub enum SocketType {
     SOCK_DGRAM,
     SOCK_STREAM
 }
+/// Represent the protocol bound to the socket.
+/// Generally only one protocol is implemented for each socket type.
+/// Currently no protocol are implemented
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone)]
 pub enum SocketProtocol {
@@ -46,6 +56,7 @@ pub struct Socket {
 }
 
 impl Socket {
+    /// Create a socket given it's domain, type and protocol
     pub const fn new(domain: SocketDomain, stype: SocketType, protocol: SocketProtocol) -> Self {
         Self {
             domain,
@@ -60,6 +71,7 @@ impl Socket {
 }
 
 impl FileOperation for Socket {
+    /// Redirect to the read appropriate to the socket type
     fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
         match self.stype {
             SocketType::SOCK_RAW    => self.raw_read(dst, length),
@@ -68,6 +80,7 @@ impl FileOperation for Socket {
         }
     }
 
+    /// Redirect to the write appropriate to the socket type
     fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo> {
         match self.stype {
             SocketType::SOCK_RAW    => self.raw_write(src, length),
@@ -140,6 +153,7 @@ impl Socket {
     }
 }
 
+/// Create two sockets that are bound together, and can be read and write
 pub fn create_socket_pair(
     domain: SocketDomain,
     stype: SocketType,
