@@ -91,7 +91,7 @@ impl Socket {
                     unsafe { hlt!()};
                 }
                 let guard = &mut buffer[0].lock();
-                dst.copy_from_slice(&guard.as_slice()[*roffset..*roffset+reading]);
+                dst[0..reading].copy_from_slice(&guard.as_slice()[*roffset..*roffset+reading]);
                 *roffset += reading;
                 // panic if overflow?
                 Ok(reading)
@@ -157,4 +157,33 @@ pub fn create_socket_pair(
     first_socket.buffer = Some([buffer2, buffer1]);
     Ok((first_socket, second_socket))
 
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::{Socket, SocketType, SocketDomain, SocketProtocol};
+    use super::create_socket_pair;
+    use super::FileOperation;
+
+    #[sys_macros::test_case]
+    fn test_socket() {
+        let mut sockets: (Socket, Socket);
+        let input = "Hellow World";
+        let mut buffer: [u8; 255] = [0; 255];
+
+        sockets = create_socket_pair(SocketDomain::AF_UNIX,
+                                     SocketType::SOCK_DGRAM,
+                                     SocketProtocol::DEFAULT)
+                  .expect("Error creating sockets");
+        sockets.1.write(input.as_bytes(), input.len()).expect("Failed writing to socket 1");
+        sockets.0.read(&mut buffer, input.len()).expect("Failed reading socket 0");
+        assert_eq!(input.as_bytes(), &buffer[0..input.len()]);
+        
+        let input2 = "This is a success";
+        buffer = [0; 255];
+        sockets.0.write(input2.as_bytes(), input2.len()).expect("Failed writing to socket 0");
+        sockets.1.read(&mut buffer, input2.len()).expect("Failed reading socket 1");
+        assert_eq!(input2.as_bytes(), &buffer[0..input2.len()]);
+    }
 }

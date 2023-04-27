@@ -7,6 +7,10 @@ use crate::errno::ErrNo;
 
 use crate::proc::process::MAX_FD;
 
+
+/// TODO! Allow each syscalls that open an fd to return an object that implement close on drop to
+/// avoid leaks due to unused close. This will make also use of full rust capabilities and lifetime
+
 #[cfg(test)]
 mod test;
 
@@ -125,6 +129,8 @@ pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 
 // SOCKET HELPERS
 use file::socket::{SocketProtocol, SocketType, SocketDomain};
+/// Create and open a pair of socket given it's domain, type and protocol.
+/// Fd are written to sockets array. Prototype is made to match linux syscall
 pub fn socket_pair(domain: SocketDomain, stype: SocketType, protocol: SocketProtocol, sockets: &mut [usize; 2]) -> Result<usize, ErrNo> {
     let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
 	let socket1: FileInfo = FileInfo::new(String::from("socketfs"), Box::new(socket.0));
