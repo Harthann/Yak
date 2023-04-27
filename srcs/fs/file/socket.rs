@@ -3,6 +3,7 @@ use super::FileOperation;
 use crate::errno::ErrNo;
 use crate::spin::Mutex;
 use alloc::sync::Arc;
+use core::cell::RefCell;
 
 #[allow(non_camel_case_types)]
 #[derive(Copy, Clone)]
@@ -23,11 +24,24 @@ pub enum SocketProtocol {
     DEFAULT
 }
 
+// Maybe replace Vec<u8> with reference on slice
+// The slice could be obtain with mmap and will embed it's length.
+// If we'll overflow the slice buffer, we could request a new page and etend our slice
+// to wrap these function, the slice could be a MemoryZone structure
+
+/// Socket structure representation. Socket alone can't do much. These need to be created by pair,
+/// Each socket will be tide to both endpoint but we'll access only one by writing or reading.
+/// UNIX domain will create 2 buffers for both endpoint of the socket.
+/// INET domain is not implemented but could create an endpoint of the socket bound to the network
+/// interface
+/// TODO? Maybe embed the woffset inside the buffer to precisely know how much byte as been written
 pub struct Socket {
     domain:   SocketDomain,
     stype:    SocketType,
     protocol: SocketProtocol,
-    buffer: Option<Arc<Mutex<[Vec<u8>; 2], false>>>,
+    roffset:  RefCell<usize>, // needed for interior mutability in read
+    woffset:  usize,
+    buffer:   Option<[Arc<Mutex<Vec<u8>, false>>; 2]>,
     endpoint: usize
 }
 
@@ -37,6 +51,8 @@ impl Socket {
             domain,
             stype,
             protocol,
+            roffset: RefCell::new(0),
+            woffset: 0,
             buffer: None,
             endpoint: 0
         }
@@ -64,16 +80,38 @@ impl FileOperation for Socket {
 /// FileOperations for DGRAM sockets
 impl Socket {
     fn dgram_read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
-        let _size = core::cmp::min(dst.len(), length);
-        todo!()
+        match &self.buffer {
+            Some(buffer) => {
+                let mut roffset = self.roffset.borrow_mut();
+                let reading = core::cmp::min(dst.len(), length);
+                // If nobody is writing to buffer this causes a deadlock
+                // for later use woffset to know how much as been written and not lock waiting
+                // input
+                while buffer[0].lock().len() < *roffset+reading {
+                    unsafe { hlt!()};
+                }
+                let guard = &mut buffer[0].lock();
+                dst.copy_from_slice(&guard.as_slice()[*roffset..*roffset+reading]);
+                *roffset += reading;
+                // panic if overflow?
+                Ok(reading)
+            },
+            None => {todo!()}
+        }
     }
 
     fn dgram_write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo> {
         match &self.buffer {
             Some(buffer) => {
-                let _guard = &buffer.lock()[self.endpoint];
-                let _writing = core::cmp::min(length, src.len());
-                todo!()
+                let guard = &mut buffer[1].lock();
+                let writing = core::cmp::min(length, src.len());
+                // Need to store offset of writing if no vector are used
+                // and access the array from this store offset
+                for i in 0..writing {
+                    guard.push(src[i]);
+                }
+                self.woffset += writing;
+                Ok(writing)
             },
             None => {todo!()}
         }
@@ -110,13 +148,13 @@ pub fn create_socket_pair(
 {
     let mut first_socket = Socket::new(domain, stype, protocol);
     let mut second_socket = Socket::new(domain, stype, protocol);
-    let buffer: Arc<Mutex<[Vec<u8>; 2], false>> = Arc::new(Mutex::default());
-    // Clone the reference to our buffer and assign our endpoint index to 1
-    second_socket.buffer = Some(Arc::clone(&buffer));
-    second_socket.endpoint = 1;
-    // Move the reference to our buffer and assign our endpoint index to 0
-    first_socket.buffer = Some(buffer);
-    first_socket.endpoint = 0;
+    let buffer1: Arc<Mutex<Vec<u8>, false>> = Arc::new(Mutex::default());
+    let buffer2: Arc<Mutex<Vec<u8>, false>> = Arc::new(Mutex::default());
+
+    // Clone the reference to our buffers. Index 0 will be readed, index 1 will be writed to
+    second_socket.buffer = Some([Arc::clone(&buffer1), Arc::clone(&buffer2)]);
+    // Move the reference to our buffers. Index 0 will be readed, index 1 will be writed to
+    first_socket.buffer = Some([buffer2, buffer1]);
     Ok((first_socket, second_socket))
 
 }
