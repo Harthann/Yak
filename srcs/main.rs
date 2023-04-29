@@ -51,12 +51,12 @@ pub extern "C" fn kmain() -> ! {
 	// poc::test_macros();
 
 	kprintln!("Hello World of {}!", 42);
-	 change_color!(Color::Red, Color::White);
-	 let workspace_msg = string::String::from(
-	 	"Press Ctrl-2 to navigate to the second workspace"
+	change_color!(Color::Red, Color::White);
+	let workspace_msg = string::String::from(
+		"Press Ctrl-2 to navigate to the second workspace"
 	);
-	 kprintln!("{}", workspace_msg);
-	 change_color!(Color::White, Color::Black);
+	kprintln!("{}", workspace_msg);
+	change_color!(Color::White, Color::Black);
 
 	loop {
 		kprint!("$> ");
