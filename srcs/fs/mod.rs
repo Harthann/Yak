@@ -32,7 +32,7 @@ pub fn create(file: FileInfo) -> Result<(), FileError> {
 	}
 }
 
-/// Create a file given it's name and a predefined buffer. The buffer should implement
+/// Create a file given its name and a predefined buffer. The buffer should implement
 /// FileOperation trait.
 /// WARNINGS: This does use String and Box to create FileInfo, no file can be created before Heap
 /// creation
@@ -64,7 +64,7 @@ const DEFAULT: Option<File> = None;
 // This static is temporary, file array should be bind to each process individually
 static PROC_FILES: Mutex<[Option<File>; 32], false> = Mutex::new([DEFAULT; 32]);
 
-/// Look for a file given it's name in SYSFILES and open it.
+/// Look for a file given its name in SYSFILES and open it.
 /// Open files list is common between processses, this will change in later version
 pub fn open(name: &str) -> Result<usize, FileError> {
 	let guard = SYSFILES.lock();
@@ -84,7 +84,7 @@ pub fn open(name: &str) -> Result<usize, FileError> {
 	return Ok(index);
 }
 
-/// Close a file given it's file descriptor. This does not delete the file from the system
+/// Close a file given its file descriptor. This does not delete the file from the system
 pub fn close(fd: usize) {
 	// TODO drop_in_place?
 	PROC_FILES.lock()[fd] = None;
