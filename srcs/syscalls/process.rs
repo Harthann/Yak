@@ -2,16 +2,27 @@ use crate::proc::process::{Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
+use crate::memory::paging::{PAGE_USER};
 
 use crate::wrappers::{_cli, _sti};
 
 use crate::boxed::Box;
 
+// kernel fork:
+// same cr3:
+// - Can't copy heap
+// other cr3:
+// => Copy heap
+// => Copy stack
+// must go to cr3 main kernel on sys
+// must dump registers
+
+
+/// Create a new process from the calling process,
+/// copy stack, heap and registers
+///
+/// Heap contains the prg and the heap allocated
 pub fn sys_fork() -> Pid {
-	//! Create a new process from the calling process,
-	//! copy stack, heap and registers
-	//!
-	//! Heap contains the prg and the heap allocated
 	unsafe {
 		_cli();
 		let running_task: &mut Task = Task::get_running_task();
@@ -38,7 +49,9 @@ pub fn sys_fork() -> Pid {
 
 		new_task.process = process;
 
-		let page_dir: &mut PageDirectory = process.setup_pagination();
+		let page_dir: &mut PageDirectory = process.setup_pagination(
+			(process.stack.flags & PAGE_USER) != 0
+		);
 
 		new_task.regs = running_task.regs;
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
@@ -48,5 +61,22 @@ pub fn sys_fork() -> Pid {
 		TASKLIST.push(new_task);
 		_sti();
 		process.pid
+	}
+}
+
+#[macro_export]
+macro_rules! sys_fork {
+	() => {
+		{
+			let mut pid: $crate::proc::process::Pid;
+			core::arch::asm!(
+				"mov eax, {0}",
+				"int 0x80",
+				"mov eax, {1}",
+				const crate::syscalls::Syscall::fork as u32,
+				out(reg) pid
+			);
+			pid
+		}
 	}
 }

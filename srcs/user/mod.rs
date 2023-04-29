@@ -68,7 +68,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.process = process;
 
 	// TODO: free those when process ends ?
-	let page_dir: &mut PageDirectory = process.setup_pagination();
+	let page_dir: &mut PageDirectory = process.setup_pagination(true);
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;

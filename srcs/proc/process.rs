@@ -227,55 +227,67 @@ impl Process {
 		}
 	}
 
-	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
+	pub unsafe fn setup_pagination(&self, user: bool) -> &'static mut PageDirectory {
 		let parent: &Process = &(*self.parent);
 		let kernel_pt_paddr: PhysAddr =
 			get_paddr!(page_directory.get_page_table(768).get_vaddr());
 
+		let flag_user;
+		let heap_addr;
+		let stack_addr;
+		if user {
+			flag_user = PAGE_USER;
+			heap_addr = USER_HEAP_ADDR;
+			stack_addr = USER_STACK_ADDR;
+		} else {
+			flag_user = 0;
+			heap_addr = parent.heap.offset;
+			stack_addr = parent.stack.offset;
+		}
 		let page_dir: &'static mut PageDirectory =
-			PageDirectory::new(PAGE_WRITABLE | PAGE_USER);
+			PageDirectory::new(PAGE_WRITABLE | flag_user);
 		let process_heap: &'static mut PageTable = PageTable::new();
 		let process_stack: &'static mut PageTable = PageTable::new();
 		let process_kernel_stack: &'static mut PageTable = PageTable::new();
 		// Setup heap + prg
 		page_dir.set_entry(
-			USER_HEAP_ADDR as usize >> 22,
+			heap_addr as usize >> 22,
 			get_paddr!(process_heap as *const _)
 				| parent.heap.flags
-				| PAGE_USER | PAGE_PRESENT
+				| flag_user | PAGE_PRESENT
 		);
 		// Setup stack
 		page_dir.set_entry(
-			USER_STACK_ADDR as usize >> 22,
+			stack_addr as usize >> 22,
 			get_paddr!(process_stack as *const _)
 				| parent.stack.flags
-				| PAGE_USER | PAGE_PRESENT
+				| flag_user | PAGE_PRESENT
 		);
 		page_dir.set_entry(
 			768,
-			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | flag_user
 		);
 		page_dir.set_entry(
 			KSTACK_ADDR as usize >> 22,
 			get_paddr!(process_kernel_stack as *const _)
 				| parent.kernel_stack.flags
-				| PAGE_USER | PAGE_PRESENT
+				| flag_user | PAGE_PRESENT
 		);
 		// Setup stack and heap
 		process_heap.new_index_frame(
-			(USER_HEAP_ADDR as usize & 0x3ff000) >> 12,
+			(heap_addr as usize & 0x3ff000) >> 12,
 			get_paddr!(self.heap.offset),
-			PAGE_WRITABLE | PAGE_USER
+			PAGE_WRITABLE | flag_user
 		);
 		process_stack.new_index_frame(
-			(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
+			(stack_addr as usize & 0x3ff000) >> 12,
 			get_paddr!(self.stack.offset),
-			PAGE_WRITABLE | PAGE_USER
+			PAGE_WRITABLE | flag_user
 		);
 		process_kernel_stack.new_index_frame(
 			(KSTACK_ADDR as usize & 0x3ff000) >> 12,
 			get_paddr!(self.kernel_stack.offset),
-			PAGE_WRITABLE | PAGE_USER
+			PAGE_WRITABLE | flag_user
 		);
 		refresh_tlb!();
 		page_dir

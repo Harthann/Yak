@@ -47,6 +47,15 @@ mod poc {
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	// 	crate::user::test_user_page();
+	unsafe {
+		let pid = crate::sys_fork!();
+		if (crate::sys_fork!() == 0) {
+			kprintln!("I'm the child !");
+		} else {
+			kprintln!("Parent here, child pid: {}", pid);
+			crate::syscalls::exit::sys_waitpid(pid, core::ptr::null_mut(), 0);
+		}
+	}
 
 	poc::test_macros();
 	kprintln!("Hello World of {}!", 42);

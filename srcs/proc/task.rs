@@ -43,11 +43,7 @@ impl Task {
 		unsafe {
 			core::arch::asm!(
 				"mov {cr3}, cr3",
-				"pushf",
-				"mov {eflags}, [esp]",
-				"popf",
-				cr3 = out(reg) task.regs.cr3,
-				eflags = out(reg) task.regs.eflags
+				cr3 = out(reg) task.regs.cr3
 			);
 			MASTER_PROCESS.state = Status::Run;
 			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
@@ -222,6 +218,7 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop();
 	old_task.regs = *regs;
+	crate::kprintln!("save_task: {:#x?}", *regs);
 	TASKLIST.push(old_task);
 	_rst();
 }
@@ -243,6 +240,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 #[no_mangle]
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
+	crate::kprintln!("find_task!");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -253,6 +251,7 @@ unsafe extern "C" fn find_task() -> ! {
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
 			let task: Registers = new_task.regs;
+			crate::kprintln!("new_task: {:p}", &task);
 			change_kernel_stack(process);
 			_rst();
 			switch_task(&task);
