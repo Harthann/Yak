@@ -9,47 +9,62 @@ pub struct Flags<T>(pub T);
 pub trait FlagOp<T> {
 	/// Toggle bit.
 	/// Safety: No check performed, will produce panic if trying to toggle bit outside of range
+    ///
 	/// e.g:
 	///
+	/// ```
 	/// let flag = Flags::<AtomicU8>::default();
 	/// flag.toggle(1); // Toggle the first bit of the inner AtomicU8
 	/// flag.toggle(9); // Panic there is no 9th bit in an u8
+	/// ```
 	fn toggle(&self, bit: u8);
 
 	/// enable x bit.
 	/// Safety: No check performed, will produce panic if trying to enable bit outside of range
+    ///
 	/// e.g:
-	///
+    ///
+	/// ```
 	/// let flag = Flags::<AtomicU8>::default();
 	/// flag.disable(1); // Enable the first bit of the inner AtomicU8
 	/// flag.disable(9); // Panic there is no 9th bit in an u8
+	/// ```
 	fn enable(&self, bit: u8);
 
 	/// disable x bit.
 	/// Safety: No check performed, will produce panic if trying to disable bit outside of range
+    ///
 	/// e.g:
 	///
+	/// ```
 	/// let flag = Flags::<AtomicU8>::default();
 	/// flag.disable(1); // Disable the first bit of the inner AtomicU8
 	/// flag.disable(9); // Panic there is no 9th bit in an u8
+	/// ```
 	fn disable(&self, bit: u8);
 
 	/// check if the x bit is set.
 	/// safety: no check performed, will produce panic if trying to check bit outside of range
+    ///
 	/// e.g:
 	///
+	/// ```
 	/// let flag = flags::<atomicu8>::default();
 	/// flag.is_enable(1); // return true/false depending of the firt bit state
 	/// flag.is_enable(9); // panic there is no 9th bit in an u8
+	/// ```
 	fn is_enable(&self, bit: u8) -> bool;
 
 	/// check if the x bit is unset.
 	/// safety: no check performed, will produce panic if trying to check bit outside of range
+    ///
 	/// e.g:
 	///
+	/// ```
 	/// let flag = flags::<atomicu8>::default();
 	/// flag.is_disable(1); // return true/false depending of the firt bit state
 	/// flag.is_disable(9); // panic there is no 9th bit in an u8
+	/// ```
 	fn is_disable(&self, bit: u8) -> bool;
 }
 
