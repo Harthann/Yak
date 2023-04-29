@@ -24,6 +24,8 @@ DIR_SRCS		=	srcs
 
 MAKEFILE_PATH	=	$(dir $(abspath Makefile))
 
+SOURCES			=	$(shell find srcs/ -type f -name '*.rs')
+
 DIR_ISO			=	iso
 DIR_GRUB		=	$(DIR_ISO)/boot/grub
 
@@ -86,7 +88,7 @@ test:			$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX)
 
 # Rule to create iso file which can be run with qemu
-$(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG)
+$(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG) Makefile Cargo.toml
 				$(BUILD_PREFIX) grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO) $(BUILD_SUFFIX)
 
 # Put kernel binary inside iso boot for grub-mkrescue
@@ -96,8 +98,8 @@ $(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) | $(DIR_GRUB)
 $(DIR_GRUB):
 				mkdir -p $(DIR_GRUB)
 
-# Build libkernel using cargo
-$(RUST_KERNEL):	Makefile Cargo.toml
+# Build kernel using cargo
+$(RUST_KERNEL): $(SOURCES)
 				$(BUILD_PREFIX) cargo build $(ARGS_CARGO) $(BUILD_SUFFIX)
 
 # Check if the rust can compile without actually compiling it
