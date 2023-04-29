@@ -44,8 +44,8 @@ pub fn create_from_raw<T: FileOperation + 'static>(
 	create(file)
 }
 
-/// Delete file from SYSFILE given it's name
-/// Should be updated later to check permissin on the file
+/// Delete file from SYSFILE given its name
+/// Should be updated later to check permission on the file
 pub fn delete(name: &str) {
 	let mut guard = SYSFILES.lock();
 	if let Some(index) = guard.iter().position(|elem| elem.name == name) {
@@ -61,7 +61,7 @@ pub fn delete(name: &str) {
 }
 
 const DEFAULT: Option<File> = None;
-// This static is temporari, file array should be bind to each process individually
+// This static is temporary, file array should be bind to each process individually
 static PROC_FILES: Mutex<[Option<File>; 32], false> = Mutex::new([DEFAULT; 32]);
 
 /// Look for a file given it's name in SYSFILES and open it.
