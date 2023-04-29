@@ -51,7 +51,7 @@ pub struct Socket {
 	protocol: SocketProtocol,
 	roffset:  RefCell<usize>, // needed for interior mutability in read
 	woffset:  usize,
-	buffer:   Option<[Arc<Mutex<Vec<u8>, false>>; 2]>,
+	buffer:   Option<[Arc<Mutex<Vec<u8>>>; 2]>,
 	endpoint: usize
 }
 
@@ -193,8 +193,8 @@ pub fn create_socket_pair(
 ) -> Result<(Socket, Socket), ErrNo> {
 	let mut first_socket = Socket::new(domain, stype, protocol);
 	let mut second_socket = Socket::new(domain, stype, protocol);
-	let buffer1: Arc<Mutex<Vec<u8>, false>> = Arc::new(Mutex::default());
-	let buffer2: Arc<Mutex<Vec<u8>, false>> = Arc::new(Mutex::default());
+	let buffer1: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::default());
+	let buffer2: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::default());
 
 	// Clone the reference to our buffers. Index 0 will be readed, index 1 will be writed to
 	second_socket.buffer = Some([Arc::clone(&buffer1), Arc::clone(&buffer2)]);

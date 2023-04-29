@@ -1,6 +1,6 @@
 use crate::boxed::Box;
 use crate::errno::ErrNo;
-use crate::spin::Mutex;
+use crate::spin::KMutex;
 use crate::string::String;
 use crate::vec::Vec;
 use alloc::sync::Arc;
@@ -18,7 +18,7 @@ pub use file::*;
 
 // Contain all file system. This will be probably converted to a BST or something like that
 // FileInfo will have to contain permission, file type information etc etc
-static SYSFILES: Mutex<Vec<Arc<FileInfo>>, true> = Mutex::new(Vec::new());
+static SYSFILES: KMutex<Vec<Arc<FileInfo>>> = KMutex::new(Vec::new());
 
 /// Take information on a file and add it to SYSFILES if it does not exist
 /// ErrNo is return if file already found.
