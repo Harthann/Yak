@@ -1,7 +1,5 @@
 #!/bin/bash
 
-sudo apt-get install -y nasm
-
 mkdir -p $HOME/.local/bin
 
 echo -e '#!/bin/bash\nld -m elf_i386 $@' > $HOME/.local/bin/i386-elf-ld

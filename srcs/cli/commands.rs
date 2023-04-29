@@ -232,9 +232,7 @@ fn keymap(command: Vec<String>) {
 	}
 }
 
-extern "C" {
-	pub fn int(nb: u8);
-}
+use crate::interrupts::int::int;
 
 fn interrupt(command: Vec<String>) {
 	let arg: usize;

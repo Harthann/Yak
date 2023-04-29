@@ -4,8 +4,8 @@
 #![feature(specialization)]
 #![feature(nonnull_slice_from_raw_parts)]
 #![feature(rustc_attrs)]
-#![feature(box_syntax)]
 #![feature(ptr_internals)]
+#![feature(const_size_of_val)]
 #![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]
@@ -70,6 +70,7 @@ pub fn memory_state() {
 }
 
 // Modules import
+mod boot;
 mod cli;
 mod gdt;
 mod keyboard;
@@ -133,7 +134,7 @@ use crate::interrupts::init_idt;
 
 use proc::task::Task;
 
-use crate::gdt::{gdt_desc, update_gdtr, KERNEL_BASE};
+use crate::gdt::{gdt_desc, GDTR};
 // use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 
 pub use pic::handlers::JIFFIES;
@@ -152,7 +153,7 @@ pub extern "C" fn kinit() {
 
 	// Update gdtr with higher half kernel gdt addr
 	unsafe {
-		update_gdtr();
+		GDTR::update();
 		reload_gdt!();
 		init_idt();
 	}
