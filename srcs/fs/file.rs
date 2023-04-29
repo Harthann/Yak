@@ -14,7 +14,7 @@ pub enum FileError {
 }
 
 /// Contains all file information.
-/// Current information are only name and it's FileOperation trait object
+/// Current information are only name and FileOperation trait object
 /// The op trait object can be store either by reference of Box. For the moment Box is choosen but
 /// this may change in the future. To make the trait object ThreadSafe Mutex is used.
 /// Arc is used to allow multiple reference on the object in a multithreaded environment
