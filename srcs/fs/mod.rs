@@ -46,7 +46,7 @@ pub fn create_from_raw<T: FileOperation + 'static>(
 	name: &str,
 	buffer: T
 ) -> Result<(), ErrNo> {
-	let file: FileInfo = FileInfo::new(String::from(name), Box::new(buffer));
+	let file: FileInfo = FileInfo::new(String::from(name), buffer);
 	create(file)
 }
 
@@ -139,9 +139,9 @@ pub fn socket_pair(
 ) -> Result<usize, ErrNo> {
 	let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
 	let socket1: FileInfo =
-		FileInfo::new(String::from("socketfs"), Box::new(socket.0));
+		FileInfo::new(String::from("socketfs"), socket.0);
 	let socket2: FileInfo =
-		FileInfo::new(String::from("socketfs"), Box::new(socket.1));
+		FileInfo::new(String::from("socketfs"), socket.1);
 
 	let curr_process = Process::get_running_process();
 

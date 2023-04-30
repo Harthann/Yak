@@ -18,14 +18,14 @@ pub trait FileOperation {
 /// Arc is used to allow multiple reference on the object in a multithreaded environment
 pub struct FileInfo {
 	pub name: String,
-	pub op:   Arc<Mutex<Box<dyn FileOperation>>>
+	pub op:   Arc<Mutex<dyn FileOperation>>
 }
 // Sync/Send marker to indicate rust that FileInfo is thread safe
 unsafe impl Sync for FileInfo {}
 unsafe impl Send for FileInfo {}
 
 impl FileInfo {
-	pub fn new(name: String, op: Box<dyn FileOperation>) -> Self {
+	pub fn new(name: String, op: impl FileOperation + 'static) -> Self {
 		Self { name, op: Arc::new(Mutex::new(op)) }
 	}
 }
