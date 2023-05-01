@@ -3,13 +3,7 @@ use core::fmt;
 use crate::memory::paging::{bitmap, page_directory, PageTable};
 use crate::memory::{PhysAddr, VirtAddr};
 
-use crate::memory::paging::{
-	get_paddr,
-	get_vaddr,
-	refresh_tlb,
-	PAGE_PRESENT,
-	PAGE_WRITABLE
-};
+use crate::memory::paging::{get_paddr, get_vaddr, refresh_tlb, PAGE_PRESENT};
 
 #[repr(transparent)]
 pub struct PageDirectory {
