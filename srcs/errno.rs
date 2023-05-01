@@ -128,9 +128,9 @@ pub enum ErrNo {
 
 use core::fmt;
 impl fmt::Debug for ErrNo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "ErrNo: [{:?}] {}", *self as usize, strerror(*self))
-    }
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		write!(f, "ErrNo: [{:?}] {}", *self as usize, strerror(*self))
+	}
 }
 
 pub fn strerror(errno: ErrNo) -> &'static str {
