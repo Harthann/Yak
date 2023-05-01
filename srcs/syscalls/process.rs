@@ -25,6 +25,7 @@ use crate::boxed::Box;
 pub fn sys_fork() -> Pid {
 	unsafe {
 		_cli();
+		crate::kprintln!("sys_fork");
 		let running_task: &mut Task = Task::get_running_task();
 		let parent: &mut Process = Process::get_running_process();
 
@@ -56,6 +57,8 @@ pub fn sys_fork() -> Pid {
 		new_task.regs = running_task.regs;
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
+		let cr3 = new_task.regs.cr3;
+		crate::kprintln!("cr3: {:#x?}", cr3);
 		new_task.regs.eax = 0; // New forked process return 0
 
 		TASKLIST.push(new_task);

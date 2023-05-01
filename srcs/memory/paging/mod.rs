@@ -2,6 +2,8 @@ pub mod bitmap;
 pub mod page_directory;
 pub mod page_table;
 
+use crate::boot::KERNEL_BASE;
+
 use crate::memory::{PhysAddr, VirtAddr};
 use crate::multiboot;
 
@@ -46,20 +48,21 @@ pub fn init_paging() {
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
 		init_page_tab
-			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+			.set_entry(KERNEL_BASE >> 22, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		refresh_tlb!();
 		// Final mapping
 		let kernel_page_tab: &mut PageTable =
-			&mut *(get_vaddr!(0, 768) as *mut _);
+			&mut *(get_vaddr!(0, KERNEL_BASE >> 22) as *mut _);
 		kernel_page_tab.init();
 		page_directory
-			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+			.set_entry(KERNEL_BASE >> 22, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		// Recursive mapping
 		page_directory.set_entry(1023, pd_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		// Remove init page
 		init_page_tab.clear();
 		page_directory.set_entry(0, 0);
 		refresh_tlb!();
+		crate::kprintln!("{}", page_directory.get_entry(KERNEL_BASE >> 22));
 	}
 }
 

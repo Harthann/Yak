@@ -62,7 +62,6 @@ struct ScreenChar {
 	color_code: ColorCode
 }
 
-const VGABUFF_OFFSET: usize = 0xc00b8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 

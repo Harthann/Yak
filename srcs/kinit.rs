@@ -143,7 +143,7 @@ const STACK_ADDR: VirtAddr = 0xff0fffff;
 pub extern "C" fn kinit() {
 	crate::wrappers::_cli();
 
-	// multiboot::read_tags();
+	multiboot::read_tags();
 	// Init paging and remove identity paging
 	init_paging();
 

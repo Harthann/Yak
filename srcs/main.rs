@@ -49,7 +49,7 @@ pub extern "C" fn kmain() -> ! {
 	// 	crate::user::test_user_page();
 	unsafe {
 		let pid = crate::sys_fork!();
-		if (crate::sys_fork!() == 0) {
+		if pid == 0 {
 			kprintln!("I'm the child !");
 		} else {
 			kprintln!("Parent here, child pid: {}", pid);

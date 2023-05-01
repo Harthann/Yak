@@ -1,6 +1,8 @@
 use core::fmt;
 use core::ptr::copy_nonoverlapping;
 
+use crate::boot::KERNEL_BASE;
+
 use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{Heap, MemoryZone, Stack};
@@ -230,7 +232,7 @@ impl Process {
 	pub unsafe fn setup_pagination(&self, user: bool) -> &'static mut PageDirectory {
 		let parent: &Process = &(*self.parent);
 		let kernel_pt_paddr: PhysAddr =
-			get_paddr!(page_directory.get_page_table(768).get_vaddr());
+			get_paddr!(page_directory.get_page_table(KERNEL_BASE >> 22).get_vaddr());
 
 		let flag_user;
 		let heap_addr;
@@ -263,16 +265,25 @@ impl Process {
 				| parent.stack.flags
 				| flag_user | PAGE_PRESENT
 		);
+		// TODO: Kernel must not be writable but need task page so map it in
+		// another page_table ?
 		page_dir.set_entry(
-			768,
+			KERNEL_BASE >> 22,
 			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | flag_user
 		);
+		crate::kprintln!("{}", page_dir.get_entry(KERNEL_BASE >> 22));
+		crate::kprintln!("{}", page_dir.get_entry(KERNEL_BASE >> 22));
 		page_dir.set_entry(
 			KSTACK_ADDR as usize >> 22,
 			get_paddr!(process_kernel_stack as *const _)
 				| parent.kernel_stack.flags
 				| flag_user | PAGE_PRESENT
 		);
+		crate::kprintln!("{:p}", page_dir);
+		//for i in 0..1024 {
+		//	crate::kprintln!("{}: {}", i, page_dir.get_entry(i));
+		//}
+		crate::kprintln!("{}", page_dir.get_entry(KERNEL_BASE >> 22));
 		// Setup stack and heap
 		process_heap.new_index_frame(
 			(heap_addr as usize & 0x3ff000) >> 12,

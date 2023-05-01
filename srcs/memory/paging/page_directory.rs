@@ -1,5 +1,7 @@
 use core::fmt;
 
+use crate::boot::KERNEL_BASE;
+
 use crate::memory::paging::{bitmap, page_directory, PageTable};
 use crate::memory::{PhysAddr, VirtAddr};
 
@@ -17,7 +19,7 @@ impl PageDirectory {
 				Ok(offset) => {
 					let page_dir: &'static mut Self = &mut *(offset as *mut _);
 					page_dir.clear();
-					page_dir.set_entry(1023, get_paddr!(offset) | flags);
+					page_dir.set_entry(1023, get_paddr!(offset) | flags | PAGE_PRESENT);
 					page_dir
 				},
 				Err(()) => todo!()
@@ -74,7 +76,7 @@ impl PageDirectory {
 		flags: u32
 	) -> Result<VirtAddr, ()> {
 		let mut available: usize = 0;
-		let mut i: usize = 768; // map kernel page if physically neighbour > 0xc0000000
+		let mut i: usize = KERNEL_BASE >> 22; // map kernel page if physically neighbour > 0xc0000000
 		let mut i_saved: usize = 0;
 		let mut j: usize = 0;
 

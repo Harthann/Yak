@@ -4,10 +4,7 @@ use crate::kprintln;
 use crate::memory::paging::bitmap;
 use crate::memory::PhysAddr;
 
-#[allow(dead_code)]
-extern "C" {
-	static multiboot_ptr: *const u8;
-}
+use crate::boot::multiboot_ptr;
 
 #[repr(C)]
 pub struct TagHeader {
@@ -52,7 +49,7 @@ pub struct AddrTag {
 }
 
 pub unsafe fn claim_multiboot() {
-	let mut ptr: *const u8 = multiboot_ptr.offset(8);
+	let mut ptr: *const u8 = (multiboot_ptr as *const u8).offset(8);
 	let mut tag_ptr: *const TagHeader = ptr as *const TagHeader;
 
 	while (*tag_ptr).size != 0 {
@@ -93,7 +90,7 @@ pub unsafe fn claim_multiboot() {
 
 pub fn read_tags() {
 	unsafe {
-		let mut ptr: *const u8 = multiboot_ptr.offset(8);
+		let mut ptr: *const u8 = (multiboot_ptr as *const u8).offset(8);
 		let mut tag_ptr: *const TagHeader = ptr as *const TagHeader;
 
 		while (*tag_ptr).size != 0 {
