@@ -1,9 +1,10 @@
-use crate::boxed::Box;
 use crate::errno::ErrNo;
-use crate::spin::KMutex;
+use crate::spin::{KMutex, Mutex};
 use crate::string::String;
 use crate::vec::Vec;
 use alloc::sync::Arc;
+use crate::utils::arcm::Arcm;
+use crate::fs::FileOperation;
 
 use crate::proc::process::MAX_FD;
 
@@ -46,7 +47,7 @@ pub fn create_from_raw<T: FileOperation + 'static>(
 	name: &str,
 	buffer: T
 ) -> Result<(), ErrNo> {
-	let file: FileInfo = FileInfo::new(String::from(name), buffer);
+	let file: FileInfo = FileInfo::new(String::from(name), Arcm::new(buffer));
 	create(file)
 }
 
@@ -139,9 +140,9 @@ pub fn socket_pair(
 ) -> Result<usize, ErrNo> {
 	let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
 	let socket1: FileInfo =
-		FileInfo::new(String::from("socketfs"), socket.0);
+		FileInfo::new(String::from("socketfs"), Arcm::new(socket.0));
 	let socket2: FileInfo =
-		FileInfo::new(String::from("socketfs"), socket.1);
+		FileInfo::new(String::from("socketfs"), Arcm::new(socket.1));
 
 	let curr_process = Process::get_running_process();
 
