@@ -56,7 +56,7 @@ static header: MultibootHeader = MultibootHeader::new();
 /// The _start function begin from low address space and will setup:
 /// - multiboot pointer
 /// - basic stack
-unsafe fn _start() {
+unsafe extern "C" fn _start() {
 	core::arch::asm!(
 		"mov eax, offset multiboot_ptr - {0}", // Get multiboot struct from GRUB
 		"mov DWORD PTR[eax], ebx", // ebx

@@ -1,6 +1,6 @@
 //!  This module aim to parse mutliboot specification
 
-use crate::kprintln;
+use crate::{kprint, kprintln};
 use crate::memory::paging::bitmap;
 use crate::memory::PhysAddr;
 
@@ -168,42 +168,47 @@ pub fn read_tags() {
 					break;
 				},
 				x if x as u32 == TagType::CmdLine as u32 => {
-					kprintln!("=> CmdLine");
+					kprint!("Command line = ");
 					let cstr: &[u8] = core::slice::from_raw_parts(
 						(tag_ptr as *const u8).offset(8),
 						(*tag_ptr).size as usize - 8 - 1 // remove size and '\0'
 					);
 					match core::str::from_utf8(cstr) {
-						Ok(string) => kprintln!("    {}", string),
-						Err(error) => kprintln!("error: {}", error)
+						Ok(string) => kprintln!("{}", string),
+						Err(error) => kprintln!("[Error]: {}", error)
 					}
 				},
 				x if x as u32 == TagType::BootLoaderName as u32 => {
-					kprintln!("=> Boot loader name");
+					kprint!("Boot loader name = ");
 					let cstr: &[u8] = core::slice::from_raw_parts(
 						(tag_ptr as *const u8).offset(8),
 						(*tag_ptr).size as usize - 8 - 1 // remove size and '\0'
 					);
 					match core::str::from_utf8(cstr) {
-						Ok(string) => kprintln!("    {}", string),
-						Err(error) => kprintln!("error: {}", error)
+						Ok(string) => kprintln!("{}", string),
+						Err(error) => kprintln!("[Error]: {}", error)
 					}
 				},
 				x if x as u32 == TagType::BasicMemInfo as u32 => {
-					kprintln!("=> Basic memory information");
 					let elem: &MemInfo = &*(tag_ptr as *const _);
-					kprintln!("    mem_lower: {} KiB", elem.mem_lower);
-					kprintln!("    mem_upper: {} KiB", elem.mem_upper);
+					kprintln!(
+						"mem_lower = {}KB, mem_upper: {}KB",
+						elem.mem_lower,
+						elem.mem_upper
+					);
 				},
 				x if x as u32 == TagType::BootDev as u32 => {
-					kprintln!("=> BIOS Boot device");
+					kprint!("Boot device ");
 					let elem: &BootDev = &*(tag_ptr as *const _);
-					kprintln!("    biosdev: {:#x}", elem.biosdev);
-					kprintln!("    partition: {:#x}", elem.partition);
-					kprintln!("    sub_partition: {:#x}", elem.sub_partition);
+					kprintln!(
+						"{:#x}, {}, {}",
+						elem.biosdev,
+						elem.partition,
+						elem.sub_partition
+					);
 				},
 				x if x as u32 == TagType::Mmap  as u32 => {
-					kprintln!("=> Memory map");
+					kprintln!("Memory map");
 					let mmap: *const MemMap = tag_ptr as *const MemMap;
 					let entry_number: u32 =
 						((*mmap).size - 16) / (*mmap).entry_size as u32;
@@ -233,18 +238,20 @@ pub fn read_tags() {
 					}
 				},
 				x if x as u32 == TagType::FrameBuffer as u32 => {
-					kprintln!("=> Framebuffer info");
+					kprintln!("Framebuffer info");
 					let elem: &FrameBufferInfo = &*(tag_ptr as *const _);
-					kprintln!("    addr: {:#x}", elem.framebuffer_addr);
-					kprintln!("    pitch: {}", elem.framebuffer_pitch);
-					kprintln!("    width: {}", elem.framebuffer_width);
-					kprintln!("    height: {}", elem.framebuffer_height);
-					kprintln!("    bpp: {}", elem.framebuffer_bpp);
-					kprintln!("    type: {}", elem.framebuffer_type);
-					kprintln!("    reserved: {}", elem.reserved);
+					kprintln!("  addr: {:#x}", elem.framebuffer_addr);
+					kprintln!("  pitch: {}", elem.framebuffer_pitch);
+					kprintln!("  width: {}", elem.framebuffer_width);
+					kprintln!("  height: {}", elem.framebuffer_height);
+					kprintln!("  bpp: {}", elem.framebuffer_bpp);
+					kprintln!("  type: {}", elem.framebuffer_type);
+					kprintln!("  reserved: {}", elem.reserved);
 					// TODO: Add color_info ?
 				},
 				x if x as u32 == TagType::ElfSections as u32 => {
+					kprintln!("-- skipped -- ELF Symbols");
+					/*
 					kprintln!("=> ELF Symbols");
 					let elem: &ElfSymbols = &*(tag_ptr as *const _);
 					kprintln!("    size: {}", elem.size);
@@ -252,8 +259,11 @@ pub fn read_tags() {
 					kprintln!("    entsize: {}", elem.entsize);
 					kprintln!("    shndx: {}", elem.shndx);
 					kprintln!("    reserved: {}", elem.reserved);
+					*/
 				}
 				x if x as u32 == TagType::Apm as u32 => {
+					kprintln!("-- skipped -- APM table");
+					/*
 					kprintln!("=> APM table");
 					let elem: &ApmTable = &*(tag_ptr as *const _);
 					kprintln!("    version: {}", elem.version);
@@ -265,14 +275,18 @@ pub fn read_tags() {
 					kprintln!("    cseg_len: {}", elem.cseg_len);
 					kprintln!("    cseg_16_len: {}", elem.cseg_16_len);
 					kprintln!("    dseg_len: {}", elem.dseg_len);
+					*/
 				}
 				x if x as u32 == TagType::AcpiOld as u32 => {
-					kprintln!("=> AcpiOld");
+					kprintln!("-- skipped -- ACPI old RSDP");
 				},
 				x if x as u32 == TagType::LoadBaseAddr as u32 => {
+					kprintln!("-- skipped -- Image load physical address");
+					/*
 					kprintln!("=> Image load base physical address");
 					let elem: &LoadBasePhys = &*(tag_ptr as *const _);
 					kprintln!("    load_base_addr: {:#x}", elem.load_base_addr);
+					*/
 				},
 				_ => {
 					kprintln!("Found tag: {}, size: {}", (*tag_ptr).htype, (*tag_ptr).size);
