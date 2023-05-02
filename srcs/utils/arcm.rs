@@ -5,7 +5,7 @@ use core::ops::{Deref, DerefMut};
 /// Wrap the given type into an Arc and a Mutex.
 /// Arc allow multiple reference on the same data between threads
 /// Mutex allow any type to be `Send` and ensure safe access to the underlying data
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct Arcm<T: ?Sized> {
 	arc: Arc<Mutex<T>>
 }
