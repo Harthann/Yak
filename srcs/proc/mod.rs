@@ -4,6 +4,7 @@ use crate::boxed::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
+use alloc::sync::Arc;
 
 use crate::memory::paging::PAGE_WRITABLE;
 
@@ -66,6 +67,13 @@ pub unsafe extern "C" fn exec_fn(
 		parent.stack.flags,
 		parent.stack.kphys
 	);
+	// Copying all open fd from parent. Should not copy 0 and 1 but create new one instead
+	for i in 0..process::MAX_FD {
+		process.fds[i] = match &parent.fds[i] {
+			Some(fd) => Some(Arc::clone(&fd)),
+			None => None
+		};
+	}
 	parent.childs.push(Box::new(process));
 
 	let process: &mut Process = parent.childs.last_mut().unwrap();

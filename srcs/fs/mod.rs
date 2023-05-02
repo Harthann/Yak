@@ -1,8 +1,14 @@
 use crate::boxed::Box;
+use crate::errno::ErrNo;
 use crate::spin::Mutex;
 use crate::string::String;
 use crate::vec::Vec;
 use alloc::sync::Arc;
+
+use crate::proc::process::MAX_FD;
+
+/// TODO! Allow each syscalls that open an fd to return an object that implement close on drop to
+/// avoid leaks due to unused close. This will make also use of full rust capabilities and lifetime
 
 #[cfg(test)]
 mod test;
@@ -12,22 +18,22 @@ pub use file::*;
 
 // Contain all file system. This will be probably converted to a BST or something like that
 // FileInfo will have to contain permission, file type information etc etc
-static SYSFILES: Mutex<Vec<FileInfo>, true> = Mutex::new(Vec::new());
+static SYSFILES: Mutex<Vec<Arc<FileInfo>>, true> = Mutex::new(Vec::new());
 
 /// Take information on a file and add it to SYSFILES if it does not exist
-/// FileError is return if file already found.
-pub fn create(file: FileInfo) -> Result<(), FileError> {
+/// ErrNo is return if file already found.
+pub fn create(file: FileInfo) -> Result<(), ErrNo> {
 	let mut guard = SYSFILES.lock();
 
 	let found_file = guard.iter().find(|elem| elem.name == file.name);
 	match found_file {
 		None => {
-			guard.push(file);
+			guard.push(Arc::new(file));
 			Ok(())
 		},
 		Some(file) => {
 			crate::kprintln!("Found file {}", file.name);
-			Err(FileError::Unknown())
+			Err(ErrNo::EEXIST)
 		}
 	}
 }
@@ -39,7 +45,7 @@ pub fn create(file: FileInfo) -> Result<(), FileError> {
 pub fn create_from_raw<T: FileOperation + 'static>(
 	name: &str,
 	buffer: T
-) -> Result<(), FileError> {
+) -> Result<(), ErrNo> {
 	let file: FileInfo = FileInfo::new(String::from(name), Box::new(buffer));
 	create(file)
 }
@@ -60,56 +66,102 @@ pub fn delete(name: &str) {
 	}
 }
 
-const DEFAULT: Option<File> = None;
-// This static is temporary, file array should be bind to each process individually
-static PROC_FILES: Mutex<[Option<File>; 32], false> = Mutex::new([DEFAULT; 32]);
-
 /// Look for a file given its name in SYSFILES and open it.
 /// Open files list is common between processses, this will change in later version
-pub fn open(name: &str) -> Result<usize, FileError> {
+pub fn open(name: &str) -> Result<usize, ErrNo> {
 	let guard = SYSFILES.lock();
 
+	// Error if file does not exist
 	let found_file = guard
 		.iter()
 		.find(|elem| elem.name == name)
-		.ok_or(FileError::Unknown())?;
-	let file: File = File { fd: 0, op: Arc::clone(&found_file.op) };
-	let mut guard = PROC_FILES.lock();
+		.ok_or(ErrNo::ENOENT)?;
+	let curr_process = Process::get_running_process();
 
-	let index = guard
+	// Error if file table already full
+	let index = curr_process
+		.fds
 		.iter()
 		.position(|elem| elem.is_none())
-		.ok_or(FileError::Unknown())?;
-	guard[index] = Some(file);
+		.ok_or(ErrNo::EMFILE)?;
+	curr_process.fds[index] = Some(Arc::clone(&found_file));
 	return Ok(index);
 }
 
 /// Close a file given its file descriptor. This does not delete the file from the system
 pub fn close(fd: usize) {
 	// TODO drop_in_place?
-	PROC_FILES.lock()[fd] = None;
+	if fd < MAX_FD {
+		let curr_process = Process::get_running_process();
+		curr_process.fds[fd] = None;
+	}
 }
 
 /// This function mimic the linux read syscall. Look for a file in file lists and call it's
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
-pub fn read(
-	fd: usize,
-	dst: &mut [u8],
-	length: usize
-) -> Result<usize, FileError> {
-	let mut guard = PROC_FILES.lock();
-	let file = guard[fd].as_mut().ok_or(FileError::Unknown())?;
+pub fn read(fd: usize, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
+	if fd >= MAX_FD {
+		return Err(ErrNo::EBADF);
+	}
+
+	let curr_process = Process::get_running_process();
+
+	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let guard2 = file.op.lock();
 	guard2.read(dst, length)
 }
 
+use crate::proc::process::Process;
 /// This function mimic the linux write syscall. Look for a file in file lists and call it's
 /// FileOperation implementation. Mutex on PROC_FILES is acquire during all the read processus
 /// which imply you can't r/w another file at the same time.
-pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, FileError> {
-	let mut guard = PROC_FILES.lock();
-	let file = guard[fd].as_mut().ok_or(FileError::Unknown())?;
+pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
+	if fd >= MAX_FD {
+		return Err(ErrNo::EBADF);
+	}
+
+	let curr_process = Process::get_running_process();
+	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let mut guard2 = file.op.lock();
 	guard2.write(src, length)
+}
+
+// SOCKET HELPERS
+use file::socket::{SocketDomain, SocketProtocol, SocketType};
+/// Create and open a pair of socket given it's domain, type and protocol.
+/// Fd are written to sockets array. Prototype is made to match linux syscall
+pub fn socket_pair(
+	domain: SocketDomain,
+	stype: SocketType,
+	protocol: SocketProtocol,
+	sockets: &mut [usize; 2]
+) -> Result<usize, ErrNo> {
+	let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
+	let socket1: FileInfo =
+		FileInfo::new(String::from("socketfs"), Box::new(socket.0));
+	let socket2: FileInfo =
+		FileInfo::new(String::from("socketfs"), Box::new(socket.1));
+
+	let curr_process = Process::get_running_process();
+
+	// Open first socket
+	let index = curr_process
+		.fds
+		.iter()
+		.position(|elem| elem.is_none())
+		.ok_or(ErrNo::EMFILE)?;
+	curr_process.fds[index] = Some(Arc::new(socket1));
+
+	// Open second socket
+	let index2 = curr_process
+		.fds
+		.iter()
+		.position(|elem| elem.is_none())
+		.ok_or(ErrNo::EMFILE)?;
+	curr_process.fds[index2] = Some(Arc::new(socket2));
+
+	sockets[0] = index;
+	sockets[1] = index2;
+	Ok(0)
 }
