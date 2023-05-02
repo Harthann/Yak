@@ -309,12 +309,11 @@ macro_rules! load_cr3 {
 macro_rules! get_segments {
 	($ds: expr) => {
 		core::arch::asm!(
-			"mov eax, {}",
 			"mov ds, ax",
 			"mov es, ax",
 			"mov fs, ax",
 			"mov gs, ax",
-			in(reg) $ds
+			in("eax") $ds
 		);
 	}
 }

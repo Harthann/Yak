@@ -57,7 +57,6 @@ pub fn sys_fork() -> Pid {
 		new_task.regs = running_task.regs;
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
-		let cr3 = new_task.regs.cr3;
 		new_task.regs.eax = 0; // New forked process return 0
 
 		TASKLIST.push(new_task);
@@ -78,7 +77,6 @@ macro_rules! sys_fork {
 				const crate::syscalls::Syscall::fork as u32,
 				out(reg) pid
 			);
-			$crate::kprintln!("pid: {}", pid);
 			pid
 		}
 	}

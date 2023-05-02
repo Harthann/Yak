@@ -88,6 +88,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				cli_count = 0;
 				sti!();
 				hlt!(); // wait for scheduler
+				crate::kprintln!("a");
 				cli!(); // unblocked here
 				cli_count = save;
 				crate::kprintln!("out");
@@ -115,11 +116,10 @@ macro_rules! sys_exit {
 	($status: expr) => {
 		{
 			core::arch::asm!(
-				"mov eax, {0}",
-				"mov ebx, {1}",
+				"mov eax, {}",
 				"int 0x80",
 				const crate::syscalls::Syscall::exit as u32,
-				in(reg) $status,
+				in("ebx") $status,
 				options(noreturn)
 			);
 		}
