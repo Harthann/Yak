@@ -30,6 +30,7 @@ impl fmt::Display for Time {
 const CMOS_CMD: u16 = 0x70;
 const CMOS_DATA: u16 = 0x71;
 
+#[allow(non_snake_case)]
 fn get_RTC_register(reg: u8) -> u8 {
 	crate::io::outb(CMOS_CMD, reg);
 	crate::io::inb(CMOS_DATA)
