@@ -81,6 +81,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				_sti();
 				return 0;
 			} else {
+				crate::kprintln!("lol");
 				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
 				let save = cli_count;
@@ -89,6 +90,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				hlt!(); // wait for scheduler
 				cli!(); // unblocked here
 				cli_count = save;
+				crate::kprintln!("out");
 			}
 		}
 	}
@@ -105,6 +107,22 @@ pub fn sys_exit(status: i32) -> ! {
 		kstack = const KSTACK_ADDR);
 		// Never goes there
 		loop {}
+	}
+}
+
+#[macro_export]
+macro_rules! sys_exit {
+	($status: expr) => {
+		{
+			core::arch::asm!(
+				"mov eax, {0}",
+				"mov ebx, {1}",
+				"int 0x80",
+				const crate::syscalls::Syscall::exit as u32,
+				in(reg) $status,
+				options(noreturn)
+			);
+		}
 	}
 }
 

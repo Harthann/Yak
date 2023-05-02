@@ -58,7 +58,6 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 		let cr3 = new_task.regs.cr3;
-		crate::kprintln!("cr3: {:#x?}", cr3);
 		new_task.regs.eax = 0; // New forked process return 0
 
 		TASKLIST.push(new_task);
@@ -71,14 +70,15 @@ pub fn sys_fork() -> Pid {
 macro_rules! sys_fork {
 	() => {
 		{
-			let mut pid: $crate::proc::process::Pid;
+			let mut pid: $crate::proc::process::Pid = 0;
 			core::arch::asm!(
 				"mov eax, {0}",
 				"int 0x80",
-				"mov eax, {1}",
+				"mov {1}, eax",
 				const crate::syscalls::Syscall::fork as u32,
 				out(reg) pid
 			);
+			$crate::kprintln!("pid: {}", pid);
 			pid
 		}
 	}

@@ -239,6 +239,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 #[no_mangle]
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
+	crate::kprintln!("next_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -249,6 +250,7 @@ unsafe extern "C" fn find_task() -> ! {
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
 			let task: Registers = new_task.regs;
+			crate::kprintln!("found: {:#x?}", task);
 			change_kernel_stack(process);
 			_rst();
 			switch_task(&task);
@@ -278,11 +280,11 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	core::arch::asm!(
 		"mov esp, {}",
-		"sub esp, 32",
+		"add esp, 8", // skip ds, cr3
 		"popa",
 		"add esp, 8", // int_no and err_code
 		"iretd", // no sti: iretd enable interrupt itself
-		in(reg) regs.esp,
+		in(reg) regs,
 		options(noreturn)
 	);
 }

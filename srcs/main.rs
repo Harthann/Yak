@@ -51,9 +51,11 @@ pub extern "C" fn kmain() -> ! {
 		let pid = crate::sys_fork!();
 		if pid == 0 {
 			kprintln!("I'm the child !");
+			crate::sys_exit!(1);
 		} else {
 			kprintln!("Parent here, child pid: {}", pid);
-			crate::syscalls::exit::sys_waitpid(pid, core::ptr::null_mut(), 0);
+			let ret = crate::syscalls::exit::sys_waitpid(pid, core::ptr::null_mut(), 0);
+			crate::kprintln!("ret: {}", ret);
 		}
 	}
 

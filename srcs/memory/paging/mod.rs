@@ -64,7 +64,6 @@ pub fn init_paging() {
 		init_page_tab.clear();
 		page_directory.set_entry(0, 0);
 		refresh_tlb!();
-		crate::kprintln!("{}", page_directory.get_entry(KERNEL_BASE >> 22));
 	}
 }
 
