@@ -79,8 +79,8 @@ mod multiboot;
 mod syscalls;
 mod io;
 mod pic;
-mod time;
 mod proc;
+mod time;
 mod user;
 mod vga_buffer;
 #[macro_use]

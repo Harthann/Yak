@@ -76,10 +76,13 @@ pub fn set_irq0_in_ms(ms: f32) {
 	unsafe {
 		RELOAD_VALUE = (1193182.0 / frequency) as u16;
 		FREQUENCY = 1193182.0 / RELOAD_VALUE as f64;
-        // TODO fround
+		// TODO fround
 		crate::time::SYSTEM_FRACTION = (1000.0 / FREQUENCY) as usize;
 		crate::kprintln!("System frequency set to: {}", FREQUENCY);
-		crate::kprintln!("System fraction set to: {}", crate::time::SYSTEM_FRACTION);
+		crate::kprintln!(
+			"System fraction set to: {}",
+			crate::time::SYSTEM_FRACTION
+		);
 		crate::kprintln!("Reload value set to: {:#x}", RELOAD_VALUE);
 		set_pit(CHANNEL_0, ACC_LOBHIB, MODE_2, RELOAD_VALUE);
 	}

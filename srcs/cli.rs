@@ -75,12 +75,16 @@ fn play(command: Vec<String>) {
 }
 
 fn jiffies(_: Vec<String>) {
-    crate::kprintln!("Jiffies: {}", crate::time::jiffies());
+	crate::kprintln!("Jiffies: {}", crate::time::jiffies());
 }
 
 fn uptime(_: Vec<String>) {
-    let time = crate::time::get_timestamp();
-    crate::kprintln!("Time elapsed since boot: {}s {}ms", time.second, time.millisecond);
+	let time = crate::time::get_timestamp();
+	crate::kprintln!(
+		"Time elapsed since boot: {}s {}ms",
+		time.second,
+		time.millisecond
+	);
 }
 
 fn date(_: Vec<String>) {
