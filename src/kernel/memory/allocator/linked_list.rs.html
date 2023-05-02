@@ -137,6 +137,20 @@
 <span id="131">131</span>
 <span id="132">132</span>
 <span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::allocator</span>::{<span class="ident">align_up</span>, <span class="ident">AllocatorInit</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory::VirtAddr</span>;
 <span class="kw">use</span> <span class="ident">core::alloc</span>::{<span class="ident">GlobalAlloc</span>, <span class="ident">Layout</span>};
@@ -163,6 +177,15 @@
 			<span class="kw">if</span> <span class="ident">excess_size</span> <span class="op">&gt;</span> <span class="number">0</span> {
 				<span class="ident">allocator</span>.<span class="ident">add_free_region</span>(<span class="ident">alloc_end</span>, <span class="ident">excess_size</span>);
 			}
+			<span class="comment">// Update allocation tracker</span>
+			<span class="ident"><span class="kw">crate</span>::KTRACKER</span>.<span class="ident">allocation</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+			<span class="ident"><span class="kw">crate</span>::KTRACKER</span>.<span class="ident">allocated_bytes</span> <span class="op">+</span><span class="op">=</span> <span class="ident">size</span>;
+			<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc_debug&quot;</span>)]</span>
+			<span class="macro">crate::dprintln!</span>(
+				<span class="string">&quot;Alloc: {:#x} bytes at {:p}&quot;</span>,
+				<span class="ident">size</span>,
+				<span class="ident">alloc_start</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">u8</span>
+			);
 			<span class="ident">alloc_start</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="ident">u8</span>
 		} <span class="kw">else</span> {
 			<span class="ident">core::ptr::null_mut</span>()
@@ -174,6 +197,11 @@
 		<span class="kw">let</span> <span class="ident">mut_self</span>: <span class="kw-2">&amp;mut</span> <span class="self">Self</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">vaddr</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
 
 		<span class="kw">let</span> (<span class="ident">size</span>, <span class="kw">_</span>) <span class="op">=</span> <span class="ident">LinkedListAllocator::size_align</span>(<span class="ident">layout</span>);
+		<span class="comment">// Update allocation tracker</span>
+		<span class="ident"><span class="kw">crate</span>::KTRACKER</span>.<span class="ident">freed</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
+		<span class="ident"><span class="kw">crate</span>::KTRACKER</span>.<span class="ident">freed_bytes</span> <span class="op">+</span><span class="op">=</span> <span class="ident">size</span>;
+		<span class="attribute">#[<span class="ident">cfg</span>(<span class="ident">feature</span> <span class="op">=</span> <span class="string">&quot;alloc_debug&quot;</span>)]</span>
+		<span class="macro">crate::dprintln!</span>(<span class="string">&quot;Freed: {:#x} bytes at {:#p}&quot;</span>, <span class="ident">size</span>, <span class="ident">ptr</span>);
 		<span class="ident">mut_self</span>.<span class="ident">add_free_region</span>(<span class="ident">ptr</span> <span class="kw">as</span> <span class="ident">VirtAddr</span>, <span class="ident">size</span>)
 	}
 }

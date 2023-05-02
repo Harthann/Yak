@@ -190,6 +190,8 @@
 <span id="184">184</span>
 <span id="185">185</span>
 <span id="186">186</span>
+<span id="187">187</span>
+<span id="188">188</span>
 </pre><pre class="rust"><code><span class="attribute">#![<span class="ident">feature</span>(<span class="ident">const_mut_refs</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">naked_functions</span>)]</span>
 <span class="attribute">#![<span class="ident">feature</span>(<span class="ident">fmt_internals</span>)]</span>
@@ -283,6 +285,7 @@
 <span class="kw">mod</span> <span class="ident">utils</span>;
 <span class="attribute">#[<span class="ident">macro_use</span>]</span>
 <span class="kw">mod</span> <span class="ident">debug</span>;
+<span class="kw">mod</span> <span class="ident">fs</span>;
 
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">alloc</span>;
 <span class="kw">extern</span> <span class="kw">crate</span> <span class="ident">sys_macros</span>;
@@ -294,6 +297,7 @@
 <span class="kw">mod</span> <span class="ident">test</span>;
 
 <span class="comment">// Modules used function and variable</span>
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::main::kmain</span>;
 <span class="kw">use</span> <span class="ident">cli::Command</span>;
 <span class="kw">use</span> <span class="ident">memory::allocator::linked_list::LinkedListAllocator</span>;
 <span class="kw">use</span> <span class="ident">memory::paging</span>::{<span class="ident">init_paging</span>, <span class="ident">page_directory</span>};
@@ -324,7 +328,7 @@
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::gdt</span>::{<span class="ident">gdt_desc</span>, <span class="ident">GDTR</span>};
 <span class="comment">// use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};</span>
-<span class="kw">use</span> <span class="ident">main::kmain</span>;
+
 <span class="kw">pub</span> <span class="kw">use</span> <span class="ident">pic::handlers::JIFFIES</span>;
 
 <span class="kw">const</span> <span class="ident">KSTACK_ADDR</span>: <span class="ident">VirtAddr</span> <span class="op">=</span> <span class="number">0xffbfffff</span>;
