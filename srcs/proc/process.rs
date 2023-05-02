@@ -28,6 +28,9 @@ use crate::memory::PhysAddr;
 use crate::user::{USER_HEAP_ADDR, USER_STACK_ADDR};
 use crate::KSTACK_ADDR;
 
+use crate::fs::FileInfo;
+use alloc::sync::Arc;
+
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
@@ -41,6 +44,7 @@ pub enum Status {
 	Thread
 }
 
+pub const MAX_FD: usize = 32;
 pub struct Process {
 	pub pid:             Pid,
 	pub state:           Status,
@@ -49,11 +53,13 @@ pub struct Process {
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
+	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
 	pub owner:           Id
 }
 
+const DEFAULT_FILE: Option<Arc<FileInfo>> = None;
 impl Process {
 	pub const fn new() -> Self {
 		Self {
@@ -64,6 +70,7 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
+			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
 			owner:           0

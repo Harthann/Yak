@@ -9,6 +9,7 @@ use core::sync::atomic::{spin_loop_hint, AtomicBool, Ordering};
 /// `T` Inner type to store and protect
 ///
 /// `INT` constant boolean to allow or not Mutex to enable/disable interrupts
+#[derive(Default)]
 pub struct Mutex<T: ?Sized, const INT: bool> {
 	lock: AtomicBool,
 	data: UnsafeCell<T>
