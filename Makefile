@@ -12,7 +12,6 @@ HOST			=	$(shell uname)
 TOOLCHAIN_ARCH	=	i386
 
 QEMU			=	qemu-system-$(TOOLCHAIN_ARCH)
-AR				=	$(TOOLCHAIN_ARCH)-elf-ar
 
 GRUB_CFG		=	grub.cfg
 
@@ -36,7 +35,7 @@ NAME			?=	kfs_$(VERSION)
 ################################################################################
 # Prepare Docker toolchain if there is no local toolchain
 ################################################################################
-ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which $(AR)), $(shell which cargo)),)
+ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which cargo)),)
 ifeq ($(shell docker images -q ${DOCKER_TAG} 2> /dev/null),)
 BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -t $(DOCKER_TAG) >&2)
 endif
