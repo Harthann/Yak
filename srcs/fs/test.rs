@@ -128,50 +128,56 @@ fn threaded_file(src: &[u8]) {
 	fs::close(fd);
 }
 
-
 #[sys_macros::test_case]
 fn test_socket_pair() {
-    use super::socket::{SocketType, SocketProtocol, SocketDomain};
-    use super::socket_pair;
-    let mut sockets: [usize; 2] = [0; 2];
-    socket_pair(SocketDomain::AF_UNIX,
-                SocketType::SOCK_DGRAM,
-                SocketProtocol::DEFAULT,
-                &mut sockets).expect("Failed to create socket pair");
-    // These assert should be remove once proper stdin/io is implemented
-    assert_eq!(sockets[0], 0);
-    assert_eq!(sockets[1], 1);
+	use super::socket::{SocketDomain, SocketProtocol, SocketType};
+	use super::socket_pair;
+	let mut sockets: [usize; 2] = [0; 2];
+	socket_pair(
+		SocketDomain::AF_UNIX,
+		SocketType::SOCK_DGRAM,
+		SocketProtocol::DEFAULT,
+		&mut sockets
+	)
+	.expect("Failed to create socket pair");
+	// These assert should be remove once proper stdin/io is implemented
+	assert_eq!(sockets[0], 0);
+	assert_eq!(sockets[1], 1);
 
-    let src: &[u8] = b"hello world";
+	let src: &[u8] = b"hello world";
 	let mut dst = Box::<[u8; 1024]>::new([0; 1024]);
 
 	assert_ne!(src, &dst[0..src.len()]);
 	assert_eq!(
-		fs::write(sockets[1], src, src.len()).expect("Writing to socket 1 failed"),
+		fs::write(sockets[1], src, src.len())
+			.expect("Writing to socket 1 failed"),
 		src.len()
 	);
 	assert_eq!(
-		fs::read(sockets[0], &mut *dst, src.len()).expect("Reading socket 0 failed"),
+		fs::read(sockets[0], &mut *dst, src.len())
+			.expect("Reading socket 0 failed"),
 		src.len()
 	);
 	assert_eq!(src, &dst[0..src.len()]);
 
-    // Test reading/writing the other way
-    let src2 = "This is not a drill!";
-    *dst = [0; 1024];
+	// Test reading/writing the other way
+	let src2 = "This is not a drill!";
+	*dst = [0; 1024];
 	assert_ne!(src, &dst[0..src2.len()]);
 	assert_eq!(
-		fs::write(sockets[0], src2.as_bytes(), src2.len()).expect("Writing to socket 0 failed"),
+		fs::write(sockets[0], src2.as_bytes(), src2.len())
+			.expect("Writing to socket 0 failed"),
 		src2.len()
 	);
 	assert_eq!(
-		fs::read(sockets[1], &mut *dst, src2.len()).expect("Reading socket 1 failed"),
+		fs::read(sockets[1], &mut *dst, src2.len())
+			.expect("Reading socket 1 failed"),
 		src2.len()
 	);
 	assert_eq!(src2.as_bytes(), &dst[0..src2.len()]);
 
-    super::close(sockets[0]);
-    super::close(sockets[1]);
+	super::close(sockets[0]);
+	super::close(sockets[1]);
 }
 
 const PARENT_STRING: &str = "This is parent";
@@ -179,35 +185,41 @@ const CHILD_STRING: &str = "This is child";
 // This test should be change and made for forked instead of threads
 #[sys_macros::test_case]
 fn test_socket_thread() {
-    use super::socket::{SocketType, SocketProtocol, SocketDomain};
-    use super::socket_pair;
-    let mut sockets: [usize; 2] = [0; 2];
+	use super::socket::{SocketDomain, SocketProtocol, SocketType};
+	use super::socket_pair;
+	let mut sockets: [usize; 2] = [0; 2];
 
-    socket_pair(SocketDomain::AF_UNIX,
-                SocketType::SOCK_DGRAM,
-                SocketProtocol::DEFAULT,
-                &mut sockets).expect("Failed to create socket pair");
-    assert_eq!(sockets[0], 0);
-    assert_eq!(sockets[1], 1);
+	socket_pair(
+		SocketDomain::AF_UNIX,
+		SocketType::SOCK_DGRAM,
+		SocketProtocol::DEFAULT,
+		&mut sockets
+	)
+	.expect("Failed to create socket pair");
+	assert_eq!(sockets[0], 0);
+	assert_eq!(sockets[1], 1);
 
-    // Issue when passing directly sockets array, child try to dereference 0x0 when accessing array
-	let pid = unsafe { crate::exec_fn!(threaded_socket, sockets[1], sockets[0]) };
+	// Issue when passing directly sockets array, child try to dereference 0x0 when accessing array
+	let pid =
+		unsafe { crate::exec_fn!(threaded_socket, sockets[1], sockets[0]) };
 
-    // should close fd 1
+	// should close fd 1
 	let mut dst: [u8; 50] = [0; 50];
 	fs::close(sockets[1]);
 	assert_eq!(
-	    fs::read(sockets[0], &mut dst, CHILD_STRING.len()).expect("Reading socket 0 failed"),
-        CHILD_STRING.len()
-    );
-    assert_eq!(CHILD_STRING.as_bytes(), &dst[0..CHILD_STRING.len()]);
+		fs::read(sockets[0], &mut dst, CHILD_STRING.len())
+			.expect("Reading socket 0 failed"),
+		CHILD_STRING.len()
+	);
+	assert_eq!(CHILD_STRING.as_bytes(), &dst[0..CHILD_STRING.len()]);
 
 	assert_eq!(
-	    fs::write(sockets[0], PARENT_STRING.as_bytes(), PARENT_STRING.len()).expect("Writing socket 0 failed"),
-        PARENT_STRING.len()
-    );
+		fs::write(sockets[0], PARENT_STRING.as_bytes(), PARENT_STRING.len())
+			.expect("Writing socket 0 failed"),
+		PARENT_STRING.len()
+	);
 
-    // wait child to finish
+	// wait child to finish
 	let mut status = 0;
 	use crate::syscalls::exit::sys_waitpid;
 	sys_waitpid(pid, &mut status, 0);
@@ -220,16 +232,17 @@ fn threaded_socket(sockets: usize, parent_sockets: usize) {
 
 	fs::close(parent_sockets);
 	assert_eq!(
-        fs::write(sockets, CHILD_STRING.as_bytes(), CHILD_STRING.len()).expect("Writing socket 0 failed"),
-        CHILD_STRING.len()
-    );
+		fs::write(sockets, CHILD_STRING.as_bytes(), CHILD_STRING.len())
+			.expect("Writing socket 0 failed"),
+		CHILD_STRING.len()
+	);
 
 	assert_eq!(
-	    fs::read(sockets, &mut dst, PARENT_STRING.len()).expect("Reading socket 1 failed"),
-        PARENT_STRING.len()
-    );
-    assert_eq!(PARENT_STRING.as_bytes(), &dst[0..PARENT_STRING.len()]);
-    // should close fd 0
+		fs::read(sockets, &mut dst, PARENT_STRING.len())
+			.expect("Reading socket 1 failed"),
+		PARENT_STRING.len()
+	);
+	assert_eq!(PARENT_STRING.as_bytes(), &dst[0..PARENT_STRING.len()]);
+	// should close fd 0
 	fs::close(sockets);
 }
-

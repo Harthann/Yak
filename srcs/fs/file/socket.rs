@@ -136,7 +136,7 @@ impl Socket {
 				let writing = core::cmp::min(length, src.len());
 				// Need to store offset of writing if no vector are used
 				// and access the array from this store offset
-                guard.extend_from_slice(&src[0..writing]);
+				guard.extend_from_slice(&src[0..writing]);
 				self.woffset += writing;
 				Ok(writing)
 			},
@@ -214,121 +214,138 @@ mod test {
 		SocketType
 	};
 	#[sys_macros::test_case]
-    fn test_write_socket_0() {
+	fn test_write_socket_0() {
 		let mut sockets: (Socket, Socket);
-        let input = "This is not a drill";
+		let input = "This is not a drill";
 
-        sockets = create_socket_pair(
+		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
 		)
 		.expect("Error creating sockets");
-        sockets
+		sockets
 			.0
 			.write(input.as_bytes(), input.len())
 			.expect("Failed writing to socket 0");
-        // When writing to first socket, data will go to it's buffer 1
-        // And to the buffer 0 of the other sockets
-        match sockets.1.buffer {
-            Some(buffers) => assert_eq!(input.as_bytes(), buffers[0].lock().as_slice()),
-            None => panic!("Socket buffer improperly set")
-        };
-        match sockets.0.buffer {
-            Some(buffers) => assert_eq!(input.as_bytes(), buffers[1].lock().as_slice()),
-            None => panic!("Socket buffer improperly set")
-        };
-    }
+		// When writing to first socket, data will go to it's buffer 1
+		// And to the buffer 0 of the other sockets
+		match sockets.1.buffer {
+			Some(buffers) => {
+				assert_eq!(input.as_bytes(), buffers[0].lock().as_slice())
+			},
+			None => panic!("Socket buffer improperly set")
+		};
+		match sockets.0.buffer {
+			Some(buffers) => {
+				assert_eq!(input.as_bytes(), buffers[1].lock().as_slice())
+			},
+			None => panic!("Socket buffer improperly set")
+		};
+	}
 
 	#[sys_macros::test_case]
-    fn test_write_socket_1() {
+	fn test_write_socket_1() {
 		let mut sockets: (Socket, Socket);
-        let input: [u8; 4] = [15, 245, 13, 23];
+		let input: [u8; 4] = [15, 245, 13, 23];
 
-        sockets = create_socket_pair(
+		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
 		)
 		.expect("Error creating sockets");
-        sockets
+		sockets
 			.1
 			.write(&input, input.len())
 			.expect("Failed writing to socket 1");
-        // When writing to first socket, data will go to it's buffer 1
-        // And to the buffer 0 of the other sockets
-        match sockets.0.buffer {
-            Some(buffers) => assert_eq!(input, buffers[0].lock().as_slice()),
-            None => panic!("Socket buffer improperly set")
-        };
-        match sockets.1.buffer {
-            Some(buffers) => assert_eq!(input, buffers[1].lock().as_slice()),
-            None => panic!("Socket buffer improperly set")
-        };
-    }
+		// When writing to first socket, data will go to it's buffer 1
+		// And to the buffer 0 of the other sockets
+		match sockets.0.buffer {
+			Some(buffers) => assert_eq!(input, buffers[0].lock().as_slice()),
+			None => panic!("Socket buffer improperly set")
+		};
+		match sockets.1.buffer {
+			Some(buffers) => assert_eq!(input, buffers[1].lock().as_slice()),
+			None => panic!("Socket buffer improperly set")
+		};
+	}
 
 	#[sys_macros::test_case]
-    fn test_read_socket_0() {
+	fn test_read_socket_0() {
 		let sockets: (Socket, Socket);
-        let input: [u8; 7] = [21, 245, 9, 29, 56, 13, 23];
-        let mut buffer: [u8; 10] = [0; 10];
+		let input: [u8; 7] = [21, 245, 9, 29, 56, 13, 23];
+		let mut buffer: [u8; 10] = [0; 10];
 
-        sockets = create_socket_pair(
+		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
 		)
 		.expect("Error creating sockets");
-        match sockets.1.buffer {
-            Some(buffers) => buffers[1].lock().extend_from_slice(&input),
-            None => panic!("Socket buffer improperly set")
-        };
-        sockets.0.read(&mut buffer, 7).expect("Couldn't read socket 1");
-        assert_eq!(buffer[0..7], input);
-    }
+		match sockets.1.buffer {
+			Some(buffers) => buffers[1].lock().extend_from_slice(&input),
+			None => panic!("Socket buffer improperly set")
+		};
+		sockets
+			.0
+			.read(&mut buffer, 7)
+			.expect("Couldn't read socket 1");
+		assert_eq!(buffer[0..7], input);
+	}
 
 	#[sys_macros::test_case]
-    fn test_read_socket_1() {
+	fn test_read_socket_1() {
 		let sockets: (Socket, Socket);
-        let input: &str = "This is not a drill!";
-        let mut buffer: [u8; 10] = [0; 10];
+		let input: &str = "This is not a drill!";
+		let mut buffer: [u8; 10] = [0; 10];
 
-        sockets = create_socket_pair(
+		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
 		)
 		.expect("Error creating sockets");
-        match sockets.0.buffer {
-            Some(buffers) => buffers[1].lock().extend_from_slice(&input.as_bytes()),
-            None => panic!("Socket buffer improperly set")
-        };
-        sockets.1.read(&mut buffer, 10).expect("Couldn't read socket 1");
-        assert_eq!(buffer, input.as_bytes()[0..10]);
-    }
+		match sockets.0.buffer {
+			Some(buffers) => {
+				buffers[1].lock().extend_from_slice(&input.as_bytes())
+			},
+			None => panic!("Socket buffer improperly set")
+		};
+		sockets
+			.1
+			.read(&mut buffer, 10)
+			.expect("Couldn't read socket 1");
+		assert_eq!(buffer, input.as_bytes()[0..10]);
+	}
 
 	#[sys_macros::test_case]
-    fn test_read_socket_tiny_buffer() {
+	fn test_read_socket_tiny_buffer() {
 		let sockets: (Socket, Socket);
-        let input: &str = "This is not a drill!";
-        let mut buffer: [u8; 1] = [0; 1];
-        let mut readed: usize = 0;
+		let input: &str = "This is not a drill!";
+		let mut buffer: [u8; 1] = [0; 1];
+		let mut readed: usize = 0;
 
-        sockets = create_socket_pair(
+		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
 		)
 		.expect("Error creating sockets");
-        match sockets.0.buffer {
-            Some(buffers) => buffers[1].lock().extend_from_slice(&input.as_bytes()),
-            None => panic!("Socket buffer improperly set")
-        };
-        while readed < input.len() {
-            readed += sockets.1.read(&mut buffer, 1).expect("Couldn't read socket 1");
-            assert_eq!(buffer[0], input.as_bytes()[readed - 1]);
-        }
-    }
+		match sockets.0.buffer {
+			Some(buffers) => {
+				buffers[1].lock().extend_from_slice(&input.as_bytes())
+			},
+			None => panic!("Socket buffer improperly set")
+		};
+		while readed < input.len() {
+			readed += sockets
+				.1
+				.read(&mut buffer, 1)
+				.expect("Couldn't read socket 1");
+			assert_eq!(buffer[0], input.as_bytes()[readed - 1]);
+		}
+	}
 
 	#[sys_macros::test_case]
 	fn test_full_socket() {
@@ -351,7 +368,7 @@ mod test {
 			.read(&mut buffer, input.len())
 			.expect("Failed reading socket 0");
 		assert_eq!(input.as_bytes(), &buffer[0..input.len()]);
-        assert_eq!(sockets.1.domain, SocketDomain::AF_UNIX);
+		assert_eq!(sockets.1.domain, SocketDomain::AF_UNIX);
 		let input2 = "This is a success";
 		buffer = [0; 255];
 		sockets
