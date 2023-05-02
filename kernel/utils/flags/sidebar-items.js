@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["Flags",""]],"trait":[["FlagOp","To use this trait the type T has to allow interior mutability This is ok in the example since AtomicU8 is thread safe and allow interior mutability"]]};

@@ -1,3 +1,3 @@
 (function() {var implementors = {};
-implementors["kernel"] = [{"text":"impl Default for <a class=\"struct\" href=\"kernel/gdt/tss/struct.Tss.html\" title=\"struct kernel::gdt::tss::Tss\">Tss</a>","synthetic":false,"types":["kernel::gdt::tss::Tss"]}];
+implementors["kernel"] = [{"text":"impl Default for <a class=\"struct\" href=\"kernel/gdt/tss/struct.Tss.html\" title=\"struct kernel::gdt::tss::Tss\">Tss</a>","synthetic":false,"types":["kernel::gdt::tss::Tss"]},{"text":"impl&lt;T:&nbsp;Default&gt; Default for <a class=\"struct\" href=\"kernel/utils/flags/struct.Flags.html\" title=\"struct kernel::utils::flags::Flags\">Flags</a>&lt;T&gt;","synthetic":false,"types":["kernel::utils::flags::Flags"]}];
 if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
