@@ -23,7 +23,7 @@ pub fn poc_derive(input: TokenStream) -> TokenStream {
 
 use proc_macro::*;
 #[proc_macro_attribute]
-pub fn test(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn test_case(_args: TokenStream, input: TokenStream) -> TokenStream {
 	let mut item: syn::Item = syn::parse(input).unwrap();
 	let fn_item = match &mut item {
 		syn::Item::Fn(fn_item) => fn_item,
@@ -84,7 +84,6 @@ pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
 	);
 
 	// Convert back Item into TokenStream
-	use quote::ToTokens;
 	item.into_token_stream().into()
 }
 
