@@ -142,8 +142,8 @@ pub unsafe fn claim_multiboot() {
 							.claim_range(
 								(*mmap_entry).baseaddr as PhysAddr,
 								(*mmap_entry).length as usize / 4096
-							)
-							.expect("Unexpected Error claiming multiboot");
+							);
+						// Don't expect because it could be already mapped by BIOS
 					}
 					mmap_entry = mmap_entry.add(1);
 					i += 1;

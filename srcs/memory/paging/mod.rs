@@ -31,10 +31,12 @@ pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr =
 			(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-		multiboot::claim_multiboot();
+		// Claim 1st MiB used by BIOS Real Mode
 		bitmap::physmap_as_mut()
-			.claim(0x0)
-			.expect("Failed to claim first page");
+			.claim_range(0x0, (1024 * 1024) / 0x1000)
+			.expect("Failed to claim BIOS Real Mode 1st MiB");
+		// Claim all memory reserved by grub multiboot
+		multiboot::claim_multiboot();
 		// Claim page_directory
 		bitmap::physmap_as_mut()
 			.claim_range(0x100000, ((pd_paddr / 0x1000) + 1024) as usize)
