@@ -38,7 +38,7 @@ pub fn create(file: FileInfo) -> Result<(), ErrNo> {
 	}
 }
 
-/// Create a file given it's name and a predefined buffer. The buffer should implement
+/// Create a file given its name and a predefined buffer. The buffer should implement
 /// FileOperation trait.
 /// WARNINGS: This does use String and Box to create FileInfo, no file can be created before Heap
 /// creation
@@ -50,8 +50,8 @@ pub fn create_from_raw<T: FileOperation + 'static>(
 	create(file)
 }
 
-/// Delete file from SYSFILE given it's name
-/// Should be updated later to check permissin on the file
+/// Delete file from SYSFILE given its name
+/// Should be updated later to check permission on the file
 pub fn delete(name: &str) {
 	let mut guard = SYSFILES.lock();
 	if let Some(index) = guard.iter().position(|elem| elem.name == name) {
@@ -66,7 +66,7 @@ pub fn delete(name: &str) {
 	}
 }
 
-/// Look for a file given it's name in SYSFILES and open it.
+/// Look for a file given its name in SYSFILES and open it.
 /// Open files list is common between processses, this will change in later version
 pub fn open(name: &str) -> Result<usize, ErrNo> {
 	let guard = SYSFILES.lock();
@@ -88,7 +88,7 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 	return Ok(index);
 }
 
-/// Close a file given it's file descriptor. This does not delete the file from the system
+/// Close a file given its file descriptor. This does not delete the file from the system
 pub fn close(fd: usize) {
 	// TODO drop_in_place?
 	if fd < MAX_FD {
