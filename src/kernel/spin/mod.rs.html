@@ -116,6 +116,7 @@
 <span id="110">110</span>
 <span id="111">111</span>
 <span id="112">112</span>
+<span id="113">113</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::cell::UnsafeCell</span>;
 <span class="kw">use</span> <span class="ident">core::fmt</span>;
 <span class="kw">use</span> <span class="ident">core::ops</span>::{<span class="ident">Deref</span>, <span class="ident">DerefMut</span>, <span class="ident">Drop</span>};
@@ -127,6 +128,7 @@
 <span class="doccomment">/// `T` Inner type to store and protect</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// `INT` constant boolean to allow or not Mutex to enable/disable interrupts</span>
+<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Default</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="question-mark">?</span><span class="ident">Sized</span>, <span class="kw">const</span> <span class="ident">INT</span>: <span class="ident">bool</span><span class="op">&gt;</span> {
 	<span class="ident">lock</span>: <span class="ident">AtomicBool</span>,
 	<span class="ident">data</span>: <span class="ident">UnsafeCell</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>

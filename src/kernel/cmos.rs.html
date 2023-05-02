@@ -63,6 +63,7 @@
 <span id="57">57</span>
 <span id="58">58</span>
 <span id="59">59</span>
+<span id="60">60</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::fmt</span>;
 
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Time</span> {
@@ -95,6 +96,7 @@
 <span class="kw">const</span> <span class="ident">CMOS_CMD</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">0x70</span>;
 <span class="kw">const</span> <span class="ident">CMOS_DATA</span>: <span class="ident">u16</span> <span class="op">=</span> <span class="number">0x71</span>;
 
+<span class="attribute">#[<span class="ident">allow</span>(<span class="ident">non_snake_case</span>)]</span>
 <span class="kw">fn</span> <span class="ident">get_RTC_register</span>(<span class="ident">reg</span>: <span class="ident">u8</span>) -&gt; <span class="ident">u8</span> {
 	<span class="ident"><span class="kw">crate</span>::io::outb</span>(<span class="ident">CMOS_CMD</span>, <span class="ident">reg</span>);
 	<span class="ident"><span class="kw">crate</span>::io::inb</span>(<span class="ident">CMOS_DATA</span>)

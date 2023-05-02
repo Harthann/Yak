@@ -86,7 +86,7 @@
 <span class="kw">mod</span> <span class="ident">poc</span> {
 	<span class="kw">use</span> <span class="ident">sys_macros::Poc</span>;
 	<span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Poc</span>)]</span>
-	<span class="kw">struct</span> <span class="ident">poc</span>;
+	<span class="kw">struct</span> <span class="ident">Poc</span>;
 
 	<span class="attribute">#[<span class="ident">sys_macros::poc_insertion</span>]</span>
 	<span class="kw">fn</span> <span class="ident">insertion_poc</span>() {
@@ -102,7 +102,7 @@
 
 	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">test_macros</span>() {
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Test drive macro:&quot;</span>);
-		<span class="ident">poc::poc</span>();
+		<span class="ident">Poc::poc</span>();
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Test attribute macro:&quot;</span>);
 		<span class="ident">insertion_poc</span>();
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Test attribute macro with argument:&quot;</span>);
