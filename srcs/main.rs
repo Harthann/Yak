@@ -46,7 +46,7 @@ mod poc {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	crate::user::test_user_page();
+	// 	crate::user::test_user_page();
 
 	poc::test_macros();
 	kprintln!("Hello World of {}!", 42);

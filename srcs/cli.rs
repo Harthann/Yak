@@ -71,9 +71,7 @@ fn play(command: Vec<String>) {
 		sound = command[1].as_str();
 	}
 	crate::kprintln!("sound: {}", sound);
-	unsafe {
-		crate::sound::play(sound);
-	}
+	crate::sound::play(sound);
 }
 
 fn jiffies(_: Vec<String>) {
@@ -193,9 +191,7 @@ fn keymap(command: Vec<String>) {
 	}
 }
 
-extern "C" {
-	pub fn int(nb: u8);
-}
+use crate::interrupts::int::int;
 
 fn interrupt(command: Vec<String>) {
 	let arg: usize;

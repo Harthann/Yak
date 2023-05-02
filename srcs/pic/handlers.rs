@@ -14,13 +14,9 @@ pub fn handler(reg: &Registers, int_no: usize) {
 	crate::pic::end_of_interrupts(int_no - PIC1_IRQ_OFFSET as usize);
 }
 
-extern "C" {
-	fn swap_task();
-}
-
 #[naked]
 #[no_mangle]
-unsafe extern "C" fn irq_0() {
+pub unsafe extern "C" fn irq_0() {
 	#[cfg(not(feature = "multitasking"))]
 	core::arch::asm!(
 		"

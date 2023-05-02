@@ -18,13 +18,33 @@ use crate::boxed::Box;
 pub mod test;
 
 extern "C" {
-	fn jump_usermode(func: VirtAddr);
 	fn userfunc();
 	fn userfunc_end();
 }
 
 pub const USER_HEAP_ADDR: VirtAddr = 0x0800000;
 pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
+
+#[naked]
+unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
+	core::arch::asm!(
+		"mov ebx, DWORD PTR[esp + 4]",
+		"mov ax, (5 * 8) | 3", // ring 3 data with bottom 2 bits set for ring 3
+		"mov ds, ax",
+		"mov es, ax",
+		"mov fs, ax",
+		"mov gs, ax", // ss is handled by iret
+		// set up the stack frame iret expects
+		"mov eax, esp",
+		"push (5 * 8) | 3", // data selector
+		"push eax",         // current esp
+		"pushfd",           // eflags
+		"push (4 * 8) | 3", /* code selector (ring 3 code with bottom 2 bits set for ring 3) */
+		"push ebx",         // func
+		"iretd",
+		options(noreturn)
+	);
+}
 
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
@@ -66,6 +86,33 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_sti();
 	process.pid
 }
+
+core::arch::global_asm!(
+	r#"
+.globl userfunc
+.globl userfunc_end
+userfunc:
+	mov eax, 2
+	int 0x80
+	cmp eax, 0
+	jne .wait_child
+
+	mov ebx, 42
+	mov eax, 1
+	int 0x80
+
+	.wait_child:
+	mov edx, 0
+	mov ecx, 0
+	mov ebx, eax
+	mov eax, 7
+	int 0x80
+	mov ebx, eax
+	mov eax, 1
+	int 0x80
+userfunc_end:
+"#
+);
 
 pub fn test_user_page() {
 	unsafe {
