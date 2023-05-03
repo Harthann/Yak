@@ -105,7 +105,7 @@ use alloc::{boxed, string, vec};
 mod test;
 
 // Modules used function and variable
-use crate::main::kmain;
+
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
@@ -186,5 +186,5 @@ pub extern "C" fn kinit() {
 	test_main();
 
 	#[cfg(not(test))]
-	kmain();
+	main::kmain();
 }
