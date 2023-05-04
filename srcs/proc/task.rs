@@ -38,7 +38,7 @@ impl Task {
 		}
 	}
 
-	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
+	pub fn init_multitasking(stack_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
 			core::arch::asm!(
@@ -60,8 +60,7 @@ impl Task {
 				PAGE_WRITABLE,
 				false
 			);
-			MASTER_PROCESS.heap = <MemoryZone as Heap>::init_addr(
-				heap_addr,
+			MASTER_PROCESS.heap = <MemoryZone as Heap>::init(
 				100 * 0x1000,
 				PAGE_WRITABLE,
 				true,
