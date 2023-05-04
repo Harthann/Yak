@@ -107,10 +107,8 @@ unsafe extern "C" fn wrapper_handler() {
 		"mov eax, [esp]",
 		"add esp, 4",
 		"call eax",
-		"mov esp, {}",
 		"cli",
 		"jmp _end_handler",
-		const KSTACK_ADDR,
 		options(noreturn),
 	);
 	// Never goes there
@@ -278,11 +276,11 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	core::arch::asm!(
 		"mov esp, {}",
-		"sub esp, 32",
+		"add esp, 8",
 		"popa",
 		"add esp, 8", // int_no and err_code
 		"iretd", // no sti: iretd enable interrupt itself
-		in(reg) regs.esp,
+		in(reg) regs,
 		options(noreturn)
 	);
 }
