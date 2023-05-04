@@ -19,7 +19,10 @@ impl PageDirectory {
 				Ok(offset) => {
 					let page_dir: &'static mut Self = &mut *(offset as *mut _);
 					page_dir.clear();
-					page_dir.set_entry(1023, get_paddr!(offset) | flags | PAGE_PRESENT);
+					page_dir.set_entry(
+						1023,
+						get_paddr!(offset) | flags | PAGE_PRESENT
+					);
 					page_dir
 				},
 				Err(()) => todo!()

@@ -236,10 +236,14 @@ impl Process {
 		}
 	}
 
-	pub unsafe fn setup_pagination(&self, user: bool) -> &'static mut PageDirectory {
+	pub unsafe fn setup_pagination(
+		&self,
+		user: bool
+	) -> &'static mut PageDirectory {
 		let parent: &Process = &(*self.parent);
-		let kernel_pt_paddr: PhysAddr =
-			get_paddr!(page_directory.get_page_table(KERNEL_BASE >> 22).get_vaddr());
+		let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory
+			.get_page_table(KERNEL_BASE >> 22)
+			.get_vaddr());
 
 		let flag_user;
 		let heap_addr;

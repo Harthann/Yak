@@ -2,7 +2,7 @@ use crate::proc::process::{Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
-use crate::memory::paging::{PAGE_USER};
+use crate::memory::paging::PAGE_USER;
 
 use crate::wrappers::{_cli, _sti};
 
@@ -16,7 +16,6 @@ use crate::boxed::Box;
 // => Copy stack
 // must go to cr3 main kernel on sys
 // must dump registers
-
 
 /// Create a new process from the calling process,
 /// copy stack, heap and registers
@@ -49,9 +48,8 @@ pub fn sys_fork() -> Pid {
 
 		new_task.process = process;
 
-		let page_dir: &mut PageDirectory = process.setup_pagination(
-			(process.stack.flags & PAGE_USER) != 0
-		);
+		let page_dir: &mut PageDirectory =
+			process.setup_pagination((process.stack.flags & PAGE_USER) != 0);
 
 		new_task.regs = running_task.regs;
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task

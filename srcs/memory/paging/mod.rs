@@ -49,15 +49,19 @@ pub fn init_paging() {
 		// Use identity mapping to setup kernel page
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
-		init_page_tab
-			.set_entry(KERNEL_BASE >> 22, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		init_page_tab.set_entry(
+			KERNEL_BASE >> 22,
+			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT
+		);
 		refresh_tlb!();
 		// Final mapping
 		let kernel_page_tab: &mut PageTable =
 			&mut *(get_vaddr!(0, KERNEL_BASE >> 22) as *mut _);
 		kernel_page_tab.init();
-		page_directory
-			.set_entry(KERNEL_BASE >> 22, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		page_directory.set_entry(
+			KERNEL_BASE >> 22,
+			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT
+		);
 		// Recursive mapping
 		page_directory.set_entry(1023, pd_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		// Remove init page

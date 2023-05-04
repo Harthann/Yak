@@ -1,34 +1,34 @@
 //!  This module aim to parse mutliboot specification
 
-use crate::{kprint, kprintln};
 use crate::memory::paging::bitmap;
 use crate::memory::PhysAddr;
+use crate::{kprint, kprintln};
 
 use crate::boot::multiboot_ptr;
 
 enum TagType {
-	End =             0,
-	CmdLine =         1,
-	BootLoaderName =  2,
-	Module =          3,
-	BasicMemInfo =    4,
-	BootDev =         5,
-	Mmap =            6,
-	Vbe =             7,
-	FrameBuffer =     8,
-	ElfSections =     9,
-	Apm =             10,
-	Efi32 =           11,
-	Efi64 =           12,
-	Smbios =          13,
-	AcpiOld =         14,
-	AcpiNew =         15,
-	Network =         16,
-	EfiMmap =         17,
-	EfiBs =           18,
-	Efi32Ih =         19,
-	Efi64Ih =         20,
-	LoadBaseAddr =    21,
+	End            = 0,
+	CmdLine        = 1,
+	BootLoaderName = 2,
+	Module         = 3,
+	BasicMemInfo   = 4,
+	BootDev        = 5,
+	Mmap           = 6,
+	Vbe            = 7,
+	FrameBuffer    = 8,
+	ElfSections    = 9,
+	Apm            = 10,
+	Efi32          = 11,
+	Efi64          = 12,
+	Smbios         = 13,
+	AcpiOld        = 14,
+	AcpiNew        = 15,
+	Network        = 16,
+	EfiMmap        = 17,
+	EfiBs          = 18,
+	Efi32Ih        = 19,
+	Efi64Ih        = 20,
+	LoadBaseAddr   = 21
 }
 
 #[repr(C)]
@@ -52,7 +52,7 @@ struct BootDev {
 	size:          u32,
 	biosdev:       u32,
 	partition:     u32,
-	sub_partition: u32,
+	sub_partition: u32
 }
 
 #[repr(C)]
@@ -82,32 +82,32 @@ struct FrameBufferInfo {
 	framebuffer_height: u32,
 	framebuffer_bpp:    u8,
 	framebuffer_type:   u8,
-	reserved:           u8,
+	reserved:           u8
 }
 
 #[repr(C)]
 struct ElfSymbols {
-	htype:          u32,
-	size:           u32,
-	num:            u16,
-	entsize:        u16,
-	shndx:          u16,
-	reserved:       u16,
+	htype:    u32,
+	size:     u32,
+	num:      u16,
+	entsize:  u16,
+	shndx:    u16,
+	reserved: u16
 }
 
 #[repr(C)]
 struct ApmTable {
-	htype:          u32,
-	size:           u32,
-	version:        u16,
-	cseg:           u16,
-	offset:         u32,
-    cseg_16:        u16,
-    dseg:           u16,
-    flags:          u16,
-    cseg_len:       u16,
-    cseg_16_len:    u16,
-    dseg_len:       u16
+	htype:       u32,
+	size:        u32,
+	version:     u16,
+	cseg:        u16,
+	offset:      u32,
+	cseg_16:     u16,
+	dseg:        u16,
+	flags:       u16,
+	cseg_len:    u16,
+	cseg_16_len: u16,
+	dseg_len:    u16
 }
 
 #[repr(C)]
@@ -138,11 +138,10 @@ pub unsafe fn claim_multiboot() {
 							(*mmap_entry).baseaddr as PhysAddr / 4096,
 							(*mmap_entry).length as usize / 4096
 						);
-						bitmap::physmap_as_mut()
-							.claim_range(
-								(*mmap_entry).baseaddr as PhysAddr,
-								(*mmap_entry).length as usize / 4096
-							);
+						bitmap::physmap_as_mut().claim_range(
+							(*mmap_entry).baseaddr as PhysAddr,
+							(*mmap_entry).length as usize / 4096
+						);
 						// Don't expect because it could be already mapped by BIOS
 					}
 					mmap_entry = mmap_entry.add(1);
@@ -171,7 +170,7 @@ pub fn read_tags() {
 					kprint!("Command line = ");
 					let cstr: &[u8] = core::slice::from_raw_parts(
 						(tag_ptr as *const u8).offset(8),
-						(*tag_ptr).size as usize - 8 - 1 // remove size and '\0'
+						(*tag_ptr).size as usize - 8 - 1 /* remove size and '\0' */
 					);
 					match core::str::from_utf8(cstr) {
 						Ok(string) => kprintln!("{}", string),
@@ -182,7 +181,7 @@ pub fn read_tags() {
 					kprint!("Boot loader name = ");
 					let cstr: &[u8] = core::slice::from_raw_parts(
 						(tag_ptr as *const u8).offset(8),
-						(*tag_ptr).size as usize - 8 - 1 // remove size and '\0'
+						(*tag_ptr).size as usize - 8 - 1 /* remove size and '\0' */
 					);
 					match core::str::from_utf8(cstr) {
 						Ok(string) => kprintln!("{}", string),
@@ -207,7 +206,7 @@ pub fn read_tags() {
 						elem.sub_partition
 					);
 				},
-				x if x as u32 == TagType::Mmap  as u32 => {
+				x if x as u32 == TagType::Mmap as u32 => {
 					kprintln!("Memory map");
 					let mmap: *const MemMap = tag_ptr as *const MemMap;
 					let entry_number: u32 =
@@ -260,7 +259,7 @@ pub fn read_tags() {
 					kprintln!("    shndx: {}", elem.shndx);
 					kprintln!("    reserved: {}", elem.reserved);
 					*/
-				}
+				},
 				x if x as u32 == TagType::Apm as u32 => {
 					kprintln!("-- skipped -- APM table");
 					/*
@@ -276,7 +275,7 @@ pub fn read_tags() {
 					kprintln!("    cseg_16_len: {}", elem.cseg_16_len);
 					kprintln!("    dseg_len: {}", elem.dseg_len);
 					*/
-				}
+				},
 				x if x as u32 == TagType::AcpiOld as u32 => {
 					kprintln!("-- skipped -- ACPI old RSDP");
 				},
@@ -289,7 +288,11 @@ pub fn read_tags() {
 					*/
 				},
 				_ => {
-					kprintln!("Found tag: {}, size: {}", (*tag_ptr).htype, (*tag_ptr).size);
+					kprintln!(
+						"Found tag: {}, size: {}",
+						(*tag_ptr).htype,
+						(*tag_ptr).size
+					);
 				}
 			}
 			ptr = ptr.add((((*tag_ptr).size + 7) & !7) as usize);
