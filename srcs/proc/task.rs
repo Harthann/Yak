@@ -43,11 +43,7 @@ impl Task {
 		unsafe {
 			core::arch::asm!(
 				"mov {cr3}, cr3",
-				"pushf",
-				"mov {eflags}, [esp]",
-				"popf",
-				cr3 = out(reg) task.regs.cr3,
-				eflags = out(reg) task.regs.eflags
+				cr3 = out(reg) task.regs.cr3
 			);
 			MASTER_PROCESS.state = Status::Run;
 			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
@@ -310,12 +306,11 @@ macro_rules! load_cr3 {
 macro_rules! get_segments {
 	($ds: expr) => {
 		core::arch::asm!(
-			"mov eax, {}",
 			"mov ds, ax",
 			"mov es, ax",
 			"mov fs, ax",
 			"mov gs, ax",
-			in(reg) $ds
+			in("eax") $ds
 		);
 	}
 }

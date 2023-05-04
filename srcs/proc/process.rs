@@ -1,6 +1,8 @@
 use core::fmt;
 use core::ptr::copy_nonoverlapping;
 
+use crate::boot::KERNEL_BASE;
+
 use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{Heap, MemoryZone, Stack};
@@ -236,8 +238,9 @@ impl Process {
 
 	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
 		let parent: &Process = &(*self.parent);
-		let kernel_pt_paddr: PhysAddr =
-			get_paddr!(page_directory.get_page_table(768).get_vaddr());
+		let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory
+			.get_page_table(KERNEL_BASE >> 22)
+			.get_vaddr());
 
 		let page_dir: &'static mut PageDirectory =
 			PageDirectory::new(PAGE_WRITABLE | PAGE_USER);
@@ -258,8 +261,10 @@ impl Process {
 				| parent.stack.flags
 				| PAGE_USER | PAGE_PRESENT
 		);
+		// TODO: Kernel must not be writable but need task page so map it in
+		// another page_table ?
 		page_dir.set_entry(
-			768,
+			KERNEL_BASE >> 22,
 			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 		);
 		page_dir.set_entry(

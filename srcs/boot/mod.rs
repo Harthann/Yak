@@ -48,6 +48,7 @@ impl MultibootHeader {
 /// multiboot header to define entrypoint inside linker script
 static header: MultibootHeader = MultibootHeader::new();
 
+#[naked]
 #[no_mangle]
 #[link_section = ".boot"]
 /// Kernel entrypoint
@@ -55,18 +56,28 @@ static header: MultibootHeader = MultibootHeader::new();
 /// The _start function begin from low address space and will setup:
 /// - multiboot pointer
 /// - basic stack
+unsafe extern "C" fn _start() {
+	core::arch::asm!(
+		"mov eax, offset multiboot_ptr - {0}", // Get multiboot struct from GRUB
+		"mov DWORD PTR[eax], ebx", // ebx
+		"mov esp, offset stack - {0} + {1}", // Stack pointer initialisation
+		"jmp init_paging",
+		const KERNEL_BASE,
+		const STACK_SIZE,
+		options(noreturn)
+	);
+}
+
+#[no_mangle]
+#[link_section = ".boot"]
+/// Setup basic pagination & load gdt
+///
+/// Called after kernel entrypoint, this function will setup:
 /// - pagination (identity paging and higher half kernel paging)
 /// - load gdt
 ///
 /// The function will then jump to higher half kernel after loading gdt
-unsafe fn _start() {
-	core::arch::asm!(
-		"mov eax, offset multiboot_ptr - {0}", // Get multiboot struct from GRUB
-		"mov DWORD PTR[eax], ebx",
-		"mov esp, offset stack - {0} + {1}", // Stack pointer initialisation
-		const KERNEL_BASE,
-		const STACK_SIZE,
-	);
+unsafe fn init_paging() {
 	setup_page_directory!();
 	setup_page_table!();
 	enable_paging!();
@@ -98,7 +109,7 @@ unsafe fn high_kernel() {
 #[no_mangle]
 #[link_section = ".data"]
 /// Address to the multiboot structure used by GRUB
-static multiboot_ptr: u32 = 0;
+pub static mut multiboot_ptr: u32 = 0;
 
 #[no_mangle]
 #[link_section = ".bss"]
@@ -125,8 +136,8 @@ macro_rules! setup_page_directory {
 			"mov eax, offset page_table - {0} | 3",
 			"mov ebx, offset page_directory - {0}",
 			"mov DWORD PTR[ebx], eax",
-			"mov DWORD PTR[ebx + 768 * 4], eax",
-			const $crate::boot::KERNEL_BASE,
+			"mov DWORD PTR[ebx + ({0} >> 22) * 4], eax",
+			const $crate::boot::KERNEL_BASE
 		);
 	}
 }
