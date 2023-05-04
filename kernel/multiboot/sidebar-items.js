@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["claim_multiboot",""],["read_tags",""]],"static":[["multiboot_ptr",""]],"struct":[["AddrTag",""],["MemInfo",""],["MemMap",""],["MemMapEntry",""],["TagHeader",""]]};
+window.SIDEBAR_ITEMS = {"enum":[["TagType",""]],"fn":[["claim_multiboot",""],["read_tags",""]],"struct":[["ApmTable",""],["BootDev",""],["ElfSymbols",""],["FrameBufferInfo",""],["LoadBasePhys",""],["MemInfo",""],["MemMap",""],["MemMapEntry",""],["TagHeader",""]]};

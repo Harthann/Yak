@@ -322,11 +322,6 @@
 <span id="316">316</span>
 <span id="317">317</span>
 <span id="318">318</span>
-<span id="319">319</span>
-<span id="320">320</span>
-<span id="321">321</span>
-<span id="322">322</span>
-<span id="323">323</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident">core::ptr</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::interrupts::Registers</span>;
@@ -372,11 +367,7 @@
 		<span class="kw">unsafe</span> {
 			<span class="macro">core::arch::asm!</span>(
 				<span class="string">&quot;mov {cr3}, cr3&quot;</span>,
-				<span class="string">&quot;pushf&quot;</span>,
-				<span class="string">&quot;mov {eflags}, [esp]&quot;</span>,
-				<span class="string">&quot;popf&quot;</span>,
-				<span class="ident">cr3</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span>,
-				<span class="ident">eflags</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">eflags</span>
+				<span class="ident">cr3</span> <span class="op">=</span> <span class="ident">out</span>(<span class="ident">reg</span>) <span class="ident">task</span>.<span class="ident">regs</span>.<span class="ident">cr3</span>
 			);
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">state</span> <span class="op">=</span> <span class="ident">Status::Run</span>;
 			<span class="ident">MASTER_PROCESS</span>.<span class="ident">setup_kernel_stack</span>(<span class="ident">PAGE_WRITABLE</span>);
@@ -639,12 +630,11 @@
 <span class="macro">macro_rules!</span> <span class="ident">get_segments</span> {
 	(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ds</span>: <span class="ident">expr</span>) =&gt; {
 		<span class="macro">core::arch::asm!</span>(
-			<span class="string">&quot;mov eax, {}&quot;</span>,
 			<span class="string">&quot;mov ds, ax&quot;</span>,
 			<span class="string">&quot;mov es, ax&quot;</span>,
 			<span class="string">&quot;mov fs, ax&quot;</span>,
 			<span class="string">&quot;mov gs, ax&quot;</span>,
-			<span class="kw">in</span>(<span class="ident">reg</span>) <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ds</span>
+			<span class="kw">in</span>(<span class="string">&quot;eax&quot;</span>) <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ds</span>
 		);
 	}
 }

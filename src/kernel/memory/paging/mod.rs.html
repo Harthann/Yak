@@ -150,9 +150,19 @@
 <span id="144">144</span>
 <span id="145">145</span>
 <span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+<span id="152">152</span>
+<span id="153">153</span>
+<span id="154">154</span>
 </pre><pre class="rust"><code><span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">bitmap</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_directory</span>;
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">page_table</span>;
+
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boot::KERNEL_BASE</span>;
 
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::memory</span>::{<span class="ident">PhysAddr</span>, <span class="ident">VirtAddr</span>};
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::multiboot</span>;
@@ -181,10 +191,12 @@
 	<span class="kw">unsafe</span> {
 		<span class="kw">let</span> <span class="ident">pd_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span>
 			(<span class="ident">page_directory</span>.<span class="ident">get_vaddr</span>() <span class="op">&amp;</span> <span class="number">0x3ff000</span>) <span class="kw">as</span> <span class="ident">PhysAddr</span>;
-		<span class="ident">multiboot::claim_multiboot</span>();
+		<span class="comment">// Claim 1st MiB used by BIOS Real Mode</span>
 		<span class="ident">bitmap::physmap_as_mut</span>()
-			.<span class="ident">claim</span>(<span class="number">0x0</span>)
-			.<span class="ident">expect</span>(<span class="string">&quot;Failed to claim first page&quot;</span>);
+			.<span class="ident">claim_range</span>(<span class="number">0x0</span>, (<span class="number">1024</span> <span class="op">*</span> <span class="number">1024</span>) <span class="op">/</span> <span class="number">0x1000</span>)
+			.<span class="ident">expect</span>(<span class="string">&quot;Failed to claim BIOS Real Mode 1st MiB&quot;</span>);
+		<span class="comment">// Claim all memory reserved by grub multiboot</span>
+		<span class="ident">multiboot::claim_multiboot</span>();
 		<span class="comment">// Claim page_directory</span>
 		<span class="ident">bitmap::physmap_as_mut</span>()
 			.<span class="ident">claim_range</span>(<span class="number">0x100000</span>, ((<span class="ident">pd_paddr</span> <span class="op">/</span> <span class="number">0x1000</span>) <span class="op">+</span> <span class="number">1024</span>) <span class="kw">as</span> <span class="ident">usize</span>)
@@ -197,15 +209,19 @@
 		<span class="comment">// Use identity mapping to setup kernel page</span>
 		<span class="kw">let</span> <span class="ident">init_pt_paddr</span>: <span class="ident">PhysAddr</span> <span class="op">=</span> <span class="ident">pd_paddr</span> <span class="op">+</span> <span class="number">0x1000</span>;
 		<span class="kw">let</span> <span class="ident">init_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span> <span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="ident">init_pt_paddr</span> <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
-		<span class="ident">init_page_tab</span>
-			.<span class="ident">set_entry</span>(<span class="number">768</span>, <span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>);
+		<span class="ident">init_page_tab</span>.<span class="ident">set_entry</span>(
+			<span class="ident">KERNEL_BASE</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
+			<span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
+		);
 		<span class="macro">refresh_tlb!</span>();
 		<span class="comment">// Final mapping</span>
 		<span class="kw">let</span> <span class="ident">kernel_page_tab</span>: <span class="kw-2">&amp;mut</span> <span class="ident">PageTable</span> <span class="op">=</span>
-			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">get_vaddr!</span>(<span class="number">0</span>, <span class="number">768</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
+			<span class="kw-2">&amp;mut</span> <span class="kw-2">*</span>(<span class="macro">get_vaddr!</span>(<span class="number">0</span>, <span class="ident">KERNEL_BASE</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>) <span class="kw">as</span> <span class="kw-2">*mut</span> <span class="kw">_</span>);
 		<span class="ident">kernel_page_tab</span>.<span class="ident">init</span>();
-		<span class="ident">page_directory</span>
-			.<span class="ident">set_entry</span>(<span class="number">768</span>, <span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>);
+		<span class="ident">page_directory</span>.<span class="ident">set_entry</span>(
+			<span class="ident">KERNEL_BASE</span> <span class="op">&gt;</span><span class="op">&gt;</span> <span class="number">22</span>,
+			<span class="ident">kernel_pt_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>
+		);
 		<span class="comment">// Recursive mapping</span>
 		<span class="ident">page_directory</span>.<span class="ident">set_entry</span>(<span class="number">1023</span>, <span class="ident">pd_paddr</span> <span class="op">|</span> <span class="ident">PAGE_WRITABLE</span> <span class="op">|</span> <span class="ident">PAGE_PRESENT</span>);
 		<span class="comment">// Remove init page</span>

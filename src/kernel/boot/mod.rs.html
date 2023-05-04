@@ -176,6 +176,17 @@
 <span id="170">170</span>
 <span id="171">171</span>
 <span id="172">172</span>
+<span id="173">173</span>
+<span id="174">174</span>
+<span id="175">175</span>
+<span id="176">176</span>
+<span id="177">177</span>
+<span id="178">178</span>
+<span id="179">179</span>
+<span id="180">180</span>
+<span id="181">181</span>
+<span id="182">182</span>
+<span id="183">183</span>
 </pre><pre class="rust"><code><span class="doccomment">//! Define boot and kernel entrypoint</span>
 
 <span class="kw">use</span> <span class="ident">core::mem::size_of</span>;
@@ -226,6 +237,7 @@
 <span class="doccomment">/// multiboot header to define entrypoint inside linker script</span>
 <span class="kw">static</span> <span class="ident">header</span>: <span class="ident">MultibootHeader</span> <span class="op">=</span> <span class="ident">MultibootHeader::new</span>();
 
+<span class="attribute">#[<span class="ident">naked</span>]</span>
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="attribute">#[<span class="ident">link_section</span> <span class="op">=</span> <span class="string">&quot;.boot&quot;</span>]</span>
 <span class="doccomment">/// Kernel entrypoint</span>
@@ -233,18 +245,28 @@
 <span class="doccomment">/// The _start function begin from low address space and will setup:</span>
 <span class="doccomment">/// - multiboot pointer</span>
 <span class="doccomment">/// - basic stack</span>
+<span class="kw">unsafe</span> <span class="kw">extern</span> <span class="string">&quot;C&quot;</span> <span class="kw">fn</span> <span class="ident">_start</span>() {
+	<span class="macro">core::arch::asm!</span>(
+		<span class="string">&quot;mov eax, offset multiboot_ptr - {0}&quot;</span>, <span class="comment">// Get multiboot struct from GRUB</span>
+		<span class="string">&quot;mov DWORD PTR[eax], ebx&quot;</span>, <span class="comment">// ebx</span>
+		<span class="string">&quot;mov esp, offset stack - {0} + {1}&quot;</span>, <span class="comment">// Stack pointer initialisation</span>
+		<span class="string">&quot;jmp init_paging&quot;</span>,
+		<span class="kw">const</span> <span class="ident">KERNEL_BASE</span>,
+		<span class="kw">const</span> <span class="ident">STACK_SIZE</span>,
+		<span class="ident">options</span>(<span class="ident">noreturn</span>)
+	);
+}
+
+<span class="attribute">#[<span class="ident">no_mangle</span>]</span>
+<span class="attribute">#[<span class="ident">link_section</span> <span class="op">=</span> <span class="string">&quot;.boot&quot;</span>]</span>
+<span class="doccomment">/// Setup basic pagination &amp; load gdt</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// Called after kernel entrypoint, this function will setup:</span>
 <span class="doccomment">/// - pagination (identity paging and higher half kernel paging)</span>
 <span class="doccomment">/// - load gdt</span>
 <span class="doccomment">///</span>
 <span class="doccomment">/// The function will then jump to higher half kernel after loading gdt</span>
-<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">_start</span>() {
-	<span class="macro">core::arch::asm!</span>(
-		<span class="string">&quot;mov eax, offset multiboot_ptr - {0}&quot;</span>, <span class="comment">// Get multiboot struct from GRUB</span>
-		<span class="string">&quot;mov DWORD PTR[eax], ebx&quot;</span>,
-		<span class="string">&quot;mov esp, offset stack - {0} + {1}&quot;</span>, <span class="comment">// Stack pointer initialisation</span>
-		<span class="kw">const</span> <span class="ident">KERNEL_BASE</span>,
-		<span class="kw">const</span> <span class="ident">STACK_SIZE</span>,
-	);
+<span class="kw">unsafe</span> <span class="kw">fn</span> <span class="ident">init_paging</span>() {
 	<span class="macro">setup_page_directory!</span>();
 	<span class="macro">setup_page_table!</span>();
 	<span class="macro">enable_paging!</span>();
@@ -276,7 +298,7 @@
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="attribute">#[<span class="ident">link_section</span> <span class="op">=</span> <span class="string">&quot;.data&quot;</span>]</span>
 <span class="doccomment">/// Address to the multiboot structure used by GRUB</span>
-<span class="kw">static</span> <span class="ident">multiboot_ptr</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0</span>;
+<span class="kw">pub</span> <span class="kw">static</span> <span class="kw-2">mut</span> <span class="ident">multiboot_ptr</span>: <span class="ident">u32</span> <span class="op">=</span> <span class="number">0</span>;
 
 <span class="attribute">#[<span class="ident">no_mangle</span>]</span>
 <span class="attribute">#[<span class="ident">link_section</span> <span class="op">=</span> <span class="string">&quot;.bss&quot;</span>]</span>
@@ -303,8 +325,8 @@
 			<span class="string">&quot;mov eax, offset page_table - {0} | 3&quot;</span>,
 			<span class="string">&quot;mov ebx, offset page_directory - {0}&quot;</span>,
 			<span class="string">&quot;mov DWORD PTR[ebx], eax&quot;</span>,
-			<span class="string">&quot;mov DWORD PTR[ebx + 768 * 4], eax&quot;</span>,
-			<span class="kw">const</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::boot::KERNEL_BASE</span>,
+			<span class="string">&quot;mov DWORD PTR[ebx + ({0} &gt;&gt; 22) * 4], eax&quot;</span>,
+			<span class="kw">const</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">crate::boot::KERNEL_BASE</span>
 		);
 	}
 }
