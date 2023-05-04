@@ -276,9 +276,6 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 			options(noreturn)
 		);
 	}
-	// Update eax if changed due to syscalls
-	let save: &mut Registers = &mut *((regs.esp as *mut u8).offset(-40) as *mut _);
-	save.eax = regs.eax;
 	core::arch::asm!(
 		"mov esp, {}",
 		"sub esp, 32",
