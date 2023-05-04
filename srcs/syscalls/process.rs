@@ -48,8 +48,7 @@ pub fn sys_fork() -> Pid {
 
 		new_task.process = process;
 
-		let page_dir: &mut PageDirectory =
-			process.setup_pagination((process.stack.flags & PAGE_USER) != 0);
+		let page_dir: &mut PageDirectory = process.setup_pagination();
 
 		new_task.regs = running_task.regs;
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
