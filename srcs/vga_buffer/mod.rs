@@ -243,18 +243,14 @@ fn panic(info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::Red, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::White, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::White, Color::Black));
 	io::outb(0xf4, 0x11);
 	loop {}
 }

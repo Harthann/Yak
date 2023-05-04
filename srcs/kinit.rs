@@ -177,9 +177,6 @@ pub extern "C" fn kinit() {
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };
 	crate::wrappers::_sti();
 
-	// Function to test and enter usermode
-	// user::test_user_page();
-
 	#[cfg(test)]
 	test_main();
 

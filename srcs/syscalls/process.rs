@@ -25,7 +25,6 @@ use crate::boxed::Box;
 pub fn sys_fork() -> Pid {
 	unsafe {
 		_cli();
-		crate::kprintln!("sys_fork");
 		let running_task: &mut Task = Task::get_running_task();
 		let parent: &mut Process = Process::get_running_process();
 
@@ -62,22 +61,5 @@ pub fn sys_fork() -> Pid {
 		TASKLIST.push(new_task);
 		_sti();
 		process.pid
-	}
-}
-
-#[macro_export]
-macro_rules! sys_fork {
-	() => {
-		{
-			let mut pid: $crate::proc::process::Pid = 0;
-			core::arch::asm!(
-				"mov eax, {0}",
-				"int 0x80",
-				"mov {1}, eax",
-				const crate::syscalls::Syscall::fork as u32,
-				out(reg) pid
-			);
-			pid
-		}
 	}
 }
