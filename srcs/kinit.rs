@@ -174,7 +174,7 @@ pub extern "C" fn kinit() {
 	pic::set_irq0_in_ms(10.0);
 
 	// Reserve some spaces to push things before main
-	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };
+	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1 - 256) };
 	crate::wrappers::_sti();
 
 	// Function to test and enter usermode
