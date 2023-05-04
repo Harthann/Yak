@@ -176,8 +176,8 @@ mod test {
 					},
 					Ok(addr) => {
 						assert!(
-							addr >=
-							0x100000 + nmb_claim_pages * PAGE_SIZE as u32
+							addr >= 0x100000
+								+ nmb_claim_pages * PAGE_SIZE as u32
 						);
 						break;
 					}
