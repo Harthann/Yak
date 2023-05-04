@@ -62,7 +62,6 @@ struct ScreenChar {
 	color_code: ColorCode
 }
 
-const VGABUFF_OFFSET: usize = 0xc00b8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
@@ -223,7 +222,7 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		$crate::kprint!("{}\n", format_args!($($arg)*));
+		$crate::kprint!("{}\n", format_args!($($arg)*))
 	)
 }
 
@@ -244,18 +243,14 @@ fn panic(info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::Red, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::White, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::White, Color::Black));
 	io::outb(0xf4, 0x11);
 	loop {}
 }

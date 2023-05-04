@@ -145,7 +145,7 @@ const STACK_ADDR: VirtAddr = 0xff0fffff;
 pub extern "C" fn kinit() {
 	crate::wrappers::_cli();
 
-	// multiboot::read_tags();
+	multiboot::read_tags();
 	// Init paging and remove identity paging
 	init_paging();
 
@@ -176,9 +176,6 @@ pub extern "C" fn kinit() {
 	// Reserve some spaces to push things before main
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1 - 256) };
 	crate::wrappers::_sti();
-
-	// Function to test and enter usermode
-	// user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
