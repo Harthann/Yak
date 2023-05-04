@@ -61,20 +61,11 @@ doc:
 				cargo doc $(ARGS_CARGO) --open
 
 boot:			$(NAME) $(DIR_LOGS)
-				$(RUN_PREFIX) $(QEMU) -soundhw pcspk\
-									  -rtc base=localtime\
-									  -no-reboot\
-									  -d int\
-									  -drive format=raw,file=$(NAME)\
-									  -serial file:$(DIR_LOGS)/kernel.log\
-									  -serial file:$(DIR_LOGS)/debug_kernel.log\
-									  -device isa-debug-exit,iobase=0xf4,iosize=0x04\
-									  -display curses 2> $(DIR_LOGS)/qemu.log $(RUN_SUFFIX)
+				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
-				$(RUN_PREFIX) $(QEMU) -s -S -drive format=raw,file=$(NAME)\
-										-serial file:kernel.log &\
+				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@ debug &
 				gdb $(DIR_ISO)/boot/$(NAME)\
 					-ex "target remote localhost:1234"\
 					-ex "break kinit"\
@@ -82,15 +73,10 @@ debug:			$(NAME)
 				pkill qemu $(RUN_SUFFIX) # When exiting gdb kill qemu
 
 test:			$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
-				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX)
+				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@
 
 # Rule to create iso file which can be run with qemu
-$(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG) Makefile
-				$(BUILD_PREFIX) grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO) $(BUILD_SUFFIX)
-
-# Put kernel binary inside iso boot for grub-mkrescue
-$(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) | $(DIR_GRUB)
-							cp -f $(RUST_KERNEL) $(DIR_ISO)/boot/$(NAME)
+$(NAME):		 $(DIR_GRUB)/$(GRUB_CFG) Makefile;
 
 # Let cargo handle build depency - ';' to make empty target
 $(RUST_KERNEL):		build;
