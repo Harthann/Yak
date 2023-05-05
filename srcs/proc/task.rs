@@ -247,7 +247,6 @@ unsafe extern "C" fn find_task() -> ! {
 			// Copy registers to shared memory
 			let task: Registers = new_task.regs;
 			change_kernel_stack(process);
-			_rst();
 			switch_task(&task);
 			// never goes there
 		}
@@ -261,7 +260,6 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 		load_cr3!(regs.cr3);
 	}
 	get_segments!(regs.ds);
-	end_of_interrupts(0x20);
 	if regs.int_no != u32::MAX {
 		// new task
 		core::arch::asm!(
@@ -273,6 +271,8 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 			options(noreturn)
 		);
 	}
+	end_of_interrupts(0x20);
+	_rst();
 	core::arch::asm!(
 		"mov esp, {}",
 		"add esp, 8",

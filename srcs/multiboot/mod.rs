@@ -138,7 +138,7 @@ pub unsafe fn claim_multiboot() {
 							(*mmap_entry).baseaddr as PhysAddr / 4096,
 							(*mmap_entry).length as usize / 4096
 						);
-						bitmap::physmap_as_mut().claim_range(
+						let _ = bitmap::physmap_as_mut().claim_range(
 							(*mmap_entry).baseaddr as PhysAddr,
 							(*mmap_entry).length as usize / 4096
 						);

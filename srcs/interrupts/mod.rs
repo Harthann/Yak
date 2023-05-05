@@ -128,7 +128,7 @@ use crate::wrappers::{_cli, _rst, hlt};
 #[no_mangle]
 pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
-	let mut task = Task::get_running_task();
+	let task = Task::get_running_task();
 	task.regs = *regs; // dump regs for syscall (e.g: fork)
 	let _process: &mut Process = &mut *task.process;
 	let int_no: usize = regs.int_no as usize;
