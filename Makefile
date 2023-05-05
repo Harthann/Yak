@@ -32,6 +32,12 @@ BUILD			?=	debug
 RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
 
+ifeq ($(strip $(HOST)),Darwin) # macOS kernel
+AUDIODEV		=	coreaudio
+else
+AUDIODEV		=	pa
+endif
+
 ################################################################################
 # Prepare Docker toolchain if there is no local toolchain
 ################################################################################
@@ -61,7 +67,7 @@ doc:
 				cargo doc $(ARGS_CARGO) --open
 
 boot:			$(NAME) $(DIR_LOGS)
-				$(RUN_PREFIX) $(QEMU) -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0\
+				$(RUN_PREFIX) $(QEMU) -audiodev $(AUDIODEV),id=audio0 -machine pcspk-audiodev=audio0\
 									  -rtc base=localtime\
 									  -no-reboot\
 									  -d int\
