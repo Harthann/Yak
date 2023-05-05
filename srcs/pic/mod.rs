@@ -73,6 +73,7 @@ pub const PIC2_IRQ_SECATA: u8 = PIC2_IRQ_OFFSET + 7;
 const PIC_EOI: u8 = 0x20; // End of Interrupts command code
 
 #[inline]
+#[no_mangle]
 pub fn end_of_interrupts(irq: usize) {
 	if irq >= 8 {
 		// Slave interrupt request
