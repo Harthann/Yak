@@ -76,7 +76,7 @@ test:			$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@
 
 # Rule to create iso file which can be run with qemu
-$(NAME):		 $(DIR_GRUB)/$(GRUB_CFG) Makefile;
+$(NAME):		 build $(DIR_GRUB)/$(GRUB_CFG) Makefile;
 
 # Let cargo handle build depency - ';' to make empty target
 $(RUST_KERNEL):		build;

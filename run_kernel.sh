@@ -15,23 +15,22 @@ fi
 #	Build iso file using test binary and grub
 grub-mkrescue -o $2 iso
 
-echo "" > logs/kernel.log
-
 DIR_LOGS=logs
 mkdir -p $DIR_LOGS
 
-QEMU_ARGS=''
+QEMU_DEBUG_ARGS=''
 if [ "$4" == "debug" ]; then
-	QEMU_ARGS="$QEMU_ARGS -s -S"
-else
-	QEMU_ARGS="$QEMU_ARGS -display curses"
+	QEMU_DEBUG_ARGS="$QEMU_DEBUG_ARGS -s -S"
 fi
 # Run qemu for kernel unit tests
 if [ "$3" == "test" ]; then 
-	qemu-system-i386 $QEMU_ARGS\
+	qemu-system-i386 $QEMU_DEBUG_ARGS\
                    	 -d int \
 				     -drive format=raw,file=$2 \
-				     -nographic \
+                     -chardev stdio,id=char0,logfile=$DIR_LOGS/kernel.log\
+					 -serial chardev:char0\
+				     -serial file:$DIR_LOGS/debug_kernel.log\
+				     -display none \
 				     -no-reboot \
 				     -device isa-debug-exit,iobase=0xf4,iosize=0x04 2> logs/qemu.log | awk "
 	  /[ok]/ {sub(/\[ok\]/,\"[\033[32mok\033[39m]\");}
