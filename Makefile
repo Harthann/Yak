@@ -31,6 +31,16 @@ DIR_LOGS        =   logs
 BUILD			?=	debug
 RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
+GDB             ?=  0
+
+################################################################################
+# QEMU additional arguments
+################################################################################
+QEMU_ARGS := 
+# Add qemu gdb option if gdb env variable is set to 1
+ifeq ($(GDB), 1)
+	QEMU_ARGS += -s -S
+endif
 
 ################################################################################
 # Prepare Docker toolchain if there is no local toolchain
@@ -61,19 +71,18 @@ doc:
 				cargo doc $(ARGS_CARGO) --open
 
 boot:			$(NAME) $(DIR_LOGS)
-				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@
+				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $@ "$(QEMU_ARGS)" $(BUILD_SUFFIX)
+
+test:			$(NAME) $(DIR_LOGS) #$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $@ "$(QEMU_ARGS)" $(BUILD_SUFFIX)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
-				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@ debug &
 				gdb $(DIR_ISO)/boot/$(NAME)\
 					-ex "target remote localhost:1234"\
 					-ex "break kinit"\
 					-ex "c";\
 				pkill qemu $(RUN_SUFFIX) # When exiting gdb kill qemu
-
-test:			$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
-				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX) $@
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		 build $(DIR_GRUB)/$(GRUB_CFG) Makefile;
