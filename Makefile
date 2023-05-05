@@ -61,7 +61,7 @@ doc:
 				cargo doc $(ARGS_CARGO) --open
 
 boot:			$(NAME) $(DIR_LOGS)
-				$(RUN_PREFIX) $(QEMU) -soundhw pcspk\
+				$(RUN_PREFIX) $(QEMU) -audiodev pa,id=audio0 -machine pcspk-audiodev=audio0\
 									  -rtc base=localtime\
 									  -no-reboot\
 									  -d int\
@@ -74,7 +74,7 @@ boot:			$(NAME) $(DIR_LOGS)
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
 				$(RUN_PREFIX) $(QEMU) -s -S -drive format=raw,file=$(NAME)\
-										-serial file:kernel.log &\
+										-serial file:$(DIR_LOGS)/kernel.log &\
 				gdb $(DIR_ISO)/boot/$(NAME)\
 					-ex "target remote localhost:1234"\
 					-ex "break kinit"\
@@ -86,7 +86,7 @@ test:			$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG) Makefile
-				$(BUILD_PREFIX) grub-mkrescue --compress=xz -o $(NAME) $(DIR_ISO) $(BUILD_SUFFIX)
+				$(BUILD_PREFIX) grub-mkrescue -o $(NAME) $(DIR_ISO) $(BUILD_SUFFIX)
 
 # Put kernel binary inside iso boot for grub-mkrescue
 $(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) | $(DIR_GRUB)
