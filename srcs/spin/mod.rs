@@ -1,7 +1,8 @@
 use core::cell::UnsafeCell;
 use core::fmt;
 use core::ops::{Deref, DerefMut, Drop};
-use core::sync::atomic::{spin_loop_hint, AtomicBool, Ordering};
+use core::sync::atomic::{AtomicBool, Ordering};
+use core::hint::spin_loop;
 
 /// Mutex structure to prevent data races
 /// # Generic
@@ -38,11 +39,18 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 	/// Once the value as been written the mutex is successfully locked.
 	/// If `const INT` as been set to `true`, interrupt flag is clear
 	fn obtain_lock(&self) {
-		while self.lock.compare_and_swap(false, true, Ordering::Acquire)
-			!= false
+		while self
+			.lock
+			.compare_exchange_weak(
+				false,
+				true,
+				Ordering::Acquire,
+				Ordering::Relaxed
+			)
+			.is_err()
 		{
 			while self.lock.load(Ordering::Relaxed) != false {
-				spin_loop_hint();
+				spin_loop();
 			}
 		}
 		if INT == true {
@@ -66,7 +74,11 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 
 	/// Try to lock the mutex. Returning a Guard if successfull
 	pub fn try_lock(&self) -> Option<MutexGuard<T, INT>> {
-		if self.lock.compare_and_swap(false, true, Ordering::Acquire) == false {
+		if self
+			.lock
+			.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
+			.is_ok()
+		{
 			if INT == true {
 				crate::wrappers::_cli();
 			}
