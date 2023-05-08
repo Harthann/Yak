@@ -44,9 +44,29 @@ mod poc {
 	}
 }
 
+fn add_lol(nb1: i32, nb2: u32, string: &str) -> i32 {
+	crate::kprintln!("in add_lol: {}", string.len() as i32 + nb1 + nb2 as i32);
+	string.len() as i32 + nb1 + nb2 as i32
+}
+
+fn test_exec_fn_diff_args() {
+	let string = "salut";
+	unsafe {
+		let pid = crate::exec_fn!(add_lol, 8, 9, string);
+		crate::kprintln!("pid: {}", pid);
+		let mut wstatus: i32 = 0;
+		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut wstatus, 0);
+		crate::kprintln!("ret: {}", ret);
+		crate::kprintln!("wexited: {}", crate::syscalls::exit::__WIFEXITED!(wstatus));
+		crate::kprintln!("wexitstatus: {}", crate::syscalls::exit::__WEXITSTATUS!(wstatus));
+	}
+}
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
+
+	test_exec_fn_diff_args();
 
 	poc::test_macros();
 	kprintln!("Hello World of {}!", 42);

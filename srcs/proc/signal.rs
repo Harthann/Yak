@@ -83,7 +83,7 @@ pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
 	}
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Signal {
 	pub sender:  Id,
 	pub sigtype: SignalType,

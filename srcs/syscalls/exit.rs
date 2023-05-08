@@ -61,6 +61,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
 				let signal: Signal = res.unwrap();
+				crate::kprintln!("signal: {:?}", signal);
 				let parent_process: &mut Process =
 					Process::get_running_process();
 				let res = parent_process.search_from_pid(signal.sender);
@@ -71,6 +72,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				if !wstatus.is_null() {
 					*wstatus = signal.wstatus; // TODO
 				}
+				crate::kprintln!("signal.sender: {}", signal.sender);
 				_sti();
 				return signal.sender;
 			} else if res == Err(ErrNo::ESRCH) {
@@ -81,6 +83,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				_sti();
 				return 0;
 			} else {
+				crate::kprintln!("pause");
 				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
 				let save = cli_count;
