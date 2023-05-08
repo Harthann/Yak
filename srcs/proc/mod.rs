@@ -113,7 +113,6 @@ pub unsafe extern "C" fn exec_fn(
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) func);
 	new_task.regs.esp -= 4;
-	let esp: u32 = new_task.regs.esp;
 	new_task.regs.eip = wrapper_fn as VirtAddr;
 	new_task.regs.cr3 = running_task.regs.cr3;
 	new_task.regs.ds = running_task.regs.ds;

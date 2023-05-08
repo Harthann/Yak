@@ -286,10 +286,13 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 
 const STACK_SIZE: usize = 0x1000;
 
+#[repr(align(4096))]
+struct TaskStack([u8; STACK_SIZE]);
+
 #[no_mangle]
 #[link_section = ".bss"]
 /// Task stack
-static mut task_stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
+static mut task_stack: TaskStack = TaskStack([0; STACK_SIZE]);
 
 macro_rules! load_cr3 {
 	($cr3: expr) => {
