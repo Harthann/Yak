@@ -84,13 +84,11 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
 				let save = cli_count;
-				crate::kprintln!("wait cli_count: {}", cli_count);
 				_rst();
 				sti!();
 				hlt!(); // wait for scheduler
 				cli!(); // unblocked here
 				cli_count = save;
-				crate::kprintln!("save: {}", save);
 			}
 		}
 	}

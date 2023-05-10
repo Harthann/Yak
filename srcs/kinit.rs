@@ -161,7 +161,7 @@ pub extern "C" fn kinit() {
 	pic::set_irq0_in_ms(10.0);
 
 	// Reserve some spaces to push things before main
-	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1 - 256) };
+	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1) };
 	crate::wrappers::_sti();
 
 	#[cfg(test)]

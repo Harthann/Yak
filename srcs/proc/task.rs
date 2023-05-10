@@ -236,7 +236,6 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 #[no_mangle]
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
-	crate::kprintln!("schedule_task");
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -261,8 +260,8 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 		load_cr3!(regs.cr3);
 	}
 	get_segments!(regs.ds);
-	crate::kprintln!("next task: {:#x?}", regs);
 	end_of_interrupts(0x20);
+	_rst();
 	if regs.int_no != u32::MAX {
 		// new task
 		core::arch::asm!(
@@ -274,7 +273,6 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 			options(noreturn)
 		);
 	}
-	_rst();
 	core::arch::asm!(
 		"mov esp, {}",
 		"add esp, 8",

@@ -27,12 +27,8 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	crate::kprintln!("_exit cli_count: {}", crate::wrappers::cli_count);
-	crate::kprintln!("abc");
 	let task: Task = TASKLIST.pop();
 	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
-	crate::kprintln!("exit status: {}", status);
-	crate::kprintln!("loolz");
 	_rst();
 	schedule_task();
 	// Never goes there
