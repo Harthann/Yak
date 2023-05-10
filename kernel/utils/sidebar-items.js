@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["flags",""],["queue",""]]};
+window.SIDEBAR_ITEMS = {"mod":[["arcm",""],["flags",""],["queue",""]]};

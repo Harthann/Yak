@@ -33,13 +33,9 @@
 <span id="27">27</span>
 <span id="28">28</span>
 <span id="29">29</span>
-<span id="30">30</span>
-<span id="31">31</span>
-</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::boxed::Box</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errno::ErrNo</span>;
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::Mutex</span>;
+</pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errno::ErrNo</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::string::String</span>;
-<span class="kw">use</span> <span class="ident">alloc::sync::Arc</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::arcm::Arcm</span>;
 
 <span class="kw">pub</span> <span class="kw">mod</span> <span class="ident">socket</span>;
 
@@ -55,15 +51,15 @@
 <span class="doccomment">/// Arc is used to allow multiple reference on the object in a multithreaded environment</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">FileInfo</span> {
 	<span class="kw">pub</span> <span class="ident">name</span>: <span class="ident">String</span>,
-	<span class="kw">pub</span> <span class="ident">op</span>:   <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">FileOperation</span><span class="op">&gt;</span>, <span class="bool-val">false</span><span class="op">&gt;</span><span class="op">&gt;</span>
+	<span class="kw">pub</span> <span class="ident">op</span>:   <span class="ident">Arcm</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">FileOperation</span><span class="op">&gt;</span>
 }
 <span class="comment">// Sync/Send marker to indicate rust that FileInfo is thread safe</span>
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Sync</span> <span class="kw">for</span> <span class="ident">FileInfo</span> {}
 <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">Send</span> <span class="kw">for</span> <span class="ident">FileInfo</span> {}
 
 <span class="kw">impl</span> <span class="ident">FileInfo</span> {
-	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">op</span>: <span class="ident">Box</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">FileOperation</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
-		<span class="self">Self</span> { <span class="ident">name</span>, <span class="ident">op</span>: <span class="ident">Arc::new</span>(<span class="ident">Mutex::new</span>(<span class="ident">op</span>)) }
+	<span class="kw">pub</span> <span class="kw">fn</span> <span class="ident">new</span>(<span class="ident">name</span>: <span class="ident">String</span>, <span class="ident">op</span>: <span class="ident">Arcm</span><span class="op">&lt;</span><span class="kw">dyn</span> <span class="ident">FileOperation</span><span class="op">&gt;</span>) -&gt; <span class="self">Self</span> {
+		<span class="self">Self</span> { <span class="ident">name</span>, <span class="ident">op</span> }
 	}
 }
 </code></pre></div>

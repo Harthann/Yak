@@ -388,9 +388,11 @@
 <span id="382">382</span>
 <span id="383">383</span>
 <span id="384">384</span>
+<span id="385">385</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="ident"><span class="kw">super</span>::FileOperation</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::errno::ErrNo</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::Mutex</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::utils::arcm::Arcm</span>;
 <span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::vec::Vec</span>;
 <span class="kw">use</span> <span class="ident">alloc::sync::Arc</span>;
 <span class="kw">use</span> <span class="ident">core::cell::RefCell</span>;
@@ -441,7 +443,7 @@
 	<span class="ident">protocol</span>: <span class="ident">SocketProtocol</span>,
 	<span class="ident">roffset</span>:  <span class="ident">RefCell</span><span class="op">&lt;</span><span class="ident">usize</span><span class="op">&gt;</span>, <span class="comment">// needed for interior mutability in read</span>
 	<span class="ident">woffset</span>:  <span class="ident">usize</span>,
-	<span class="ident">buffer</span>:   <span class="prelude-ty">Option</span><span class="op">&lt;</span>[<span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="bool-val">false</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">2</span>]<span class="op">&gt;</span>,
+	<span class="ident">buffer</span>:   <span class="prelude-ty">Option</span><span class="op">&lt;</span>[<span class="ident">Arcm</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span>; <span class="number">2</span>]<span class="op">&gt;</span>,
 	<span class="ident">endpoint</span>: <span class="ident">usize</span>
 }
 
@@ -583,11 +585,11 @@
 ) -&gt; <span class="prelude-ty">Result</span><span class="op">&lt;</span>(<span class="ident">Socket</span>, <span class="ident">Socket</span>), <span class="ident">ErrNo</span><span class="op">&gt;</span> {
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">first_socket</span> <span class="op">=</span> <span class="ident">Socket::new</span>(<span class="ident">domain</span>, <span class="ident">stype</span>, <span class="ident">protocol</span>);
 	<span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">second_socket</span> <span class="op">=</span> <span class="ident">Socket::new</span>(<span class="ident">domain</span>, <span class="ident">stype</span>, <span class="ident">protocol</span>);
-	<span class="kw">let</span> <span class="ident">buffer1</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="bool-val">false</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">Mutex::default</span>());
-	<span class="kw">let</span> <span class="ident">buffer2</span>: <span class="ident">Arc</span><span class="op">&lt;</span><span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span>, <span class="bool-val">false</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Arc::new</span>(<span class="ident">Mutex::default</span>());
+	<span class="kw">let</span> <span class="ident">buffer1</span>: <span class="ident">Arcm</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Arcm::default</span>();
+	<span class="kw">let</span> <span class="ident">buffer2</span>: <span class="ident">Arcm</span><span class="op">&lt;</span><span class="ident">Vec</span><span class="op">&lt;</span><span class="ident">u8</span><span class="op">&gt;</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Arcm::default</span>();
 
 	<span class="comment">// Clone the reference to our buffers. Index 0 will be readed, index 1 will be writed to</span>
-	<span class="ident">second_socket</span>.<span class="ident">buffer</span> <span class="op">=</span> <span class="prelude-val">Some</span>([<span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">buffer1</span>), <span class="ident">Arc::clone</span>(<span class="kw-2">&amp;</span><span class="ident">buffer2</span>)]);
+	<span class="ident">second_socket</span>.<span class="ident">buffer</span> <span class="op">=</span> <span class="prelude-val">Some</span>([<span class="ident">buffer1</span>.<span class="ident">clone</span>(), <span class="ident">buffer2</span>.<span class="ident">clone</span>()]);
 	<span class="comment">// Move the reference to our buffers. Index 0 will be readed, index 1 will be writed to</span>
 	<span class="ident">first_socket</span>.<span class="ident">buffer</span> <span class="op">=</span> <span class="prelude-val">Some</span>([<span class="ident">buffer2</span>, <span class="ident">buffer1</span>]);
 	<span class="prelude-val">Ok</span>((<span class="ident">first_socket</span>, <span class="ident">second_socket</span>))

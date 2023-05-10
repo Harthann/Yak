@@ -336,7 +336,7 @@
 <span class="kw">mod</span> <span class="ident">cursor</span>;
 <span class="kw">use</span> <span class="ident">cursor::Cursor</span>;
 
-<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::Mutex</span>;
+<span class="kw">use</span> <span class="ident"><span class="kw">crate</span>::spin::KMutex</span>;
 
 <span class="attribute">#[<span class="ident">derive</span>(<span class="ident">Debug</span>, <span class="ident">Clone</span>)]</span>
 <span class="kw">pub</span> <span class="kw">struct</span> <span class="ident">Screen</span> {
@@ -392,8 +392,8 @@
 <span class="kw">const</span> <span class="ident">BUFFER_WIDTH</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">80</span>;
 
 <span class="kw">pub</span> <span class="kw">const</span> <span class="ident">NB_SCREEN</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">3</span>;
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">SCREENS</span>: <span class="ident">Mutex</span><span class="op">&lt;</span>[<span class="ident">Screen</span>; <span class="ident">NB_SCREEN</span>], <span class="bool-val">true</span><span class="op">&gt;</span> <span class="op">=</span>
-	<span class="ident">Mutex::new</span>([<span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>()]);
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">SCREENS</span>: <span class="ident">KMutex</span><span class="op">&lt;</span>[<span class="ident">Screen</span>; <span class="ident">NB_SCREEN</span>]<span class="op">&gt;</span> <span class="op">=</span>
+	<span class="ident">KMutex::new</span>([<span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>(), <span class="ident">Screen::new</span>()]);
 
 <span class="kw">type</span> <span class="ident">Buffer</span> <span class="op">=</span> [[<span class="ident">ScreenChar</span>; <span class="ident">BUFFER_WIDTH</span>]; <span class="ident">BUFFER_HEIGHT</span>];
 
@@ -402,7 +402,7 @@
 	<span class="ident">ascii_code</span>: <span class="number">0x20</span>,
 	<span class="ident">color_code</span>: <span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>)
 }; <span class="ident">BUFFER_WIDTH</span>]; <span class="ident">BUFFER_HEIGHT</span>];
-<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">WRITER</span>: <span class="ident">Mutex</span><span class="op">&lt;</span><span class="ident">Writer</span>, <span class="bool-val">true</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">Mutex</span>::<span class="op">&lt;</span><span class="ident">Writer</span>, <span class="bool-val">true</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">Writer</span> {
+<span class="kw">pub</span> <span class="kw">static</span> <span class="ident">WRITER</span>: <span class="ident">KMutex</span><span class="op">&lt;</span><span class="ident">Writer</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">KMutex</span>::<span class="op">&lt;</span><span class="ident">Writer</span><span class="op">&gt;</span><span class="ident">::new</span>(<span class="ident">Writer</span> {
 	<span class="ident">screen_index</span>: <span class="number">0</span>,
 	<span class="ident">cursor</span>:       <span class="ident">Cursor::new</span>(<span class="number">0</span>, <span class="number">0</span>, <span class="ident">ColorCode::new</span>(<span class="ident">Color::White</span>, <span class="ident">Color::Black</span>)),
 	<span class="ident">vga_buffer</span>:   <span class="kw">unsafe</span> { <span class="kw-2">&amp;mut</span> <span class="ident">VGA_BUFFER</span> }
