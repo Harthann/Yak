@@ -2,7 +2,7 @@ use crate::proc::process::{Pid, Process};
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::task::{Task, TaskStatus};
 
-use crate::wrappers::{_cli, _sti, cli, cli_count, hlt, sti};
+use crate::wrappers::{_cli, _sti, _rst, cli_count, cli, hlt, sti};
 
 use crate::errno::ErrNo;
 use crate::KSTACK_ADDR;
@@ -84,11 +84,13 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
 				let save = cli_count;
-				cli_count = 0;
+				crate::kprintln!("wait cli_count: {}", cli_count);
+				_rst();
 				sti!();
 				hlt!(); // wait for scheduler
 				cli!(); // unblocked here
 				cli_count = save;
+				crate::kprintln!("save: {}", save);
 			}
 		}
 	}
