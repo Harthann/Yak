@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # Argument expect
 # 1: Kernel binary
@@ -25,6 +25,9 @@ cp -f $1 iso/boot/$2
 DIR_LOGS=logs
 mkdir -p $DIR_LOGS
 
+# Sound hardware depends on Host OS
+[ $(uname) == "Darwin" ] && AUDIODEV="coreadio" || AUDIODEV="pa"
+
 # Expect qemu args to be in arg 4
 # In case of test, redirect logfile output to stdio as well
 [ "$3" == "test" ] && QEMU_ARGS="-chardev stdio,id=char0,logfile=$DIR_LOGS/kernel.log -display none" \
@@ -32,6 +35,7 @@ mkdir -p $DIR_LOGS
 QEMU_ARGS="
 $QEMU_ARGS
 $4
+-audiodev $AUDIODEV,id=audio0 -machine pcspk-audiodev=audio0
 -d int
 -drive format=raw,file=$2
 -serial chardev:char0
