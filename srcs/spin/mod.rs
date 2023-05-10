@@ -4,6 +4,9 @@ use core::ops::{Deref, DerefMut, Drop};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::hint::spin_loop;
 
+pub type Mutex<T> = RawMutex<T, false>;
+pub type KMutex<T> = RawMutex<T, true>;
+
 /// Mutex structure to prevent data races
 /// # Generic
 ///
@@ -11,7 +14,7 @@ use core::hint::spin_loop;
 ///
 /// `INT` constant boolean to allow or not Mutex to enable/disable interrupts
 #[derive(Default)]
-pub struct Mutex<T: ?Sized, const INT: bool> {
+pub struct RawMutex<T: ?Sized, const INT: bool> {
 	lock: AtomicBool,
 	data: UnsafeCell<T>
 }
@@ -25,16 +28,16 @@ pub struct MutexGuard<'a, T: ?Sized + 'a, const INT: bool> {
 	data: &'a mut T
 }
 
-impl<T, const INT: bool> Mutex<T, INT> {
+impl<T, const INT: bool> RawMutex<T, INT> {
 	/// Create a new mutex with the given data stored inside
-	pub const fn new(data: T) -> Mutex<T, INT> {
-		Mutex { lock: AtomicBool::new(false), data: UnsafeCell::new(data) }
+	pub const fn new(data: T) -> Self {
+		Self { lock: AtomicBool::new(false), data: UnsafeCell::new(data) }
 	}
 }
-unsafe impl<T: ?Sized + Send, const INT: bool> Sync for Mutex<T, INT> {}
-unsafe impl<T: ?Sized + Send, const INT: bool> Send for Mutex<T, INT> {}
+unsafe impl<T: ?Sized + Send, const INT: bool> Sync for RawMutex<T, INT> {}
+unsafe impl<T: ?Sized + Send, const INT: bool> Send for RawMutex<T, INT> {}
 
-impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
+impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 	/// Loop until the inner lock as the value false then write true on it.
 	/// Once the value as been written the mutex is successfully locked.
 	/// If `const INT` as been set to `true`, interrupt flag is clear
@@ -93,7 +96,7 @@ impl<T: ?Sized, const INT: bool> Mutex<T, INT> {
 }
 
 // Note this will probably cause deadlock since write need to lock a mutex
-impl<T: ?Sized, const INT: bool> fmt::Debug for Mutex<T, INT> {
+impl<T: ?Sized, const INT: bool> fmt::Debug for RawMutex<T, INT> {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self.try_lock() {
 			Some(_guard) => write!(f, "Mutex ({:#p}) {{ <Not locked> }}", self),
