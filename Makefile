@@ -29,7 +29,6 @@ DIR_GRUB		=	$(DIR_ISO)/boot/grub
 DIR_LOGS        =   logs
 
 BUILD			?=	debug
-RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
 GDB             ?=  0
 
@@ -86,9 +85,6 @@ debug:			$(NAME)
 
 # Rule to create iso file which can be run with qemu
 $(NAME):		 build $(DIR_GRUB)/$(GRUB_CFG) Makefile;
-
-# Let cargo handle build depency - ';' to make empty target
-$(RUST_KERNEL):		build;
 
 # Build kernel using cargo
 build:
