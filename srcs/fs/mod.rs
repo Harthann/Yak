@@ -1,7 +1,8 @@
-use crate::boxed::Box;
 use crate::errno::ErrNo;
-use crate::spin::Mutex;
+use crate::fs::FileOperation;
+use crate::spin::{KMutex, Mutex};
 use crate::string::String;
+use crate::utils::arcm::Arcm;
 use crate::vec::Vec;
 use alloc::sync::Arc;
 
@@ -18,7 +19,7 @@ pub use file::*;
 
 // Contain all file system. This will be probably converted to a BST or something like that
 // FileInfo will have to contain permission, file type information etc etc
-static SYSFILES: Mutex<Vec<Arc<FileInfo>>, true> = Mutex::new(Vec::new());
+static SYSFILES: KMutex<Vec<Arc<FileInfo>>> = KMutex::new(Vec::new());
 
 /// Take information on a file and add it to SYSFILES if it does not exist
 /// ErrNo is return if file already found.
@@ -46,7 +47,7 @@ pub fn create_from_raw<T: FileOperation + 'static>(
 	name: &str,
 	buffer: T
 ) -> Result<(), ErrNo> {
-	let file: FileInfo = FileInfo::new(String::from(name), Box::new(buffer));
+	let file: FileInfo = FileInfo::new(String::from(name), Arcm::new(buffer));
 	create(file)
 }
 
@@ -139,9 +140,9 @@ pub fn socket_pair(
 ) -> Result<usize, ErrNo> {
 	let socket = file::socket::create_socket_pair(domain, stype, protocol)?;
 	let socket1: FileInfo =
-		FileInfo::new(String::from("socketfs"), Box::new(socket.0));
+		FileInfo::new(String::from("socketfs"), Arcm::new(socket.0));
 	let socket2: FileInfo =
-		FileInfo::new(String::from("socketfs"), Box::new(socket.1));
+		FileInfo::new(String::from("socketfs"), Arcm::new(socket.1));
 
 	let curr_process = Process::get_running_process();
 

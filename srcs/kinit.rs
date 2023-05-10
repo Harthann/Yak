@@ -11,6 +11,8 @@
 #![feature(c_variadic)]
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
+#![feature(unsize)]
+#![feature(coerce_unsized)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
