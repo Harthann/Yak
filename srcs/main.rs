@@ -43,6 +43,7 @@ mod poc {
 		proc_macro_poc();
 	}
 }
+use crate::proc::process::MASTER_PROCESS;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
@@ -55,6 +56,9 @@ pub extern "C" fn kmain() -> ! {
 	let workspace_msg = string::String::from(
 		"Press Ctrl-2 to navigate to the second workspace"
 	);
+    unsafe { crate::dprintln!("{}", MASTER_PROCESS.stack); }
+    unsafe { crate::dprintln!("{}", MASTER_PROCESS.heap); }
+    unsafe { crate::dprintln!("{}", MASTER_PROCESS.kernel_stack); }
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
 	kprint!("$> ");
