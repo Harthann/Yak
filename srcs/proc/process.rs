@@ -184,6 +184,8 @@ impl Process {
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
+        // Removing these free seems to add leaking pages even tho MemoryZone drop perform the same
+        // operation
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 		free_pages(self.heap.offset, self.heap.size / 0x1000);
 		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
