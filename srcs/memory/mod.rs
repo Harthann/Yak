@@ -4,7 +4,6 @@ pub mod allocator;
 #[macro_use]
 pub mod paging;
 
-use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::{
 	alloc_pages,
 	alloc_pages_at_addr,
@@ -74,118 +73,38 @@ impl MemoryZone {
 	}
 }
 
-pub trait Heap {
-	fn init_addr(
+impl MemoryZone {
+	pub fn init_addr(
 		offset: VirtAddr,
-		size: usize,
-		flags: u32,
-		kphys: bool,
-		allocator: &mut dyn AllocatorInit
-	) -> MemoryZone;
-	fn init(
-		size: usize,
-		flags: u32,
-		kphys: bool,
-		allocator: &mut dyn AllocatorInit
-	) -> MemoryZone;
-	fn init_no_allocator(size: usize, flags: u32, kphys: bool) -> MemoryZone;
-}
-
-pub trait Stack {
-	fn init_addr(
-		offset: VirtAddr,
-		size: usize,
-		flags: u32,
-		kphys: bool
-	) -> MemoryZone;
-	fn init(size: usize, flags: u32, kphys: bool) -> MemoryZone;
-}
-
-impl Heap for MemoryZone {
-	fn init_addr(
-		offset: VirtAddr,
-		size: usize,
-		flags: u32,
-		kphys: bool,
-		allocator: &mut dyn AllocatorInit
+        ztype:  TypeZone,
+		size:   usize,
+		flags:  u32,
+		kphys:  bool
 	) -> MemoryZone {
-		let heap: MemoryZone = MemoryZone {
-			offset:    offset,
-			type_zone: TypeZone::Heap,
-			size:      size,
-			flags:     flags,
-			kphys:     kphys
+		let mut mz: MemoryZone = MemoryZone {
+			offset,
+			type_zone: ztype,
+			size,
+			flags,
+			kphys
 		};
-		init_memory_addr(offset, size, flags, kphys)
-			.expect("unable to allocate pages for heap");
-		unsafe { allocator.init(offset, size) };
-		heap
-	}
-
-	fn init(
-		size: usize,
-		flags: u32,
-		kphys: bool,
-		allocator: &mut dyn AllocatorInit
-	) -> MemoryZone {
-		let mut heap: MemoryZone = MemoryZone {
-			offset:    0,
-			type_zone: TypeZone::Heap,
-			size:      size,
-			flags:     flags,
-			kphys:     kphys
-		};
-		heap.offset = init_memory(size, flags, kphys)
-			.expect("unable to allocate pages for heap");
-		unsafe { allocator.init(heap.offset, size) };
-		heap
-	}
-
-	fn init_no_allocator(size: usize, flags: u32, kphys: bool) -> MemoryZone {
-		let mut heap: MemoryZone = MemoryZone {
-			offset:    0,
-			type_zone: TypeZone::Heap,
-			size:      size,
-			flags:     flags,
-			kphys:     kphys
-		};
-		heap.offset = init_memory(size, flags, kphys)
-			.expect("unable to allocate pages for heap");
-		heap
-	}
-}
-
-impl Stack for MemoryZone {
-	fn init_addr(
-		offset: VirtAddr,
-		size: usize,
-		flags: u32,
-		kphys: bool
-	) -> MemoryZone {
-		let stack_bottom: VirtAddr = offset - (size - 1) as u32;
-
-		let stack: MemoryZone = MemoryZone {
-			offset:    stack_bottom,
-			type_zone: TypeZone::Stack,
-			size:      size,
-			flags:     flags,
-			kphys:     kphys
-		};
-		init_memory_addr(stack_bottom, size, flags, kphys)
+		mz.offset = init_memory_addr(offset, size, flags, kphys)
 			.expect("unable to allocate pages for stack");
-		stack
+        // crate::dprintln!("MemoryZone create: {}", self);
+		mz
 	}
 
-	fn init(size: usize, flags: u32, kphys: bool) -> MemoryZone {
+	pub fn init(ztype: TypeZone, size: usize, flags: u32, kphys: bool) -> MemoryZone {
 		let mut stack: MemoryZone = MemoryZone {
 			offset:    0,
-			type_zone: TypeZone::Stack,
-			size:      size,
-			flags:     flags,
-			kphys:     kphys
+			type_zone: ztype,
+			size,
+			flags,
+			kphys
 		};
 		stack.offset = init_memory(size, flags, kphys)
 			.expect("unable to allocate pages for stack");
+        // crate::dprintln!("MemoryZone create: {}", self);
 		stack
 	}
 }

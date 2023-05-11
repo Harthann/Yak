@@ -3,9 +3,10 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
+use crate::memory::allocator::AllocatorInit;
 use crate::boxed::Box;
 use crate::memory::paging::free_pages;
-use crate::memory::{Heap, MemoryZone, Stack};
+use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
 
 use crate::proc::task::Task;
@@ -116,15 +117,15 @@ impl Process {
 	}
 
 	pub fn setup_stack(&mut self, size: usize, flags: u32, kphys: bool) {
-		self.stack = <MemoryZone as Stack>::init(size, flags, kphys);
+		self.stack = MemoryZone::init(TypeZone::Stack, size, flags, kphys);
 	}
 
 	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
-		self.heap = <MemoryZone as Heap>::init_no_allocator(size, flags, kphys);
+		self.heap = MemoryZone::init(TypeZone::Heap, size, flags, kphys);
 	}
 
 	pub fn setup_kernel_stack(&mut self, flags: u32) {
-		self.kernel_stack = <MemoryZone as Stack>::init(0x1000, flags, false);
+		self.kernel_stack = MemoryZone::init(TypeZone::Stack, 0x1000, flags, false);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {

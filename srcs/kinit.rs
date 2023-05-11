@@ -141,6 +141,7 @@ pub use pic::handlers::JIFFIES;
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xff0fffff;
+const STACK_SIZE: u32 = 0x1000;
 
 // Kernel initialisation
 #[no_mangle]

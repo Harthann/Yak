@@ -2,9 +2,10 @@ use core::ptr;
 
 use crate::interrupts::Registers;
 use crate::memory::paging::page_directory;
-use crate::memory::{Heap, MemoryZone, Stack, VirtAddr};
+use crate::memory::{MemoryZone, TypeZone, VirtAddr};
 use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
+use crate::memory::allocator::AllocatorInit;
 
 use crate::utils::queue::Queue;
 use crate::vec::Vec;
@@ -54,19 +55,22 @@ impl Task {
 				)
 				.expect("Could not claim kernel stack page");
 			change_kernel_stack(&MASTER_PROCESS);
-			MASTER_PROCESS.stack = <MemoryZone as Stack>::init_addr(
-				stack_addr,
-				0x1000,
+			MASTER_PROCESS.stack = MemoryZone::init_addr(
+				stack_addr - (crate::STACK_SIZE - 1),
+                TypeZone::Stack,
+				crate::STACK_SIZE as usize,
 				PAGE_WRITABLE,
 				false
 			);
-			MASTER_PROCESS.heap = <MemoryZone as Heap>::init_addr(
+			MASTER_PROCESS.heap = MemoryZone::init_addr(
 				heap_addr,
+                TypeZone::Heap,
 				100 * 0x1000,
 				PAGE_WRITABLE,
 				true,
-				&mut KALLOCATOR
 			);
+			// Init allocator with addr &mut KALLOCATOR
+            KALLOCATOR.init(MASTER_PROCESS.heap.offset, MASTER_PROCESS.heap.size);
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
 			MASTER_PROCESS.owner = 0;
