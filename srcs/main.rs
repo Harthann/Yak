@@ -45,6 +45,15 @@ mod poc {
 }
 use crate::proc::process::MASTER_PROCESS;
 
+use crate::syscalls::mmap;
+use crate::memory;
+fn test_mmap() {
+    let _mz =  mmap::sys_mmap(0x0, 0x1000, 0, memory::WRITABLE, 0, 0).expect("Couldn't map memory");
+    let _mz2 = mmap::sys_mmap(0x0, 0x1000, 0, memory::WRITABLE, 0, 0).expect("Couldn't map memory");
+    let _mz3 = mmap::sys_mmap(0x0, 0x1000, 0, 0, 0, 0).expect("Couldn't map memory");
+    loop {}
+}
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	// 	crate::user::test_user_page();
@@ -59,6 +68,7 @@ pub extern "C" fn kmain() -> ! {
     unsafe { crate::dprintln!("{}", MASTER_PROCESS.stack); }
     unsafe { crate::dprintln!("{}", MASTER_PROCESS.heap); }
     unsafe { crate::dprintln!("{}", MASTER_PROCESS.kernel_stack); }
+    unsafe { crate::exec_fn!(test_mmap); }
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
 	kprint!("$> ");

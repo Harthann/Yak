@@ -3,11 +3,11 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
-use crate::memory::allocator::AllocatorInit;
 use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
+use crate::alloc::collections::LinkedList;
 
 use crate::proc::task::Task;
 
@@ -25,6 +25,7 @@ use crate::memory::paging::{
 	PAGE_WRITABLE
 };
 use crate::memory::PhysAddr;
+use crate::utils::arcm::Arcm;
 
 use crate::user::{USER_HEAP_ADDR, USER_STACK_ADDR};
 use crate::KSTACK_ADDR;
@@ -45,6 +46,8 @@ pub enum Status {
 	Thread
 }
 
+/// Arcm is needed to protect MemoryZone only if the memory zone is shared between threads
+/// otherwise it will be useless.
 pub const MAX_FD: usize = 32;
 pub struct Process {
 	pub pid:             Pid,
@@ -54,6 +57,7 @@ pub struct Process {
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
+    pub mem_map:         LinkedList<Arcm<MemoryZone>>,
 	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
@@ -71,6 +75,7 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
+            mem_map:         LinkedList::new(),
 			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
@@ -302,6 +307,10 @@ impl Process {
 		crate::kprintln!("       PID        OWNER   STATUS");
 		MASTER_PROCESS.print_tree();
 	}
+
+    pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
+        self.mem_map.push_back(mz);
+    }
 }
 
 impl fmt::Display for Process {
