@@ -19,29 +19,28 @@ pub type PhysAddr = u32;
 /// Since paging flags are already stored in page directory it's probably not needed to store them
 /// here as well
 use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
-pub const PRESENT:    u32 = PAGE_PRESENT;
 /// Prots
 pub const WRITABLE:   u32 = PAGE_WRITABLE;
-pub const READABLE:   u32 = PAGE_WRITABLE << 1;
-pub const EXECUTABLE: u32 = PAGE_WRITABLE << 2;
+pub const READABLE:   u32 = WRITABLE << 1;
+pub const EXECUTABLE: u32 = WRITABLE << 2;
 
 /// Flags
 /// Flags starting with an underscore re ignored by linux kernel and so are useless
-pub const MAP_SHARED:     u32 = 1 << 0;
-pub const MAP_PRIVATE:    u32 = 1 << 1;
+pub const MAP_SHARED:      u32 = 1 << 0;
+pub const MAP_PRIVATE:     u32 = 1 << 1;
 /// Valid only for 64 bits system
-pub const MAP_32BIT:      u32 = 1 << 2;
-pub const MAP_ANON:       u32 = 1 << 3;
-pub const MAP_ANONYMOUS:  u32 = 1 << 4;
+pub const MAP_32BIT:       u32 = 1 << 2;
+pub const MAP_ANON:        u32 = 1 << 3;
+pub const MAP_ANONYMOUS:   u32 = 1 << 4;
 pub const _MAP_DENYWRITE:  u32 = 1 << 5;
 pub const _MAP_EXECUTABLE: u32 = 1 << 6;
 pub const _MAP_FILE:       u32 = 1 << 7;
-pub const MAP_FIXED:      u32 = 1 << 8;
-pub const MAP_GROWSDOWN:  u32 = 1 << 9;
-pub const MAP_LOCKED:     u32 = 1 << 10;
-pub const MAP_NONBLOCK:   u32 = 1 << 11;
-pub const MAP_NORESERVE:  u32 = 1 << 12;
-pub const MAP_POPULATE:   u32 = 1 << 13;
+pub const MAP_FIXED:       u32 = 1 << 8;
+pub const MAP_GROWSDOWN:   u32 = 1 << 9;
+pub const MAP_LOCKED:      u32 = 1 << 10;
+pub const MAP_NONBLOCK:    u32 = 1 << 11;
+pub const MAP_NORESERVE:   u32 = 1 << 12;
+pub const MAP_POPULATE:    u32 = 1 << 13;
 
 
 
@@ -126,6 +125,7 @@ impl MemoryZone {
             TypeZone::Heap       => "heap",
             TypeZone::Stack      => "stack",
             TypeZone::Unassigned => "unassigned",
+            TypeZone::File(name) => name,
             _                    => "Not yet named"
         };
 		mz.offset = init_memory_addr(offset, size, flags, kphys)
@@ -146,6 +146,7 @@ impl MemoryZone {
             TypeZone::Heap       => "heap",
             TypeZone::Stack      => "stack",
             TypeZone::Unassigned => "unassigned",
+            TypeZone::File(name) => name,
             _                    => "Not yet named"
         };
 		mz.offset = init_memory(size, flags, kphys)
@@ -227,6 +228,11 @@ mod tests {
         for i in 0..255 {
             assert_eq!(mz[i as usize], i);
         }
+    }
 
+    #[sys_macros::test_case]
+    fn memory_zone_for_files() {
+        let mut mz = MemoryZone::init(TypeZone::File("This is my file name"), 0x1000, super::WRITABLE, false);
+        assert_eq!("This is my file name", mz.name);
     }
 }
