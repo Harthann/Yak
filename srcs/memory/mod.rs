@@ -20,10 +20,30 @@ pub type PhysAddr = u32;
 /// here as well
 use crate::memory::paging::{PAGE_WRITABLE, PAGE_PRESENT};
 pub const PRESENT:    u32 = PAGE_PRESENT;
+/// Prots
 pub const WRITABLE:   u32 = PAGE_WRITABLE;
 pub const READABLE:   u32 = PAGE_WRITABLE << 1;
 pub const EXECUTABLE: u32 = PAGE_WRITABLE << 2;
-pub const SHARED:     u32 = PAGE_WRITABLE << 3;
+
+/// Flags
+/// Flags starting with an underscore re ignored by linux kernel and so are useless
+pub const MAP_SHARED:     u32 = 1 << 0;
+pub const MAP_PRIVATE:    u32 = 1 << 1;
+/// Valid only for 64 bits system
+pub const MAP_32BIT:      u32 = 1 << 2;
+pub const MAP_ANON:       u32 = 1 << 3;
+pub const MAP_ANONYMOUS:  u32 = 1 << 4;
+pub const _MAP_DENYWRITE:  u32 = 1 << 5;
+pub const _MAP_EXECUTABLE: u32 = 1 << 6;
+pub const _MAP_FILE:       u32 = 1 << 7;
+pub const MAP_FIXED:      u32 = 1 << 8;
+pub const MAP_GROWSDOWN:  u32 = 1 << 9;
+pub const MAP_LOCKED:     u32 = 1 << 10;
+pub const MAP_NONBLOCK:   u32 = 1 << 11;
+pub const MAP_NORESERVE:  u32 = 1 << 12;
+pub const MAP_POPULATE:   u32 = 1 << 13;
+
+
 
 pub fn init_memory_addr(
 	addr: VirtAddr,
@@ -169,7 +189,7 @@ impl fmt::Display for MemoryZone {
         let readable:   char = if self.flags & READABLE   == READABLE   { 'R' } else { '-' };
         let writable:   char = if self.flags & WRITABLE   == WRITABLE   { 'W' } else { '-' };
         let executable: char = if self.flags & EXECUTABLE == EXECUTABLE { 'X' } else { '-' };
-        let shared:     char = if self.flags & SHARED     == SHARED     { 'S' } else { '-' };
+        let shared:     char = if self.flags & MAP_SHARED == MAP_SHARED { 'S' } else { '-' };
 		write!(f, "{:#10x} {:#10x} {}{}{}{} [ {} ]",
                self.offset, self.size, readable, writable, executable, shared, self.name)
 	}

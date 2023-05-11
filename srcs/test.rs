@@ -45,7 +45,9 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 			crate::memory_state();
 			panic!("Memory leaks test failed");
 		}
-        crate::kprintln!("Leaking {} pages", pages_after_test - pages_before_test);
+        if pages_before_test != pages_after_test {
+            crate::kprintln!("Leaking {} {} pages", pages_after_test, pages_before_test);
+        }
 	}
     crate::kprintln!("Kernel uses {} more pages", physmap_as_mut().used - used_pages);
 	crate::memory_state();
