@@ -167,6 +167,23 @@ impl MemoryZone {
          core::slice::from_raw_parts_mut(self.offset as *mut u8, self.size)
         }
     }
+
+    /// Add pages to the memory zone, growing upward for most zones. And downward for stacks type
+    /// Should return an error if failed
+    pub fn grow(&mut self) -> Result<(), ()> {
+        todo!()
+    }
+
+    /// Remap the memory zone in the virtual address space using new_addr as a hint or strict addr
+    /// if flags REMAP_FIXED is set.
+    pub fn remap(&mut self, _new_addr: VirtAddr, _new_size: usize, _flags: u32) -> Result<VirtAddr, ()> {
+        todo!()
+    }
+
+    /// Change protection of a memory zone
+    pub fn protect(&mut self, _prot: u32) {
+    }
+
 }
 
 use core::ops::Deref;
