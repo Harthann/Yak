@@ -102,13 +102,6 @@ debug:			$(NAME)
 # Rule to create iso file which can be run with qemu
 $(NAME):		 build $(DIR_GRUB)/$(GRUB_CFG) Makefile;
 
-# Put kernel binary inside iso boot for grub-mkrescue
-$(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) | $(DIR_GRUB)
-							cp -f $(RUST_KERNEL) $(DIR_ISO)/boot/$(NAME)
-
-# Let cargo handle build depency - ';' to make empty target
-$(RUST_KERNEL):		build;
-
 # Build kernel using cargo
 build:
 				$(BUILD_PREFIX) cargo build $(ARGS_CARGO) $(BUILD_SUFFIX)
