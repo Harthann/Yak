@@ -1,6 +1,7 @@
 use super::FileOperation;
 use crate::errno::ErrNo;
 use crate::spin::Mutex;
+use crate::utils::arcm::Arcm;
 use crate::vec::Vec;
 use alloc::sync::Arc;
 use core::cell::RefCell;
@@ -51,7 +52,7 @@ pub struct Socket {
 	protocol: SocketProtocol,
 	roffset:  RefCell<usize>, // needed for interior mutability in read
 	woffset:  usize,
-	buffer:   Option<[Arc<Mutex<Vec<u8>, false>>; 2]>,
+	buffer:   Option<[Arcm<Vec<u8>>; 2]>,
 	endpoint: usize
 }
 
@@ -193,11 +194,11 @@ pub fn create_socket_pair(
 ) -> Result<(Socket, Socket), ErrNo> {
 	let mut first_socket = Socket::new(domain, stype, protocol);
 	let mut second_socket = Socket::new(domain, stype, protocol);
-	let buffer1: Arc<Mutex<Vec<u8>, false>> = Arc::new(Mutex::default());
-	let buffer2: Arc<Mutex<Vec<u8>, false>> = Arc::new(Mutex::default());
+	let buffer1: Arcm<Vec<u8>> = Arcm::default();
+	let buffer2: Arcm<Vec<u8>> = Arcm::default();
 
 	// Clone the reference to our buffers. Index 0 will be readed, index 1 will be writed to
-	second_socket.buffer = Some([Arc::clone(&buffer1), Arc::clone(&buffer2)]);
+	second_socket.buffer = Some([buffer1.clone(), buffer2.clone()]);
 	// Move the reference to our buffers. Index 0 will be readed, index 1 will be writed to
 	first_socket.buffer = Some([buffer2, buffer1]);
 	Ok((first_socket, second_socket))
