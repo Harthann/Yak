@@ -61,6 +61,9 @@ pub struct Process {
 	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
+    pub page_tables:     Vec<&'static mut PageTable>,
+    pub pd: *mut PageDirectory,
+    pub test: bool,
 	pub owner:           Id
 }
 
@@ -79,6 +82,9 @@ impl Process {
 			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
+            page_tables:     Vec::new(),
+            pd: 0x0 as *mut PageDirectory,
+            test: false,
 			owner:           0
 		}
 	}
@@ -186,9 +192,23 @@ impl Process {
 		}
         // Removing these free seems to add leaking pages even tho MemoryZone drop perform the same
         // operation
-		free_pages(self.stack.offset, self.stack.size / 0x1000);
-		free_pages(self.heap.offset, self.heap.size / 0x1000);
-		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
+		//free_pages(self.stack.offset, self.stack.size / 0x1000);
+		//free_pages(self.heap.offset, self.heap.size / 0x1000);
+        //crate::kprintln!("heap? {:#x}", self.heap.offset);
+		//free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
+
+        if self.test == true {
+            use crate::memory::paging::bitmap;
+            let pd = &mut *self.pd;
+            for i in &self.page_tables {
+                let vaddr = i.get_vaddr() as usize;
+                bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
+                page_directory.get_page_table(vaddr >> 22).set_entry((vaddr & 0x3ff000) >> 12, 0);
+            }
+            let vaddr = pd.get_vaddr() as usize;
+            bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
+            page_directory.get_page_table(vaddr >> 22).set_entry((vaddr & 0x3ff000) >> 12, 0);
+        }
 		parent.childs.remove(i);
 	}
 
@@ -244,7 +264,7 @@ impl Process {
 		}
 	}
 
-	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
+	pub unsafe fn setup_pagination(&mut self) -> &'static mut PageDirectory {
 		let parent: &Process = &(*self.parent);
 		let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory
 			.get_page_table(KERNEL_BASE >> 22)
@@ -297,6 +317,10 @@ impl Process {
 			get_paddr!(self.kernel_stack.offset),
 			PAGE_WRITABLE | PAGE_USER
 		);
+        self.pd = page_dir;
+        self.page_tables.push(process_heap);
+        self.page_tables.push(process_stack);
+        self.page_tables.push(process_kernel_stack);
 		refresh_tlb!();
 		page_dir
 	}

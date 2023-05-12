@@ -23,11 +23,12 @@ pub enum TaskStatus {
 	Interruptible    // Waiting for changing state (wait4 - waitpid)
 }
 
+use crate::memory::paging::page_directory::PageDirectory;
 #[derive(Copy, Clone)]
 pub struct Task {
 	pub regs:    Registers,
 	pub state:   TaskStatus,
-	pub process: *mut Process
+	pub process: *mut Process,
 }
 
 impl Task {

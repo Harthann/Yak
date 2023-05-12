@@ -75,7 +75,7 @@ pub fn init_memory(
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy,Debug)]
 pub enum TypeZone {
 	Unassigned,
 	Stack,
@@ -182,6 +182,7 @@ impl MemoryZone {
 
     /// Change protection of a memory zone
     pub fn protect(&mut self, _prot: u32) {
+        todo!()
     }
 
 }
@@ -216,10 +217,15 @@ impl fmt::Display for MemoryZone {
 use core::ops::Drop;
 impl Drop for MemoryZone {
 	fn drop(&mut self) {
-        let mut npages = self.size / 4096;
-        // If memory size isn't aligned to page size this means more memory is allocated
-        if self.size % 4096 != 0 { npages += 1 }
-        free_pages(self.offset, npages);
+        match self.type_zone {
+            TypeZone::Unassigned => { /* Memory not allocated do nothing */ },
+            _ => {
+                let mut npages = self.size / 4096;
+                // If memory size isn't aligned to page size this means more memory is allocated
+                if self.size % 4096 != 0 { npages += 1 }
+                free_pages(self.offset, npages);
+            }
+        }
     }
 }
 

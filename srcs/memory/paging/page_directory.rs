@@ -12,6 +12,14 @@ pub struct PageDirectory {
 	entries: [PageDirectoryEntry; 1024]
 }
 
+impl core::ops::Drop for PageDirectory {
+    fn drop(&mut self) {
+        crate::kprintln!("Dropping PageDir");
+        for i in 0..1024 {
+            drop(self.get_page_table(i));
+        }
+    }
+}
 impl PageDirectory {
 	pub fn new(flags: u32) -> &'static mut Self {
 		unsafe {
@@ -361,6 +369,7 @@ impl PageDirectory {
 		unsafe {
 			if self.get_entry(index).get_present() == 1 {
 				let page_table: &mut PageTable = self.get_page_table(index);
+                crate::kprintln!("Cleaning {}", index);
 				page_table.clear();
 				bitmap::physmap_as_mut()
 					.free_page(self.get_entry(index).get_paddr());
