@@ -29,13 +29,29 @@ DIR_GRUB		=	$(DIR_ISO)/boot/grub
 DIR_LOGS        =   logs
 
 BUILD			?=	debug
-RUST_KERNEL 	?=	target/i386/$(BUILD)/kernel
 NAME			?=	kfs_$(VERSION)
 
-ifeq ($(strip $(HOST)),Darwin) # macOS kernel
-AUDIODEV		=	coreaudio
+
+################################################################################
+# GDB SETUP
+################################################################################
+GDB             ?=  0
+
+# Check if custom gdb startup script exist and use it if present
+ifneq (, $(wildcard ./start.gdb))
+GDB_STARTUP=--command=./start.gdb
 else
-AUDIODEV		=	pa
+# Default gdb startup command
+GDB_STARTUP=-ex "target remote localhost:1234" -ex "break kinit" -ex "c";
+endif
+
+################################################################################
+# QEMU additional arguments
+################################################################################
+QEMU_ARGS := 
+# Add qemu gdb option if gdb env variable is set to 1
+ifeq ($(GDB), 1)
+	QEMU_ARGS += -s -S
 endif
 
 ################################################################################
@@ -67,39 +83,18 @@ doc:
 				cargo doc $(ARGS_CARGO) --open
 
 boot:			$(NAME) $(DIR_LOGS)
-				$(RUN_PREFIX) $(QEMU) -audiodev $(AUDIODEV),id=audio0 -machine pcspk-audiodev=audio0\
-									  -rtc base=localtime\
-									  -no-reboot\
-									  -d int\
-									  -drive format=raw,file=$(NAME)\
-									  -serial file:$(DIR_LOGS)/kernel.log\
-									  -serial file:$(DIR_LOGS)/debug_kernel.log\
-									  -device isa-debug-exit,iobase=0xf4,iosize=0x04\
-									  -display curses 2> $(DIR_LOGS)/qemu.log $(RUN_SUFFIX)
+				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $@ "$(QEMU_ARGS)" $(BUILD_SUFFIX)
+
+test:			$(NAME) $(DIR_LOGS)
+				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $@ "$(QEMU_ARGS)" $(BUILD_SUFFIX)
 
 # This rule will run qemu with flags to wait gdb to connect to it
 debug:			$(NAME)
-				$(RUN_PREFIX) $(QEMU) -s -S -drive format=raw,file=$(NAME)\
-										-serial file:$(DIR_LOGS)/kernel.log &\
-				gdb $(DIR_ISO)/boot/$(NAME)\
-					-ex "target remote localhost:1234"\
-					-ex "break kinit"\
-					-ex "c";\
+				gdb $(DIR_ISO)/boot/$(NAME) $(GDB_STARTUP)
 				pkill qemu $(RUN_SUFFIX) # When exiting gdb kill qemu
 
-test:			$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
-				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $(BUILD_SUFFIX)
-
 # Rule to create iso file which can be run with qemu
-$(NAME):		$(DIR_ISO)/boot/$(NAME) $(DIR_GRUB)/$(GRUB_CFG) Makefile
-				$(BUILD_PREFIX) grub-mkrescue -o $(NAME) $(DIR_ISO) $(BUILD_SUFFIX)
-
-# Put kernel binary inside iso boot for grub-mkrescue
-$(DIR_ISO)/boot/$(NAME):	$(RUST_KERNEL) | $(DIR_GRUB)
-							cp -f $(RUST_KERNEL) $(DIR_ISO)/boot/$(NAME)
-
-# Let cargo handle build depency - ';' to make empty target
-$(RUST_KERNEL):		build;
+$(NAME):		 build $(DIR_GRUB)/$(GRUB_CFG) Makefile;
 
 # Build kernel using cargo
 build:

@@ -8,5 +8,6 @@ iso/
 
 /target
 .bash_history
+start.gdb
 Cargo.lock
 logs
