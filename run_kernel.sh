@@ -26,7 +26,7 @@ DIR_LOGS=logs
 mkdir -p $DIR_LOGS
 
 # Sound hardware depends on Host OS
-[ $(uname) == "Darwin" ] && AUDIODEV="coreadio" || AUDIODEV="pa"
+[ $(uname) == "Darwin" ] && AUDIODEV="coreaudio" || AUDIODEV="pa"
 
 # Expect qemu args to be in arg 4
 # In case of test, redirect logfile output to stdio as well
