@@ -77,6 +77,7 @@ where
 {
 }
 
+#[cfg(test)]
 mod test {
 	use super::Arcm;
 	use crate::boxed::Box;

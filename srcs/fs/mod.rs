@@ -1,6 +1,6 @@
 use crate::errno::ErrNo;
 use crate::fs::FileOperation;
-use crate::spin::{KMutex, Mutex};
+use crate::spin::KMutex;
 use crate::string::String;
 use crate::utils::arcm::Arcm;
 use crate::vec::Vec;

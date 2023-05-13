@@ -65,7 +65,7 @@ mod boot;
 mod cli;
 mod gdt;
 mod keyboard;
-mod main;
+mod kmain;
 #[macro_use]
 mod memory;
 mod interrupts;
@@ -168,5 +168,5 @@ pub extern "C" fn kinit() {
 	test_main();
 
 	#[cfg(not(test))]
-	main::kmain();
+	kmain::kmain();
 }

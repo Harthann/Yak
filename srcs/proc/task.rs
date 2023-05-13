@@ -6,7 +6,6 @@ use crate::memory::{Heap, MemoryZone, Stack, VirtAddr};
 use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
 
-use crate::utils::queue::Queue;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
 
