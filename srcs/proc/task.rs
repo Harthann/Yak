@@ -206,7 +206,7 @@ unsafe extern "C" fn swap_task() -> ! {
 		"call save_task",
 		"pop eax",
 
-		"jmp schedule_task", // never returns
+		"call schedule_task", // never returns
 		const crate::boot::KERNEL_BASE,
 		options(noreturn)
 	)
@@ -217,7 +217,6 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
 	let mut old_task: Task = TASKLIST.pop_front().unwrap();
 	old_task.regs = *regs;
-	crate::dprintln!("saved: {:#x?}", regs);
 	TASKLIST.push_back(old_task);
 	_rst();
 }
@@ -230,7 +229,7 @@ use crate::proc::change_kernel_stack;
 pub unsafe extern "C" fn schedule_task() -> ! {
 	core::arch::asm!(
 		"mov esp, offset task_stack + {}",
-		"jmp find_task",
+		"call find_task",
 		const STACK_SIZE,
 		options(noreturn)
 	);
@@ -239,7 +238,6 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 #[no_mangle]
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
-	crate::kprintln!("len: {}", TASKLIST.len());
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -264,8 +262,6 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	get_segments!(regs.ds);
 	end_of_interrupts(0x20);
-	crate::dprintln!("Registers: {:#x?}", regs);
-	crate::vga_buffer::hexdump(regs.esp as *const u8, 44);
 	_rst();
 	if regs.int_no != u32::MAX {
 		// new task
@@ -278,20 +274,20 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 			options(noreturn)
 		);
 	}
-	let old: &mut Registers = &mut *((regs.esp as *mut u8).offset(-40) as *mut _);
-	crate::dprintln!("old: {:#x?}", old);
 	core::arch::asm!(
 		"mov esp, {}",
-		"mov edi, DWORD PTR[esp - 32]",
-		"mov esi, DWORD PTR[esp - 28]",
-		"mov ebp, DWORD PTR[esp - 24]",
-		"mov ebx, DWORD PTR[esp - 16]",
-		"mov edx, DWORD PTR[esp - 12]",
-		"mov ecx, DWORD PTR[esp - 8]",
-		"mov eax, DWORD PTR[esp - 4]",
+		"add esp, 8",
+		"mov edi, DWORD PTR[esp]",
+		"mov esi, DWORD PTR[esp + 4]",
+		"mov ebp, DWORD PTR[esp + 8]",
+		"mov ebx, DWORD PTR[esp + 16]",
+		"mov edx, DWORD PTR[esp + 20]",
+		"mov ecx, DWORD PTR[esp + 24]",
+		"mov eax, DWORD PTR[esp + 28]",
+		"mov esp, DWORD PTR[esp + 12]",
 		"add esp, 8", // int_no and err_code
 		"iretd", // no sti: iretd enable interrupt itself
-		in(reg) regs.esp,
+		in(reg) regs,
 		options(noreturn)
 	);
 }
