@@ -2,7 +2,7 @@ use crate::proc::process::{Pid, Process};
 use crate::proc::signal::{Signal, SignalType};
 use crate::proc::task::{Task, TaskStatus};
 
-use crate::wrappers::{_cli, _sti, _rst, cli_count, cli, hlt, sti};
+use crate::wrappers::{_cli, _rst, _sti, cli, cli_count, hlt, sti};
 
 use crate::errno::ErrNo;
 use crate::KSTACK_ADDR;
