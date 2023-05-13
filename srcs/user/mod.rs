@@ -82,7 +82,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
-	TASKLIST.push(new_task);
+	crate::kprintln!("here");
+	TASKLIST.push_back(new_task);
 	_sti();
 	process.pid
 }

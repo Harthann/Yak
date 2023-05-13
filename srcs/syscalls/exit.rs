@@ -57,6 +57,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 	unsafe {
 		_cli();
 		loop {
+			crate::dprintln!("loop");
 			let res =
 				Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
@@ -71,6 +72,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				if !wstatus.is_null() {
 					*wstatus = signal.wstatus; // TODO
 				}
+				crate::dprintln!("end waiting");
 				_sti();
 				return signal.sender;
 			} else if res == Err(ErrNo::ESRCH) {
@@ -81,6 +83,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				_sti();
 				return 0;
 			} else {
+				crate::dprintln!("wait");
 				let task: &mut Task = Task::get_running_task();
 				task.state = TaskStatus::Interruptible;
 				let save = cli_count;
@@ -89,6 +92,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				hlt!(); // wait for scheduler
 				cli!(); // unblocked here
 				cli_count = save;
+				crate::dprintln!("recover");
 			}
 		}
 	}
@@ -96,6 +100,7 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 
 pub fn sys_exit(status: i32) -> ! {
 	unsafe {
+		crate::dprintln!("exit");
 		core::arch::asm!(
 		"mov eax, {status}",
 		"mov esp, {kstack}",

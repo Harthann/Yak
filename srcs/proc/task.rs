@@ -13,7 +13,9 @@ use crate::wrappers::{_cli, _rst};
 use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
-pub static mut TASKLIST: Queue<Task> = Queue::new();
+use crate::alloc::collections::vec_deque::VecDeque;
+
+pub static mut TASKLIST: VecDeque<Task> = VecDeque::new();
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TaskStatus {
@@ -71,7 +73,7 @@ impl Task {
 			MASTER_PROCESS.owner = 0;
 			NEXT_PID += 1;
 			task.process = &mut MASTER_PROCESS;
-			TASKLIST.push(task);
+			TASKLIST.push_back(task);
 		}
 	}
 
@@ -82,20 +84,20 @@ impl Task {
 		while i < len {
 			let task: &mut Task = Task::get_running_task();
 			if task.process != process_ptr {
-				TASKLIST.push(TASKLIST.pop());
+				TASKLIST.push_back(TASKLIST.pop_front().unwrap());
 			} else {
-				TASKLIST.pop();
+				TASKLIST.pop_front();
 			}
 			i += 1;
 		}
 	}
 
+	#[inline]
 	pub unsafe fn get_running_task() -> &'static mut Task {
-		let res = TASKLIST.front_mut();
-		if res.is_none() {
-			todo!();
+		match TASKLIST.front_mut() {
+			Some(x) => x,
+			None => todo!()
 		}
-		&mut *res.unwrap()
 	}
 }
 
@@ -204,7 +206,7 @@ unsafe extern "C" fn swap_task() -> ! {
 		"call save_task",
 		"pop eax",
 
-		"call schedule_task", // never returns
+		"jmp schedule_task", // never returns
 		const crate::boot::KERNEL_BASE,
 		options(noreturn)
 	)
@@ -213,9 +215,10 @@ unsafe extern "C" fn swap_task() -> ! {
 #[no_mangle]
 pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
-	let mut old_task: Task = TASKLIST.pop();
+	let mut old_task: Task = TASKLIST.pop_front().unwrap();
 	old_task.regs = *regs;
-	TASKLIST.push(old_task);
+	crate::dprintln!("saved: {:#x?}", regs);
+	TASKLIST.push_back(old_task);
 	_rst();
 }
 
@@ -227,7 +230,7 @@ use crate::proc::change_kernel_stack;
 pub unsafe extern "C" fn schedule_task() -> ! {
 	core::arch::asm!(
 		"mov esp, offset task_stack + {}",
-		"call find_task",
+		"jmp find_task",
 		const STACK_SIZE,
 		options(noreturn)
 	);
@@ -236,6 +239,7 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 #[no_mangle]
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
+	crate::kprintln!("len: {}", TASKLIST.len());
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		let process: &mut Process = &mut *new_task.process;
@@ -250,8 +254,7 @@ unsafe extern "C" fn find_task() -> ! {
 			switch_task(&task);
 			// never goes there
 		}
-		let skipped_task: Task = TASKLIST.pop();
-		TASKLIST.push(skipped_task);
+		TASKLIST.push_back(TASKLIST.pop_front().unwrap());
 	}
 }
 
@@ -261,6 +264,8 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	get_segments!(regs.ds);
 	end_of_interrupts(0x20);
+	crate::dprintln!("Registers: {:#x?}", regs);
+	crate::vga_buffer::hexdump(regs.esp as *const u8, 44);
 	_rst();
 	if regs.int_no != u32::MAX {
 		// new task
@@ -273,13 +278,20 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 			options(noreturn)
 		);
 	}
+	let old: &mut Registers = &mut *((regs.esp as *mut u8).offset(-40) as *mut _);
+	crate::dprintln!("old: {:#x?}", old);
 	core::arch::asm!(
 		"mov esp, {}",
-		"add esp, 8",
-		"popa",
+		"mov edi, DWORD PTR[esp - 32]",
+		"mov esi, DWORD PTR[esp - 28]",
+		"mov ebp, DWORD PTR[esp - 24]",
+		"mov ebx, DWORD PTR[esp - 16]",
+		"mov edx, DWORD PTR[esp - 12]",
+		"mov ecx, DWORD PTR[esp - 8]",
+		"mov eax, DWORD PTR[esp - 4]",
 		"add esp, 8", // int_no and err_code
 		"iretd", // no sti: iretd enable interrupt itself
-		in(reg) regs,
+		in(reg) regs.esp,
 		options(noreturn)
 	);
 }
