@@ -54,12 +54,6 @@ ifeq ($(GDB), 1)
 	QEMU_ARGS += -s -S
 endif
 
-ifeq ($(strip $(HOST)),Darwin) # macOS kernel
-AUDIODEV		=	coreaudio
-else
-AUDIODEV		=	pa
-endif
-
 ################################################################################
 # Prepare Docker toolchain if there is no local toolchain
 ################################################################################
@@ -91,7 +85,7 @@ doc:
 boot:			$(NAME) $(DIR_LOGS)
 				$(BUILD_PREFIX) cargo run $(ARGS_CARGO) -- $(NAME) $@ "$(QEMU_ARGS)" $(BUILD_SUFFIX)
 
-test:			$(NAME) $(DIR_LOGS) #$(DIR_GRUB) $(DIR_GRUB)/$(GRUB_CFG)
+test:			$(NAME) $(DIR_LOGS)
 				$(BUILD_PREFIX) cargo test $(ARGS_CARGO) -- $(NAME) $@ "$(QEMU_ARGS)" $(BUILD_SUFFIX)
 
 # This rule will run qemu with flags to wait gdb to connect to it
