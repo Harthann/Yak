@@ -1,4 +1,4 @@
-use crate::spin::Mutex;
+use crate::spin::KMutex;
 use crate::utils::queue::Queue;
 use crate::vga_buffer::WRITER;
 
@@ -12,8 +12,8 @@ use crate::keyboard::SpecialKeyFlag;
 use crate::vga_buffer::Screen;
 
 pub const NB_SCREEN: u8 = 3;
-pub static INPUT_BUFFER: Mutex<Option<Queue<(Input, u8)>>, true> =
-	Mutex::new(None);
+pub static INPUT_BUFFER: KMutex<Option<Queue<(Input, u8)>>> =
+	KMutex::new(None);
 
 #[derive(Clone, Default)]
 pub struct TermEmu {

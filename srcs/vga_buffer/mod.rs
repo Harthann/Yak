@@ -10,7 +10,7 @@ use color::{Color, ColorCode};
 mod cursor;
 use cursor::Cursor;
 
-use crate::spin::Mutex;
+use crate::spin::KMutex;
 
 #[derive(Debug, Clone)]
 pub struct Screen {
@@ -77,19 +77,21 @@ impl Default for ScreenChar {
 	}
 }
 
-const VGABUFF_OFFSET: usize = 0xc00b8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 const VGA_LEN: usize = BUFFER_WIDTH * BUFFER_HEIGHT;
 
 type Buffer = [ScreenChar; BUFFER_WIDTH * BUFFER_HEIGHT];
+pub const NB_SCREEN: usize = 3;
+pub static SCREENS: KMutex<[Screen; NB_SCREEN]> =
+	KMutex::new([Screen::new(), Screen::new(), Screen::new()]);
 
 #[link_section = ".vga_buffer"]
 static mut VGA_BUFFER: Buffer = [ScreenChar {
 	ascii_code: 0x20,
 	color_code: ColorCode::new(Color::White, Color::Black)
 }; BUFFER_WIDTH * BUFFER_HEIGHT];
-pub static WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
+pub static WRITER: KMutex<Writer> = KMutex::<Writer>::new(Writer {
 	screen_index: 0,
 	cursor:       Cursor::new(0, 0, ColorCode::new_default()),
 	vga_buffer:   unsafe { &mut VGA_BUFFER }
@@ -257,14 +259,12 @@ fn panic(info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::Red, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe { WRITER.lock().chcolor(ColorCode::default()) };
+	WRITER.lock().chcolor(ColorCode::default());
 	io::outb(0xf4, 0x11);
 	loop {}
 }

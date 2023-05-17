@@ -11,8 +11,9 @@
 #![feature(c_variadic)]
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
+#![feature(unsize)]
+#![feature(coerce_unsized)]
 #![feature(vec_into_raw_parts)]
-#![feature(cell_update)]
 #![no_std]
 #![allow(dead_code)]
 #![allow(incomplete_features)]
@@ -107,6 +108,7 @@ use alloc::{boxed, string, vec};
 mod test;
 
 // Modules used function and variable
+
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
@@ -147,7 +149,7 @@ const STACK_ADDR: VirtAddr = 0xff0fffff;
 pub extern "C" fn kinit() {
 	crate::wrappers::_cli();
 
-	// multiboot::read_tags();
+	multiboot::read_tags();
 	// Init paging and remove identity paging
 	init_paging();
 
@@ -178,12 +180,9 @@ pub extern "C" fn kinit() {
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };
 	crate::wrappers::_sti();
 
-	// Function to test and enter usermode
-	// user::test_user_page();
-
 	#[cfg(test)]
 	test_main();
 
 	#[cfg(not(test))]
-	crate::main::kmain();
+	main::kmain();
 }

@@ -164,7 +164,7 @@ mod test {
 			let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as u32;
 
 			// At start the kernel claim kernel code and memory pages to initialize the bitmap
-			// claim occur at adress 0x0 and from 0x100000 to pd_addr / 0x1000 + 1024
+			// claim occur at adress 0x0 to 1MiB then from it to pd_addr / 0x1000 + 1024
 			assert_eq!(physmap.claim(0x0), Err(0));
 			assert_eq!(used, physmap.used);
 			loop {
@@ -174,9 +174,9 @@ mod test {
 						assert_eq!(used, physmap.used);
 					},
 					Ok(addr) => {
-						assert_eq!(
-							addr,
-							0x100000 + nmb_claim_pages * PAGE_SIZE as u32
+						assert!(
+							addr >= 0x100000
+								+ nmb_claim_pages * PAGE_SIZE as u32
 						);
 						break;
 					}
@@ -205,7 +205,9 @@ mod test {
 			assert_eq!(res, Err(x as usize / SECTOR_SIZE as usize));
 			assert_eq!(used, physmap.used);
 
-			x += nmb_claim_pages * PAGE_SIZE;
+			x = physmap.get_page().unwrap() as usize;
+			physmap.free_page(x as u32);
+
 			let res = physmap.claim_range(x as u32, 10);
 			assert_eq!(res, Ok(x as u32));
 			assert_eq!(used + 10, physmap.used);
@@ -223,7 +225,7 @@ mod test {
 		crate::print_fn!();
 		let physmap = physmap_as_mut();
 		let mut addresses: [u32; 50] = [0; 50];
-		let mut used = physmap.used;
+		let mut used;
 
 		for i in 0..50 {
 			used = physmap.used;

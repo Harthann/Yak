@@ -1,6 +1,8 @@
 use core::fmt;
 use core::ptr::copy_nonoverlapping;
 
+use crate::boot::KERNEL_BASE;
+
 use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{Heap, MemoryZone, Stack};
@@ -26,6 +28,9 @@ use crate::memory::PhysAddr;
 use crate::user::{USER_HEAP_ADDR, USER_STACK_ADDR};
 use crate::KSTACK_ADDR;
 
+use crate::fs::FileInfo;
+use alloc::sync::Arc;
+
 pub static mut NEXT_PID: Id = 0;
 pub static mut MASTER_PROCESS: Process = Process::new();
 
@@ -39,6 +44,7 @@ pub enum Status {
 	Thread
 }
 
+pub const MAX_FD: usize = 32;
 pub struct Process {
 	pub pid:             Pid,
 	pub state:           Status,
@@ -47,11 +53,13 @@ pub struct Process {
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
+	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
 	pub owner:           Id
 }
 
+const DEFAULT_FILE: Option<Arc<FileInfo>> = None;
 impl Process {
 	pub const fn new() -> Self {
 		Self {
@@ -62,6 +70,7 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
+			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
 			owner:           0
@@ -229,8 +238,9 @@ impl Process {
 
 	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
 		let parent: &Process = &(*self.parent);
-		let kernel_pt_paddr: PhysAddr =
-			get_paddr!(page_directory.get_page_table(768).get_vaddr());
+		let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory
+			.get_page_table(KERNEL_BASE >> 22)
+			.get_vaddr());
 
 		let page_dir: &'static mut PageDirectory =
 			PageDirectory::new(PAGE_WRITABLE | PAGE_USER);
@@ -251,8 +261,10 @@ impl Process {
 				| parent.stack.flags
 				| PAGE_USER | PAGE_PRESENT
 		);
+		// TODO: Kernel must not be writable but need task page so map it in
+		// another page_table ?
 		page_dir.set_entry(
-			768,
+			KERNEL_BASE >> 22,
 			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
 		);
 		page_dir.set_entry(
