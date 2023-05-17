@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["_start_rodata",""]],"struct":[["PageTable",""],["PageTableEntry",""]]};
+window.SIDEBAR_ITEMS = {"fn":["_start_rodata"],"struct":["PageTable","PageTableEntry"]};

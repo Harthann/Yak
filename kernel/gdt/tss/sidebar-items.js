@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["init_tss",""]],"static":[["TSS",""]],"struct":[["Tss",""]]};
+window.SIDEBAR_ITEMS = {"fn":["init_tss"],"static":["TSS"],"struct":["Tss"]};

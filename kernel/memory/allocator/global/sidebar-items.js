@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["alloc",""],["alloc_zeroed",""],["dealloc",""],["realloc",""]],"struct":[["Global",""]]};
+window.SIDEBAR_ITEMS = {"fn":["alloc","alloc_zeroed","dealloc","realloc"],"struct":["Global"]};

@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["kernel"] = [{"text":"impl Write for <a class=\"struct\" href=\"kernel/vga_buffer/struct.Writer.html\" title=\"struct kernel::vga_buffer::Writer\">Writer</a>","synthetic":false,"types":["kernel::vga_buffer::Writer"]},{"text":"impl Write for <a class=\"struct\" href=\"kernel/debug/struct.DWriter.html\" title=\"struct kernel::debug::DWriter\">DWriter</a>","synthetic":false,"types":["kernel::debug::DWriter"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"kernel":[["impl Write for <a class=\"struct\" href=\"kernel/vga_buffer/struct.Writer.html\" title=\"struct kernel::vga_buffer::Writer\">Writer</a>"],["impl Write for <a class=\"struct\" href=\"kernel/debug/struct.DWriter.html\" title=\"struct kernel::debug::DWriter\">DWriter</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

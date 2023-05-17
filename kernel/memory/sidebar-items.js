@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["TypeZone",""]],"fn":[["init_memory",""],["init_memory_addr",""]],"mod":[["allocator",""],["paging",""]],"struct":[["MemoryZone",""]],"trait":[["Heap",""],["Stack",""]],"type":[["PhysAddr",""],["VirtAddr",""]]};
+window.SIDEBAR_ITEMS = {"enum":["TypeZone"],"fn":["init_memory","init_memory_addr"],"mod":["allocator","paging"],"struct":["MemoryZone"],"trait":["Heap","Stack"],"type":["PhysAddr","VirtAddr"]};

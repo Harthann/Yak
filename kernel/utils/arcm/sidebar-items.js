@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":[["test",""]],"struct":[["Arcm","Wrap the given type into an Arc and a Mutex. Arc allow multiple reference on the same data between threads Mutex allow any type to be `Send` and ensure safe access to the underlying data"]]};
+window.SIDEBAR_ITEMS = {"struct":["Arcm"]};

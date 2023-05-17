@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["_cli",""],["_rst",""],["_sti",""]],"macro":[["cli",""],["hlt",""],["sti",""]],"static":[["cli_count",""]]};
+window.SIDEBAR_ITEMS = {"fn":["_cli","_rst","_sti"],"macro":["cli","hlt","sti"],"static":["cli_count"]};

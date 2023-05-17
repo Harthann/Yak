@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["BeatType",""]],"fn":[["play",""]],"mod":[["mii",""],["note",""],["notes_frequencies",""],["overworld",""]],"struct":[["Partition",""]]};
+window.SIDEBAR_ITEMS = {"enum":["BeatType"],"fn":["play"],"mod":["mii","note","notes_frequencies","overworld"],"struct":["Partition"]};

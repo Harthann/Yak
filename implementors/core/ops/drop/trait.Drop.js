@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["kernel"] = [{"text":"impl&lt;'a, T:&nbsp;?Sized, const INT:&nbsp;bool&gt; Drop for <a class=\"struct\" href=\"kernel/spin/struct.MutexGuard.html\" title=\"struct kernel::spin::MutexGuard\">MutexGuard</a>&lt;'a, T, INT&gt;","synthetic":false,"types":["kernel::spin::MutexGuard"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"kernel":[["impl&lt;'a, T: ?Sized, const INT: bool&gt; Drop for <a class=\"struct\" href=\"kernel/spin/struct.MutexGuard.html\" title=\"struct kernel::spin::MutexGuard\">MutexGuard</a>&lt;'a, T, INT&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

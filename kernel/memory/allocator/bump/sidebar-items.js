@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["BumpAllocator",""]]};
+window.SIDEBAR_ITEMS = {"struct":["BumpAllocator"]};

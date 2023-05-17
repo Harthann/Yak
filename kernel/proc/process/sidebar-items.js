@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["DEFAULT_FILE",""],["MAX_FD",""]],"enum":[["Status",""]],"static":[["MASTER_PROCESS",""],["NEXT_PID",""]],"struct":[["Process",""]],"type":[["Pid",""]]};
+window.SIDEBAR_ITEMS = {"constant":["DEFAULT_FILE","MAX_FD"],"enum":["Status"],"static":["MASTER_PROCESS","NEXT_PID"],"struct":["Process"],"type":["Pid"]};

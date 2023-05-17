@@ -1,3 +1,3 @@
-(function() {var implementors = {};
-implementors["kernel"] = [{"text":"impl&lt;'a, T:&nbsp;?Sized, const INT:&nbsp;bool&gt; Deref for <a class=\"struct\" href=\"kernel/spin/struct.MutexGuard.html\" title=\"struct kernel::spin::MutexGuard\">MutexGuard</a>&lt;'a, T, INT&gt;","synthetic":false,"types":["kernel::spin::MutexGuard"]},{"text":"impl&lt;T:&nbsp;?Sized&gt; Deref for <a class=\"struct\" href=\"kernel/utils/arcm/struct.Arcm.html\" title=\"struct kernel::utils::arcm::Arcm\">Arcm</a>&lt;T&gt;","synthetic":false,"types":["kernel::utils::arcm::Arcm"]}];
-if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {var implementors = {
+"kernel":[["impl&lt;'a, T: ?Sized, const INT: bool&gt; Deref for <a class=\"struct\" href=\"kernel/spin/struct.MutexGuard.html\" title=\"struct kernel::spin::MutexGuard\">MutexGuard</a>&lt;'a, T, INT&gt;"],["impl&lt;T: ?Sized&gt; Deref for <a class=\"struct\" href=\"kernel/utils/arcm/struct.Arcm.html\" title=\"struct kernel::utils::arcm::Arcm\">Arcm</a>&lt;T&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

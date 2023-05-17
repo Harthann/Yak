@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["USER_HEAP_ADDR",""],["USER_STACK_ADDR",""]],"fn":[["exec_fn_userspace",""],["jump_usermode",""],["test_user_page",""],["userfunc",""],["userfunc_end",""]]};
+window.SIDEBAR_ITEMS = {"constant":["USER_HEAP_ADDR","USER_STACK_ADDR"],"fn":["exec_fn_userspace","jump_usermode","test_user_page","userfunc","userfunc_end"]};

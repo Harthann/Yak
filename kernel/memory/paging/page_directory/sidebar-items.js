@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["PageDirectory",""],["PageDirectoryEntry",""]]};
+window.SIDEBAR_ITEMS = {"struct":["PageDirectory","PageDirectoryEntry"]};

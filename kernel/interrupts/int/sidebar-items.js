@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["int",""]],"macro":[["int_no",""]]};
+window.SIDEBAR_ITEMS = {"fn":["int"],"macro":["int_no"]};

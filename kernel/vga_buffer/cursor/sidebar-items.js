@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Cursor",""]]};
+window.SIDEBAR_ITEMS = {"struct":["Cursor"]};

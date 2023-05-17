@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["sys_fork","Create a new process from the calling process, copy stack, heap and registers"]]};
+window.SIDEBAR_ITEMS = {"fn":["sys_fork"]};

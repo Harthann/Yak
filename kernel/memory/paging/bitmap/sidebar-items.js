@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["MAX_MEM",""],["PAGE_SIZE",""],["SECTOR_NUMBER",""],["SECTOR_SIZE",""]],"fn":[["physmap_as_mut",""]],"static":[["PHYSMAP",""]],"struct":[["Bitmaps",""]],"type":[["Sector",""]]};
+window.SIDEBAR_ITEMS = {"constant":["MAX_MEM","PAGE_SIZE","SECTOR_NUMBER","SECTOR_SIZE"],"fn":["physmap_as_mut"],"static":["PHYSMAP"],"struct":["Bitmaps"],"type":["Sector"]};

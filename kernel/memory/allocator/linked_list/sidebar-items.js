@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["LinkedListAllocator",""],["ListNode",""]]};
+window.SIDEBAR_ITEMS = {"struct":["LinkedListAllocator","ListNode"]};
