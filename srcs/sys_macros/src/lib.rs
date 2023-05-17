@@ -17,7 +17,6 @@ pub fn poc_derive(input: TokenStream) -> TokenStream {
 			}
 		}
 	};
-	println!("This is from compilation");
 	gen.into()
 }
 

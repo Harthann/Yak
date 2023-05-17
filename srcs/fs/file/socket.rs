@@ -1,9 +1,7 @@
 use super::FileOperation;
 use crate::errno::ErrNo;
-use crate::spin::Mutex;
 use crate::utils::arcm::Arcm;
 use crate::vec::Vec;
-use alloc::sync::Arc;
 use core::cell::RefCell;
 
 /// Represent the different domains of a socket.

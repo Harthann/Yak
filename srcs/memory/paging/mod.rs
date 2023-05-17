@@ -130,7 +130,7 @@ macro_rules! get_vaddr {
 
 macro_rules! refresh_tlb {
 	() => {
-		core::arch::asm!("mov eax, cr3", "mov cr3, eax")
+		core::arch::asm!("push eax", "mov eax, cr3", "mov cr3, eax", "pop eax")
 	};
 }
 

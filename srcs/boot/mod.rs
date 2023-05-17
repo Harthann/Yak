@@ -111,10 +111,13 @@ unsafe fn high_kernel() {
 /// Address to the multiboot structure used by GRUB
 pub static mut multiboot_ptr: u32 = 0;
 
+#[repr(align(4096))]
+struct Stack([u8; STACK_SIZE]);
+
 #[no_mangle]
 #[link_section = ".bss"]
 /// Kernel stack
-static mut stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
+static mut stack: Stack = Stack([0; STACK_SIZE]);
 
 #[no_mangle]
 #[link_section = ".padata"]
