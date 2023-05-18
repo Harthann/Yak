@@ -24,7 +24,6 @@ pub enum TaskStatus {
 	Interruptible    // Waiting for changing state (wait4 - waitpid)
 }
 
-
 #[derive(Copy, Clone)]
 pub struct Task {
 	pub regs:    Registers,

@@ -32,7 +32,6 @@ mod poc {
 	}
 }
 
-
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
