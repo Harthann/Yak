@@ -63,6 +63,7 @@ pub struct Process {
 	pub signal_handlers: Vec<SignalHandler>,
 	pub page_tables:     Vec<&'static mut PageTable>,
 	pub pd:              *mut PageDirectory,
+	// Temporary workaround to differentiate processes from threads
 	pub test:            bool,
 	pub owner:           Id
 }
