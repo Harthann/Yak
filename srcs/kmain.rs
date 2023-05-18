@@ -47,8 +47,7 @@ mod poc {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	// crate::user::test_user_page();
-	// poc::test_macros();
+	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);

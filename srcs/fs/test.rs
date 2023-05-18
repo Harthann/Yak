@@ -25,7 +25,6 @@ impl fs::FileOperation for Buffer {
 	}
 
 	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo> {
->>>>>>> dev
 		for i in 0..length {
 			if i >= self.buffer.len() || i >= src.len() {
 				return Ok(i);
@@ -37,7 +36,6 @@ impl fs::FileOperation for Buffer {
 }
 
 #[sys_macros::test_case]
->>>>>>> dev
 fn test_file() {
 	let buffer: Buffer = Buffer::new();
 	let buffer2: Buffer = Buffer::new();
@@ -248,4 +246,3 @@ fn threaded_socket(sockets: usize, parent_sockets: usize) {
 	// should close fd 0
 	fs::close(sockets);
 }
->>>>>>> dev

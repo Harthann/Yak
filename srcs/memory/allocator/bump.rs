@@ -13,7 +13,7 @@ impl AllocatorInit for BumpAllocator {
 unsafe impl GlobalAlloc for BumpAllocator {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
 		let vaddr: u32 = self as *const Self as u32;
-		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
+		let mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		let alloc_start = align_up(mut_self.next, layout.align());
 		let alloc_end: VirtAddr =
@@ -33,7 +33,7 @@ unsafe impl GlobalAlloc for BumpAllocator {
 
 	unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
 		let vaddr: u32 = self as *const Self as u32;
-		let mut mut_self: &mut Self = &mut *(vaddr as *mut _);
+		let mut_self: &mut Self = &mut *(vaddr as *mut _);
 
 		mut_self.allocations -= 1;
 		if mut_self.allocations == 0 {
