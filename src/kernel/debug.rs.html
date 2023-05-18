@@ -82,7 +82,7 @@
 	() =&gt; (<span class="macro-nonterminal">$</span><span class="macro">crate::dprint!</span>(<span class="string">&quot;\n&quot;</span>));
 	($(<span class="macro-nonterminal">$arg</span>:tt)<span class="kw-2">*</span>) =&gt; (
 		<span class="macro-nonterminal">$</span><span class="macro">crate::dprint!</span>(<span class="string">&quot;[{: &gt;12.6}] {}\n&quot;</span>,
-                        <span class="macro-nonterminal">crate::pic::JIFFIES </span><span class="kw">as </span>f64 * <span class="kw">crate</span>::pic::pit::SYSTEM_FRACTION / <span class="number">1000.0</span>,
+                        <span class="macro-nonterminal">crate::time::get_timestamp</span>().as_f64(),
                         <span class="macro">format_args!</span>($(<span class="macro-nonterminal">$arg</span>)<span class="kw-2">*</span>))
 	)
 }

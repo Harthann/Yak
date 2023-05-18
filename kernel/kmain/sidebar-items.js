@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["kmain","sleep"],"mod":["poc"]};
+window.SIDEBAR_ITEMS = {"fn":["kmain"],"mod":["poc"]};

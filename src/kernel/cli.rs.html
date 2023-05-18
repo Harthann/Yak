@@ -288,10 +288,6 @@
 <a href="#288" id="288">288</a>
 <a href="#289" id="289">289</a>
 <a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Command line interface (term)
 
 </span><span class="kw">use </span>core::arch::asm;
@@ -369,20 +365,16 @@
 }
 
 <span class="kw">fn </span>jiffies(<span class="kw">_</span>: Vec&lt;String&gt;) {
-	<span class="kw">unsafe </span>{
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Jiffies: {}&quot;</span>, <span class="kw">crate</span>::pic::JIFFIES);
-	}
+	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Jiffies: {}&quot;</span>, <span class="kw">crate</span>::time::jiffies());
 }
 
 <span class="kw">fn </span>uptime(<span class="kw">_</span>: Vec&lt;String&gt;) {
-	<span class="kw">unsafe </span>{
-		<span class="kw">crate</span>::pic::pit::TIME_ELAPSED =
-			<span class="kw">crate</span>::pic::JIFFIES <span class="kw">as </span>f64 * <span class="kw">crate</span>::pic::pit::SYSTEM_FRACTION;
-		<span class="kw">let </span>second = (<span class="kw">crate</span>::pic::pit::TIME_ELAPSED / <span class="number">1000.0</span>) <span class="kw">as </span>u64;
-		<span class="kw">let </span>ms =
-			((<span class="kw">crate</span>::pic::pit::TIME_ELAPSED - second <span class="kw">as </span>f64) * <span class="number">1000.0</span>) <span class="kw">as </span>u64;
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Time elapsed since boot: {}s {}ms&quot;</span>, second, ms);
-	}
+	<span class="kw">let </span>time = <span class="kw">crate</span>::time::get_timestamp();
+	<span class="macro">crate::kprintln!</span>(
+		<span class="string">&quot;Time elapsed since boot: {}s {}ms&quot;</span>,
+		time.second,
+		time.millisecond
+	);
 }
 
 <span class="kw">fn </span>date(<span class="kw">_</span>: Vec&lt;String&gt;) {

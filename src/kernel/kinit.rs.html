@@ -247,6 +247,7 @@
 <span class="kw">mod </span>io;
 <span class="kw">mod </span>pic;
 <span class="kw">mod </span>proc;
+<span class="kw">mod </span>time;
 <span class="kw">mod </span>user;
 <span class="kw">mod </span>vga_buffer;
 <span class="attr">#[macro_use]
@@ -292,10 +293,9 @@
 <span class="kw">use </span>proc::task::Task;
 
 <span class="kw">use </span><span class="kw">crate</span>::gdt::{gdt_desc, GDTR};
+<span class="comment">// use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 
-<span class="kw">pub use </span>pic::handlers::JIFFIES;
-
-<span class="kw">const </span>KSTACK_ADDR: VirtAddr = <span class="number">0xffbfffff</span>;
+</span><span class="kw">const </span>KSTACK_ADDR: VirtAddr = <span class="number">0xffbfffff</span>;
 <span class="kw">const </span>STACK_ADDR: VirtAddr = <span class="number">0xff0fffff</span>;
 
 <span class="comment">// Kernel initialisation

@@ -177,12 +177,8 @@
 </span><span class="kw">pub static </span><span class="kw-2">mut </span>FREQUENCY: f64 = <span class="number">1.0</span>;
 <span class="kw">pub static </span><span class="kw-2">mut </span>RELOAD_VALUE: u16 = <span class="number">1</span>;
 <span class="comment">// Number of ms between each irq0
-</span><span class="attr">#[no_mangle]
-</span><span class="kw">pub static </span><span class="kw-2">mut </span>SYSTEM_FRACTION: f64 = <span class="number">1.0</span>;
-<span class="attr">#[no_mangle]
-</span><span class="kw">pub static </span><span class="kw-2">mut </span>TIME_ELAPSED: f64 = <span class="number">0.0</span>;
 
-<span class="comment">//  Max frequency = 1193182, Min frequency = 18
+//  Max frequency = 1193182, Min frequency = 18
 // frequency = 1193182 / reload_value;
 // frequency * reload_value = 1193182
 // reload_value = 1193182 / frequency
@@ -202,9 +198,13 @@
 	<span class="kw">unsafe </span>{
 		RELOAD_VALUE = (<span class="number">1193182.0 </span>/ frequency) <span class="kw">as </span>u16;
 		FREQUENCY = <span class="number">1193182.0 </span>/ RELOAD_VALUE <span class="kw">as </span>f64;
-		SYSTEM_FRACTION = <span class="number">1000.0 </span>/ FREQUENCY;
+		<span class="comment">// TODO fround
+		</span><span class="kw">crate</span>::time::SYSTEM_FRACTION = (<span class="number">1000.0 </span>/ FREQUENCY) <span class="kw">as </span>usize;
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;System frequency set to: {}&quot;</span>, FREQUENCY);
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;System fraction set to: {}&quot;</span>, SYSTEM_FRACTION);
+		<span class="macro">crate::kprintln!</span>(
+			<span class="string">&quot;System fraction set to: {}&quot;</span>,
+			<span class="kw">crate</span>::time::SYSTEM_FRACTION
+		);
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Reload value set to: {:#x}&quot;</span>, RELOAD_VALUE);
 		set_pit(CHANNEL_0, ACC_LOBHIB, MODE_2, RELOAD_VALUE);
 	}
