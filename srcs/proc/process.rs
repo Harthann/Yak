@@ -3,11 +3,11 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
+use crate::alloc::collections::LinkedList;
 use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
-use crate::alloc::collections::LinkedList;
 
 use crate::proc::task::Task;
 
@@ -57,13 +57,13 @@ pub struct Process {
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
-    pub mem_map:         LinkedList<Arcm<MemoryZone>>,
+	pub mem_map:         LinkedList<Arcm<MemoryZone>>,
 	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
-    pub page_tables:     Vec<&'static mut PageTable>,
-    pub pd: *mut PageDirectory,
-    pub test: bool,
+	pub page_tables:     Vec<&'static mut PageTable>,
+	pub pd:              *mut PageDirectory,
+	pub test:            bool,
 	pub owner:           Id
 }
 
@@ -78,13 +78,13 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
-            mem_map:         LinkedList::new(),
+			mem_map:         LinkedList::new(),
 			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
-            page_tables:     Vec::new(),
-            pd: 0x0 as *mut PageDirectory,
-            test: false,
+			page_tables:     Vec::new(),
+			pd:              0x0 as *mut PageDirectory,
+			test:            false,
 			owner:           0
 		}
 	}
@@ -136,7 +136,8 @@ impl Process {
 	}
 
 	pub fn setup_kernel_stack(&mut self, flags: u32) {
-		self.kernel_stack = MemoryZone::init(TypeZone::Stack, 0x1000, flags, false);
+		self.kernel_stack =
+			MemoryZone::init(TypeZone::Stack, 0x1000, flags, false);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
@@ -190,25 +191,29 @@ impl Process {
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
-        // Removing these free seems to add leaking pages even tho MemoryZone drop perform the same
-        // operation
-		//free_pages(self.stack.offset, self.stack.size / 0x1000);
-		//free_pages(self.heap.offset, self.heap.size / 0x1000);
-        //crate::kprintln!("heap? {:#x}", self.heap.offset);
-		//free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
+		// Removing these free seems to add leaking pages even tho MemoryZone drop perform the same
+		// operation
+		// free_pages(self.stack.offset, self.stack.size / 0x1000);
+		// free_pages(self.heap.offset, self.heap.size / 0x1000);
+		// crate::kprintln!("heap? {:#x}", self.heap.offset);
+		// free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
 
-        if self.test == true {
-            use crate::memory::paging::bitmap;
-            let pd = &mut *self.pd;
-            for i in &self.page_tables {
-                let vaddr = i.get_vaddr() as usize;
-                bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
-                page_directory.get_page_table(vaddr >> 22).set_entry((vaddr & 0x3ff000) >> 12, 0);
-            }
-            let vaddr = pd.get_vaddr() as usize;
-            bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
-            page_directory.get_page_table(vaddr >> 22).set_entry((vaddr & 0x3ff000) >> 12, 0);
-        }
+		if self.test == true {
+			use crate::memory::paging::bitmap;
+			let pd = &mut *self.pd;
+			for i in &self.page_tables {
+				let vaddr = i.get_vaddr() as usize;
+				bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
+				page_directory
+					.get_page_table(vaddr >> 22)
+					.set_entry((vaddr & 0x3ff000) >> 12, 0);
+			}
+			let vaddr = pd.get_vaddr() as usize;
+			bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
+			page_directory
+				.get_page_table(vaddr >> 22)
+				.set_entry((vaddr & 0x3ff000) >> 12, 0);
+		}
 		parent.childs.remove(i);
 	}
 
@@ -317,10 +322,10 @@ impl Process {
 			get_paddr!(self.kernel_stack.offset),
 			PAGE_WRITABLE | PAGE_USER
 		);
-        self.pd = page_dir;
-        self.page_tables.push(process_heap);
-        self.page_tables.push(process_stack);
-        self.page_tables.push(process_kernel_stack);
+		self.pd = page_dir;
+		self.page_tables.push(process_heap);
+		self.page_tables.push(process_stack);
+		self.page_tables.push(process_kernel_stack);
 		refresh_tlb!();
 		page_dir
 	}
@@ -334,9 +339,9 @@ impl Process {
 		MASTER_PROCESS.print_tree();
 	}
 
-    pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
-        self.mem_map.push_back(mz);
-    }
+	pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
+		self.mem_map.push_back(mz);
+	}
 }
 
 impl fmt::Display for Process {

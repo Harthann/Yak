@@ -1,11 +1,11 @@
 use core::ptr;
 
 use crate::interrupts::Registers;
+use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
 use crate::memory::{MemoryZone, TypeZone, VirtAddr};
 use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
-use crate::memory::allocator::AllocatorInit;
 
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
@@ -29,7 +29,7 @@ use crate::memory::paging::page_directory::PageDirectory;
 pub struct Task {
 	pub regs:    Registers,
 	pub state:   TaskStatus,
-	pub process: *mut Process,
+	pub process: *mut Process
 }
 
 impl Task {
@@ -59,19 +59,20 @@ impl Task {
 			change_kernel_stack(&MASTER_PROCESS);
 			MASTER_PROCESS.stack = MemoryZone::init_addr(
 				stack_addr - (crate::STACK_SIZE - 1),
-                TypeZone::Stack,
+				TypeZone::Stack,
 				crate::STACK_SIZE as usize,
 				PAGE_WRITABLE,
 				false
 			);
 			MASTER_PROCESS.heap = MemoryZone::init(
-                TypeZone::Heap,
+				TypeZone::Heap,
 				100 * 0x1000,
 				PAGE_WRITABLE,
-				true,
+				true
 			);
 			// Init allocator with addr &mut KALLOCATOR
-            KALLOCATOR.init(MASTER_PROCESS.heap.offset, MASTER_PROCESS.heap.size);
+			KALLOCATOR
+				.init(MASTER_PROCESS.heap.offset, MASTER_PROCESS.heap.size);
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
 			MASTER_PROCESS.owner = 0;

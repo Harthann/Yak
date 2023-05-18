@@ -35,21 +35,28 @@ pub fn leaks() -> bool {
 pub fn test_runner(tests: &[&dyn Fn()]) {
 	use crate::memory::paging::bitmap::physmap_as_mut;
 	crate::kprintln!("Running {} tests", tests.len());
-    let used_pages =  physmap_as_mut().used;
-    crate::kprintln!("Kernel as mapped {} pages", used_pages);
+	let used_pages = physmap_as_mut().used;
+	crate::kprintln!("Kernel as mapped {} pages", used_pages);
 	for test in tests {
-        let pages_before_test =  physmap_as_mut().used;
+		let pages_before_test = physmap_as_mut().used;
 		test.run();
-        let pages_after_test =  physmap_as_mut().used;
+		let pages_after_test = physmap_as_mut().used;
 		if leaks() == true {
 			crate::memory_state();
 			panic!("Memory leaks test failed");
 		}
-        if pages_before_test != pages_after_test {
-            crate::kprintln!("Before {} pages\n After {} pages", pages_before_test, pages_after_test);
-        }
+		if pages_before_test != pages_after_test {
+			crate::kprintln!(
+				"Before {} pages\n After {} pages",
+				pages_before_test,
+				pages_after_test
+			);
+		}
 	}
-    crate::kprintln!("Kernel uses {} more pages", physmap_as_mut().used - used_pages);
+	crate::kprintln!(
+		"Kernel uses {} more pages",
+		physmap_as_mut().used - used_pages
+	);
 	crate::memory_state();
 	io::outb(0xf4, 0x10);
 }

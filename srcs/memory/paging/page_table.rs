@@ -16,15 +16,15 @@ pub struct PageTable {
 use crate::memory::paging::bitmap;
 use core::ops;
 impl ops::Drop for PageTable {
-    fn drop(&mut self) {
-        crate::kprintln!("Dropping table");
-        for i in 0..1024 {
-            if self.entries[i].get_present() != 0 {
-                crate::kprintln!("free pages {}", self.entries[i].get_paddr());
-                bitmap::physmap_as_mut().free_page(self.entries[i].get_paddr());
-            }
-        }
-    }
+	fn drop(&mut self) {
+		crate::kprintln!("Dropping table");
+		for i in 0..1024 {
+			if self.entries[i].get_present() != 0 {
+				crate::kprintln!("free pages {}", self.entries[i].get_paddr());
+				bitmap::physmap_as_mut().free_page(self.entries[i].get_paddr());
+			}
+		}
+	}
 }
 
 impl PageTable {

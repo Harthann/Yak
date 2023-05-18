@@ -27,7 +27,7 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	uptime,
 	date,
 	play,
-    pmap,
+	pmap,
 	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
@@ -38,12 +38,12 @@ const KNOWN_CMD: [&str; NB_CMDS] = [
 fn pmap(command: Vec<String>) {
 	let pid: Pid;
 
-    if command.len() != 2 {
+	if command.len() != 2 {
 		kprintln!("Invalid argument.");
 		kprintln!("Usage: pmap [pid]");
 		return;
 	}
-    if let Some(res) = atou(command[1].as_str()) {
+	if let Some(res) = atou(command[1].as_str()) {
 		pid = res as Pid;
 	} else {
 		kprintln!("Invalid argument.");
@@ -51,31 +51,31 @@ fn pmap(command: Vec<String>) {
 		return;
 	}
 
-    use crate::proc::process::MASTER_PROCESS;
-    unsafe {
-    crate::wrappers::_cli();
-	// Send to a specific process
-	let res = MASTER_PROCESS.search_from_pid(pid);
-	if res.is_err() {
-		crate::wrappers::_sti();
-		return ;
+	use crate::proc::process::MASTER_PROCESS;
+	unsafe {
+		crate::wrappers::_cli();
+		// Send to a specific process
+		let res = MASTER_PROCESS.search_from_pid(pid);
+		if res.is_err() {
+			crate::wrappers::_sti();
+			return;
+		}
+		let process: &mut Process = res.unwrap();
+		let mut used_size: usize = 0;
+		crate::kprintln!("{}:", pid);
+		crate::kprintln!("{}", process.heap);
+		used_size += process.heap.size;
+		crate::kprintln!("{}", process.stack);
+		used_size += process.stack.size;
+		crate::kprintln!("{}", process.kernel_stack);
+		used_size += process.kernel_stack.size;
+		for i in &process.mem_map {
+			let guard = i.lock();
+			crate::kprintln!("{}", *guard);
+			used_size += guard.size;
+		}
+		crate::kprintln!(" total: {:#x}", used_size);
 	}
-	let process: &mut Process = res.unwrap();
-    let mut used_size: usize = 0;
-    crate::kprintln!("{}:", pid);
-    crate::kprintln!("{}", process.heap);
-    used_size += process.heap.size;
-    crate::kprintln!("{}", process.stack);
-    used_size += process.stack.size;
-    crate::kprintln!("{}", process.kernel_stack);
-    used_size += process.kernel_stack.size;
-    for i in &process.mem_map {
-        let guard = i.lock();
-        crate::kprintln!("{}", *guard);
-        used_size += guard.size;
-    }
-    crate::kprintln!(" total: {:#x}", used_size);
-    }
 }
 
 fn kill(command: Vec<String>) {
