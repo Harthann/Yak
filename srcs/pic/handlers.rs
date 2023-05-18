@@ -2,9 +2,6 @@ use crate::interrupts::Registers;
 use crate::pic::PIC1_IRQ_OFFSET;
 use crate::vga_buffer;
 
-#[no_mangle]
-pub static mut JIFFIES: usize = 0;
-
 #[allow(unused)]
 pub fn handler(reg: &Registers, int_no: usize) {
 	if crate::keyboard::keyboard_event() {

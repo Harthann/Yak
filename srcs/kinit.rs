@@ -75,6 +75,7 @@ mod syscalls;
 mod io;
 mod pic;
 mod proc;
+mod time;
 mod user;
 mod vga_buffer;
 #[macro_use]
@@ -120,8 +121,7 @@ use crate::interrupts::init_idt;
 use proc::task::Task;
 
 use crate::gdt::{gdt_desc, GDTR};
-
-pub use pic::handlers::JIFFIES;
+// use crate::memory::paging::{alloc_pages_at_addr, PAGE_USER};
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xff0fffff;

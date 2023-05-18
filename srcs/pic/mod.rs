@@ -6,7 +6,7 @@ pub mod handlers;
 pub mod pit;
 pub use pit::{set_irq0_in_ms, set_pit};
 
-pub use handlers::{handler, JIFFIES};
+pub use handlers::handler;
 // References: [https://wiki.osdev.org/8259_PIC]
 
 // 	PIC2 Interrupt		BIT	 ____________		PIC1 Interrupt		BIT	 ____________

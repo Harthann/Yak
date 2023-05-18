@@ -190,7 +190,7 @@ unsafe extern "C" fn swap_task() -> ! {
 		"mov cr3, eax",
 
 		"2:",
-		"add DWORD PTR[JIFFIES], 1",
+		"call jiffies_inc",
 
 		"mov eax, 0x10",
 		"mov ds, ax",

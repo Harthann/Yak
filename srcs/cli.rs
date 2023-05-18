@@ -75,20 +75,16 @@ fn play(command: Vec<String>) {
 }
 
 fn jiffies(_: Vec<String>) {
-	unsafe {
-		crate::kprintln!("Jiffies: {}", crate::pic::JIFFIES);
-	}
+	crate::kprintln!("Jiffies: {}", crate::time::jiffies());
 }
 
 fn uptime(_: Vec<String>) {
-	unsafe {
-		crate::pic::pit::TIME_ELAPSED =
-			crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
-		let second = (crate::pic::pit::TIME_ELAPSED / 1000.0) as u64;
-		let ms =
-			((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
-		crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
-	}
+	let time = crate::time::get_timestamp();
+	crate::kprintln!(
+		"Time elapsed since boot: {}s {}ms",
+		time.second,
+		time.millisecond
+	);
 }
 
 fn date(_: Vec<String>) {

@@ -1,5 +1,5 @@
-use crate::kmain::sleep;
 use crate::pic::pit::{speaker_off, speaker_on};
+use crate::time::sleep;
 use crate::vec::Vec;
 
 mod notes_frequencies;
