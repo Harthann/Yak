@@ -1,12 +1,16 @@
 use core::fmt;
 use core::ptr::copy_nonoverlapping;
+use core::borrow::BorrowMut;
 
 use crate::boot::KERNEL_BASE;
 
-use crate::boxed::Box;
 use crate::memory::paging::free_pages;
 use crate::memory::{Heap, MemoryZone, Stack};
 use crate::vec::Vec;
+
+use core::cell::RefCell;
+use crate::alloc::rc::Rc;
+use crate::alloc::collections::btree_map::BTreeMap;
 
 use crate::proc::task::Task;
 
@@ -31,10 +35,10 @@ use crate::KSTACK_ADDR;
 use crate::fs::FileInfo;
 use alloc::sync::Arc;
 
-pub static mut NEXT_PID: Id = 0;
-pub static mut MASTER_PROCESS: Process = Process::new();
-
 pub type Pid = Id;
+
+pub static mut NEXT_PID: Pid = 0;
+pub static mut PROCESS_TREE: BTreeMap<Pid, Rc<RefCell<Process>>> = BTreeMap::new();
 
 #[derive(Debug, PartialEq)]
 pub enum Status {
@@ -45,11 +49,12 @@ pub enum Status {
 }
 
 pub const MAX_FD: usize = 32;
+
 pub struct Process {
 	pub pid:             Pid,
 	pub state:           Status,
 	pub parent:          *mut Process,
-	pub childs:          Vec<Box<Process>>,
+	pub childs:          Vec<Rc<RefCell<Process>>>,
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
@@ -81,29 +86,26 @@ impl Process {
 		let mut ret: usize = 0;
 		for process in self.childs.iter() {
 			ret += 1;
-			ret += process.get_nb_subprocess()
+			ret += process.get_mut().get_nb_subprocess()
 		}
 		ret
 	}
 
-	pub fn print_tree(&self) {
-		crate::kprintln!("{}", self);
-		for process in self.childs.iter() {
-			process.print_tree();
+	pub fn print_tree() {
+		unsafe {
+			for mut process in PROCESS_TREE.values() {
+				crate::kprintln!("{}", process.get_mut());
+			}
 		}
 	}
 
-	pub fn search_from_pid(&mut self, pid: Id) -> Result<&mut Process, ErrNo> {
-		if self.pid == pid {
-			return Ok(self);
-		}
-		for process in self.childs.iter_mut() {
-			let res = process.search_from_pid(pid);
-			if res.is_ok() {
-				return res;
+	pub fn search_from_pid(pid: Id) -> Result<&'static mut Process, ErrNo> {
+		unsafe {
+			match PROCESS_TREE.get_mut(&pid) {
+				Some(process) => Ok(process.get_mut()),
+				None => Err(ErrNo::ESRCH)
 			}
 		}
-		Err(ErrNo::ESRCH)
 	}
 
 	// TODO: next_pid need to check overflow and if other pid is available
@@ -158,7 +160,7 @@ impl Process {
 			}
 			parent.childs.push(res.unwrap());
 			let len = parent.childs.len();
-			parent.childs[len - 1].parent = self.parent;
+			parent.childs[len - 1].get_mut().parent = self.parent;
 		}
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
 		self.state = Status::Zombie;
@@ -169,7 +171,7 @@ impl Process {
 		let parent: &mut Process = &mut *self.parent;
 		let mut i = 0;
 		while i < parent.childs.len() {
-			let ptr: *mut Process = parent.childs[i].as_mut();
+			let ptr: *const Process = parent.childs[i].as_ptr();
 			if ptr == &mut *self {
 				break;
 			}
@@ -203,7 +205,7 @@ impl Process {
 		pid: Id,
 		signal: SignalType
 	) -> Result<Signal, ErrNo> {
-		MASTER_PROCESS.search_from_pid(pid)?; // Return ErrNo::ESRCH if doesn't exist
+		Process::search_from_pid(pid)?; // Return ErrNo::ESRCH if doesn't exist
 		let mut i = 0;
 		while i < self.signals.len() {
 			if self.signals[i].sender == pid
@@ -216,15 +218,15 @@ impl Process {
 		Err(ErrNo::EAGAIN)
 	}
 
-	pub fn get_running_process() -> &'static mut Self {
-		unsafe { &mut *Task::get_running_task().process }
+	pub fn get_running_process() -> Rc<RefCell<Self>> {
+		unsafe { Task::get_running_task().process.clone() }
 	}
 
 	pub unsafe fn get_signal_running_process(
 		pid: Id,
 		signal: SignalType
 	) -> Result<Signal, ErrNo> {
-		let process: &mut Process = Process::get_running_process();
+		let process: &mut Process = Process::get_running_process().get_mut();
 		if pid == -1 {
 			process.get_signal(signal)
 		} else if pid > 0 {
@@ -293,13 +295,13 @@ impl Process {
 		page_dir
 	}
 
-	pub unsafe fn get_nb_process() -> usize {
-		MASTER_PROCESS.get_nb_subprocess() + 1
+	pub fn get_nb_process() -> usize {
+		unsafe { PROCESS_TREE.len() }
 	}
 
 	pub unsafe fn print_all_process() {
 		crate::kprintln!("       PID        OWNER   STATUS");
-		MASTER_PROCESS.print_tree();
+		Self::print_tree();
 	}
 }
 

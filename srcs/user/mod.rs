@@ -7,12 +7,13 @@ use crate::wrappers::{_cli, _sti};
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
 
-use crate::proc::process::{Pid, Process};
+use crate::proc::process::{PROCESS_TREE, Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
 
-use crate::boxed::Box;
+use core::cell::RefCell;
+use crate::alloc::rc::Rc;
 
 #[cfg(test)]
 pub mod test;
@@ -49,10 +50,13 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let parent: &mut Process = Process::get_running_process();
+	let binding = Process::get_running_process();
+	let mut parent = binding.borrow_mut();
 
 	let mut process: Process = Process::new();
-	process.init(parent);
+	let mut new_task: Task = Task::new();
+	process.init(&mut parent);
+	let pid = process.pid;
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
 	process.setup_stack(0x1000, PAGE_WRITABLE | PAGE_USER, false);
 	process.setup_heap(
@@ -60,12 +64,6 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 		PAGE_WRITABLE | PAGE_USER,
 		false
 	);
-	parent.childs.push(Box::new(process));
-
-	let process: &mut Process = parent.childs.last_mut().unwrap();
-	let mut new_task: Task = Task::new();
-
-	new_task.process = process;
 
 	// TODO: free those when process ends ?
 	let page_dir: &mut PageDirectory = process.setup_pagination();
@@ -82,9 +80,15 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
+	let ref_counter = Rc::new(RefCell::new(process));
+
+	PROCESS_TREE.insert(pid, ref_counter.clone());
+	parent.childs.push(ref_counter.clone());
+	new_task.process = ref_counter.clone();
+
 	TASKLIST.push_back(new_task);
 	_sti();
-	process.pid
+	pid
 }
 
 core::arch::global_asm!(

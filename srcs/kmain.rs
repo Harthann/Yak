@@ -1,6 +1,5 @@
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
-use crate::wrappers::{cli, hlt, sti};
 use crate::{kprint, kprintln, string};
 
 mod poc {

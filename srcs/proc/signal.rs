@@ -1,5 +1,5 @@
 use crate::errno::ErrNo;
-use crate::proc::process::{Process, MASTER_PROCESS};
+use crate::proc::process::{Process};
 use crate::proc::Id;
 
 pub type SigHandlerFn = fn(i32);
@@ -102,7 +102,7 @@ impl Signal {
 		wstatus: i32
 	) -> Result<Id, ErrNo> {
 		unsafe {
-			let process: &mut Process = MASTER_PROCESS.search_from_pid(pid)?;
+			let process: &mut Process = Process::search_from_pid(pid)?;
 			Self::send_to_process(process, sender_pid, sigtype, wstatus);
 		}
 		Ok(pid)

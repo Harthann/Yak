@@ -4,6 +4,7 @@
 #![feature(lang_items)]
 #![feature(c_variadic)]
 #![feature(asm_const)]
+#![feature(get_mut_unchecked)]
 #![feature(alloc_error_handler)]
 #![feature(unsize)]
 #![feature(coerce_unsized)]
@@ -93,7 +94,7 @@ extern crate alloc;
 extern crate sys_macros;
 // mod alloc;
 
-use alloc::{boxed, string, vec};
+use alloc::{string, vec};
 
 #[cfg(test)]
 mod test;

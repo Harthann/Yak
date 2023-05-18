@@ -1,4 +1,6 @@
-use crate::proc::process::{Pid, Process, MASTER_PROCESS};
+use crate::alloc::rc::Rc;
+
+use crate::proc::process::{Pid, Process};
 use crate::proc::signal::{
 	get_signal_type,
 	SigHandlerFn,
@@ -16,8 +18,8 @@ use crate::vec::Vec;
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	// TODO: check signal validity
 	// TODO: Use map/hashmap instead
-	let handlers: &mut Vec<SignalHandler> =
-		&mut Process::get_running_process().signal_handlers;
+	let process: &mut Process = Process::get_running_process().get_mut();
+	let handlers: &mut Vec<SignalHandler> = &mut process.signal_handlers;
 	for i in 0..handlers.len() {
 		if handlers[i].signal == signal {
 			handlers.remove(i);
@@ -34,7 +36,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 	if pid > 0 {
 		// Send to a specific process
 		unsafe {
-			let res = MASTER_PROCESS.search_from_pid(pid);
+			let res = Process::search_from_pid(pid);
 			if res.is_err() {
 				_sti();
 				return -(res.err().unwrap() as i32);
@@ -44,7 +46,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				_sti();
 				return 0; // kill check for pid presence if signal is 0
 			}
-			let sender_pid = Process::get_running_process().pid;
+			let sender_pid = Process::get_running_process().get_mut().pid;
 			let res = get_signal_type(signal);
 			if res.is_err() {
 				_sti();

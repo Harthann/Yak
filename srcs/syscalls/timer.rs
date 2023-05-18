@@ -2,16 +2,16 @@ use crate::proc::process::Process;
 use crate::proc::Id;
 
 pub fn sys_getpid() -> Id {
-	Process::get_running_process().pid
+	Process::get_running_process().get_mut().pid
 }
 
 pub fn sys_getuid() -> Id {
-	Process::get_running_process().owner
+	Process::get_running_process().get_mut().owner
 }
 
 pub fn sys_getppid() -> Id {
 	unsafe {
-		let ptr: *mut Process = Process::get_running_process().parent;
+		let ptr: *mut Process = Process::get_running_process().get_mut().parent;
 		if ptr.is_null() {
 			-1
 		} else {

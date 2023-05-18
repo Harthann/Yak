@@ -1,9 +1,10 @@
 //! Processus, Tasks and Signals
 
-use crate::boxed::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
+use core::cell::RefCell;
+use crate::alloc::rc::Rc;
 use alloc::sync::Arc;
 
 use crate::memory::paging::PAGE_WRITABLE;
@@ -17,7 +18,7 @@ pub mod task;
 #[cfg(test)]
 pub mod test;
 
-use process::{Pid, Process};
+use process::{PROCESS_TREE, Pid, Process};
 use task::{schedule_task, Task, TASKLIST};
 
 use crate::syscalls::exit::__W_EXITCODE;
@@ -27,8 +28,9 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	let task: Task = TASKLIST.pop_front().unwrap();
-	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
+	let mut task: Task = TASKLIST.pop_front().unwrap();
+	let mut process = task.process.borrow_mut();
+	process.zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
 	schedule_task();
 	// Never goes there
@@ -57,10 +59,13 @@ pub unsafe extern "C" fn exec_fn(
 ) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let parent: &mut Process = Process::get_running_process();
+	let binding = Process::get_running_process();
+	let mut parent = binding.borrow_mut();
 
 	let mut process = Process::new();
-	process.init(parent);
+	let mut new_task: Task = Task::new();
+	process.init(&mut parent);
+	let pid = process.pid;
 	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
 		parent.stack.size,
@@ -74,12 +79,7 @@ pub unsafe extern "C" fn exec_fn(
 			None => None
 		};
 	}
-	parent.childs.push(Box::new(process));
 
-	let process: &mut Process = parent.childs.last_mut().unwrap();
-	let mut new_task: Task = Task::new();
-
-	new_task.process = process;
 	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
@@ -116,9 +116,16 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.eip = wrapper_fn as VirtAddr;
 	new_task.regs.cr3 = running_task.regs.cr3;
 	new_task.regs.ds = running_task.regs.ds;
+
+	let ref_counter = Rc::new(RefCell::new(process));
+
+	PROCESS_TREE.insert(pid, ref_counter.clone());
+	parent.childs.push(ref_counter.clone());
+	new_task.process = ref_counter.clone();
+
 	TASKLIST.push_back(new_task);
 	_sti();
-	process.pid
+	pid
 }
 
 #[macro_export]
