@@ -258,38 +258,40 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 pub fn _print(args: fmt::Arguments) {
+	unsafe { crate::dprintln!("{}", args) };
 	WRITER.lock().write_fmt(args).unwrap();
 }
 
+use crate::dprint;
 pub fn hexdump(ptr: *const u8, size: usize) {
 	let mut i: usize = 0;
 
 	while i < size {
-		kprint!("{:08x}: ", unsafe { ptr.offset(i as isize) as usize });
+		dprint!("{:08x}: ", unsafe { ptr.offset(i as isize) as usize });
 		let nb = if size - i > 16 { 16 } else { size - i };
 		for j in 0..nb {
 			let byte: u8 = unsafe { *(ptr.offset((i + j) as isize)) as u8 };
-			kprint!("{:02x}", byte);
+			dprint!("{:02x}", byte);
 			if j % 2 == 1 {
-				kprint!(" ");
+				dprint!(" ");
 			}
 		}
 		for j in 0..16 - nb {
 			if j % 2 == 0 {
-				kprint!(" ");
+				dprint!(" ");
 			}
-			kprint!("  ");
+			dprint!("  ");
 		}
 		for j in 0..nb {
 			let byte: u8 = unsafe { *(ptr.offset((i + j) as isize)) as u8 };
 			if byte >= 0x20 && byte < 0x7f {
 				// printable
-				kprint!("{}", byte as char);
+				dprint!("{}", byte as char);
 			} else {
-				kprint!(".");
+				dprint!(".");
 			}
 		}
-		kprint!("\n");
+		dprint!("\n");
 		i += 16;
 	}
 }

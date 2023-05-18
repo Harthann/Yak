@@ -83,7 +83,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
-	TASKLIST.push(new_task);
+	TASKLIST.push_back(new_task);
 	_sti();
 	process.pid
 }
@@ -122,11 +122,6 @@ pub fn test_user_page() {
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-	let mut status: i32 = 0;
-	let ret = crate::syscalls::exit::sys_waitpid(-1, &mut status, 0);
+	let ret = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
 	crate::kprintln!("pid ret: {}", ret);
-	crate::kprintln!(
-		"status: {}",
-		crate::syscalls::exit::__WEXITSTATUS!(status)
-	);
 }

@@ -55,7 +55,7 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.eax = 0; // New forked process return 0
         process.test = true;
 
-		TASKLIST.push(new_task);
+		TASKLIST.push_back(new_task);
 		_sti();
 		process.pid
 	}

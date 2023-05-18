@@ -7,14 +7,15 @@ use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
 use crate::memory::allocator::AllocatorInit;
 
-use crate::utils::queue::Queue;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
 
 use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
-pub static mut TASKLIST: Queue<Task> = Queue::new();
+use crate::alloc::collections::vec_deque::VecDeque;
+
+pub static mut TASKLIST: VecDeque<Task> = VecDeque::new();
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum TaskStatus {
@@ -40,7 +41,7 @@ impl Task {
 		}
 	}
 
-	pub fn init_multitasking(stack_addr: VirtAddr, heap_addr: VirtAddr) {
+	pub fn init_multitasking(stack_addr: VirtAddr) {
 		let mut task = Task::new();
 		unsafe {
 			core::arch::asm!(
@@ -63,8 +64,7 @@ impl Task {
 				PAGE_WRITABLE,
 				false
 			);
-			MASTER_PROCESS.heap = MemoryZone::init_addr(
-				heap_addr,
+			MASTER_PROCESS.heap = MemoryZone::init(
                 TypeZone::Heap,
 				100 * 0x1000,
 				PAGE_WRITABLE,
@@ -77,7 +77,7 @@ impl Task {
 			MASTER_PROCESS.owner = 0;
 			NEXT_PID += 1;
 			task.process = &mut MASTER_PROCESS;
-			TASKLIST.push(task);
+			TASKLIST.push_back(task);
 		}
 	}
 
@@ -88,20 +88,20 @@ impl Task {
 		while i < len {
 			let task: &mut Task = Task::get_running_task();
 			if task.process != process_ptr {
-				TASKLIST.push(TASKLIST.pop());
+				TASKLIST.push_back(TASKLIST.pop_front().unwrap());
 			} else {
-				TASKLIST.pop();
+				TASKLIST.pop_front();
 			}
 			i += 1;
 		}
 	}
 
+	#[inline]
 	pub unsafe fn get_running_task() -> &'static mut Task {
-		let res = TASKLIST.front_mut();
-		if res.is_none() {
-			todo!();
+		match TASKLIST.front_mut() {
+			Some(x) => x,
+			None => todo!()
 		}
-		&mut *res.unwrap()
 	}
 }
 
@@ -112,10 +112,8 @@ unsafe extern "C" fn wrapper_handler() {
 		"mov eax, [esp]",
 		"add esp, 4",
 		"call eax",
-		"mov esp, {}",
 		"cli",
 		"jmp _end_handler",
-		const KSTACK_ADDR,
 		options(noreturn),
 	);
 	// Never goes there
@@ -197,7 +195,7 @@ unsafe extern "C" fn swap_task() -> ! {
 		"mov cr3, eax",
 
 		"2:",
-		"add DWORD PTR[JIFFIES], 1",
+		"call jiffies_inc",
 
 		"mov eax, 0x10",
 		"mov ds, ax",
@@ -221,9 +219,9 @@ unsafe extern "C" fn swap_task() -> ! {
 #[no_mangle]
 pub unsafe extern "C" fn save_task(regs: &Registers) {
 	_cli();
-	let mut old_task: Task = TASKLIST.pop();
+	let mut old_task: Task = TASKLIST.pop_front().unwrap();
 	old_task.regs = *regs;
-	TASKLIST.push(old_task);
+	TASKLIST.push_back(old_task);
 	_rst();
 }
 
@@ -255,12 +253,10 @@ unsafe extern "C" fn find_task() -> ! {
 			// Copy registers to shared memory
 			let task: Registers = new_task.regs;
 			change_kernel_stack(process);
-			_rst();
 			switch_task(&task);
 			// never goes there
 		}
-		let skipped_task: Task = TASKLIST.pop();
-		TASKLIST.push(skipped_task);
+		TASKLIST.push_back(TASKLIST.pop_front().unwrap());
 	}
 }
 
@@ -270,6 +266,7 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	get_segments!(regs.ds);
 	end_of_interrupts(0x20);
+	_rst();
 	if regs.int_no != u32::MAX {
 		// new task
 		core::arch::asm!(
@@ -283,21 +280,31 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 	}
 	core::arch::asm!(
 		"mov esp, {}",
-		"sub esp, 32",
-		"popa",
+		"add esp, 8",
+		"mov edi, DWORD PTR[esp]",
+		"mov esi, DWORD PTR[esp + 4]",
+		"mov ebp, DWORD PTR[esp + 8]",
+		"mov ebx, DWORD PTR[esp + 16]",
+		"mov edx, DWORD PTR[esp + 20]",
+		"mov ecx, DWORD PTR[esp + 24]",
+		"mov eax, DWORD PTR[esp + 28]",
+		"mov esp, DWORD PTR[esp + 12]",
 		"add esp, 8", // int_no and err_code
 		"iretd", // no sti: iretd enable interrupt itself
-		in(reg) regs.esp,
+		in(reg) regs,
 		options(noreturn)
 	);
 }
 
 const STACK_SIZE: usize = 0x1000;
 
+#[repr(align(4096))]
+struct TaskStack([u8; STACK_SIZE]);
+
 #[no_mangle]
 #[link_section = ".bss"]
 /// Task stack
-static mut task_stack: [u8; STACK_SIZE] = [0; STACK_SIZE];
+static mut task_stack: TaskStack = TaskStack([0; STACK_SIZE]);
 
 macro_rules! load_cr3 {
 	($cr3: expr) => {
