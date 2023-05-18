@@ -1,6 +1,6 @@
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
-use crate::wrappers::{cli, hlt, sti};
+
 use crate::{kprint, kprintln, string};
 
 mod poc {
@@ -31,7 +31,7 @@ mod poc {
 		proc_macro_poc();
 	}
 }
-use crate::proc::process::MASTER_PROCESS;
+
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {

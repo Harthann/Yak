@@ -18,7 +18,7 @@ pub type PhysAddr = u32;
 /// Permission aren't yet use, and will probably be seperated from Paging permission
 /// Since paging flags are already stored in page directory it's probably not needed to store them
 /// here as well
-use crate::memory::paging::{PAGE_PRESENT, PAGE_WRITABLE};
+use crate::memory::paging::{PAGE_WRITABLE};
 /// Prots
 pub const WRITABLE: u32 = PAGE_WRITABLE;
 pub const READABLE: u32 = WRITABLE << 1;

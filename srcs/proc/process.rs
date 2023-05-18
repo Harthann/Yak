@@ -5,7 +5,7 @@ use crate::boot::KERNEL_BASE;
 
 use crate::alloc::collections::LinkedList;
 use crate::boxed::Box;
-use crate::memory::paging::free_pages;
+
 use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
 

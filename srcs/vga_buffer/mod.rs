@@ -258,7 +258,7 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 pub fn _print(args: fmt::Arguments) {
-	unsafe { crate::dprintln!("{}", args) };
+	crate::dprintln!("{}", args);
 	WRITER.lock().write_fmt(args).unwrap();
 }
 
