@@ -2,6 +2,8 @@ pub mod bitmap;
 pub mod page_directory;
 pub mod page_table;
 
+use crate::boot::KERNEL_BASE;
+
 use crate::memory::{PhysAddr, VirtAddr};
 use crate::multiboot;
 
@@ -29,10 +31,12 @@ pub fn init_paging() {
 	unsafe {
 		let pd_paddr: PhysAddr =
 			(page_directory.get_vaddr() & 0x3ff000) as PhysAddr;
-		multiboot::claim_multiboot();
+		// Claim 1st MiB used by BIOS Real Mode
 		bitmap::physmap_as_mut()
-			.claim(0x0)
-			.expect("Failed to claim first page");
+			.claim_range(0x0, (1024 * 1024) / 0x1000)
+			.expect("Failed to claim BIOS Real Mode 1st MiB");
+		// Claim all memory reserved by grub multiboot
+		multiboot::claim_multiboot();
 		// Claim page_directory
 		bitmap::physmap_as_mut()
 			.claim_range(0x100000, ((pd_paddr / 0x1000) + 1024) as usize)
@@ -45,15 +49,19 @@ pub fn init_paging() {
 		// Use identity mapping to setup kernel page
 		let init_pt_paddr: PhysAddr = pd_paddr + 0x1000;
 		let init_page_tab: &mut PageTable = &mut *(init_pt_paddr as *mut _);
-		init_page_tab
-			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		init_page_tab.set_entry(
+			KERNEL_BASE >> 22,
+			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT
+		);
 		refresh_tlb!();
 		// Final mapping
 		let kernel_page_tab: &mut PageTable =
-			&mut *(get_vaddr!(0, 768) as *mut _);
+			&mut *(get_vaddr!(0, KERNEL_BASE >> 22) as *mut _);
 		kernel_page_tab.init();
-		page_directory
-			.set_entry(768, kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT);
+		page_directory.set_entry(
+			KERNEL_BASE >> 22,
+			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT
+		);
 		// Recursive mapping
 		page_directory.set_entry(1023, pd_paddr | PAGE_WRITABLE | PAGE_PRESENT);
 		// Remove init page
@@ -122,7 +130,7 @@ macro_rules! get_vaddr {
 
 macro_rules! refresh_tlb {
 	() => {
-		core::arch::asm!("mov eax, cr3", "mov cr3, eax")
+		core::arch::asm!("push eax", "mov eax, cr3", "mov cr3, eax", "pop eax")
 	};
 }
 

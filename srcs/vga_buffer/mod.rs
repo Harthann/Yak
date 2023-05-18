@@ -10,7 +10,7 @@ use color::{Color, ColorCode};
 mod cursor;
 use cursor::Cursor;
 
-use crate::spin::Mutex;
+use crate::spin::KMutex;
 
 #[derive(Debug, Clone)]
 pub struct Screen {
@@ -62,13 +62,12 @@ struct ScreenChar {
 	color_code: ColorCode
 }
 
-const VGABUFF_OFFSET: usize = 0xc00b8000;
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
 pub const NB_SCREEN: usize = 3;
-pub static SCREENS: Mutex<[Screen; NB_SCREEN], true> =
-	Mutex::new([Screen::new(), Screen::new(), Screen::new()]);
+pub static SCREENS: KMutex<[Screen; NB_SCREEN]> =
+	KMutex::new([Screen::new(), Screen::new(), Screen::new()]);
 
 type Buffer = [[ScreenChar; BUFFER_WIDTH]; BUFFER_HEIGHT];
 
@@ -77,7 +76,7 @@ static mut VGA_BUFFER: Buffer = [[ScreenChar {
 	ascii_code: 0x20,
 	color_code: ColorCode::new(Color::White, Color::Black)
 }; BUFFER_WIDTH]; BUFFER_HEIGHT];
-pub static WRITER: Mutex<Writer, true> = Mutex::<Writer, true>::new(Writer {
+pub static WRITER: KMutex<Writer> = KMutex::<Writer>::new(Writer {
 	screen_index: 0,
 	cursor:       Cursor::new(0, 0, ColorCode::new(Color::White, Color::Black)),
 	vga_buffer:   unsafe { &mut VGA_BUFFER }
@@ -223,7 +222,7 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		$crate::kprint!("{}\n", format_args!($($arg)*));
+		$crate::kprint!("{}\n", format_args!($($arg)*))
 	)
 }
 
@@ -244,55 +243,53 @@ fn panic(info: &PanicInfo) -> ! {
 #[cfg(test)]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::Red, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("[failed]");
 	kprintln!("{}", info);
-	unsafe {
-		WRITER
-			.lock()
-			.chcolor(ColorCode::new(Color::White, Color::Black))
-	};
+	WRITER
+		.lock()
+		.chcolor(ColorCode::new(Color::White, Color::Black));
 	io::outb(0xf4, 0x11);
 	loop {}
 }
 
 pub fn _print(args: fmt::Arguments) {
+	unsafe { crate::dprintln!("{}", args) };
 	WRITER.lock().write_fmt(args).unwrap();
 }
 
+use crate::dprint;
 pub fn hexdump(ptr: *const u8, size: usize) {
 	let mut i: usize = 0;
 
 	while i < size {
-		kprint!("{:08x}: ", unsafe { ptr.offset(i as isize) as usize });
+		dprint!("{:08x}: ", unsafe { ptr.offset(i as isize) as usize });
 		let nb = if size - i > 16 { 16 } else { size - i };
 		for j in 0..nb {
 			let byte: u8 = unsafe { *(ptr.offset((i + j) as isize)) as u8 };
-			kprint!("{:02x}", byte);
+			dprint!("{:02x}", byte);
 			if j % 2 == 1 {
-				kprint!(" ");
+				dprint!(" ");
 			}
 		}
 		for j in 0..16 - nb {
 			if j % 2 == 0 {
-				kprint!(" ");
+				dprint!(" ");
 			}
-			kprint!("  ");
+			dprint!("  ");
 		}
 		for j in 0..nb {
 			let byte: u8 = unsafe { *(ptr.offset((i + j) as isize)) as u8 };
 			if byte >= 0x20 && byte < 0x7f {
 				// printable
-				kprint!("{}", byte as char);
+				dprint!("{}", byte as char);
 			} else {
-				kprint!(".");
+				dprint!(".");
 			}
 		}
-		kprint!("\n");
+		dprint!("\n");
 		i += 16;
 	}
 }

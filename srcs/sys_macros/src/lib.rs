@@ -17,13 +17,12 @@ pub fn poc_derive(input: TokenStream) -> TokenStream {
 			}
 		}
 	};
-	println!("This is from compilation");
 	gen.into()
 }
 
 use proc_macro::*;
 #[proc_macro_attribute]
-pub fn test(_args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn test_case(_args: TokenStream, input: TokenStream) -> TokenStream {
 	let mut item: syn::Item = syn::parse(input).unwrap();
 	let fn_item = match &mut item {
 		syn::Item::Fn(fn_item) => fn_item,
@@ -84,12 +83,11 @@ pub fn poc_insertion(_args: TokenStream, input: TokenStream) -> TokenStream {
 	);
 
 	// Convert back Item into TokenStream
-	use quote::ToTokens;
 	item.into_token_stream().into()
 }
 
 #[proc_macro]
-pub fn proc_macro_poc(input: TokenStream) -> TokenStream {
+pub fn proc_macro_poc(_input: TokenStream) -> TokenStream {
 	let code = quote! {
 		fn proc_macro_poc() {
 			crate::kprintln!("This is basic proc macro poc");

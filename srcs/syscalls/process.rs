@@ -7,11 +7,20 @@ use crate::wrappers::{_cli, _sti};
 
 use crate::boxed::Box;
 
+// kernel fork:
+// same cr3:
+// - Can't copy heap
+// other cr3:
+// => Copy heap
+// => Copy stack
+// must go to cr3 main kernel on sys
+// must dump registers
+
+/// Create a new process from the calling process,
+/// copy stack, heap and registers
+///
+/// Heap contains the prg and the heap allocated
 pub fn sys_fork() -> Pid {
-	//! Create a new process from the calling process,
-	//! copy stack, heap and registers
-	//!
-	//! Heap contains the prg and the heap allocated
 	unsafe {
 		_cli();
 		let running_task: &mut Task = Task::get_running_task();
@@ -45,7 +54,7 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 		new_task.regs.eax = 0; // New forked process return 0
 
-		TASKLIST.push(new_task);
+		TASKLIST.push_back(new_task);
 		_sti();
 		process.pid
 	}

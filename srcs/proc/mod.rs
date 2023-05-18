@@ -4,6 +4,7 @@ use crate::boxed::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
+use alloc::sync::Arc;
 
 use crate::memory::paging::PAGE_WRITABLE;
 
@@ -26,7 +27,7 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	let task: Task = TASKLIST.pop();
+	let task: Task = TASKLIST.pop_front().unwrap();
 	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
 	schedule_task();
@@ -41,7 +42,7 @@ pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 		"add esp, 8",
 		"sti",
 		"call eax",
-		"cli",
+		"sub esp, 8",
 		"push eax",
 		"call _exit",
 		options(noreturn)
@@ -66,6 +67,13 @@ pub unsafe extern "C" fn exec_fn(
 		parent.stack.flags,
 		parent.stack.kphys
 	);
+	// Copying all open fd from parent. Should not copy 0 and 1 but create new one instead
+	for i in 0..process::MAX_FD {
+		process.fds[i] = match &parent.fds[i] {
+			Some(fd) => Some(Arc::clone(&fd)),
+			None => None
+		};
+	}
 	parent.childs.push(Box::new(process));
 
 	let process: &mut Process = parent.childs.last_mut().unwrap();
@@ -108,7 +116,7 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.eip = wrapper_fn as VirtAddr;
 	new_task.regs.cr3 = running_task.regs.cr3;
 	new_task.regs.ds = running_task.regs.ds;
-	TASKLIST.push(new_task);
+	TASKLIST.push_back(new_task);
 	_sti();
 	process.pid
 }

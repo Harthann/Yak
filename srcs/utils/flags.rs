@@ -107,9 +107,9 @@ mod tests {
 	use super::{FlagOp, Flags};
 	use core::sync::atomic::{AtomicU8, Ordering};
 
-	#[sys_macros::test]
+	#[sys_macros::test_case]
 	fn test_flag_toggle() {
-		let mut flags = Flags::<AtomicU8>::default();
+		let flags = Flags::<AtomicU8>::default();
 		assert_eq!(flags.0.load(Ordering::Relaxed), 0);
 		for i in 0..8 {
 			assert_eq!(flags.0.load(Ordering::Relaxed) & (1 << i), 0);
@@ -120,9 +120,9 @@ mod tests {
 		}
 	}
 
-	#[sys_macros::test]
+	#[sys_macros::test_case]
 	fn test_flag_enable() {
-		let mut flags = Flags::<AtomicU8>::default();
+		let flags = Flags::<AtomicU8>::default();
 		assert_eq!(flags.0.load(Ordering::Relaxed), 0);
 		for i in 0..8 {
 			assert_eq!(flags.0.load(Ordering::Relaxed) & (1 << i), 0);
@@ -133,9 +133,9 @@ mod tests {
 		}
 	}
 
-	#[sys_macros::test]
+	#[sys_macros::test_case]
 	fn test_flag_disable() {
-		let mut flags = Flags::<AtomicU8>::new(0b11111111);
+		let flags = Flags::<AtomicU8>::new(0b11111111);
 		assert_eq!(flags.0.load(Ordering::Relaxed), 0xff);
 		for i in 0..8 {
 			assert_eq!(flags.0.load(Ordering::Relaxed) & (1 << i), (1 << i));
@@ -146,9 +146,9 @@ mod tests {
 		}
 	}
 
-	#[sys_macros::test]
+	#[sys_macros::test_case]
 	fn test_flag_is() {
-		let mut flags = Flags::<AtomicU8>::default();
+		let flags = Flags::<AtomicU8>::default();
 		assert_eq!(flags.0.load(Ordering::Relaxed), 0);
 		for i in 0..8 {
 			assert_eq!(flags.is_enable(i), false);

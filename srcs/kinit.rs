@@ -1,19 +1,14 @@
 #![feature(const_mut_refs)]
 #![feature(naked_functions)]
-#![feature(fmt_internals)]
-#![feature(specialization)]
-#![feature(nonnull_slice_from_raw_parts)]
-#![feature(rustc_attrs)]
-#![feature(ptr_internals)]
 #![feature(const_size_of_val)]
-#![feature(fundamental)]
 #![feature(lang_items)]
 #![feature(c_variadic)]
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
+#![feature(unsize)]
+#![feature(coerce_unsized)]
 #![no_std]
 #![allow(dead_code)]
-#![allow(incomplete_features)]
 #![no_main]
 // Custom test framework
 #![feature(custom_test_frameworks)]
@@ -70,7 +65,7 @@ mod boot;
 mod cli;
 mod gdt;
 mod keyboard;
-mod main;
+mod kmain;
 #[macro_use]
 mod memory;
 mod interrupts;
@@ -92,6 +87,7 @@ mod spin;
 mod utils;
 #[macro_use]
 mod debug;
+mod fs;
 
 extern crate alloc;
 extern crate sys_macros;
@@ -103,6 +99,7 @@ use alloc::{boxed, string, vec};
 mod test;
 
 // Modules used function and variable
+
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
@@ -115,14 +112,6 @@ static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 #[alloc_error_handler]
 pub fn rust_oom(layout: core::alloc::Layout) -> ! {
 	panic!("Failed to allocate memory: {}", layout.size())
-}
-
-// Code from boot section
-#[allow(dead_code)]
-extern "C" {
-	fn stack_bottom();
-	fn stack_top();
-	fn heap();
 }
 
 use crate::memory::VirtAddr;
@@ -142,7 +131,7 @@ const STACK_ADDR: VirtAddr = 0xff0fffff;
 pub extern "C" fn kinit() {
 	crate::wrappers::_cli();
 
-	// multiboot::read_tags();
+	multiboot::read_tags();
 	// Init paging and remove identity paging
 	init_paging();
 
@@ -153,7 +142,7 @@ pub extern "C" fn kinit() {
 		init_idt();
 	}
 
-	Task::init_multitasking(STACK_ADDR, heap as u32);
+	Task::init_multitasking(STACK_ADDR);
 
 	gdt::tss::init_tss(KSTACK_ADDR + 1);
 	reload_tss!();
@@ -165,21 +154,19 @@ pub extern "C" fn kinit() {
 	}
 
 	setup_pic8259();
+
 	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
 	// This setup should be done using frequency, but for readability and ease of use, this is done
 	// with time between each interrupt in ms.
 	pic::set_irq0_in_ms(10.0);
 
 	// Reserve some spaces to push things before main
-	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR - 256) };
+	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1) };
 	crate::wrappers::_sti();
-
-	// Function to test and enter usermode
-	// user::test_user_page();
 
 	#[cfg(test)]
 	test_main();
 
 	#[cfg(not(test))]
-	main::kmain();
+	kmain::kmain();
 }

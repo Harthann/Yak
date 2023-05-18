@@ -6,7 +6,7 @@ use crate::{kprint, kprintln, string};
 mod poc {
 	use sys_macros::Poc;
 	#[derive(Poc)]
-	struct poc;
+	struct Poc;
 
 	#[sys_macros::poc_insertion]
 	fn insertion_poc() {
@@ -22,7 +22,7 @@ mod poc {
 
 	pub fn test_macros() {
 		crate::kprintln!("Test drive macro:");
-		poc::poc();
+		Poc::poc();
 		crate::kprintln!("Test attribute macro:");
 		insertion_poc();
 		crate::kprintln!("Test attribute macro with argument:");
@@ -34,7 +34,7 @@ mod poc {
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	// 	crate::user::test_user_page();
+	crate::user::test_user_page();
 
 	poc::test_macros();
 	kprintln!("Hello World of {}!", 42);

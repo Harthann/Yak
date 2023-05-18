@@ -30,7 +30,6 @@ pub unsafe extern "C" fn irq_0() {
 
         popa
 
-		sti
         iretd
     ",
 		options(noreturn)
