@@ -106,7 +106,6 @@ mod tests {
 	use super::{FlagOp, Flags};
 	use core::sync::atomic::{AtomicU8, Ordering};
 
-
 	#[sys_macros::test_case]
 	fn test_flag_toggle() {
 		let flags = Flags::<AtomicU8>::default();
@@ -119,7 +118,6 @@ mod tests {
 			assert_eq!(flags.0.load(Ordering::Relaxed) & (1 << i), 0);
 		}
 	}
-
 
 	#[sys_macros::test_case]
 	fn test_flag_enable() {
@@ -134,7 +132,6 @@ mod tests {
 		}
 	}
 
-
 	#[sys_macros::test_case]
 	fn test_flag_disable() {
 		let flags = Flags::<AtomicU8>::new(0b11111111);
@@ -147,7 +144,6 @@ mod tests {
 			assert_eq!(flags.0.load(Ordering::Relaxed) & (1 << i), 0);
 		}
 	}
-
 
 	#[sys_macros::test_case]
 	fn test_flag_is() {
