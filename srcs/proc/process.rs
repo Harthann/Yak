@@ -102,7 +102,7 @@ impl Process {
 	pub fn search_from_pid(pid: Id) -> Result<&'static mut Process, ErrNo> {
 		unsafe {
 			match PROCESS_TREE.get_mut(&pid) {
-				Some(process) => Ok(Rc::get_mut(process).unwrap()),
+				Some(process) => Ok(Rc::get_mut_unchecked(process)),
 				None => Err(ErrNo::ESRCH)
 			}
 		}
@@ -149,7 +149,7 @@ impl Process {
 
 	pub unsafe fn zombify(&mut self, wstatus: i32) {
 		let mut binding = self.parent.clone().expect("Process has no parent");
-		let parent: &mut Process = Rc::get_mut(&mut binding).unwrap();
+		let parent: &mut Process = Rc::get_mut_unchecked(&mut binding);
 		while self.childs.len() > 0 {
 			// TODO: DON'T MOVE THREADS AND REMOVE THEM
 			let res = self.childs.pop();
@@ -182,7 +182,7 @@ impl Process {
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 		free_pages(self.heap.offset, self.heap.size / 0x1000);
 		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
-		let parent: &mut Process = Rc::get_mut(&mut parent).unwrap();
+		let parent: &mut Process = Rc::get_mut_unchecked(&mut parent);
 		parent.childs.remove(i);
 	}
 
@@ -218,16 +218,15 @@ impl Process {
 		Err(ErrNo::EAGAIN)
 	}
 
-	pub fn get_running_process() -> Rc<Self> {
-		unsafe { Task::get_running_task().process.clone() }
+	pub fn get_running_process() -> &'static mut Self {
+		unsafe { Rc::get_mut_unchecked(&mut Task::get_running_task().process) }
 	}
 
 	pub unsafe fn get_signal_running_process(
 		pid: Id,
 		signal: SignalType
 	) -> Result<Signal, ErrNo> {
-		let mut binding = Process::get_running_process();
-		let process: &mut Process = Rc::get_mut(&mut binding).unwrap();
+		let mut process = Process::get_running_process();
 		if pid == -1 {
 			process.get_signal(signal)
 		} else if pid > 0 {

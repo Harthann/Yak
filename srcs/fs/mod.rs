@@ -77,8 +77,7 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 		.iter()
 		.find(|elem| elem.name == name)
 		.ok_or(ErrNo::ENOENT)?;
-	let mut binding = Process::get_running_process();
-	let mut curr_process = Rc::get_mut(&mut binding).unwrap();
+	let mut curr_process = Process::get_running_process();
 
 	// Error if file table already full
 	let index = curr_process
@@ -94,8 +93,7 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 pub fn close(fd: usize) {
 	// TODO drop_in_place?
 	if fd < MAX_FD {
-		let mut binding = Process::get_running_process();
-		let mut curr_process = Rc::get_mut(&mut binding).unwrap();
+		let mut curr_process = Process::get_running_process();
 		curr_process.fds[fd] = None;
 	}
 }
@@ -108,8 +106,7 @@ pub fn read(fd: usize, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
 		return Err(ErrNo::EBADF);
 	}
 
-	let mut binding = Process::get_running_process();
-	let curr_process = Rc::get_mut(&mut binding).unwrap();
+	let mut curr_process = Process::get_running_process();
 
 	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let guard2 = file.op.lock();
@@ -125,8 +122,7 @@ pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 		return Err(ErrNo::EBADF);
 	}
 
-	let mut binding = Process::get_running_process();
-	let curr_process = Rc::get_mut(&mut binding).unwrap();
+	let mut curr_process = Process::get_running_process();
 	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
 	let mut guard2 = file.op.lock();
 	guard2.write(src, length)
@@ -148,8 +144,7 @@ pub fn socket_pair(
 	let socket2: FileInfo =
 		FileInfo::new(String::from("socketfs"), Arcm::new(socket.1));
 
-	let mut binding = Process::get_running_process();
-	let mut curr_process = Rc::get_mut(&mut binding).unwrap();
+	let mut curr_process = Process::get_running_process();
 
 	// Open first socket
 	let index = curr_process

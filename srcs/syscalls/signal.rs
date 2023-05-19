@@ -18,8 +18,7 @@ use crate::vec::Vec;
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	// TODO: check signal validity
 	// TODO: Use map/hashmap instead
-	let mut binding = Process::get_running_process();
-	let process: &mut Process = Rc::get_mut(&mut binding).unwrap();
+	let mut process = Process::get_running_process();
 	let handlers: &mut Vec<SignalHandler> = &mut process.signal_handlers;
 	for i in 0..handlers.len() {
 		if handlers[i].signal == signal {

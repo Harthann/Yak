@@ -121,7 +121,7 @@ impl Task {
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
 				let mut binding = self.process.clone();
-				let process = Rc::get_mut(&mut binding).unwrap();
+				let process = Rc::get_mut_unchecked(&mut binding);
 				for handler in process.signal_handlers.iter() {
 					if handler.signal == process.signals[i].sigtype as i32 {
 						process.signals.remove(i);

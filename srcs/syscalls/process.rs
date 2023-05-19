@@ -25,8 +25,7 @@ pub fn sys_fork() -> Pid {
 	unsafe {
 		_cli();
 		let running_task: &mut Task = Task::get_running_task();
-		let mut binding = Process::get_running_process();
-		let parent: &mut Process = Rc::get_mut(&mut binding).unwrap();
+		let mut parent = Process::get_running_process();
 
 		let mut process: Process = Process::new();
 		let mut new_task: Task = Task::new();
