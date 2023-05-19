@@ -50,8 +50,8 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let binding = Process::get_running_process();
-	let mut parent = binding.borrow_mut();
+	let mut binding = Process::get_running_process();
+	let mut parent = Rc::get_mut(&mut binding).unwrap();
 
 	let mut process: Process = Process::new();
 	let mut new_task: Task = Task::new();
@@ -80,7 +80,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
-	let ref_counter = Rc::new(RefCell::new(process));
+	let ref_counter = Rc::new(process);
 
 	PROCESS_TREE.insert(pid, ref_counter.clone());
 	parent.childs.push(ref_counter.clone());

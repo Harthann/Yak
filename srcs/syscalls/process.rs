@@ -25,7 +25,8 @@ pub fn sys_fork() -> Pid {
 	unsafe {
 		_cli();
 		let running_task: &mut Task = Task::get_running_task();
-		let parent: &mut Process = Process::get_running_process().get_mut();
+		let mut binding = Process::get_running_process();
+		let parent: &mut Process = Rc::get_mut(&mut binding).unwrap();
 
 		let mut process: Process = Process::new();
 		let mut new_task: Task = Task::new();
@@ -51,7 +52,7 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 		new_task.regs.eax = 0; // New forked process return 0
 
-		let ref_counter = Rc::new(RefCell::new(process));
+		let ref_counter = Rc::new(process);
 
 		PROCESS_TREE.insert(pid, ref_counter.clone());
 		parent.childs.push(ref_counter.clone());

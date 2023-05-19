@@ -29,7 +29,7 @@ pub type Id = i32;
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
 	let mut task: Task = TASKLIST.pop_front().unwrap();
-	let mut process = task.process.borrow_mut();
+	let process: &mut Process = Rc::get_mut(&mut task.process).unwrap();
 	process.zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
 	schedule_task();
@@ -59,8 +59,8 @@ pub unsafe extern "C" fn exec_fn(
 ) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let binding = Process::get_running_process();
-	let mut parent = binding.borrow_mut();
+	let mut binding = Process::get_running_process();
+	let mut parent = Rc::get_mut(&mut binding).unwrap();
 
 	let mut process = Process::new();
 	let mut new_task: Task = Task::new();
@@ -117,7 +117,7 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.cr3 = running_task.regs.cr3;
 	new_task.regs.ds = running_task.regs.ds;
 
-	let ref_counter = Rc::new(RefCell::new(process));
+	let ref_counter = Rc::new(process);
 
 	PROCESS_TREE.insert(pid, ref_counter.clone());
 	parent.childs.push(ref_counter.clone());

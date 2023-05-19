@@ -38,7 +38,7 @@ use alloc::sync::Arc;
 pub type Pid = Id;
 
 pub static mut NEXT_PID: Pid = 0;
-pub static mut PROCESS_TREE: BTreeMap<Pid, Rc<RefCell<Process>>> = BTreeMap::new();
+pub static mut PROCESS_TREE: BTreeMap<Pid, Rc<Process>> = BTreeMap::new();
 
 #[derive(Debug, PartialEq)]
 pub enum Status {
@@ -53,8 +53,8 @@ pub const MAX_FD: usize = 32;
 pub struct Process {
 	pub pid:             Pid,
 	pub state:           Status,
-	pub parent:          *mut Process,
-	pub childs:          Vec<Rc<RefCell<Process>>>,
+	pub parent:          Option<Rc<Process>>,
+	pub childs:          Vec<Rc<Process>>,
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
@@ -66,11 +66,11 @@ pub struct Process {
 
 const DEFAULT_FILE: Option<Arc<FileInfo>> = None;
 impl Process {
-	pub const fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			pid:             0,
 			state:           Status::Disable,
-			parent:          core::ptr::null_mut(),
+			parent:          None,
 			childs:          Vec::new(),
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
@@ -86,15 +86,15 @@ impl Process {
 		let mut ret: usize = 0;
 		for process in self.childs.iter() {
 			ret += 1;
-			ret += process.get_mut().get_nb_subprocess()
+			ret += process.get_nb_subprocess()
 		}
 		ret
 	}
 
 	pub fn print_tree() {
 		unsafe {
-			for mut process in PROCESS_TREE.values() {
-				crate::kprintln!("{}", process.get_mut());
+			for process in PROCESS_TREE.values() {
+				crate::kprintln!("{}", process);
 			}
 		}
 	}
@@ -102,7 +102,7 @@ impl Process {
 	pub fn search_from_pid(pid: Id) -> Result<&'static mut Process, ErrNo> {
 		unsafe {
 			match PROCESS_TREE.get_mut(&pid) {
-				Some(process) => Ok(process.get_mut()),
+				Some(process) => Ok(Rc::get_mut(process).unwrap()),
 				None => Err(ErrNo::ESRCH)
 			}
 		}
@@ -112,7 +112,7 @@ impl Process {
 	pub unsafe fn init(&mut self, parent: &mut Process) {
 		self.pid = NEXT_PID;
 		self.state = Status::Run;
-		self.parent = parent;
+		self.parent = Some(Rc::from_raw(parent));
 		self.owner = parent.owner;
 		NEXT_PID += 1;
 	}
@@ -148,10 +148,8 @@ impl Process {
 	}
 
 	pub unsafe fn zombify(&mut self, wstatus: i32) {
-		if self.parent.is_null() {
-			todo!();
-		}
-		let parent: &mut Process = &mut *self.parent;
+		let mut binding = self.parent.clone().expect("Process has no parent");
+		let parent: &mut Process = Rc::get_mut(&mut binding).unwrap();
 		while self.childs.len() > 0 {
 			// TODO: DON'T MOVE THREADS AND REMOVE THEM
 			let res = self.childs.pop();
@@ -160,7 +158,9 @@ impl Process {
 			}
 			parent.childs.push(res.unwrap());
 			let len = parent.childs.len();
-			parent.childs[len - 1].get_mut().parent = self.parent;
+			let mut binding = parent.childs[len - 1].clone();
+			let process: &mut Process = Rc::get_mut(&mut binding).unwrap();
+			process.parent = Some(Rc::from_raw(parent));
 		}
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
 		self.state = Status::Zombie;
@@ -168,11 +168,10 @@ impl Process {
 	}
 
 	pub unsafe fn remove(&mut self) {
-		let parent: &mut Process = &mut *self.parent;
 		let mut i = 0;
+		let mut parent = self.parent.clone().expect("Process has no parent");
 		while i < parent.childs.len() {
-			let ptr: *const Process = parent.childs[i].as_ptr();
-			if ptr == &mut *self {
+			if Rc::as_ptr(&parent.childs[i]) == &mut *self {
 				break;
 			}
 			i += 1;
@@ -183,6 +182,7 @@ impl Process {
 		free_pages(self.stack.offset, self.stack.size / 0x1000);
 		free_pages(self.heap.offset, self.heap.size / 0x1000);
 		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
+		let parent: &mut Process = Rc::get_mut(&mut parent).unwrap();
 		parent.childs.remove(i);
 	}
 
@@ -218,7 +218,7 @@ impl Process {
 		Err(ErrNo::EAGAIN)
 	}
 
-	pub fn get_running_process() -> Rc<RefCell<Self>> {
+	pub fn get_running_process() -> Rc<Self> {
 		unsafe { Task::get_running_task().process.clone() }
 	}
 
@@ -226,7 +226,8 @@ impl Process {
 		pid: Id,
 		signal: SignalType
 	) -> Result<Signal, ErrNo> {
-		let process: &mut Process = Process::get_running_process().get_mut();
+		let mut binding = Process::get_running_process();
+		let process: &mut Process = Rc::get_mut(&mut binding).unwrap();
 		if pid == -1 {
 			process.get_signal(signal)
 		} else if pid > 0 {
@@ -239,7 +240,7 @@ impl Process {
 	}
 
 	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
-		let parent: &Process = &(*self.parent);
+		let parent: &Process = &(*self.parent.clone().expect("Process has no parent"));
 		let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory
 			.get_page_table(KERNEL_BASE >> 22)
 			.get_vaddr());

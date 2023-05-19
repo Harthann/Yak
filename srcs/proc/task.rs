@@ -28,7 +28,7 @@ pub enum TaskStatus {
 pub struct Task {
 	pub regs:    Registers,
 	pub state:   TaskStatus,
-	pub process: Rc<RefCell<Process>>
+	pub process: Rc<Process>
 }
 
 impl Task {
@@ -36,7 +36,7 @@ impl Task {
 		Self {
 			regs:    Registers::new(),
 			state:   TaskStatus::Running,
-			process: Rc::new(RefCell::new(Process::new()))
+			process: Rc::new(Process::new())
 		}
 	}
 
@@ -71,7 +71,7 @@ impl Task {
 			process.signals = Vec::with_capacity(8);
 			process.owner = 0;
 			NEXT_PID += 1;
-			let ref_counter = Rc::new(RefCell::new(process));
+			let ref_counter = Rc::new(process);
 
 			PROCESS_TREE.insert(NEXT_PID, ref_counter.clone());
 			task.process = ref_counter.clone();
@@ -85,7 +85,7 @@ impl Task {
 		let mut i = 0;
 		while i < len {
 			let task: &mut Task = Task::get_running_task();
-			if task.process.as_ptr() != &mut *process {
+			if Rc::as_ptr(&task.process) != &mut *process {
 				TASKLIST.push_back(TASKLIST.pop_front().unwrap());
 			} else {
 				TASKLIST.pop_front();
@@ -94,7 +94,7 @@ impl Task {
 		}
 	}
 
-	unsafe fn handle_signal(&mut self, handler: &mut SignalHandler) {
+	unsafe fn handle_signal(&mut self, handler: &SignalHandler) -> ! {
 		self.regs.esp -= core::mem::size_of::<Task>() as u32;
 		(self.regs.esp as *mut Registers).write(self.regs);
 		self.regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
@@ -109,27 +109,28 @@ impl Task {
 			in("eax") handler.handler);
 		self.regs.eip = wrapper_handler as u32;
 		_rst();
-		schedule_task();
+		schedule_task()
 	}
 
 	unsafe fn do_signal(&mut self) {
-		let process: &mut Process = self.process.get_mut();
-		let len = process.signals.len();
+		let len = self.process.signals.len();
 		for i in 0..len {
 			if self.state != TaskStatus::Uninterruptible
-				&& process.signals[i].sigtype == SignalType::SIGKILL
+				&& self.process.signals[i].sigtype == SignalType::SIGKILL
 			{
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
-				for handler in process.signal_handlers.iter_mut() {
+				let mut binding = self.process.clone();
+				let process = Rc::get_mut(&mut binding).unwrap();
+				for handler in process.signal_handlers.iter() {
 					if handler.signal == process.signals[i].sigtype as i32 {
 						process.signals.remove(i);
 						self.state = TaskStatus::Uninterruptible;
-						self.handle_signal(handler);
+						self.handle_signal(handler)
 					}
 				}
 			} else if self.state == TaskStatus::Interruptible
-				&& process.signals[i].sigtype == SignalType::SIGCHLD
+				&& self.process.signals[i].sigtype == SignalType::SIGCHLD
 			{
 				self.state = TaskStatus::Running;
 			}
@@ -241,17 +242,15 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
 	loop {
-		crate::kprintln!("strong_count: {}", Rc::strong_count(&Process::get_running_process()));
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?
-		if new_task.process.get_mut().signals.len() > 0 {
+		if new_task.process.signals.len() > 0 {
 			new_task.do_signal();
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
 			let task: Registers = new_task.regs;
-			let process = new_task.process.borrow_mut();
-			change_kernel_stack(process);
+			change_kernel_stack(&*new_task.process);
 			switch_task(&task);
 			// never goes there
 		}

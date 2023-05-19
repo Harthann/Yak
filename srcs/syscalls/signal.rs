@@ -18,7 +18,8 @@ use crate::vec::Vec;
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	// TODO: check signal validity
 	// TODO: Use map/hashmap instead
-	let process: &mut Process = Process::get_running_process().get_mut();
+	let mut binding = Process::get_running_process();
+	let process: &mut Process = Rc::get_mut(&mut binding).unwrap();
 	let handlers: &mut Vec<SignalHandler> = &mut process.signal_handlers;
 	for i in 0..handlers.len() {
 		if handlers[i].signal == signal {
@@ -46,7 +47,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				_sti();
 				return 0; // kill check for pid presence if signal is 0
 			}
-			let sender_pid = Process::get_running_process().get_mut().pid;
+			let sender_pid = Process::get_running_process().pid;
 			let res = get_signal_type(signal);
 			if res.is_err() {
 				_sti();
