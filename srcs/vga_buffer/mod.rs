@@ -237,6 +237,8 @@ fn panic(info: &PanicInfo) -> ! {
 	WRITER
 		.lock()
 		.chcolor(ColorCode::new(Color::White, Color::Black));
+	#[cfg(feature = "crash_on_panic")]
+	io::outb(0xf4, 0x11);
 	loop {}
 }
 
@@ -256,7 +258,7 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 pub fn _print(args: fmt::Arguments) {
-	unsafe { crate::dprintln!("{}", args) };
+	crate::dprintln!("{}", args);
 	WRITER.lock().write_fmt(args).unwrap();
 }
 
