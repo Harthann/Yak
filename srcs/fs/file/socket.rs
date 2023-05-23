@@ -1,6 +1,6 @@
 use super::FileOperation;
-use crate::fs::RawFileMemory;
 use crate::errno::ErrNo;
+use crate::fs::RawFileMemory;
 use crate::utils::arcm::Arcm;
 use core::cell::RefCell;
 
@@ -133,11 +133,12 @@ impl Socket {
 			Some(buffer) => {
 				let guard = &mut buffer[1].lock();
 				let writing = core::cmp::min(length, src.len());
-                let woffset = guard.offset;
-                // Currenlty panic if overflow, ideal scenario is to extend memory zone if we risk
-                // overflow
-				guard[woffset..woffset+writing].copy_from_slice(&src[0..writing]);
-                guard.offset += writing;
+				let woffset = guard.offset;
+				// Currenlty panic if overflow, ideal scenario is to extend memory zone if we risk
+				// overflow
+				guard[woffset..woffset + writing]
+					.copy_from_slice(&src[0..writing]);
+				guard.offset += writing;
 				Ok(writing)
 			},
 			None => {
@@ -262,11 +263,15 @@ mod test {
 		// When writing to first socket, data will go to it's buffer 1
 		// And to the buffer 0 of the other sockets
 		match sockets.0.buffer {
-			Some(buffers) => assert_eq!(input, &buffers[0].lock()[0..input.len()]),
+			Some(buffers) => {
+				assert_eq!(input, &buffers[0].lock()[0..input.len()])
+			},
 			None => panic!("Socket buffer improperly set")
 		};
 		match sockets.1.buffer {
-			Some(buffers) => assert_eq!(input, &buffers[1].lock()[0..input.len()]),
+			Some(buffers) => {
+				assert_eq!(input, &buffers[1].lock()[0..input.len()])
+			},
 			None => panic!("Socket buffer improperly set")
 		};
 	}
@@ -285,9 +290,9 @@ mod test {
 		.expect("Error creating sockets");
 		match sockets.1.buffer {
 			Some(buffers) => {
-                buffers[1].lock()[0..input.len()].copy_from_slice(&input);
-                buffers[1].lock().offset += input.len();
-            },
+				buffers[1].lock()[0..input.len()].copy_from_slice(&input);
+				buffers[1].lock().offset += input.len();
+			},
 			None => panic!("Socket buffer improperly set")
 		};
 		sockets
@@ -311,8 +316,9 @@ mod test {
 		.expect("Error creating sockets");
 		match sockets.0.buffer {
 			Some(buffers) => {
-				buffers[1].lock()[0..input.len()].copy_from_slice(&input.as_bytes());
-                buffers[1].lock().offset += input.len();
+				buffers[1].lock()[0..input.len()]
+					.copy_from_slice(&input.as_bytes());
+				buffers[1].lock().offset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};
@@ -338,8 +344,9 @@ mod test {
 		.expect("Error creating sockets");
 		match sockets.0.buffer {
 			Some(buffers) => {
-				buffers[1].lock()[0..input.len()].copy_from_slice(&input.as_bytes());
-                buffers[1].lock().offset += input.len();
+				buffers[1].lock()[0..input.len()]
+					.copy_from_slice(&input.as_bytes());
+				buffers[1].lock().offset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};

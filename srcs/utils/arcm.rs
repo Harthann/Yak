@@ -11,11 +11,9 @@ pub struct Arcm<T: ?Sized> {
 }
 
 impl<T> Clone for Arcm<T> {
-    fn clone(&self) -> Self {
-        Self {
-            arc: self.arc.clone()
-        }
-    }
+	fn clone(&self) -> Self {
+		Self { arc: self.arc.clone() }
+	}
 }
 impl<T> Arcm<T> {
 	/// Create a new Arcm by copying the data

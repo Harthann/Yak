@@ -1,7 +1,7 @@
 use crate::errno::ErrNo;
+use crate::memory::{MemoryZone, TypeZone};
 use crate::string::String;
 use crate::utils::arcm::Arcm;
-use crate::memory::{MemoryZone, TypeZone};
 
 pub mod socket;
 
@@ -11,17 +11,22 @@ pub trait FileOperation {
 }
 
 pub struct RawFileMemory {
-    pub buffer: MemoryZone,
-    pub offset: usize
+	pub buffer: MemoryZone,
+	pub offset: usize
 }
 
 impl RawFileMemory {
-    pub fn new() -> Self {
-        Self {
-            buffer: MemoryZone::init(TypeZone::Anon, 4096, crate::memory::WRITABLE, false),
-            offset: 0
-        }
-    }
+	pub fn new() -> Self {
+		Self {
+			buffer: MemoryZone::init(
+				TypeZone::Anon,
+				4096,
+				crate::memory::WRITABLE,
+				false
+			),
+			offset: 0
+		}
+	}
 }
 
 use core::ops::Deref;
