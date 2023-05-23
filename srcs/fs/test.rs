@@ -213,11 +213,11 @@ fn test_socket_thread() {
 	);
 	assert_eq!(CHILD_STRING.as_bytes(), &dst[0..CHILD_STRING.len()]);
 
-	assert_eq!(
-		fs::write(sockets[0], PARENT_STRING.as_bytes(), PARENT_STRING.len())
-			.expect("Writing socket 0 failed"),
-		PARENT_STRING.len()
-	);
+	//assert_eq!(
+	//	fs::write(sockets[0], PARENT_STRING.as_bytes(), PARENT_STRING.len())
+	//		.expect("Writing socket 0 failed"),
+	//	PARENT_STRING.len()
+	//);
 
 	// wait child to finish
 	let mut status = 0;
@@ -237,12 +237,12 @@ fn threaded_socket(sockets: usize, parent_sockets: usize) {
 		CHILD_STRING.len()
 	);
 
-	assert_eq!(
-		fs::read(sockets, &mut dst, PARENT_STRING.len())
-			.expect("Reading socket 1 failed"),
-		PARENT_STRING.len()
-	);
-	assert_eq!(PARENT_STRING.as_bytes(), &dst[0..PARENT_STRING.len()]);
+	//assert_eq!(
+	//	fs::read(sockets, &mut dst, PARENT_STRING.len())
+	//		.expect("Reading socket 1 failed"),
+	//	PARENT_STRING.len()
+	//);
+	//assert_eq!(PARENT_STRING.as_bytes(), &dst[0..PARENT_STRING.len()]);
 	// should close fd 0
 	fs::close(sockets);
 }

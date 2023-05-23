@@ -1,7 +1,7 @@
 use super::FileOperation;
+use crate::fs::RawFileMemory;
 use crate::errno::ErrNo;
 use crate::utils::arcm::Arcm;
-use crate::vec::Vec;
 use core::cell::RefCell;
 
 /// Represent the different domains of a socket.
@@ -50,7 +50,7 @@ pub struct Socket {
 	protocol: SocketProtocol,
 	roffset:  RefCell<usize>, // needed for interior mutability in read
 	woffset:  usize,
-	buffer:   Option<[Arcm<Vec<u8>>; 2]>,
+	buffer:   Option<[Arcm<RawFileMemory>; 2]>,
 	endpoint: usize
 }
 
@@ -107,12 +107,12 @@ impl Socket {
 				// If nobody is writing to buffer this causes a deadlock
 				// for later use woffset to know how much as been written and not lock waiting
 				// input
-				while buffer[0].lock().len() < *roffset + reading {
+				while buffer[0].lock().offset < *roffset + reading {
 					unsafe { hlt!() };
 				}
 				let guard = &mut buffer[0].lock();
 				dst[0..reading].copy_from_slice(
-					&guard.as_slice()[*roffset..*roffset + reading]
+					&guard.to_slice()[*roffset..*roffset + reading]
 				);
 				*roffset += reading;
 				// panic if overflow?
@@ -133,10 +133,11 @@ impl Socket {
 			Some(buffer) => {
 				let guard = &mut buffer[1].lock();
 				let writing = core::cmp::min(length, src.len());
-				// Need to store offset of writing if no vector are used
-				// and access the array from this store offset
-				guard.extend_from_slice(&src[0..writing]);
-				self.woffset += writing;
+                let woffset = guard.offset;
+                // Currenlty panic if overflow, ideal scenario is to extend memory zone if we risk
+                // overflow
+				guard[woffset..woffset+writing].copy_from_slice(&src[0..writing]);
+                guard.offset += writing;
 				Ok(writing)
 			},
 			None => {
@@ -192,8 +193,8 @@ pub fn create_socket_pair(
 ) -> Result<(Socket, Socket), ErrNo> {
 	let mut first_socket = Socket::new(domain, stype, protocol);
 	let mut second_socket = Socket::new(domain, stype, protocol);
-	let buffer1: Arcm<Vec<u8>> = Arcm::default();
-	let buffer2: Arcm<Vec<u8>> = Arcm::default();
+	let buffer1: Arcm<RawFileMemory> = Arcm::new(RawFileMemory::new());
+	let buffer2: Arcm<RawFileMemory> = Arcm::new(RawFileMemory::new());
 
 	// Clone the reference to our buffers. Index 0 will be readed, index 1 will be writed to
 	second_socket.buffer = Some([buffer1.clone(), buffer2.clone()]);
@@ -231,13 +232,13 @@ mod test {
 		// And to the buffer 0 of the other sockets
 		match sockets.1.buffer {
 			Some(buffers) => {
-				assert_eq!(input.as_bytes(), buffers[0].lock().as_slice())
+				assert_eq!(input.as_bytes(), &buffers[0].lock()[0..input.len()])
 			},
 			None => panic!("Socket buffer improperly set")
 		};
 		match sockets.0.buffer {
 			Some(buffers) => {
-				assert_eq!(input.as_bytes(), buffers[1].lock().as_slice())
+				assert_eq!(input.as_bytes(), &buffers[1].lock()[0..input.len()])
 			},
 			None => panic!("Socket buffer improperly set")
 		};
@@ -261,11 +262,11 @@ mod test {
 		// When writing to first socket, data will go to it's buffer 1
 		// And to the buffer 0 of the other sockets
 		match sockets.0.buffer {
-			Some(buffers) => assert_eq!(input, buffers[0].lock().as_slice()),
+			Some(buffers) => assert_eq!(input, &buffers[0].lock()[0..input.len()]),
 			None => panic!("Socket buffer improperly set")
 		};
 		match sockets.1.buffer {
-			Some(buffers) => assert_eq!(input, buffers[1].lock().as_slice()),
+			Some(buffers) => assert_eq!(input, &buffers[1].lock()[0..input.len()]),
 			None => panic!("Socket buffer improperly set")
 		};
 	}
@@ -283,7 +284,10 @@ mod test {
 		)
 		.expect("Error creating sockets");
 		match sockets.1.buffer {
-			Some(buffers) => buffers[1].lock().extend_from_slice(&input),
+			Some(buffers) => {
+                buffers[1].lock()[0..input.len()].copy_from_slice(&input);
+                buffers[1].lock().offset += input.len();
+            },
 			None => panic!("Socket buffer improperly set")
 		};
 		sockets
@@ -307,7 +311,8 @@ mod test {
 		.expect("Error creating sockets");
 		match sockets.0.buffer {
 			Some(buffers) => {
-				buffers[1].lock().extend_from_slice(&input.as_bytes())
+				buffers[1].lock()[0..input.len()].copy_from_slice(&input.as_bytes());
+                buffers[1].lock().offset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};
@@ -333,7 +338,8 @@ mod test {
 		.expect("Error creating sockets");
 		match sockets.0.buffer {
 			Some(buffers) => {
-				buffers[1].lock().extend_from_slice(&input.as_bytes())
+				buffers[1].lock()[0..input.len()].copy_from_slice(&input.as_bytes());
+                buffers[1].lock().offset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};
