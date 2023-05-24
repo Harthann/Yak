@@ -1,5 +1,8 @@
 use crate::memory::{MemoryZone, TypeZone};
+use crate::memory::paging::bitmap::PAGE_SIZE;
 
+/// Base representation of a file in Memory
+/// Currently doesn't implement FileOperation but it probably should
 pub struct RawFileMemory {
 	pub buffer: MemoryZone,
 	pub woffset: usize,
@@ -7,11 +10,12 @@ pub struct RawFileMemory {
 }
 
 impl RawFileMemory {
+    /// Create a default Anonymous file with 1 PAGE of memory
 	pub fn new() -> Self {
 		Self {
 			buffer: MemoryZone::init(
 				TypeZone::Anon,
-				4096,
+				PAGE_SIZE,
 				crate::memory::WRITABLE,
 				false
 			),
@@ -35,5 +39,4 @@ impl DerefMut for RawFileMemory {
 		&mut self.buffer
 	}
 }
-
 

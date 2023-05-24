@@ -100,8 +100,7 @@ impl Socket {
 			Some(buffer) => {
 				let reading = core::cmp::min(dst.len(), length);
 				// If nobody is writing to buffer this causes a deadlock
-				// for later use woffset to know how much as been written and not lock waiting
-				// input
+				// Current strategy is to lock until there's enough bytes.
                 let roffset = buffer[0].lock().roffset;
 				while buffer[0].lock().woffset < roffset + reading {
 					unsafe { hlt!() };

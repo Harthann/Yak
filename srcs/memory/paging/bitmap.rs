@@ -4,7 +4,7 @@ type Sector = u8;
 
 // Hardcoded value corresponding to our paging maximum memory
 const MAX_MEM: u64 = 1024 * 1024 * 4096;
-const PAGE_SIZE: usize = 4096;
+pub const PAGE_SIZE: usize = 4096;
 const SECTOR_SIZE: usize = PAGE_SIZE * 8;
 const SECTOR_NUMBER: usize = (MAX_MEM / SECTOR_SIZE as u64) as usize;
 
