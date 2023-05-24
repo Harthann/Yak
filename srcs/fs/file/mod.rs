@@ -1,47 +1,13 @@
 use crate::errno::ErrNo;
-use crate::memory::{MemoryZone, TypeZone};
 use crate::string::String;
 use crate::utils::arcm::Arcm;
 
 pub mod socket;
+mod raw;
 
 pub trait FileOperation {
 	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo>;
 	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo>;
-}
-
-pub struct RawFileMemory {
-	pub buffer: MemoryZone,
-	pub offset: usize
-}
-
-impl RawFileMemory {
-	pub fn new() -> Self {
-		Self {
-			buffer: MemoryZone::init(
-				TypeZone::Anon,
-				4096,
-				crate::memory::WRITABLE,
-				false
-			),
-			offset: 0
-		}
-	}
-}
-
-use core::ops::Deref;
-impl Deref for RawFileMemory {
-	type Target = MemoryZone;
-	fn deref(&self) -> &Self::Target {
-		&self.buffer
-	}
-}
-
-use core::ops::DerefMut;
-impl DerefMut for RawFileMemory {
-	fn deref_mut(&mut self) -> &mut MemoryZone {
-		&mut self.buffer
-	}
 }
 
 /// Contains all file information.

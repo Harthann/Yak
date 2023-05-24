@@ -1,6 +1,6 @@
 use super::FileOperation;
 use crate::errno::ErrNo;
-use crate::fs::RawFileMemory;
+use super::raw::RawFileMemory;
 use crate::utils::arcm::Arcm;
 use core::cell::RefCell;
 
@@ -48,8 +48,6 @@ pub struct Socket {
 	domain:   SocketDomain,
 	stype:    SocketType,
 	protocol: SocketProtocol,
-	roffset:  RefCell<usize>, // needed for interior mutability in read
-	woffset:  usize,
 	buffer:   Option<[Arcm<RawFileMemory>; 2]>,
 	endpoint: usize
 }
@@ -65,8 +63,6 @@ impl Socket {
 			domain,
 			stype,
 			protocol,
-			roffset: RefCell::new(0),
-			woffset: 0,
 			buffer: None,
 			endpoint: 0
 		}
@@ -86,9 +82,9 @@ impl FileOperation for Socket {
 	/// Redirect to the write appropriate to the socket type
 	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 		match self.stype {
-			SocketType::SOCK_RAW => self.raw_write(src, length),
+			SocketType::SOCK_RAW    => self.raw_write(src, length),
 			SocketType::SOCK_STREAM => self.stream_write(src, length),
-			SocketType::SOCK_DGRAM => self.dgram_write(src, length)
+			SocketType::SOCK_DGRAM  => self.dgram_write(src, length)
 		}
 	}
 }
@@ -102,19 +98,19 @@ impl Socket {
 	) -> Result<usize, ErrNo> {
 		match &self.buffer {
 			Some(buffer) => {
-				let mut roffset = self.roffset.borrow_mut();
 				let reading = core::cmp::min(dst.len(), length);
 				// If nobody is writing to buffer this causes a deadlock
 				// for later use woffset to know how much as been written and not lock waiting
 				// input
-				while buffer[0].lock().offset < *roffset + reading {
+                let roffset = buffer[0].lock().roffset;
+				while buffer[0].lock().woffset < roffset + reading {
 					unsafe { hlt!() };
 				}
 				let guard = &mut buffer[0].lock();
 				dst[0..reading].copy_from_slice(
-					&guard.to_slice()[*roffset..*roffset + reading]
+					&guard.to_slice()[roffset..roffset + reading]
 				);
-				*roffset += reading;
+				guard.roffset += reading;
 				// panic if overflow?
 				Ok(reading)
 			},
@@ -133,12 +129,12 @@ impl Socket {
 			Some(buffer) => {
 				let guard = &mut buffer[1].lock();
 				let writing = core::cmp::min(length, src.len());
-				let woffset = guard.offset;
+				let woffset = guard.woffset;
 				// Currenlty panic if overflow, ideal scenario is to extend memory zone if we risk
 				// overflow
 				guard[woffset..woffset + writing]
 					.copy_from_slice(&src[0..writing]);
-				guard.offset += writing;
+				guard.woffset += writing;
 				Ok(writing)
 			},
 			None => {
@@ -291,7 +287,7 @@ mod test {
 		match sockets.1.buffer {
 			Some(buffers) => {
 				buffers[1].lock()[0..input.len()].copy_from_slice(&input);
-				buffers[1].lock().offset += input.len();
+				buffers[1].lock().woffset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};
@@ -318,7 +314,7 @@ mod test {
 			Some(buffers) => {
 				buffers[1].lock()[0..input.len()]
 					.copy_from_slice(&input.as_bytes());
-				buffers[1].lock().offset += input.len();
+				buffers[1].lock().woffset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};
@@ -346,7 +342,7 @@ mod test {
 			Some(buffers) => {
 				buffers[1].lock()[0..input.len()]
 					.copy_from_slice(&input.as_bytes());
-				buffers[1].lock().offset += input.len();
+				buffers[1].lock().woffset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
 		};
