@@ -2,8 +2,8 @@ use crate::errno::ErrNo;
 use crate::string::String;
 use crate::utils::arcm::Arcm;
 
-pub mod socket;
 mod raw;
+pub mod socket;
 
 pub trait FileOperation {
 	fn read(&self, dst: &mut [u8], length: usize) -> Result<usize, ErrNo>;

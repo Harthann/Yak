@@ -1,6 +1,6 @@
+use super::raw::RawFileMemory;
 use super::FileOperation;
 use crate::errno::ErrNo;
-use super::raw::RawFileMemory;
 use crate::utils::arcm::Arcm;
 use core::cell::RefCell;
 
@@ -59,13 +59,7 @@ impl Socket {
 		stype: SocketType,
 		protocol: SocketProtocol
 	) -> Self {
-		Self {
-			domain,
-			stype,
-			protocol,
-			buffer: None,
-			endpoint: 0
-		}
+		Self { domain, stype, protocol, buffer: None, endpoint: 0 }
 	}
 }
 
@@ -82,9 +76,9 @@ impl FileOperation for Socket {
 	/// Redirect to the write appropriate to the socket type
 	fn write(&mut self, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 		match self.stype {
-			SocketType::SOCK_RAW    => self.raw_write(src, length),
+			SocketType::SOCK_RAW => self.raw_write(src, length),
 			SocketType::SOCK_STREAM => self.stream_write(src, length),
-			SocketType::SOCK_DGRAM  => self.dgram_write(src, length)
+			SocketType::SOCK_DGRAM => self.dgram_write(src, length)
 		}
 	}
 }
@@ -101,7 +95,7 @@ impl Socket {
 				let reading = core::cmp::min(dst.len(), length);
 				// If nobody is writing to buffer this causes a deadlock
 				// Current strategy is to lock until there's enough bytes.
-                let roffset = buffer[0].lock().roffset;
+				let roffset = buffer[0].lock().roffset;
 				while buffer[0].lock().woffset < roffset + reading {
 					unsafe { hlt!() };
 				}
