@@ -53,6 +53,7 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.int_no = u32::MAX; // trigger for switch_task
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 		new_task.regs.eax = 0; // New forked process return 0
+		process.test = true;
 
 		TASKLIST.push_back(new_task);
 		_sti();
