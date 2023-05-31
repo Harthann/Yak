@@ -68,9 +68,7 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 	/// out of scope, mutex will be unlocked
 	pub fn lock(&self) -> MutexGuard<T, INT> {
 		#[cfg(feature = "mutex_debug")]
-		unsafe {
-			crate::dprintln!("{:?}", self)
-		};
+		crate::dprintln!("{:?}", self);
 		self.obtain_lock();
 		MutexGuard { lock: &self.lock, data: unsafe { &mut *self.data.get() } }
 	}
