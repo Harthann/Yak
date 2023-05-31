@@ -1,5 +1,3 @@
-use core::borrow::BorrowMut;
-
 use crate::interrupts::Registers;
 use crate::memory::paging::page_directory;
 use crate::memory::{Heap, MemoryZone, Stack, VirtAddr};
@@ -12,8 +10,7 @@ use crate::wrappers::{_cli, _rst};
 use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
-use core::cell::RefCell;
-use crate::alloc::rc::Rc;
+use crate::utils::arcm::KArcm;
 use crate::alloc::collections::vec_deque::VecDeque;
 
 pub static mut TASKLIST: VecDeque<Task> = VecDeque::new();
@@ -28,7 +25,7 @@ pub enum TaskStatus {
 pub struct Task {
 	pub regs:    Registers,
 	pub state:   TaskStatus,
-	pub process: Rc<Process>
+	pub process: KArcm<Process>
 }
 
 impl Task {
@@ -36,7 +33,7 @@ impl Task {
 		Self {
 			regs:    Registers::new(),
 			state:   TaskStatus::Running,
-			process: Rc::new(Process::new())
+			process: KArcm::new(Process::new())
 		}
 	}
 
@@ -58,11 +55,9 @@ impl Task {
 					PAGE_WRITABLE
 				)
 				.expect("Could not claim kernel stack page");
-			change_kernel_stack(&process);
-			crate::kprintln!("lol");
 			process.stack = <MemoryZone as Stack>::init_addr(
 				stack_addr,
-				0x1000,
+				2 * 0x1000,
 				PAGE_WRITABLE,
 				false
 			);
@@ -70,22 +65,25 @@ impl Task {
 			process.childs = Vec::with_capacity(8);
 			process.signals = Vec::with_capacity(8);
 			process.owner = 0;
-			NEXT_PID += 1;
-			let ref_counter = Rc::new(process);
 
-			PROCESS_TREE.insert(NEXT_PID, ref_counter.clone());
-			task.process = ref_counter.clone();
+			task.process = KArcm::new(process);
+			PROCESS_TREE.insert(NEXT_PID, task.process.clone());
+			task.process.execute(|mutex| {
+				let process = &mutex.lock();
+				change_kernel_stack(process);
+			});
 
 			TASKLIST.push_back(task);
+			NEXT_PID += 1;
 		}
 	}
 
-	pub unsafe fn remove_task_from_process(process: &mut Process) {
+	pub unsafe fn remove_task_from_process(process: &Process) {
 		let len = TASKLIST.len();
 		let mut i = 0;
 		while i < len {
 			let task: &mut Task = Task::get_running_task();
-			if Rc::as_ptr(&task.process) != &mut *process {
+			if task.process.lock().pid == process.pid {
 				TASKLIST.push_back(TASKLIST.pop_front().unwrap());
 			} else {
 				TASKLIST.pop_front();
@@ -94,43 +92,41 @@ impl Task {
 		}
 	}
 
-	unsafe fn handle_signal(&mut self, handler: &SignalHandler) -> ! {
-		self.regs.esp -= core::mem::size_of::<Task>() as u32;
-		(self.regs.esp as *mut Registers).write(self.regs);
-		self.regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
+	unsafe fn handle_signal(regs: &mut Registers, handler: &SignalHandler) -> ! {
+		regs.esp -= core::mem::size_of::<Task>() as u32;
+		(regs.esp as *mut Registers).write(*regs);
+		regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
 		 // Setup args (int signal) and handler call
-		self.regs.esp -= 4;
+		regs.esp -= 4;
 		core::arch::asm!("mov [{esp}], eax",
-			esp = in(reg) self.regs.esp,
+			esp = in(reg) regs.esp,
 			in("eax") handler.signal);
-		self.regs.esp -= 4;
+		regs.esp -= 4;
 		core::arch::asm!("mov [{esp}], eax",
-			esp = in(reg) self.regs.esp,
+			esp = in(reg) regs.esp,
 			in("eax") handler.handler);
-		self.regs.eip = wrapper_handler as u32;
+		regs.eip = wrapper_handler as u32;
 		_rst();
 		schedule_task()
 	}
 
 	unsafe fn do_signal(&mut self) {
-		let len = self.process.signals.len();
+		let len = self.process.lock().signals.len();
 		for i in 0..len {
 			if self.state != TaskStatus::Uninterruptible
-				&& self.process.signals[i].sigtype == SignalType::SIGKILL
+				&& self.process.lock().signals[i].sigtype == SignalType::SIGKILL
 			{
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
-				let mut binding = self.process.clone();
-				let process = Rc::get_mut(&mut binding).unwrap();
-				for handler in process.signal_handlers.iter() {
-					if handler.signal == process.signals[i].sigtype as i32 {
-						process.signals.remove(i);
+				for handler in self.process.lock().signal_handlers.iter() {
+					if handler.signal == self.process.lock().signals[i].sigtype as i32 {
+						self.process.lock().signals.remove(i);
 						self.state = TaskStatus::Uninterruptible;
-						self.handle_signal(handler)
+						Task::handle_signal(&mut self.regs, handler)
 					}
 				}
 			} else if self.state == TaskStatus::Interruptible
-				&& self.process.signals[i].sigtype == SignalType::SIGCHLD
+				&& self.process.lock().signals[i].sigtype == SignalType::SIGCHLD
 			{
 				self.state = TaskStatus::Running;
 			}
@@ -244,14 +240,17 @@ unsafe extern "C" fn find_task() -> ! {
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?
-		if new_task.process.signals.len() > 0 {
+		if new_task.process.lock().signals.len() > 0 {
 			new_task.do_signal();
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
-			let task: Registers = new_task.regs;
-			change_kernel_stack(&*new_task.process);
-			switch_task(&task);
+			let new_regs: Registers = new_task.regs;
+			new_task.process.execute(|mutex| {
+				let process = &mutex.lock();
+				change_kernel_stack(process);
+			});
+			switch_task(&new_regs);
 			// never goes there
 		}
 		TASKLIST.push_back(TASKLIST.pop_front().unwrap());

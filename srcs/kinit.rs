@@ -4,7 +4,6 @@
 #![feature(lang_items)]
 #![feature(c_variadic)]
 #![feature(asm_const)]
-#![feature(get_mut_unchecked)]
 #![feature(alloc_error_handler)]
 #![feature(unsize)]
 #![feature(coerce_unsized)]

@@ -1,10 +1,9 @@
 //! Processus, Tasks and Signals
 
 use crate::vec::Vec;
+use crate::utils::arcm::KArcm;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
-use core::cell::RefCell;
-use crate::alloc::rc::Rc;
 use alloc::sync::Arc;
 
 use crate::memory::paging::PAGE_WRITABLE;
@@ -28,9 +27,8 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	let mut task: Task = TASKLIST.pop_front().unwrap();
-	let process: &mut Process = Rc::get_mut(&mut task.process).unwrap();
-	process.zombify(__W_EXITCODE!(status as i32, 0));
+	let task: Task = TASKLIST.pop_front().unwrap();
+	task.process.lock().zombify(__W_EXITCODE!(status as i32, 0));
 	_rst();
 	schedule_task();
 	// Never goes there
@@ -59,12 +57,13 @@ pub unsafe extern "C" fn exec_fn(
 ) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let mut binding = Process::get_running_process();
-	let mut parent = Rc::get_mut(&mut binding).unwrap();
-
+	let binding = Process::get_running_process();
 	let mut process = Process::new();
 	let mut new_task: Task = Task::new();
-	process.init(&mut parent);
+
+	process.init(&binding);
+	let mut parent = binding.lock();
+
 	let pid = process.pid;
 	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
@@ -117,11 +116,9 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.cr3 = running_task.regs.cr3;
 	new_task.regs.ds = running_task.regs.ds;
 
-	let ref_counter = Rc::new(process);
-
-	PROCESS_TREE.insert(pid, ref_counter.clone());
-	parent.childs.push(ref_counter.clone());
-	new_task.process = ref_counter.clone();
+	new_task.process = KArcm::new(process);
+	PROCESS_TREE.insert(pid, new_task.process.clone());
+	parent.childs.push(new_task.process.clone());
 
 	TASKLIST.push_back(new_task);
 	_sti();

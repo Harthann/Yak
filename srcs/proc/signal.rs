@@ -101,10 +101,9 @@ impl Signal {
 		sigtype: SignalType,
 		wstatus: i32
 	) -> Result<Id, ErrNo> {
-		unsafe {
-			let process: &mut Process = Process::search_from_pid(pid)?;
-			Self::send_to_process(process, sender_pid, sigtype, wstatus);
-		}
+		let binding = Process::search_from_pid(pid)?;
+		let mut process = binding.lock();
+		Self::send_to_process(&mut *process, sender_pid, sigtype, wstatus);
 		Ok(pid)
 	}
 

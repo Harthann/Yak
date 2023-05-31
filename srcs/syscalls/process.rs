@@ -1,12 +1,11 @@
 use crate::proc::process::{PROCESS_TREE, Pid, Process};
 use crate::proc::task::{Task, TASKLIST};
 
+use crate::utils::arcm::KArcm;
+
 use crate::memory::paging::page_directory::PageDirectory;
 
 use crate::wrappers::{_cli, _sti};
-
-use core::cell::RefCell;
-use crate::alloc::rc::Rc;
 
 // kernel fork:
 // same cr3:
@@ -25,12 +24,13 @@ pub fn sys_fork() -> Pid {
 	unsafe {
 		_cli();
 		let running_task: &mut Task = Task::get_running_task();
-		let mut binding = Process::get_running_process();
-		let parent: &mut Process = Rc::get_mut(&mut binding).unwrap();
-
+		let binding = Process::get_running_process();
 		let mut process: Process = Process::new();
 		let mut new_task: Task = Task::new();
-		process.init(parent);
+
+		process.init(&binding);
+		let mut parent = binding.lock();
+
 		let pid = process.pid;
 		process.setup_kernel_stack(parent.kernel_stack.flags);
 		process.setup_stack(
@@ -43,7 +43,7 @@ pub fn sys_fork() -> Pid {
 			parent.heap.flags,
 			parent.heap.kphys
 		);
-		process.copy_mem(parent);
+		process.copy_mem(&mut *parent);
 
 		let page_dir: &mut PageDirectory = process.setup_pagination();
 
@@ -52,11 +52,9 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 		new_task.regs.eax = 0; // New forked process return 0
 
-		let ref_counter = Rc::new(process);
-
-		PROCESS_TREE.insert(pid, ref_counter.clone());
-		parent.childs.push(ref_counter.clone());
-		new_task.process = ref_counter.clone();
+		new_task.process = KArcm::new(process);
+		PROCESS_TREE.insert(pid, new_task.process.clone());
+		parent.childs.push(new_task.process.clone());
 
 		TASKLIST.push_back(new_task);
 		_sti();
