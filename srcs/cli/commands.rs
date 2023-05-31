@@ -70,7 +70,7 @@ fn memtrack(command: Vec<String>) {
 			);
 		},
 		_ => crate::kprintln!("Invalid argument")
-    }
+	}
 }
 
 fn pmap(command: Vec<String>) {

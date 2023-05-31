@@ -1,6 +1,6 @@
+use crate::syscalls::exit::sys_waitpid;
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
-use crate::syscalls::exit::sys_waitpid;
 use crate::{kprint, kprintln, string};
 
 mod poc {
