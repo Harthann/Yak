@@ -1,20 +1,7 @@
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
-use crate::wrappers::{cli, hlt, sti};
-use crate::{kprint, kprintln, string};
-
-// Temporary sleep function until a proper sleep is implemented and teste
-pub fn sleep(microseconds: usize) {
-	unsafe {
-		let tmp = crate::pic::JIFFIES;
-		while crate::pic::JIFFIES < tmp + microseconds {
-			sti!();
-			hlt!();
-			cli!();
-		}
-	}
-}
 use crate::syscalls::exit::sys_waitpid;
+use crate::{kprint, kprintln, string};
 
 mod poc {
 	use sys_macros::Poc;
@@ -62,6 +49,6 @@ pub extern "C" fn kmain() -> ! {
 		let pid = unsafe { crate::exec_fn!(crate::cli::cli) };
 		let mut status = 0;
 		sys_waitpid(pid, &mut status, 0);
-		unsafe { crate::dprintln!("Term has been killed") };
+		crate::dprintln!("Term has been killed");
 	}
 }

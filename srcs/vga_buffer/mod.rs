@@ -245,14 +245,14 @@ macro_rules! kprintln {
 #[cfg(not(test))]
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-	unsafe {
-		crate::dprintln!("{}", info);
-	}
+	crate::dprintln!("{}", info);
 	WRITER
 		.lock()
 		.chcolor(ColorCode::new(Color::Red, Color::Black));
 	kprintln!("{}", info);
 	WRITER.lock().chcolor(ColorCode::default());
+	#[cfg(feature = "crash_on_panic")]
+	io::outb(0xf4, 0x11);
 	loop {}
 }
 
@@ -270,7 +270,7 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 pub fn _print(args: fmt::Arguments) {
-	unsafe { crate::dprintln!("{}", args) };
+	crate::dprintln!("{}", args);
 	WRITER.lock().write_fmt(args).unwrap();
 }
 

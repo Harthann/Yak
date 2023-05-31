@@ -10,7 +10,7 @@ pub mod signal;
 pub mod timer;
 
 use exit::{sys_exit, sys_wait4, sys_waitpid};
-use mmap::{sys_mmap, sys_munmap};
+use mmap::{mmap, sys_munmap};
 use process::sys_fork;
 use signal::{sys_kill, sys_signal};
 use timer::{sys_getpid, sys_getppid, sys_getuid};
@@ -42,7 +42,7 @@ pub fn syscall_handler(reg: &mut Registers) {
 			reg.eax = sys_getppid() as u32
 		},
 		_ if reg.eax == Syscall::getppid as u32 => {
-			reg.eax = sys_mmap(
+			reg.eax = mmap(
 				reg.ebx as _,
 				reg.ecx as _,
 				reg.edx as _,

@@ -10,7 +10,7 @@ use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
 
-const NB_CMDS: usize = 15;
+const NB_CMDS: usize = 16;
 const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
@@ -28,11 +28,12 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	date,
 	play,
 	memtrack,
+	pmap,
 	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "memtrack", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "memtrack", "pmap", "kill"
 ];
 
 pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
@@ -69,6 +70,49 @@ fn memtrack(command: Vec<String>) {
 			);
 		},
 		_ => crate::kprintln!("Invalid argument")
+    }
+}
+
+fn pmap(command: Vec<String>) {
+	let pid: Pid;
+
+	if command.len() != 2 {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: pmap [pid]");
+		return;
+	}
+	if let Some(res) = atou(command[1].as_str()) {
+		pid = res as Pid;
+	} else {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: pmap [pid]");
+		return;
+	}
+
+	use crate::proc::process::MASTER_PROCESS;
+	unsafe {
+		crate::wrappers::_cli();
+		// Send to a specific process
+		let res = MASTER_PROCESS.search_from_pid(pid);
+		if res.is_err() {
+			crate::wrappers::_sti();
+			return;
+		}
+		let process: &mut Process = res.unwrap();
+		let mut used_size: usize = 0;
+		crate::kprintln!("{}:", pid);
+		crate::kprintln!("{}", process.heap);
+		used_size += process.heap.size;
+		crate::kprintln!("{}", process.stack);
+		used_size += process.stack.size;
+		crate::kprintln!("{}", process.kernel_stack);
+		used_size += process.kernel_stack.size;
+		for i in &process.mem_map {
+			let guard = i.lock();
+			crate::kprintln!("{}", *guard);
+			used_size += guard.size;
+		}
+		crate::kprintln!(" total: {:#x}", used_size);
 	}
 }
 
@@ -113,20 +157,16 @@ fn play(command: Vec<String>) {
 }
 
 fn jiffies(_: Vec<String>) {
-	unsafe {
-		crate::kprintln!("Jiffies: {}", crate::pic::JIFFIES);
-	}
+	crate::kprintln!("Jiffies: {}", crate::time::jiffies());
 }
 
 fn uptime(_: Vec<String>) {
-	unsafe {
-		crate::pic::pit::TIME_ELAPSED =
-			crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION;
-		let second = (crate::pic::pit::TIME_ELAPSED / 1000.0) as u64;
-		let ms =
-			((crate::pic::pit::TIME_ELAPSED - second as f64) * 1000.0) as u64;
-		crate::kprintln!("Time elapsed since boot: {}s {}ms", second, ms);
-	}
+	let time = crate::time::get_timestamp();
+	crate::kprintln!(
+		"Time elapsed since boot: {}s {}ms",
+		time.second,
+		time.millisecond
+	);
 }
 
 fn date(_: Vec<String>) {

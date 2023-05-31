@@ -35,7 +35,7 @@ macro_rules! dprintln {
 	() => ($crate::dprint!("\n"));
 	($($arg:tt)*) => (
 		$crate::dprint!("[{: >12.6}] {}\n",
-                        crate::pic::JIFFIES as f64 * crate::pic::pit::SYSTEM_FRACTION / 1000.0,
+                        crate::time::get_timestamp().as_f64(),
                         format_args!($($arg)*))
 	)
 }

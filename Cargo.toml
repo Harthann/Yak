@@ -30,7 +30,9 @@ default = ["multitasking", "debug_features"]
 multitasking = []
 
 # List all debug features you want to enable
-debug_features = ["mutex_debug"]
+debug_features = ["crash_on_panic"]
 
 mutex_debug = []
 alloc_debug = []
+
+crash_on_panic = []
