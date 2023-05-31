@@ -1,12 +1,16 @@
 use crate::interrupts::Registers;
 use crate::pic::PIC1_IRQ_OFFSET;
-use crate::vga_buffer;
 
 #[allow(unused)]
 pub fn handler(reg: &Registers, int_no: usize) {
 	if crate::keyboard::keyboard_event() {
-		let charcode = crate::keyboard::handle_event();
-		vga_buffer::clihandle!(charcode);
+		if let Some(event) = crate::keyboard::handle_event() {
+			match &mut *crate::cli::INPUT_BUFFER.lock() {
+				Some(buffer) => buffer.push(event),
+				None => {}
+			}
+		}
+		// vga_buffer::clihandle!(charcode);
 	}
 	crate::pic::end_of_interrupts(int_no - PIC1_IRQ_OFFSET as usize);
 }
