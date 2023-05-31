@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["align_down","align_up"],"mod":["bump","kglobal","linked_list"],"struct":["AllocError"],"trait":["Allocator","AllocatorInit"]};
+window.SIDEBAR_ITEMS = {"fn":["align_down","align_up"],"mod":["bump","global","kglobal","linked_list"],"struct":["AllocError"],"trait":["Allocator","AllocatorInit"]};

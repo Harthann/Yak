@@ -1,1 +1,0 @@
-window.SIDEBAR_ITEMS = {"constant":["KNOWN_CMD","MAX_CMD_LENGTH","NB_CMDS"],"fn":["atou","clear","command_entry","date","halt","help","hexdump_parser","hextou","interrupt","jiffies","keymap","kill","memtrack","play","pmap","ps","reboot","shutdown","uptime"],"static":["COMMANDS"],"struct":["Command"]};
