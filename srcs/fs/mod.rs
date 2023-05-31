@@ -19,7 +19,6 @@ pub use file::*;
 
 // Contain all file system. This will be probably converted to a BST or something like that
 // FileInfo will have to contain permission, file type information etc etc
-
 static SYSFILES: KMutex<Vec<Arc<FileInfo>>> = KMutex::new(Vec::new());
 
 /// Take information on a file and add it to SYSFILES if it does not exist
