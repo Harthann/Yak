@@ -298,7 +298,7 @@
 
 <span class="comment">// Hardcoded value corresponding to our paging maximum memory
 </span><span class="kw">const </span>MAX_MEM: u64 = <span class="number">1024 </span>* <span class="number">1024 </span>* <span class="number">4096</span>;
-<span class="kw">const </span>PAGE_SIZE: usize = <span class="number">4096</span>;
+<span class="kw">pub const </span>PAGE_SIZE: usize = <span class="number">4096</span>;
 <span class="kw">const </span>SECTOR_SIZE: usize = PAGE_SIZE * <span class="number">8</span>;
 <span class="kw">const </span>SECTOR_NUMBER: usize = (MAX_MEM / SECTOR_SIZE <span class="kw">as </span>u64) <span class="kw">as </span>usize;
 

@@ -381,10 +381,12 @@
 <a href="#381" id="381">381</a>
 <a href="#382" id="382">382</a>
 <a href="#383" id="383">383</a>
-</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::FileOperation;
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+</pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::raw::RawFileMemory;
+<span class="kw">use </span><span class="kw">super</span>::FileOperation;
 <span class="kw">use </span><span class="kw">crate</span>::errno::ErrNo;
 <span class="kw">use </span><span class="kw">crate</span>::utils::arcm::Arcm;
-<span class="kw">use </span><span class="kw">crate</span>::vec::Vec;
 <span class="kw">use </span>core::cell::RefCell;
 
 <span class="doccomment">/// Represent the different domains of a socket.
@@ -431,9 +433,7 @@
 	domain:   SocketDomain,
 	stype:    SocketType,
 	protocol: SocketProtocol,
-	roffset:  RefCell&lt;usize&gt;, <span class="comment">// needed for interior mutability in read
-	</span>woffset:  usize,
-	buffer:   <span class="prelude-ty">Option</span>&lt;[Arcm&lt;Vec&lt;u8&gt;&gt;; <span class="number">2</span>]&gt;,
+	buffer:   <span class="prelude-ty">Option</span>&lt;[Arcm&lt;RawFileMemory&gt;; <span class="number">2</span>]&gt;,
 	endpoint: usize
 }
 
@@ -444,15 +444,7 @@
 		stype: SocketType,
 		protocol: SocketProtocol
 	) -&gt; <span class="self">Self </span>{
-		<span class="self">Self </span>{
-			domain,
-			stype,
-			protocol,
-			roffset: RefCell::new(<span class="number">0</span>),
-			woffset: <span class="number">0</span>,
-			buffer: <span class="prelude-val">None</span>,
-			endpoint: <span class="number">0
-		</span>}
+		<span class="self">Self </span>{ domain, stype, protocol, buffer: <span class="prelude-val">None</span>, endpoint: <span class="number">0 </span>}
 	}
 }
 
@@ -485,19 +477,18 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;usize, ErrNo&gt; {
 		<span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.buffer {
 			<span class="prelude-val">Some</span>(buffer) =&gt; {
-				<span class="kw">let </span><span class="kw-2">mut </span>roffset = <span class="self">self</span>.roffset.borrow_mut();
 				<span class="kw">let </span>reading = core::cmp::min(dst.len(), length);
 				<span class="comment">// If nobody is writing to buffer this causes a deadlock
-				// for later use woffset to know how much as been written and not lock waiting
-				// input
-				</span><span class="kw">while </span>buffer[<span class="number">0</span>].lock().len() &lt; <span class="kw-2">*</span>roffset + reading {
+				// Current strategy is to lock until there&#39;s enough bytes.
+				</span><span class="kw">let </span>roffset = buffer[<span class="number">0</span>].lock().roffset;
+				<span class="kw">while </span>buffer[<span class="number">0</span>].lock().woffset &lt; roffset + reading {
 					<span class="kw">unsafe </span>{ <span class="macro">hlt!</span>() };
 				}
 				<span class="kw">let </span>guard = <span class="kw-2">&amp;mut </span>buffer[<span class="number">0</span>].lock();
 				dst[<span class="number">0</span>..reading].copy_from_slice(
-					<span class="kw-2">&amp;</span>guard.as_slice()[<span class="kw-2">*</span>roffset..<span class="kw-2">*</span>roffset + reading]
+					<span class="kw-2">&amp;</span>guard.to_slice()[roffset..roffset + reading]
 				);
-				<span class="kw-2">*</span>roffset += reading;
+				guard.roffset += reading;
 				<span class="comment">// panic if overflow?
 				</span><span class="prelude-val">Ok</span>(reading)
 			},
@@ -516,10 +507,12 @@
 			<span class="prelude-val">Some</span>(buffer) =&gt; {
 				<span class="kw">let </span>guard = <span class="kw-2">&amp;mut </span>buffer[<span class="number">1</span>].lock();
 				<span class="kw">let </span>writing = core::cmp::min(length, src.len());
-				<span class="comment">// Need to store offset of writing if no vector are used
-				// and access the array from this store offset
-				</span>guard.extend_from_slice(<span class="kw-2">&amp;</span>src[<span class="number">0</span>..writing]);
-				<span class="self">self</span>.woffset += writing;
+				<span class="kw">let </span>woffset = guard.woffset;
+				<span class="comment">// Currenlty panic if overflow, ideal scenario is to extend memory zone if we risk
+				// overflow
+				</span>guard[woffset..woffset + writing]
+					.copy_from_slice(<span class="kw-2">&amp;</span>src[<span class="number">0</span>..writing]);
+				guard.woffset += writing;
 				<span class="prelude-val">Ok</span>(writing)
 			},
 			<span class="prelude-val">None </span>=&gt; {
@@ -575,8 +568,8 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(Socket, Socket), ErrNo&gt; {
 	<span class="kw">let </span><span class="kw-2">mut </span>first_socket = Socket::new(domain, stype, protocol);
 	<span class="kw">let </span><span class="kw-2">mut </span>second_socket = Socket::new(domain, stype, protocol);
-	<span class="kw">let </span>buffer1: Arcm&lt;Vec&lt;u8&gt;&gt; = Arcm::default();
-	<span class="kw">let </span>buffer2: Arcm&lt;Vec&lt;u8&gt;&gt; = Arcm::default();
+	<span class="kw">let </span>buffer1: Arcm&lt;RawFileMemory&gt; = Arcm::new(RawFileMemory::new());
+	<span class="kw">let </span>buffer2: Arcm&lt;RawFileMemory&gt; = Arcm::new(RawFileMemory::new());
 
 	<span class="comment">// Clone the reference to our buffers. Index 0 will be readed, index 1 will be writed to
 	</span>second_socket.buffer = <span class="prelude-val">Some</span>([buffer1.clone(), buffer2.clone()]);
@@ -614,13 +607,13 @@
 		// And to the buffer 0 of the other sockets
 		</span><span class="kw">match </span>sockets.<span class="number">1</span>.buffer {
 			<span class="prelude-val">Some</span>(buffers) =&gt; {
-				<span class="macro">assert_eq!</span>(input.as_bytes(), buffers[<span class="number">0</span>].lock().as_slice())
+				<span class="macro">assert_eq!</span>(input.as_bytes(), <span class="kw-2">&amp;</span>buffers[<span class="number">0</span>].lock()[<span class="number">0</span>..input.len()])
 			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};
 		<span class="kw">match </span>sockets.<span class="number">0</span>.buffer {
 			<span class="prelude-val">Some</span>(buffers) =&gt; {
-				<span class="macro">assert_eq!</span>(input.as_bytes(), buffers[<span class="number">1</span>].lock().as_slice())
+				<span class="macro">assert_eq!</span>(input.as_bytes(), <span class="kw-2">&amp;</span>buffers[<span class="number">1</span>].lock()[<span class="number">0</span>..input.len()])
 			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};
@@ -644,11 +637,15 @@
 		<span class="comment">// When writing to first socket, data will go to it&#39;s buffer 1
 		// And to the buffer 0 of the other sockets
 		</span><span class="kw">match </span>sockets.<span class="number">0</span>.buffer {
-			<span class="prelude-val">Some</span>(buffers) =&gt; <span class="macro">assert_eq!</span>(input, buffers[<span class="number">0</span>].lock().as_slice()),
+			<span class="prelude-val">Some</span>(buffers) =&gt; {
+				<span class="macro">assert_eq!</span>(input, <span class="kw-2">&amp;</span>buffers[<span class="number">0</span>].lock()[<span class="number">0</span>..input.len()])
+			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};
 		<span class="kw">match </span>sockets.<span class="number">1</span>.buffer {
-			<span class="prelude-val">Some</span>(buffers) =&gt; <span class="macro">assert_eq!</span>(input, buffers[<span class="number">1</span>].lock().as_slice()),
+			<span class="prelude-val">Some</span>(buffers) =&gt; {
+				<span class="macro">assert_eq!</span>(input, <span class="kw-2">&amp;</span>buffers[<span class="number">1</span>].lock()[<span class="number">0</span>..input.len()])
+			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};
 	}
@@ -666,7 +663,10 @@
 		)
 		.expect(<span class="string">&quot;Error creating sockets&quot;</span>);
 		<span class="kw">match </span>sockets.<span class="number">1</span>.buffer {
-			<span class="prelude-val">Some</span>(buffers) =&gt; buffers[<span class="number">1</span>].lock().extend_from_slice(<span class="kw-2">&amp;</span>input),
+			<span class="prelude-val">Some</span>(buffers) =&gt; {
+				buffers[<span class="number">1</span>].lock()[<span class="number">0</span>..input.len()].copy_from_slice(<span class="kw-2">&amp;</span>input);
+				buffers[<span class="number">1</span>].lock().woffset += input.len();
+			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};
 		sockets
@@ -690,7 +690,9 @@
 		.expect(<span class="string">&quot;Error creating sockets&quot;</span>);
 		<span class="kw">match </span>sockets.<span class="number">0</span>.buffer {
 			<span class="prelude-val">Some</span>(buffers) =&gt; {
-				buffers[<span class="number">1</span>].lock().extend_from_slice(<span class="kw-2">&amp;</span>input.as_bytes())
+				buffers[<span class="number">1</span>].lock()[<span class="number">0</span>..input.len()]
+					.copy_from_slice(<span class="kw-2">&amp;</span>input.as_bytes());
+				buffers[<span class="number">1</span>].lock().woffset += input.len();
 			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};
@@ -716,7 +718,9 @@
 		.expect(<span class="string">&quot;Error creating sockets&quot;</span>);
 		<span class="kw">match </span>sockets.<span class="number">0</span>.buffer {
 			<span class="prelude-val">Some</span>(buffers) =&gt; {
-				buffers[<span class="number">1</span>].lock().extend_from_slice(<span class="kw-2">&amp;</span>input.as_bytes())
+				buffers[<span class="number">1</span>].lock()[<span class="number">0</span>..input.len()]
+					.copy_from_slice(<span class="kw-2">&amp;</span>input.as_bytes());
+				buffers[<span class="number">1</span>].lock().woffset += input.len();
 			},
 			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Socket buffer improperly set&quot;</span>)
 		};

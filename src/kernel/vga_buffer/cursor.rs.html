@@ -50,32 +50,25 @@
 <a href="#50" id="50">50</a>
 <a href="#51" id="51">51</a>
 <a href="#52" id="52">52</a>
-<a href="#53" id="53">53</a>
-<a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::io;
 <span class="kw">use </span><span class="kw">crate</span>::vga_buffer::{ColorCode, BUFFER_WIDTH};
 
 <span class="attr">#[derive(Debug, Clone, Copy)]
 </span><span class="kw">pub struct </span>Cursor {
-	x:          usize,
-	y:          usize,
+	pos:        usize,
 	color_code: ColorCode
 }
 
 <span class="kw">impl </span>Cursor {
 	<span class="kw">pub const fn </span>new(x: usize, y: usize, color_code: ColorCode) -&gt; Cursor {
-		Cursor { x: x, y: y, color_code: color_code }
+		Cursor { pos: y * BUFFER_WIDTH + x, color_code: color_code }
 	}
 
 	<span class="kw">pub fn </span>update(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-		<span class="kw">let </span>pos: u16 = (<span class="self">self</span>.y * BUFFER_WIDTH + <span class="self">self</span>.x) <span class="kw">as </span>u16;
-
 		io::outb(<span class="number">0x3d4</span>, <span class="number">0x0f</span>);
-		io::outb(<span class="number">0x3d5</span>, (pos &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
+		io::outb(<span class="number">0x3d5</span>, (<span class="self">self</span>.pos &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
 		io::outb(<span class="number">0x3d4</span>, <span class="number">0x0e</span>);
-		io::outb(<span class="number">0x3d5</span>, ((pos &gt;&gt; <span class="number">8</span>) &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
+		io::outb(<span class="number">0x3d5</span>, ((<span class="self">self</span>.pos &gt;&gt; <span class="number">8</span>) &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
 	}
 
 	<span class="kw">pub fn </span>enable(<span class="kw-2">&amp;</span><span class="self">self</span>) {
@@ -101,13 +94,12 @@
 		<span class="self">self</span>.color_code = color_code;
 	}
 
-	<span class="kw">pub fn </span>get_pos(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; (usize, usize) {
-		(<span class="self">self</span>.x, <span class="self">self</span>.y)
+	<span class="kw">pub fn </span>get_pos(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize {
+		<span class="self">self</span>.pos
 	}
 
-	<span class="kw">pub fn </span>set_pos(<span class="kw-2">&amp;mut </span><span class="self">self</span>, x: usize, y: usize) {
-		<span class="self">self</span>.x = x;
-		<span class="self">self</span>.y = y;
+	<span class="kw">pub fn </span>set_pos(<span class="kw-2">&amp;mut </span><span class="self">self</span>, x: usize) {
+		<span class="self">self</span>.pos = x;
 	}
 }
 </code></pre></div></section></main></body></html>

@@ -119,6 +119,11 @@
 <a href="#119" id="119">119</a>
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::spin::Mutex;
 <span class="kw">use </span>alloc::sync::Arc;
 <span class="kw">use </span>core::ops::{Deref, DerefMut};
@@ -126,11 +131,16 @@
 <span class="doccomment">/// Wrap the given type into an Arc and a Mutex.
 /// Arc allow multiple reference on the same data between threads
 /// Mutex allow any type to be `Send` and ensure safe access to the underlying data
-</span><span class="attr">#[derive(Clone, Default)]
+</span><span class="attr">#[derive(Default)]
 </span><span class="kw">pub struct </span>Arcm&lt;T: <span class="question-mark">?</span>Sized&gt; {
 	arc: Arc&lt;Mutex&lt;T&gt;&gt;
 }
 
+<span class="kw">impl</span>&lt;T&gt; Clone <span class="kw">for </span>Arcm&lt;T&gt; {
+	<span class="kw">fn </span>clone(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="self">Self </span>{
+		<span class="self">Self </span>{ arc: <span class="self">self</span>.arc.clone() }
+	}
+}
 <span class="kw">impl</span>&lt;T&gt; Arcm&lt;T&gt; {
 	<span class="doccomment">/// Create a new Arcm by copying the data
 	///

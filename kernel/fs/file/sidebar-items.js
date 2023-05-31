@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["socket"],"struct":["FileInfo"],"trait":["FileOperation"]};
+window.SIDEBAR_ITEMS = {"mod":["raw","socket"],"struct":["FileInfo"],"trait":["FileOperation"]};
