@@ -46,6 +46,7 @@ impl FlagOp<AtomicU8> for Flags<AtomicU8> {
 		self.0.fetch_or(1 << bit, Ordering::Relaxed);
 	}
 
+	/// disable x bit.
 	/// # Safety
 	/// No check performed, will produce panic if trying to disable bit outside of range
 	///
