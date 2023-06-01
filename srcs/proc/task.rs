@@ -50,6 +50,10 @@ impl Task {
 			// Init allocator with addr &mut KALLOCATOR
 			KALLOCATOR.init(heap.offset, heap.size);
 			let mut task = Task::new();
+			core::arch::asm!(
+				"mov {}, cr3",
+				out(reg) task.regs.cr3
+			);
 			let mut process: Process = Process::new();
 			process.state = Status::Run;
 			process.setup_kernel_stack(PAGE_WRITABLE);
