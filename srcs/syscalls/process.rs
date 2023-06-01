@@ -29,21 +29,23 @@ pub fn sys_fork() -> Pid {
 		let mut new_task: Task = Task::new();
 
 		process.init(&binding);
-		let mut parent = binding.lock();
 
 		let pid = process.pid;
-		process.setup_kernel_stack(parent.kernel_stack.flags);
-		process.setup_stack(
-			parent.stack.size,
-			parent.stack.flags,
-			parent.stack.kphys
-		);
-		process.setup_heap(
-			parent.heap.size,
-			parent.heap.flags,
-			parent.heap.kphys
-		);
-		process.copy_mem(&mut *parent);
+		{ // lock parent in scope
+			let mut parent = binding.lock();
+			process.setup_kernel_stack(parent.kernel_stack.flags);
+			process.setup_stack(
+				parent.stack.size,
+				parent.stack.flags,
+				parent.stack.kphys
+			);
+			process.setup_heap(
+				parent.heap.size,
+				parent.heap.flags,
+				parent.heap.kphys
+			);
+			process.copy_mem(&mut parent);
+		}
 
 		let page_dir: &mut PageDirectory = process.setup_pagination();
 
@@ -55,6 +57,8 @@ pub fn sys_fork() -> Pid {
 
 		new_task.process = KArcm::new(process);
 		PROCESS_TREE.insert(pid, new_task.process.clone());
+
+		let mut parent = binding.lock();
 		parent.childs.push(new_task.process.clone());
 
 		TASKLIST.push_back(new_task);
