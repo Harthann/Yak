@@ -108,11 +108,13 @@ pub fn read(fd: usize, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
 	}
 
 	let binding = Process::get_running_process();
-	let mut curr_process = binding.lock();
-
-	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
-	let guard2 = file.op.lock();
-	guard2.read(dst, length)
+	let guard2 = binding.execute(|guard| {
+		let mut curr_process = guard.lock();
+		let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
+		Ok(file.op.clone())
+	})?;
+	let fileop = guard2.lock();
+	fileop.read(dst, length)
 }
 
 use crate::proc::process::Process;
