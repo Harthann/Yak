@@ -2,6 +2,7 @@ use crate::interrupts::Registers;
 use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
 use crate::memory::{MemoryZone, TypeZone, VirtAddr};
+use crate::proc::Pid;
 use crate::proc::process::{Process, Status, PROCESS_TREE, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
 
@@ -82,15 +83,12 @@ impl Task {
 		}
 	}
 
-	pub unsafe fn remove_task_from_process(process: &Process) {
+	pub unsafe fn remove_task_from_process(pid: Pid) {
 		let len = TASKLIST.len();
 		let mut i = 0;
 		while i < len {
-			let task: &mut Task = Task::get_running_task();
-			if task.process.lock().pid == process.pid {
-				TASKLIST.push_back(TASKLIST.pop_front().unwrap());
-			} else {
-				TASKLIST.pop_front();
+			if TASKLIST[i].process.lock().pid == pid {
+				TASKLIST.remove(i);
 			}
 			i += 1;
 		}
@@ -122,12 +120,22 @@ impl Task {
 			{
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
-				for handler in self.process.lock().signal_handlers.iter() {
-					if handler.signal == self.process.lock().signals[i].sigtype as i32 {
-						self.process.lock().signals.remove(i);
-						self.state = TaskStatus::Uninterruptible;
-						Task::handle_signal(&mut self.regs, handler)
-					}
+				let res = {
+					let process = self.process.lock();
+					let get_handler = |process: &Process| -> Option<SignalHandler> {
+						for handler in process.signal_handlers.iter() {
+							if handler.signal == process.signals[i].sigtype as i32 {
+								return Some(handler.clone());
+							}
+						}
+						None
+					};
+					get_handler(&process)
+				};
+				if res.is_some() {
+					self.process.lock().signals.remove(i);
+					self.state = TaskStatus::Uninterruptible;
+					Task::handle_signal(&mut self.regs, &res.unwrap())
 				}
 			} else if self.state == TaskStatus::Interruptible
 				&& self.process.lock().signals[i].sigtype == SignalType::SIGCHLD

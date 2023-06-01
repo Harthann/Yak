@@ -39,8 +39,6 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				_sti();
 				return -(res.err().unwrap() as i32);
 			}
-			let binding = res.unwrap();
-			let mut process = binding.lock();
 			if signal == 0 {
 				_sti();
 				return 0; // kill check for pid presence if signal is 0
@@ -53,8 +51,8 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 			}
 			let signal_type = res.unwrap();
 			if signal_type == SignalType::SIGKILL {
-				Task::remove_task_from_process(&*process);
-				process.zombify(__W_STOPCODE!(signal_type as i32));
+				Process::zombify(pid, __W_STOPCODE!(signal_type as i32));
+				Task::remove_task_from_process(pid);
 				_sti();
 				return 0;
 			} else {

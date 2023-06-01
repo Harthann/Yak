@@ -127,10 +127,13 @@ pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 	}
 
 	let binding = Process::get_running_process();
-	let mut curr_process = binding.lock();
-	let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
-	let mut guard2 = file.op.lock();
-	guard2.write(src, length)
+	let guard2 = binding.execute(|guard| {
+		let mut curr_process = guard.lock();
+		let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
+		Ok(file.op.clone())
+	})?;
+	let mut fileop = guard2.lock();
+	fileop.write(src, length)
 }
 
 // SOCKET HELPERS

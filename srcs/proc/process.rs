@@ -158,24 +158,30 @@ impl Process {
 		);
 	}
 
-	pub unsafe fn zombify(&mut self, wstatus: i32) {
-		let mut parent = match &self.parent {
-			Some(x) => x.lock(),
-			None => panic!("Process has no parent")
-		};
-		while self.childs.len() > 0 {
+	pub unsafe fn zombify(pid: Pid, wstatus: i32) {
+		let binding = Process::search_from_pid(pid).unwrap();
+		let binding_parent = {
+			let process = binding.lock();
+			match &process.parent {
+				Some(x) => Process::search_from_pid(x.lock().pid),
+				None => panic!("Process has no parent")
+			}
+		}.unwrap();
+		let mut process = binding.lock();
+		let mut parent = binding_parent.lock();
+		while process.childs.len() > 0 {
 			// TODO: DON'T MOVE THREADS AND REMOVE THEM
-			let res = self.childs.pop();
+			let res = process.childs.pop();
 			if res.is_none() {
 				todo!();
 			}
 			parent.childs.push(res.unwrap());
 			let len = parent.childs.len();
-			parent.childs[len - 1].lock().parent = Some(self.parent.as_ref().unwrap().clone());
+			parent.childs[len - 1].lock().parent = Some(binding_parent.clone());
 		}
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
-		self.state = Status::Zombie;
-		Signal::send_to_process(&mut parent, self.pid, SignalType::SIGCHLD, wstatus);
+		process.state = Status::Zombie;
+		Signal::send_to_process(&mut parent, process.pid, SignalType::SIGCHLD, wstatus);
 	}
 
 	pub unsafe fn remove(pid: Pid) {

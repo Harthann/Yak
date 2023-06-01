@@ -2,7 +2,7 @@
 
 use crate::vec::Vec;
 use crate::utils::arcm::KArcm;
-use crate::wrappers::{_cli, _rst, _sti};
+use crate::wrappers::{_cli, _rst};
 use crate::{VirtAddr, KSTACK_ADDR};
 use alloc::sync::Arc;
 
@@ -29,10 +29,11 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
 	{
 		let task: Task = TASKLIST.pop_front().unwrap();
-		task.process.lock().zombify(__W_EXITCODE!(status as i32, 0));
+		let pid = task.process.lock().pid;
+		Process::zombify(pid, __W_EXITCODE!(status as i32, 0));
 	}
 	_rst();
-	schedule_task();
+	schedule_task()
 	// Never goes there
 }
 
@@ -57,7 +58,6 @@ pub unsafe extern "C" fn exec_fn(
 	args_size: &Vec<usize>,
 	mut args: ...
 ) -> Pid {
-	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let binding = Process::get_running_process();
 	let mut process = Process::new();
@@ -123,7 +123,6 @@ pub unsafe extern "C" fn exec_fn(
 	parent.childs.push(new_task.process.clone());
 
 	TASKLIST.push_back(new_task);
-	_sti();
 	pid
 }
 

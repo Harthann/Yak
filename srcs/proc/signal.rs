@@ -4,6 +4,7 @@ use crate::proc::Id;
 
 pub type SigHandlerFn = fn(i32);
 
+#[derive(Clone)]
 pub struct SignalHandler {
 	pub signal:  i32,
 	pub handler: SigHandlerFn
