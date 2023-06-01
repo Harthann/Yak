@@ -3,11 +3,11 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
-use crate::memory::paging::free_pages;
-use crate::memory::{Heap, MemoryZone, Stack};
+use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
 
 use crate::utils::arcm::KArcm;
+use crate::alloc::collections::LinkedList;
 use crate::alloc::collections::btree_map::BTreeMap;
 
 use crate::proc::task::Task;
@@ -26,6 +26,7 @@ use crate::memory::paging::{
 	PAGE_WRITABLE
 };
 use crate::memory::PhysAddr;
+use crate::utils::arcm::Arcm;
 
 use crate::user::{USER_HEAP_ADDR, USER_STACK_ADDR};
 use crate::KSTACK_ADDR;
@@ -46,6 +47,8 @@ pub enum Status {
 	Thread
 }
 
+/// Arcm is needed to protect MemoryZone only if the memory zone is shared between threads
+/// otherwise it will be useless.
 pub const MAX_FD: usize = 32;
 
 pub struct Process {
@@ -56,9 +59,14 @@ pub struct Process {
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
+	pub mem_map:         LinkedList<Arcm<MemoryZone>>,
 	pub fds:             [Option<Arc<FileInfo>>; MAX_FD],
 	pub signals:         Vec<Signal>,
 	pub signal_handlers: Vec<SignalHandler>,
+	pub page_tables:     Vec<&'static mut PageTable>,
+	pub pd:              *mut PageDirectory,
+	// Temporary workaround to differentiate processes from threads
+	pub test:            bool,
 	pub owner:           Id
 }
 
@@ -73,9 +81,13 @@ impl Process {
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
 			kernel_stack:    MemoryZone::new(),
+			mem_map:         LinkedList::new(),
 			fds:             [DEFAULT_FILE; MAX_FD],
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
+			page_tables:     Vec::new(),
+			pd:              0x0 as *mut PageDirectory,
+			test:            false,
 			owner:           0
 		}
 	}
@@ -116,15 +128,16 @@ impl Process {
 	}
 
 	pub fn setup_stack(&mut self, size: usize, flags: u32, kphys: bool) {
-		self.stack = <MemoryZone as Stack>::init(size, flags, kphys);
+		self.stack = MemoryZone::init(TypeZone::Stack, size, flags, kphys);
 	}
 
 	pub fn setup_heap(&mut self, size: usize, flags: u32, kphys: bool) {
-		self.heap = <MemoryZone as Heap>::init_no_allocator(size, flags, kphys);
+		self.heap = MemoryZone::init(TypeZone::Heap, size, flags, kphys);
 	}
 
 	pub fn setup_kernel_stack(&mut self, flags: u32) {
-		self.kernel_stack = <MemoryZone as Stack>::init(0x1000, flags, false);
+		self.kernel_stack =
+			MemoryZone::init(TypeZone::Stack, 0x1000, flags, false);
 	}
 
 	pub unsafe fn copy_mem(&mut self, parent: &mut Process) {
@@ -165,14 +178,19 @@ impl Process {
 		Signal::send_to_process(&mut parent, self.pid, SignalType::SIGCHLD, wstatus);
 	}
 
-	pub unsafe fn remove(&mut self) {
-		let mut parent = match &self.parent {
-			Some(x) => x.lock(),
-			None => panic!("Process has no parent")
-		};
+	pub unsafe fn remove(pid: Pid) {
+		let binding = Process::search_from_pid(pid).unwrap();
+		let binding_parent = {
+			let process = binding.lock();
+			match &process.parent {
+				Some(x) => Process::search_from_pid(x.lock().pid),
+				None => panic!("Process has no parent")
+			}
+		}.unwrap();
+		let mut parent = binding_parent.lock();
 		let mut i = 0;
 		while i < parent.childs.len() {
-			if parent.childs[i].lock().pid == self.pid {
+			if parent.childs[i].lock().pid == pid {
 				break;
 			}
 			i += 1;
@@ -180,10 +198,25 @@ impl Process {
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
-		free_pages(self.stack.offset, self.stack.size / 0x1000);
-		free_pages(self.heap.offset, self.heap.size / 0x1000);
-		free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
+		let mut process = binding.lock();
+		if process.test == true {
+			use crate::memory::paging::bitmap;
+			let pd = &mut *process.pd;
+			for i in &process.page_tables {
+				let vaddr = i.get_vaddr() as usize;
+				bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
+				page_directory
+					.get_page_table(vaddr >> 22)
+					.set_entry((vaddr & 0x3ff000) >> 12, 0);
+			}
+			let vaddr = pd.get_vaddr() as usize;
+			bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
+			page_directory
+				.get_page_table(vaddr >> 22)
+				.set_entry((vaddr & 0x3ff000) >> 12, 0);
+		}
 		parent.childs.remove(i);
+		PROCESS_TREE.remove(&pid);
 	}
 
 	pub unsafe fn get_signal(
@@ -239,7 +272,7 @@ impl Process {
 		}
 	}
 
-	pub unsafe fn setup_pagination(&self) -> &'static mut PageDirectory {
+	pub unsafe fn setup_pagination(&mut self) -> &'static mut PageDirectory {
 		let parent = match &self.parent {
 			Some(x) => x.lock(),
 			None => panic!("Process has no parent")
@@ -295,6 +328,10 @@ impl Process {
 			get_paddr!(self.kernel_stack.offset),
 			PAGE_WRITABLE | PAGE_USER
 		);
+		self.pd = page_dir;
+		self.page_tables.push(process_heap);
+		self.page_tables.push(process_stack);
+		self.page_tables.push(process_kernel_stack);
 		refresh_tlb!();
 		page_dir
 	}
@@ -306,6 +343,10 @@ impl Process {
 	pub unsafe fn print_all_process() {
 		crate::kprintln!("       PID        OWNER   STATUS");
 		Self::print_tree();
+	}
+
+	pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
+		self.mem_map.push_back(mz);
 	}
 }
 

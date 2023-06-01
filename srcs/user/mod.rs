@@ -71,6 +71,7 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
 	new_task.regs.cr3 = get_paddr!(page_dir as *const _);
 	new_task.regs.esp -= 4;
+	process.test = true;
 
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,

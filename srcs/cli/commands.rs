@@ -10,7 +10,7 @@ use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
 
-const NB_CMDS: usize = 14;
+const NB_CMDS: usize = 16;
 const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
@@ -27,12 +27,89 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	uptime,
 	date,
 	play,
+	memtrack,
+	pmap,
 	kill
 ];
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "memtrack", "pmap", "kill"
 ];
+
+pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
+	unsafe {
+		let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
+		COMMANDS[cmd_id](args);
+		crate::syscalls::exit::sys_exit(0);
+	}
+}
+
+fn memtrack(command: Vec<String>) {
+	static mut HEAP_STATE: crate::Tracker = crate::Tracker::new();
+	if command.len() != 2 {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: memstate [start, stop]");
+		return;
+	}
+
+	match command[1].as_str() {
+		"start" => {
+			crate::kprintln!("Saving current heap usage");
+			unsafe { HEAP_STATE = crate::KTRACKER };
+		},
+		"stop" => unsafe {
+			let mut current_state = crate::KTRACKER;
+			current_state.allocation -= HEAP_STATE.allocation;
+			current_state.allocated_bytes -= HEAP_STATE.allocated_bytes;
+			current_state.freed -= HEAP_STATE.freed;
+			current_state.freed_bytes -= HEAP_STATE.freed_bytes;
+			crate::kprintln!("{}", current_state);
+			crate::kprintln!(
+				"Leaks: {} bytes",
+				current_state.allocated_bytes - current_state.freed_bytes
+			);
+		},
+		_ => crate::kprintln!("Invalid argument")
+	}
+}
+
+fn pmap(command: Vec<String>) {
+	let pid: Pid;
+
+	if command.len() != 2 {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: pmap [pid]");
+		return;
+	}
+	if let Some(res) = atou(command[1].as_str()) {
+		pid = res as Pid;
+	} else {
+		kprintln!("Invalid argument.");
+		kprintln!("Usage: pmap [pid]");
+		return;
+	}
+
+	// Send to a specific process
+	let binding = match Process::search_from_pid(pid) {
+		Ok(x) => x,
+		Err(_) => return
+	};
+	let process = binding.lock();
+	let mut used_size: usize = 0;
+	crate::kprintln!("{}:", pid);
+	crate::kprintln!("{}", process.heap);
+	used_size += process.heap.size;
+	crate::kprintln!("{}", process.stack);
+	used_size += process.stack.size;
+	crate::kprintln!("{}", process.kernel_stack);
+	used_size += process.kernel_stack.size;
+	for i in &process.mem_map {
+		let guard = i.lock();
+		crate::kprintln!("{}", *guard);
+		used_size += guard.size;
+	}
+	crate::kprintln!(" total: {:#x}", used_size);
+}
 
 fn kill(command: Vec<String>) {
 	let mut wstatus: i32 = 0;
@@ -109,6 +186,9 @@ fn help(_: Vec<String>) {
 }
 
 fn shutdown(_: Vec<String>) {
+	unsafe {
+		crate::dprintln!("{}", crate::KTRACKER);
+	}
 	io::outb(0xf4, 0x10);
 }
 
@@ -216,17 +296,19 @@ fn interrupt(command: Vec<String>) {
 
 #[derive(Debug, Clone)]
 pub struct Command {
-	pub command: String
+	pub command: String,
+	pub index:   usize
 }
 
 impl Command {
 	pub const fn new() -> Command {
-		Command { command: String::new() }
+		Command { command: String::new(), index: 0 }
 	}
 
-	fn append(&mut self, x: char) -> Result<(), ()> {
+	fn insert(&mut self, x: char) -> Result<(), ()> {
 		if self.command.len() < MAX_CMD_LENGTH {
-			self.command.push(x);
+			self.command.insert(self.index, x);
+			self.index += 1;
 			return Ok(());
 		} else {
 			Err(())
@@ -239,6 +321,7 @@ impl Command {
 
 	pub fn clear(&mut self) {
 		self.command.clear();
+		self.index = 0;
 	}
 
 	pub fn is_known(&self) -> Option<usize> {
@@ -255,17 +338,31 @@ impl Command {
 
 	pub fn handle(&mut self, charcode: char) {
 		if charcode == '\x08' {
-			if self.command.len() != 0 {
-				crate::vga_buffer::WRITER.lock().write_byte(0x08);
+			if self.command.len() != 0 && self.index != 0 {
+				self.command.remove(self.index - 1);
+				let tmp: &str =
+					&self.command[self.index - 1..self.command.len()];
+				self.index -= 1;
+				crate::kprint!(
+					"{delbyte}{string} {delbyte}",
+					string = tmp,
+					delbyte = '\x08'
+				);
+				crate::vga_buffer::WRITER
+					.lock()
+					.move_cursor(-(tmp.len() as i32));
 			}
-			self.command.pop();
 		} else if charcode >= ' ' && charcode <= '~' {
-			crate::kprint!("{}", charcode);
-			if self.append(charcode).is_err() {
+			if self.insert(charcode).is_err() {
 				kprintln!("Can't handle longer command, clearing buffer");
 				kprint!("$> ");
 				self.clear();
 			}
+			let tmp: &str = &self.command[self.index - 1..self.command.len()];
+			crate::kprint!("{}", tmp);
+			crate::vga_buffer::WRITER
+				.lock()
+				.move_cursor(-(tmp.len() as i32) + 1);
 		} else if charcode == '\n' {
 			crate::kprint!("{}", charcode);
 			match self.is_known() {
@@ -275,7 +372,12 @@ impl Command {
 					for arg in splited {
 						split.push(arg.to_string());
 					}
-					COMMANDS[x](split);
+					let (ptr, len, cap) = split.into_raw_parts();
+					let pid = unsafe {
+						crate::exec_fn!(command_entry, x, ptr, len, cap)
+					};
+					let mut status = 0;
+					sys_waitpid(pid, &mut status, 0);
 				},
 				_ => {
 					if self.command.len() != 0 {

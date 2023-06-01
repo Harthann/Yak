@@ -1,3 +1,4 @@
+use crate::syscalls::exit::sys_waitpid;
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
 use crate::{kprint, kprintln, string};
@@ -35,15 +36,19 @@ mod poc {
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
 
-	poc::test_macros();
 	kprintln!("Hello World of {}!", 42);
-
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(
 		"Press Ctrl-2 to navigate to the second workspace"
 	);
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
-	kprint!("$> ");
-	loop {}
+
+	loop {
+		kprint!("$> ");
+		let pid = unsafe { crate::exec_fn!(crate::cli::cli) };
+		let mut status = 0;
+		sys_waitpid(pid, &mut status, 0);
+		crate::dprintln!("Term has been killed");
+	}
 }

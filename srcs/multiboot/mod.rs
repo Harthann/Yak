@@ -138,11 +138,11 @@ pub unsafe fn claim_multiboot() {
 							(*mmap_entry).baseaddr as PhysAddr / 4096,
 							(*mmap_entry).length as usize / 4096
 						);
-						let _ = bitmap::physmap_as_mut().claim_range(
+						// Force because it could be already mapped by BIOS
+						bitmap::physmap_as_mut().force_claim_range(
 							(*mmap_entry).baseaddr as PhysAddr,
 							(*mmap_entry).length as usize / 4096
 						);
-						// Don't expect because it could be already mapped by BIOS
 					}
 					mmap_entry = mmap_entry.add(1);
 					i += 1;

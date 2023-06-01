@@ -7,6 +7,7 @@
 #![feature(alloc_error_handler)]
 #![feature(unsize)]
 #![feature(coerce_unsized)]
+#![feature(vec_into_raw_parts)]
 #![no_std]
 #![allow(dead_code)]
 #![no_main]
@@ -24,11 +25,23 @@ pub extern "C" fn eh_personality() {}
 const GLOBAL_ALIGN: usize = 8;
 
 // Allocation tracking
+#[derive(Copy, Clone)]
 pub struct Tracker {
 	allocation:      usize,
 	allocated_bytes: usize,
 	freed:           usize,
 	freed_bytes:     usize
+}
+
+use core::fmt;
+impl fmt::Display for Tracker {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(
+			f,
+			"Alloc: {} for {} bytes\nFreed: {} for {} bytes",
+			self.allocation, self.allocated_bytes, self.freed, self.freed_bytes
+		)
+	}
 }
 
 impl Tracker {
@@ -42,21 +55,11 @@ impl Tracker {
 	}
 }
 
-static mut TRACKER: Tracker = Tracker::new();
 static mut KTRACKER: Tracker = Tracker::new();
 
 pub fn memory_state() {
 	unsafe {
-		kprintln!(
-			"\nAllocation: {} for {} bytes",
-			KTRACKER.allocation,
-			KTRACKER.allocated_bytes
-		);
-		kprintln!(
-			"Free:       {} for {} bytes",
-			KTRACKER.freed,
-			KTRACKER.freed_bytes
-		);
+		kprintln!("{}", KTRACKER);
 	}
 }
 
@@ -105,7 +108,6 @@ use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
 
-static mut ALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 #[global_allocator]
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
 
@@ -125,6 +127,7 @@ use crate::gdt::{gdt_desc, GDTR};
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xff0fffff;
+const STACK_SIZE: u32 = 0x1000;
 
 // Kernel initialisation
 #[no_mangle]
@@ -150,7 +153,6 @@ pub extern "C" fn kinit() {
 	// init tracker after init first process
 	unsafe {
 		KTRACKER = Tracker::new();
-		TRACKER = Tracker::new();
 	}
 
 	setup_pic8259();

@@ -1,6 +1,7 @@
 use crate::interrupts::Registers;
+use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
-use crate::memory::{Heap, MemoryZone, Stack, VirtAddr};
+use crate::memory::{MemoryZone, TypeZone, VirtAddr};
 use crate::proc::process::{Process, Status, PROCESS_TREE, NEXT_PID};
 use crate::proc::signal::{SignalHandler, SignalType};
 
@@ -39,12 +40,14 @@ impl Task {
 
 	pub fn init_multitasking(stack_addr: VirtAddr) {
 		unsafe {
-			let heap = <MemoryZone as Heap>::init(
+			let heap = MemoryZone::init(
+				TypeZone::Heap,
 				100 * 0x1000,
 				PAGE_WRITABLE,
-				true,
-				&mut KALLOCATOR
+				true
 			);
+			// Init allocator with addr &mut KALLOCATOR
+			KALLOCATOR.init(heap.offset, heap.size);
 			let mut task = Task::new();
 			let mut process: Process = Process::new();
 			process.state = Status::Run;
@@ -55,9 +58,10 @@ impl Task {
 					PAGE_WRITABLE
 				)
 				.expect("Could not claim kernel stack page");
-			process.stack = <MemoryZone as Stack>::init_addr(
-				stack_addr,
-				2 * 0x1000,
+			process.stack = MemoryZone::init_addr(
+				stack_addr - (crate::STACK_SIZE - 1),
+				TypeZone::Stack,
+				crate::STACK_SIZE as usize,
 				PAGE_WRITABLE,
 				false
 			);

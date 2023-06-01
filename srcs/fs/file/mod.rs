@@ -2,6 +2,7 @@ use crate::errno::ErrNo;
 use crate::string::String;
 use crate::utils::arcm::Arcm;
 
+mod raw;
 pub mod socket;
 
 pub trait FileOperation {
