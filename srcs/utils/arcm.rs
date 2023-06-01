@@ -9,7 +9,7 @@ pub type KArcm<T> = RawArcm<T, true>;
 /// Arc allow multiple reference on the same data between threads
 /// Mutex allow any type to be `Send` and ensure safe access to the underlying data
 #[derive(Default)]
-pub struct RawArcm<T: ?Sized, const INT : bool> {
+pub struct RawArcm<T: ?Sized, const INT: bool> {
 	arc: Arc<RawMutex<T, INT>>
 }
 
@@ -78,7 +78,8 @@ impl<T: ?Sized, const INT: bool> DerefMut for RawArcm<T, INT> {
 ///     assert_eq!(arcm.lock().bar(), 42);
 /// }
 /// ```
-impl<T, U, const INT: bool> core::ops::CoerceUnsized<RawArcm<U, INT>> for RawArcm<T, INT>
+impl<T, U, const INT: bool> core::ops::CoerceUnsized<RawArcm<U, INT>>
+	for RawArcm<T, INT>
 where
 	T: core::marker::Unsize<U> + ?Sized,
 	U: ?Sized

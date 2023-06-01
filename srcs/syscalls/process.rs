@@ -1,4 +1,4 @@
-use crate::proc::process::{PROCESS_TREE, Pid, Process};
+use crate::proc::process::{Pid, Process, PROCESS_TREE};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::utils::arcm::KArcm;
@@ -31,7 +31,8 @@ pub fn sys_fork() -> Pid {
 		process.init(&binding);
 
 		let pid = process.pid;
-		{ // lock parent in scope
+		{
+			// lock parent in scope
 			let mut parent = binding.lock();
 			process.setup_kernel_stack(parent.kernel_stack.flags);
 			process.setup_stack(
@@ -56,10 +57,10 @@ pub fn sys_fork() -> Pid {
 		process.test = true;
 
 		new_task.process = KArcm::new(process);
-		PROCESS_TREE.insert(pid, new_task.process.clone());
 
 		let mut parent = binding.lock();
 		parent.childs.push(new_task.process.clone());
+		PROCESS_TREE.insert(pid, new_task.process.clone());
 
 		TASKLIST.push_back(new_task);
 		_sti();

@@ -1,8 +1,8 @@
 //! Processus, Tasks and Signals
 
-use crate::vec::Vec;
 use crate::utils::arcm::KArcm;
-use crate::wrappers::{_cli, _rst};
+use crate::vec::Vec;
+use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
 use alloc::sync::Arc;
 
@@ -17,7 +17,7 @@ pub mod task;
 #[cfg(test)]
 pub mod test;
 
-use process::{PROCESS_TREE, Pid, Process};
+use process::{Pid, Process, PROCESS_TREE};
 use task::{schedule_task, Task, TASKLIST};
 
 use crate::syscalls::exit::__W_EXITCODE;
@@ -58,6 +58,7 @@ pub unsafe extern "C" fn exec_fn(
 	args_size: &Vec<usize>,
 	mut args: ...
 ) -> Pid {
+	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let binding = Process::get_running_process();
 	let mut process = Process::new();
@@ -119,10 +120,11 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.ds = running_task.regs.ds;
 
 	new_task.process = KArcm::new(process);
-	PROCESS_TREE.insert(pid, new_task.process.clone());
 	parent.childs.push(new_task.process.clone());
+	PROCESS_TREE.insert(pid, new_task.process.clone());
 
 	TASKLIST.push_back(new_task);
+	_sti();
 	pid
 }
 

@@ -1,5 +1,5 @@
 use crate::errno::ErrNo;
-use crate::proc::process::{Process};
+use crate::proc::process::Process;
 use crate::proc::Id;
 
 pub type SigHandlerFn = fn(i32);

@@ -6,8 +6,9 @@ use crate::utils::arcm::KArcm;
 
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
+use crate::wrappers::{_cli, _sti};
 
-use crate::proc::process::{PROCESS_TREE, Pid, Process};
+use crate::proc::process::{Pid, Process, PROCESS_TREE};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
@@ -45,6 +46,7 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 }
 
 pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
+	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let binding = Process::get_running_process();
 	let mut process: Process = Process::new();
@@ -78,12 +80,13 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	new_task.regs.ds = running_task.regs.ds;
 
 	new_task.process = KArcm::new(process);
-	PROCESS_TREE.insert(pid, new_task.process.clone());
 
 	let mut parent = binding.lock();
 	parent.childs.push(new_task.process.clone());
+	PROCESS_TREE.insert(pid, new_task.process.clone());
 
 	TASKLIST.push_back(new_task);
+	_sti();
 	pid
 }
 

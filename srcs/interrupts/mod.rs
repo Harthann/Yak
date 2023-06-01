@@ -117,10 +117,7 @@ fn page_fault_handler(reg: &Registers) {
 		core::arch::asm!("mov {}, cr2", out(reg) cr2);
 		crate::kprintln!("at addr {:#x}", cr2);
 		let binding = crate::proc::process::Process::get_running_process();
-		crate::kprintln!(
-			"Current pid {}",
-			binding.lock().pid
-		);
+		crate::kprintln!("Current pid {}", binding.lock().pid);
 	}
 	crate::kprintln!("{:#x?}", reg);
 }

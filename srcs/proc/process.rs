@@ -6,9 +6,9 @@ use crate::boot::KERNEL_BASE;
 use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
 
-use crate::utils::arcm::KArcm;
-use crate::alloc::collections::LinkedList;
 use crate::alloc::collections::btree_map::BTreeMap;
+use crate::alloc::collections::LinkedList;
+use crate::utils::arcm::KArcm;
 
 use crate::proc::task::Task;
 
@@ -166,7 +166,8 @@ impl Process {
 				Some(x) => Process::search_from_pid(x.lock().pid),
 				None => panic!("Process has no parent")
 			}
-		}.unwrap();
+		}
+		.unwrap();
 		let mut process = binding.lock();
 		let mut parent = binding_parent.lock();
 		while process.childs.len() > 0 {
@@ -181,7 +182,12 @@ impl Process {
 		}
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
 		process.state = Status::Zombie;
-		Signal::send_to_process(&mut parent, process.pid, SignalType::SIGCHLD, wstatus);
+		Signal::send_to_process(
+			&mut parent,
+			process.pid,
+			SignalType::SIGCHLD,
+			wstatus
+		);
 	}
 
 	pub unsafe fn remove(pid: Pid) {
@@ -192,7 +198,8 @@ impl Process {
 				Some(x) => Process::search_from_pid(x.lock().pid),
 				None => panic!("Process has no parent")
 			}
-		}.unwrap();
+		}
+		.unwrap();
 		let mut parent = binding_parent.lock();
 		let mut i = 0;
 		while i < parent.childs.len() {

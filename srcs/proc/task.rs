@@ -2,9 +2,9 @@ use crate::interrupts::Registers;
 use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
 use crate::memory::{MemoryZone, TypeZone, VirtAddr};
-use crate::proc::Pid;
-use crate::proc::process::{Process, Status, PROCESS_TREE, NEXT_PID};
+use crate::proc::process::{Process, Status, NEXT_PID, PROCESS_TREE};
 use crate::proc::signal::{SignalHandler, SignalType};
+use crate::proc::Pid;
 
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
@@ -12,8 +12,8 @@ use crate::wrappers::{_cli, _rst};
 use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
-use crate::utils::arcm::KArcm;
 use crate::alloc::collections::vec_deque::VecDeque;
+use crate::utils::arcm::KArcm;
 
 pub static mut TASKLIST: VecDeque<Task> = VecDeque::new();
 
@@ -94,11 +94,14 @@ impl Task {
 		}
 	}
 
-	unsafe fn handle_signal(regs: &mut Registers, handler: &SignalHandler) -> ! {
+	unsafe fn handle_signal(
+		regs: &mut Registers,
+		handler: &SignalHandler
+	) -> ! {
 		regs.esp -= core::mem::size_of::<Task>() as u32;
 		(regs.esp as *mut Registers).write(*regs);
 		regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
-		 // Setup args (int signal) and handler call
+				 // Setup args (int signal) and handler call
 		regs.esp -= 4;
 		core::arch::asm!("mov [{esp}], eax",
 			esp = in(reg) regs.esp,
@@ -122,14 +125,17 @@ impl Task {
 			} else if self.state == TaskStatus::Running {
 				let res = {
 					let process = self.process.lock();
-					let get_handler = |process: &Process| -> Option<SignalHandler> {
-						for handler in process.signal_handlers.iter() {
-							if handler.signal == process.signals[i].sigtype as i32 {
-								return Some(handler.clone());
+					let get_handler =
+						|process: &Process| -> Option<SignalHandler> {
+							for handler in process.signal_handlers.iter() {
+								if handler.signal
+									== process.signals[i].sigtype as i32
+								{
+									return Some(handler.clone());
+								}
 							}
-						}
-						None
-					};
+							None
+						};
 					get_handler(&process)
 				};
 				if res.is_some() {

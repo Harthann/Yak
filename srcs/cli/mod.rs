@@ -1,7 +1,7 @@
+use crate::alloc::boxed::Box;
 use crate::spin::KMutex;
 use crate::utils::queue::Queue;
 use crate::vga_buffer::WRITER;
-use crate::alloc::boxed::Box;
 
 mod input;
 pub use input::{Input, Termcaps};
