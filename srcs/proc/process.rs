@@ -125,6 +125,7 @@ impl Process {
 	// TODO: next_pid need to check overflow and if other pid is available
 	pub unsafe fn init(&mut self, parent: &mut Process) {
 		self.pid = NEXT_PID;
+		self.exe = parent.exe.clone();
 		self.state = Status::Run;
 		self.parent = parent;
 		self.owner = parent.owner;

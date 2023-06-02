@@ -4,6 +4,7 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::wrappers::{_cli, _sti};
 
+use crate::alloc::string::String;
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
 
@@ -46,13 +47,14 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 	);
 }
 
-pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
+pub unsafe fn exec_fn_userspace(name: String, func: VirtAddr, size: usize) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let parent: &mut Process = Process::get_running_process();
 
 	let mut process: Process = Process::new();
 	process.init(parent);
+	process.exe = name.clone();
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
 	process.setup_stack(0x1000, PAGE_WRITABLE | PAGE_USER, false);
 	process.setup_heap(
@@ -88,6 +90,16 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	process.pid
 }
 
+#[macro_export]
+macro_rules! exec_fn_userspace {
+	($func:expr, $size:expr) => {
+		{
+			use crate::alloc::string::ToString;
+			crate::user::exec_fn_userspace(stringify!($func).to_string(), $func as u32, $size)
+		}
+	}
+}
+
 core::arch::global_asm!(
 	r#"
 .globl userfunc
@@ -117,8 +129,8 @@ userfunc_end:
 
 pub fn test_user_page() {
 	unsafe {
-		exec_fn_userspace(
-			userfunc as u32,
+		crate::exec_fn_userspace!(
+			userfunc,
 			userfunc_end as usize - userfunc as usize
 		);
 	}
