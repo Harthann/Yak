@@ -93,7 +93,7 @@ impl Task {
 		while i < len {
 			if TASKLIST[i].process.lock().pid == pid {
 				TASKLIST.remove(i);
-				break ;
+				break;
 			}
 			i += 1;
 		}
