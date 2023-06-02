@@ -1,5 +1,7 @@
 //! Processus, Tasks and Signals
 
+use core::ffi::CStr;
+use crate::alloc::string::ToString;
 use crate::boxed::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
@@ -51,6 +53,7 @@ pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
 }
 
 pub unsafe extern "C" fn exec_fn(
+	name: *const u8,
 	func: VirtAddr,
 	args_size: &Vec<usize>,
 	mut args: ...
@@ -61,6 +64,7 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
+	process.exe = CStr::from_ptr(name as *const i8).to_str().unwrap().to_string();
 	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
 		parent.stack.size,
@@ -134,14 +138,14 @@ macro_rules! exec_fn {
 	($func:expr) => {
 		{
 			let args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
-			crate::proc::exec_fn($func as u32, &args_size)
+			crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size)
 		}
 	};
 	($func:expr, $($rest:expr),+) => {
 		{
 			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
 			crate::size_of_args!(args_size, $($rest),+);
-			crate::proc::exec_fn($func as u32, &args_size, $($rest),+)
+			crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size, $($rest),+)
 		}
 	}
 }

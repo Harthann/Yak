@@ -3,6 +3,7 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
+use crate::alloc::string::String;
 use crate::alloc::collections::LinkedList;
 use crate::boxed::Box;
 
@@ -51,6 +52,7 @@ pub enum Status {
 pub const MAX_FD: usize = 32;
 pub struct Process {
 	pub pid:             Pid,
+	pub exe:            String,
 	pub state:           Status,
 	pub parent:          *mut Process,
 	pub childs:          Vec<Box<Process>>,
@@ -73,6 +75,7 @@ impl Process {
 	pub const fn new() -> Self {
 		Self {
 			pid:             0,
+			exe:            String::new(),
 			state:           Status::Disable,
 			parent:          core::ptr::null_mut(),
 			childs:          Vec::new(),
@@ -336,7 +339,7 @@ impl Process {
 	}
 
 	pub unsafe fn print_all_process() {
-		crate::kprintln!("       PID        OWNER   STATUS");
+		crate::kprintln!("       PID                   NAME        OWNER   STATUS");
 		MASTER_PROCESS.print_tree();
 	}
 
@@ -347,6 +350,6 @@ impl Process {
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.state)
+		write!(f, "{:10} - {:>20} - {:10} - {:?}", self.pid, self.exe, self.owner, self.state)
 	}
 }
