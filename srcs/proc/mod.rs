@@ -1,12 +1,12 @@
 //! Processus, Tasks and Signals
 
-use core::ffi::CStr;
 use crate::alloc::string::ToString;
 use crate::boxed::Box;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst, _sti};
 use crate::{VirtAddr, KSTACK_ADDR};
 use alloc::sync::Arc;
+use core::ffi::CStr;
 
 use crate::memory::paging::PAGE_WRITABLE;
 
@@ -64,7 +64,10 @@ pub unsafe extern "C" fn exec_fn(
 
 	let mut process = Process::new();
 	process.init(parent);
-	process.exe = CStr::from_ptr(name as *const i8).to_str().unwrap().to_string();
+	process.exe = CStr::from_ptr(name as *const i8)
+		.to_str()
+		.unwrap()
+		.to_string();
 	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
 		parent.stack.size,

@@ -47,7 +47,11 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 	);
 }
 
-pub unsafe fn exec_fn_userspace(name: String, func: VirtAddr, size: usize) -> Pid {
+pub unsafe fn exec_fn_userspace(
+	name: String,
+	func: VirtAddr,
+	size: usize
+) -> Pid {
 	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let parent: &mut Process = Process::get_running_process();
@@ -92,12 +96,14 @@ pub unsafe fn exec_fn_userspace(name: String, func: VirtAddr, size: usize) -> Pi
 
 #[macro_export]
 macro_rules! exec_fn_userspace {
-	($func:expr, $size:expr) => {
-		{
-			use crate::alloc::string::ToString;
-			crate::user::exec_fn_userspace(stringify!($func).to_string(), $func as u32, $size)
-		}
-	}
+	($func:expr, $size:expr) => {{
+		use crate::alloc::string::ToString;
+		crate::user::exec_fn_userspace(
+			stringify!($func).to_string(),
+			$func as u32,
+			$size
+		)
+	}};
 }
 
 core::arch::global_asm!(

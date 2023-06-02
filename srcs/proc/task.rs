@@ -73,7 +73,7 @@ impl Task {
 			// Init allocator with addr &mut KALLOCATOR
 			KALLOCATOR
 				.init(MASTER_PROCESS.heap.offset, MASTER_PROCESS.heap.size);
-			MASTER_PROCESS.exe =  String::from("kernel");
+			MASTER_PROCESS.exe = String::from("kernel");
 			MASTER_PROCESS.childs = Vec::with_capacity(8);
 			MASTER_PROCESS.signals = Vec::with_capacity(8);
 			MASTER_PROCESS.owner = 0;
