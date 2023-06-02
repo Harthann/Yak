@@ -174,6 +174,13 @@ impl Process {
 			let len = parent.childs.len();
 			parent.childs[len - 1].parent = self.parent;
 		}
+		// Transfer signals from childs to parent
+		while self.signals.len() != 0 {
+			let signal = self.signals.remove(0);
+			if signal.sigtype == SignalType::SIGCHLD {
+				parent.signals.push(signal);
+			}
+		}
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
 		self.state = Status::Zombie;
 		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);

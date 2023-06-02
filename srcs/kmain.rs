@@ -44,11 +44,16 @@ pub extern "C" fn kmain() -> ! {
 	kprintln!("{}", workspace_msg);
 	change_color!(Color::White, Color::Black);
 
+	kprint!("$> ");
+	let mut pid = unsafe { crate::exec_fn!(crate::cli::cli) };
 	loop {
-		kprint!("$> ");
-		let pid = unsafe { crate::exec_fn!(crate::cli::cli) };
+		// Auto-remove all zombies on pid 0 and relaunch cli if killed
 		let mut status = 0;
-		sys_waitpid(pid, &mut status, 0);
-		crate::dprintln!("Term has been killed");
+		let ret = sys_waitpid(-1, &mut status, 0);
+		if ret == pid {
+			crate::dprintln!("Term has been killed");
+			kprint!("$> ");
+			pid = unsafe { crate::exec_fn!(crate::cli::cli) };
+		}
 	}
 }
