@@ -2,7 +2,7 @@
 
 use crate::utils::arcm::KArcm;
 use crate::vec::Vec;
-use crate::wrappers::{_cli, _rst, _sti};
+use crate::wrappers::{_cli, _rst};
 use crate::{VirtAddr, KSTACK_ADDR};
 use alloc::sync::Arc;
 
@@ -58,7 +58,6 @@ pub unsafe extern "C" fn exec_fn(
 	args_size: &Vec<usize>,
 	mut args: ...
 ) -> Pid {
-	_cli();
 	let running_task: &mut Task = Task::get_running_task();
 	let binding = Process::get_running_process();
 	let mut process = Process::new();
@@ -124,7 +123,6 @@ pub unsafe extern "C" fn exec_fn(
 	PROCESS_TREE.insert(pid, new_task.process.clone());
 
 	TASKLIST.push_back(new_task);
-	_sti();
 	pid
 }
 

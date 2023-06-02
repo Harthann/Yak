@@ -5,8 +5,6 @@ use crate::utils::arcm::KArcm;
 
 use crate::memory::paging::page_directory::PageDirectory;
 
-use crate::wrappers::{_cli, _sti};
-
 // kernel fork:
 // same cr3:
 // - Can't copy heap
@@ -22,7 +20,6 @@ use crate::wrappers::{_cli, _sti};
 /// Heap contains the prg and the heap allocated
 pub fn sys_fork() -> Pid {
 	unsafe {
-		_cli();
 		let running_task: &mut Task = Task::get_running_task();
 		let binding = Process::get_running_process();
 		let mut process: Process = Process::new();
@@ -63,7 +60,6 @@ pub fn sys_fork() -> Pid {
 		PROCESS_TREE.insert(pid, new_task.process.clone());
 
 		TASKLIST.push_back(new_task);
-		_sti();
 		pid
 	}
 }
