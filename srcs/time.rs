@@ -24,7 +24,8 @@ impl Time {
 pub fn get_timestamp() -> Time {
 	// SYSTEM_FRACTION shouldn't be change after boot and should so be safe
 	unsafe {
-		let total_ms = (JIFFIES.load(Ordering::Relaxed) as f64 * SYSTEM_FRACTION) as usize;
+		let total_ms =
+			(JIFFIES.load(Ordering::Relaxed) as f64 * SYSTEM_FRACTION) as usize;
 		Time {
 			second:      total_ms / 1000,
 			millisecond: total_ms - (total_ms / 1000)
@@ -68,9 +69,11 @@ fn raw_delay_ms(ms: usize) {
 #[inline]
 fn sleep_ms(ms: usize) {
 	unsafe {
-		let saved_time = (JIFFIES.load(Ordering::Relaxed) as f64 * SYSTEM_FRACTION) as usize;
+		let saved_time =
+			(JIFFIES.load(Ordering::Relaxed) as f64 * SYSTEM_FRACTION) as usize;
 		while saved_time + ms
-			> (JIFFIES.load(Ordering::Relaxed) as f64 * SYSTEM_FRACTION) as usize
+			> (JIFFIES.load(Ordering::Relaxed) as f64 * SYSTEM_FRACTION)
+				as usize
 		{
 			crate::wrappers::sti!();
 			crate::wrappers::hlt!();
