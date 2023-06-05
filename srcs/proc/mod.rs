@@ -137,6 +137,25 @@ macro_rules! size_of_args {
 }
 
 #[macro_export]
+macro_rules! exec_fn_name {
+	($name:expr, $func:expr) => {
+		{
+			let args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			$name.push_str("\0");
+			crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size)
+		}
+	};
+	($name:expr, $func:expr, $($rest:expr),+) => {
+		{
+			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			crate::size_of_args!(args_size, $($rest),+);
+			$name.push_str("\0");
+			crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size, $($rest),+)
+		}
+	}
+}
+
+#[macro_export]
 macro_rules! exec_fn {
 	($func:expr) => {
 		{

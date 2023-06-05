@@ -2,10 +2,13 @@
 
 use core::arch::asm;
 
+use crate::cli::LOCK_CMD;
 use crate::proc::process::{Pid, Process};
+use crate::proc::signal::SignalType;
 use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_kill;
+use crate::syscalls::timer::sys_getppid;
 use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
@@ -31,6 +34,7 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	pmap,
 	kill
 ];
+
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
 	"jiffies", "ps", "uptime", "date", "play", "memtrack", "pmap", "kill"
@@ -39,8 +43,9 @@ const KNOWN_CMD: [&str; NB_CMDS] = [
 pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 	unsafe {
 		let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
+		// notify parent that vector has been copied
+		sys_kill(sys_getppid(), SignalType::SIGHUP as i32);
 		COMMANDS[cmd_id](args);
-		crate::syscalls::exit::sys_exit(0);
 	}
 }
 
@@ -135,6 +140,7 @@ fn kill(command: Vec<String>) {
 	}
 
 	let res: i32 = sys_kill(pid, 9); // SIGKILL
+
 	if res != 0 {
 		kprintln!("[Error]: {}", res);
 		return;
@@ -372,17 +378,38 @@ impl Command {
 			crate::kprint!("{}", charcode);
 			match self.is_known() {
 				Some(x) => {
+					unsafe { LOCK_CMD = true };
+					let mut background: bool = false;
 					let mut split: Vec<String> = Vec::new();
 					let splited = self.command.split(&[' ', '\t', '\0'][..]);
 					for arg in splited {
 						split.push(arg.to_string());
 					}
-					let (ptr, len, cap) = split.into_raw_parts();
-					let pid = unsafe {
-						crate::exec_fn!(command_entry, x, ptr, len, cap)
-					};
-					let mut status = 0;
-					sys_waitpid(pid, &mut status, 0);
+					if split.last().unwrap() == "&" {
+						split.pop();
+						background = true;
+					}
+					let (ptr, len, cap) = split.clone().into_raw_parts();
+					unsafe {
+						let pid = crate::exec_fn_name!(
+							split[0],
+							command_entry,
+							x,
+							ptr,
+							len,
+							cap
+						);
+						loop {
+							if LOCK_CMD == false {
+								break;
+							}
+							crate::time::sleep(1);
+						}
+						if background == false {
+							let mut wstatus: i32 = 0;
+							sys_waitpid(pid, &mut wstatus, 0);
+						}
+					}
 				},
 				_ => {
 					if self.command.len() != 0 {

@@ -7,8 +7,8 @@ use crate::wrappers::{_cli, _rst, _sti, cli, cli_count, hlt, sti};
 use crate::errno::ErrNo;
 use crate::KSTACK_ADDR;
 
-const WNOHANG: u32 = 0x01;
-const WUNTRACED: u32 = 0x02;
+pub const WNOHANG: u32 = 0x01;
+pub const WUNTRACED: u32 = 0x02;
 
 type Time = usize;
 

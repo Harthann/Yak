@@ -1,3 +1,4 @@
+use crate::cli::cli;
 use crate::syscalls::exit::sys_waitpid;
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;
@@ -46,7 +47,7 @@ pub extern "C" fn kmain() -> ! {
 
 	loop {
 		kprint!("$> ");
-		let pid = unsafe { crate::exec_fn!(crate::cli::cli) };
+		let pid = unsafe { crate::exec_fn!(cli) };
 		let mut status = 0;
 		sys_waitpid(pid, &mut status, 0);
 		crate::dprintln!("Term has been killed");
