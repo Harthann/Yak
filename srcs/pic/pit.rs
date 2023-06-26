@@ -77,7 +77,7 @@ pub fn set_irq0_in_ms(ms: f32) {
 		RELOAD_VALUE = (1193182.0 / frequency) as u16;
 		FREQUENCY = 1193182.0 / RELOAD_VALUE as f64;
 		// TODO fround
-		crate::time::SYSTEM_FRACTION = (1000.0 / FREQUENCY) as usize;
+		crate::time::SYSTEM_FRACTION = 1000.0 / FREQUENCY;
 		crate::kprintln!("System frequency set to: {}", FREQUENCY);
 		crate::kprintln!(
 			"System fraction set to: {}",
