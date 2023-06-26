@@ -112,7 +112,6 @@ fn pmap(command: Vec<String>) {
 }
 
 fn kill(command: Vec<String>) {
-	let mut wstatus: i32 = 0;
 	let pid: Pid;
 
 	if command.len() != 2 {
@@ -134,7 +133,6 @@ fn kill(command: Vec<String>) {
 		kprintln!("[Error]: {}", res);
 		return;
 	}
-	sys_waitpid(pid, &mut wstatus, 0);
 }
 
 fn reboot(_: Vec<String>) {
