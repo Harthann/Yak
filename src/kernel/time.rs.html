@@ -92,6 +92,9 @@
 <a href="#92" id="92">92</a>
 <a href="#93" id="93">93</a>
 <a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>core::sync::atomic::{AtomicUsize, Ordering};
 <span class="attr">#[no_mangle]
 </span><span class="kw">static </span>JIFFIES: AtomicUsize = AtomicUsize::new(<span class="number">0</span>);
@@ -99,7 +102,7 @@
 <span class="comment">// Number of ms between each irq0
 // This value should be written only onth at the boot
 </span><span class="attr">#[no_mangle]
-</span><span class="kw">pub static </span><span class="kw-2">mut </span>SYSTEM_FRACTION: usize = <span class="number">1</span>;
+</span><span class="kw">pub static </span><span class="kw-2">mut </span>SYSTEM_FRACTION: f64 = <span class="number">1.0</span>;
 
 <span class="kw">pub struct </span>Time {
 	<span class="kw">pub </span>second:      usize,
@@ -118,7 +121,8 @@
 </span><span class="kw">pub fn </span>get_timestamp() -&gt; Time {
 	<span class="comment">// SYSTEM_FRACTION shouldn&#39;t be change after boot and should so be safe
 	</span><span class="kw">unsafe </span>{
-		<span class="kw">let </span>total_ms = JIFFIES.load(Ordering::Relaxed) * SYSTEM_FRACTION;
+		<span class="kw">let </span>total_ms =
+			(JIFFIES.load(Ordering::Relaxed) <span class="kw">as </span>f64 * SYSTEM_FRACTION) <span class="kw">as </span>usize;
 		Time {
 			second:      total_ms / <span class="number">1000</span>,
 			millisecond: total_ms - (total_ms / <span class="number">1000</span>)
@@ -162,9 +166,11 @@
 <span class="attr">#[inline]
 </span><span class="kw">fn </span>sleep_ms(ms: usize) {
 	<span class="kw">unsafe </span>{
-		<span class="kw">let </span>saved_time = JIFFIES.load(Ordering::Relaxed) * SYSTEM_FRACTION;
+		<span class="kw">let </span>saved_time =
+			(JIFFIES.load(Ordering::Relaxed) <span class="kw">as </span>f64 * SYSTEM_FRACTION) <span class="kw">as </span>usize;
 		<span class="kw">while </span>saved_time + ms
-			&gt; JIFFIES.load(Ordering::Relaxed) * SYSTEM_FRACTION
+			&gt; (JIFFIES.load(Ordering::Relaxed) <span class="kw">as </span>f64 * SYSTEM_FRACTION)
+				<span class="kw">as </span>usize
 		{
 			<span class="macro">crate::wrappers::sti!</span>();
 			<span class="macro">crate::wrappers::hlt!</span>();

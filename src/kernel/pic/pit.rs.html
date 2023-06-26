@@ -199,7 +199,7 @@
 		RELOAD_VALUE = (<span class="number">1193182.0 </span>/ frequency) <span class="kw">as </span>u16;
 		FREQUENCY = <span class="number">1193182.0 </span>/ RELOAD_VALUE <span class="kw">as </span>f64;
 		<span class="comment">// TODO fround
-		</span><span class="kw">crate</span>::time::SYSTEM_FRACTION = (<span class="number">1000.0 </span>/ FREQUENCY) <span class="kw">as </span>usize;
+		</span><span class="kw">crate</span>::time::SYSTEM_FRACTION = <span class="number">1000.0 </span>/ FREQUENCY;
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;System frequency set to: {}&quot;</span>, FREQUENCY);
 		<span class="macro">crate::kprintln!</span>(
 			<span class="string">&quot;System fraction set to: {}&quot;</span>,
