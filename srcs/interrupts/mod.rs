@@ -1,6 +1,5 @@
 //! Setup interrupts and exception handler
 
-use crate::proc::process::Process;
 use crate::proc::task::Task;
 use crate::syscalls::syscall_handler;
 
@@ -117,10 +116,8 @@ fn page_fault_handler(reg: &Registers) {
 		let cr2: usize;
 		core::arch::asm!("mov {}, cr2", out(reg) cr2);
 		crate::kprintln!("at addr {:#x}", cr2);
-		crate::kprintln!(
-			"Current pid {}",
-			crate::proc::process::Process::get_running_process().pid
-		);
+		let binding = crate::proc::process::Process::get_running_process();
+		crate::kprintln!("Current pid {}", binding.lock().pid);
 	}
 	crate::kprintln!("{:#x?}", reg);
 }
@@ -134,7 +131,6 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 	_cli();
 	let task = Task::get_running_task();
 	task.regs = *regs; // dump regs for syscall (e.g: fork)
-	let _process: &mut Process = &mut *task.process;
 	let int_no: usize = regs.int_no as usize;
 	if int_no < EXCEPTION_SIZE && STR_EXCEPTION[int_no] != "Reserved" {
 		crate::kprintln!(

@@ -61,12 +61,11 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				Process::get_signal_running_process(pid, SignalType::SIGCHLD);
 			if res.is_ok() {
 				let signal: Signal = res.unwrap();
-				let parent_process: &mut Process =
-					Process::get_running_process();
-				let res = parent_process.search_from_pid(signal.sender);
+				let res = Process::search_from_pid(signal.sender);
 				if res.is_ok() {
-					let process: &mut Process = res.unwrap();
-					process.remove();
+					let binding = res.unwrap();
+					let pid = binding.lock().pid;
+					Process::remove(pid);
 				}
 				if !wstatus.is_null() {
 					*wstatus = signal.wstatus; // TODO

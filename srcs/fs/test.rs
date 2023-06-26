@@ -1,4 +1,4 @@
-use crate::boxed::Box;
+use crate::alloc::boxed::Box;
 use crate::fs;
 use crate::fs::ErrNo;
 

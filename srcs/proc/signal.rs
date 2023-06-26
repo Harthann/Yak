@@ -1,9 +1,10 @@
 use crate::errno::ErrNo;
-use crate::proc::process::{Process, MASTER_PROCESS};
+use crate::proc::process::Process;
 use crate::proc::Id;
 
 pub type SigHandlerFn = fn(i32);
 
+#[derive(Clone)]
 pub struct SignalHandler {
 	pub signal:  i32,
 	pub handler: SigHandlerFn
@@ -101,10 +102,9 @@ impl Signal {
 		sigtype: SignalType,
 		wstatus: i32
 	) -> Result<Id, ErrNo> {
-		unsafe {
-			let process: &mut Process = MASTER_PROCESS.search_from_pid(pid)?;
-			Self::send_to_process(process, sender_pid, sigtype, wstatus);
-		}
+		let binding = Process::search_from_pid(pid)?;
+		let mut process = binding.lock();
+		Self::send_to_process(&mut *process, sender_pid, sigtype, wstatus);
 		Ok(pid)
 	}
 

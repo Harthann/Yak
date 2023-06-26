@@ -1,4 +1,4 @@
-use crate::proc::process::{Pid, Process, MASTER_PROCESS};
+use crate::proc::process::{Pid, Process};
 use crate::proc::signal::{
 	get_signal_type,
 	SigHandlerFn,
@@ -15,9 +15,9 @@ use crate::vec::Vec;
 
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	// TODO: check signal validity
-	// TODO: Use map/hashmap instead
-	let handlers: &mut Vec<SignalHandler> =
-		&mut Process::get_running_process().signal_handlers;
+	let binding = Process::get_running_process();
+	let mut process = binding.lock();
+	let handlers: &mut Vec<SignalHandler> = &mut process.signal_handlers;
 	for i in 0..handlers.len() {
 		if handlers[i].signal == signal {
 			handlers.remove(i);
@@ -34,17 +34,16 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 	if pid > 0 {
 		// Send to a specific process
 		unsafe {
-			let res = MASTER_PROCESS.search_from_pid(pid);
+			let res = Process::search_from_pid(pid);
 			if res.is_err() {
 				_sti();
 				return -(res.err().unwrap() as i32);
 			}
-			let process: &mut Process = res.unwrap();
 			if signal == 0 {
 				_sti();
 				return 0; // kill check for pid presence if signal is 0
 			}
-			let sender_pid = Process::get_running_process().pid;
+			let sender_pid = Process::get_running_process().lock().pid;
 			let res = get_signal_type(signal);
 			if res.is_err() {
 				_sti();
@@ -52,8 +51,8 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 			}
 			let signal_type = res.unwrap();
 			if signal_type == SignalType::SIGKILL {
-				Task::remove_task_from_process(process);
-				process.zombify(__W_STOPCODE!(signal_type as i32));
+				Process::zombify(pid, __W_STOPCODE!(signal_type as i32));
+				Task::remove_task_from_process(pid);
 				_sti();
 				return 0;
 			} else {

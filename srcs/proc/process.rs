@@ -3,11 +3,12 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
-use crate::alloc::collections::LinkedList;
-use crate::boxed::Box;
-
 use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
+
+use crate::alloc::collections::btree_map::BTreeMap;
+use crate::alloc::collections::LinkedList;
+use crate::utils::arcm::KArcm;
 
 use crate::proc::task::Task;
 
@@ -33,10 +34,10 @@ use crate::KSTACK_ADDR;
 use crate::fs::FileInfo;
 use alloc::sync::Arc;
 
-pub static mut NEXT_PID: Id = 0;
-pub static mut MASTER_PROCESS: Process = Process::new();
-
 pub type Pid = Id;
+
+pub static mut NEXT_PID: Pid = 0;
+pub static mut PROCESS_TREE: BTreeMap<Pid, KArcm<Process>> = BTreeMap::new();
 
 #[derive(Debug, PartialEq)]
 pub enum Status {
@@ -49,11 +50,12 @@ pub enum Status {
 /// Arcm is needed to protect MemoryZone only if the memory zone is shared between threads
 /// otherwise it will be useless.
 pub const MAX_FD: usize = 32;
+
 pub struct Process {
 	pub pid:             Pid,
 	pub state:           Status,
-	pub parent:          *mut Process,
-	pub childs:          Vec<Box<Process>>,
+	pub parent:          Option<KArcm<Process>>,
+	pub childs:          Vec<KArcm<Process>>,
 	pub stack:           MemoryZone,
 	pub heap:            MemoryZone,
 	pub kernel_stack:    MemoryZone,
@@ -70,11 +72,11 @@ pub struct Process {
 
 const DEFAULT_FILE: Option<Arc<FileInfo>> = None;
 impl Process {
-	pub const fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			pid:             0,
 			state:           Status::Disable,
-			parent:          core::ptr::null_mut(),
+			parent:          None,
 			childs:          Vec::new(),
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
@@ -94,37 +96,34 @@ impl Process {
 		let mut ret: usize = 0;
 		for process in self.childs.iter() {
 			ret += 1;
-			ret += process.get_nb_subprocess()
+			ret += process.lock().get_nb_subprocess()
 		}
 		ret
 	}
 
-	pub fn print_tree(&self) {
-		crate::kprintln!("{}", self);
-		for process in self.childs.iter() {
-			process.print_tree();
+	pub fn print_tree() {
+		unsafe {
+			for process in PROCESS_TREE.values() {
+				crate::kprintln!("{}", *process.lock());
+			}
 		}
 	}
 
-	pub fn search_from_pid(&mut self, pid: Id) -> Result<&mut Process, ErrNo> {
-		if self.pid == pid {
-			return Ok(self);
-		}
-		for process in self.childs.iter_mut() {
-			let res = process.search_from_pid(pid);
-			if res.is_ok() {
-				return res;
+	pub fn search_from_pid(pid: Id) -> Result<KArcm<Process>, ErrNo> {
+		unsafe {
+			match PROCESS_TREE.get_mut(&pid) {
+				Some(process) => Ok(process.clone()),
+				None => Err(ErrNo::ESRCH)
 			}
 		}
-		Err(ErrNo::ESRCH)
 	}
 
 	// TODO: next_pid need to check overflow and if other pid is available
-	pub unsafe fn init(&mut self, parent: &mut Process) {
+	pub unsafe fn init(&mut self, parent: &KArcm<Process>) {
 		self.pid = NEXT_PID;
 		self.state = Status::Run;
-		self.parent = parent;
-		self.owner = parent.owner;
+		self.parent = Some(parent.clone());
+		self.owner = parent.lock().owner;
 		NEXT_PID += 1;
 	}
 
@@ -159,32 +158,52 @@ impl Process {
 		);
 	}
 
-	pub unsafe fn zombify(&mut self, wstatus: i32) {
-		if self.parent.is_null() {
-			todo!();
+	pub unsafe fn zombify(pid: Pid, wstatus: i32) {
+		let binding = Process::search_from_pid(pid).unwrap();
+		let binding_parent = {
+			let process = binding.lock();
+			match &process.parent {
+				Some(x) => Process::search_from_pid(x.lock().pid),
+				None => panic!("Process has no parent")
+			}
 		}
-		let parent: &mut Process = &mut *self.parent;
-		while self.childs.len() > 0 {
+		.unwrap();
+		let mut process = binding.lock();
+		let mut parent = binding_parent.lock();
+		while process.childs.len() > 0 {
 			// TODO: DON'T MOVE THREADS AND REMOVE THEM
-			let res = self.childs.pop();
+			let res = process.childs.pop();
 			if res.is_none() {
 				todo!();
 			}
 			parent.childs.push(res.unwrap());
 			let len = parent.childs.len();
-			parent.childs[len - 1].parent = self.parent;
+			parent.childs[len - 1].lock().parent = Some(binding_parent.clone());
 		}
 		// Don't remove and wait for the parent process to do wait4() -> Zombify
-		self.state = Status::Zombie;
-		Signal::send_to_process(parent, self.pid, SignalType::SIGCHLD, wstatus);
+		process.state = Status::Zombie;
+		Signal::send_to_process(
+			&mut parent,
+			process.pid,
+			SignalType::SIGCHLD,
+			wstatus
+		);
 	}
 
-	pub unsafe fn remove(&mut self) {
-		let parent: &mut Process = &mut *self.parent;
+	pub unsafe fn remove(pid: Pid) {
+		let binding = Process::search_from_pid(pid).unwrap();
+		let binding_parent = {
+			let process = binding.lock();
+			match &process.parent {
+				Some(x) => Process::search_from_pid(x.lock().pid),
+				None => panic!("Process has no parent")
+			}
+		}
+		.unwrap();
+		let mut parent = binding_parent.lock();
 		let mut i = 0;
 		while i < parent.childs.len() {
-			let ptr: *mut Process = parent.childs[i].as_mut();
-			if ptr == &mut *self {
+			if parent.childs[i].lock().pid == pid {
 				break;
 			}
 			i += 1;
@@ -192,17 +211,11 @@ impl Process {
 		if i == parent.childs.len() {
 			todo!(); // Problem
 		}
-		// Removing these free seems to add leaking pages even tho MemoryZone drop perform the same
-		// operation
-		// free_pages(self.stack.offset, self.stack.size / 0x1000);
-		// free_pages(self.heap.offset, self.heap.size / 0x1000);
-		// crate::kprintln!("heap? {:#x}", self.heap.offset);
-		// free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
-
-		if self.test == true {
+		let mut process = binding.lock();
+		if process.test == true {
 			use crate::memory::paging::bitmap;
-			let pd = &mut *self.pd;
-			for i in &self.page_tables {
+			let pd = &mut *process.pd;
+			for i in &process.page_tables {
 				let vaddr = i.get_vaddr() as usize;
 				bitmap::physmap_as_mut().free_page(get_paddr!(vaddr));
 				page_directory
@@ -216,6 +229,7 @@ impl Process {
 				.set_entry((vaddr & 0x3ff000) >> 12, 0);
 		}
 		parent.childs.remove(i);
+		PROCESS_TREE.remove(&pid);
 	}
 
 	pub unsafe fn get_signal(
@@ -237,7 +251,7 @@ impl Process {
 		pid: Id,
 		signal: SignalType
 	) -> Result<Signal, ErrNo> {
-		MASTER_PROCESS.search_from_pid(pid)?; // Return ErrNo::ESRCH if doesn't exist
+		Process::search_from_pid(pid)?; // Return ErrNo::ESRCH if doesn't exist
 		let mut i = 0;
 		while i < self.signals.len() {
 			if self.signals[i].sender == pid
@@ -250,15 +264,16 @@ impl Process {
 		Err(ErrNo::EAGAIN)
 	}
 
-	pub fn get_running_process() -> &'static mut Self {
-		unsafe { &mut *Task::get_running_task().process }
+	pub fn get_running_process() -> KArcm<Self> {
+		unsafe { Task::get_running_task().process.clone() }
 	}
 
 	pub unsafe fn get_signal_running_process(
 		pid: Id,
 		signal: SignalType
 	) -> Result<Signal, ErrNo> {
-		let process: &mut Process = Process::get_running_process();
+		let binding = Process::get_running_process();
+		let mut process = binding.lock();
 		if pid == -1 {
 			process.get_signal(signal)
 		} else if pid > 0 {
@@ -271,7 +286,10 @@ impl Process {
 	}
 
 	pub unsafe fn setup_pagination(&mut self) -> &'static mut PageDirectory {
-		let parent: &Process = &(*self.parent);
+		let parent = match &self.parent {
+			Some(x) => x.lock(),
+			None => panic!("Process has no parent")
+		};
 		let kernel_pt_paddr: PhysAddr = get_paddr!(page_directory
 			.get_page_table(KERNEL_BASE >> 22)
 			.get_vaddr());
@@ -331,13 +349,13 @@ impl Process {
 		page_dir
 	}
 
-	pub unsafe fn get_nb_process() -> usize {
-		MASTER_PROCESS.get_nb_subprocess() + 1
+	pub fn get_nb_process() -> usize {
+		unsafe { PROCESS_TREE.len() }
 	}
 
 	pub unsafe fn print_all_process() {
 		crate::kprintln!("       PID        OWNER   STATUS");
-		MASTER_PROCESS.print_tree();
+		Self::print_tree();
 	}
 
 	pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {

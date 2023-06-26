@@ -153,7 +153,7 @@ global_asm!(
 .globl userfunc_5
 .globl end_userfunc_5
 userfunc_5:
-	mov eax, 2
+	mov eax, 2 // fork
 	int 0x80
 	cmp eax, 0
 	jne .wait_child_5
@@ -166,9 +166,9 @@ userfunc_5:
 	mov edx, 0
 	mov ecx, 0
 	mov ebx, eax
-	mov eax, 7
+	mov eax, 7 // waitpid
 	int 0x80
-	mov ebx, eax
+	mov ebx, eax // exit
 	mov eax, 1
 	int 0x80
 end_userfunc_5:

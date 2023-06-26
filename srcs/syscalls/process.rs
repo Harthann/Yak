@@ -1,11 +1,9 @@
-use crate::proc::process::{Pid, Process};
+use crate::proc::process::{Pid, Process, PROCESS_TREE};
 use crate::proc::task::{Task, TASKLIST};
 
+use crate::utils::arcm::KArcm;
+
 use crate::memory::paging::page_directory::PageDirectory;
-
-use crate::wrappers::{_cli, _sti};
-
-use crate::boxed::Box;
 
 // kernel fork:
 // same cr3:
@@ -22,30 +20,30 @@ use crate::boxed::Box;
 /// Heap contains the prg and the heap allocated
 pub fn sys_fork() -> Pid {
 	unsafe {
-		_cli();
 		let running_task: &mut Task = Task::get_running_task();
-		let parent: &mut Process = Process::get_running_process();
-
+		let binding = Process::get_running_process();
 		let mut process: Process = Process::new();
-		process.init(parent);
-		process.setup_kernel_stack(parent.kernel_stack.flags);
-		process.setup_stack(
-			parent.stack.size,
-			parent.stack.flags,
-			parent.stack.kphys
-		);
-		process.setup_heap(
-			parent.heap.size,
-			parent.heap.flags,
-			parent.heap.kphys
-		);
-		process.copy_mem(parent);
-		parent.childs.push(Box::new(process));
-
-		let process: &mut Process = parent.childs.last_mut().unwrap();
 		let mut new_task: Task = Task::new();
 
-		new_task.process = process;
+		process.init(&binding);
+
+		let pid = process.pid;
+		{
+			// lock parent in scope
+			let mut parent = binding.lock();
+			process.setup_kernel_stack(parent.kernel_stack.flags);
+			process.setup_stack(
+				parent.stack.size,
+				parent.stack.flags,
+				parent.stack.kphys
+			);
+			process.setup_heap(
+				parent.heap.size,
+				parent.heap.flags,
+				parent.heap.kphys
+			);
+			process.copy_mem(&mut parent);
+		}
 
 		let page_dir: &mut PageDirectory = process.setup_pagination();
 
@@ -55,8 +53,13 @@ pub fn sys_fork() -> Pid {
 		new_task.regs.eax = 0; // New forked process return 0
 		process.test = true;
 
+		new_task.process = KArcm::new(process);
+
+		let mut parent = binding.lock();
+		parent.childs.push(new_task.process.clone());
+		PROCESS_TREE.insert(pid, new_task.process.clone());
+
 		TASKLIST.push_back(new_task);
-		_sti();
-		process.pid
+		pid
 	}
 }
