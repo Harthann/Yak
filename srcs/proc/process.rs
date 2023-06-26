@@ -181,8 +181,8 @@ impl Process {
 			parent.childs[len - 1].lock().parent = Some(binding_parent.clone());
 		}
 		// Transfer signals from childs to parent
-		while self.signals.len() != 0 {
-			let signal = self.signals.remove(0);
+		while process.signals.len() != 0 {
+			let signal = process.signals.remove(0);
 			if signal.sigtype == SignalType::SIGCHLD {
 				parent.signals.push(signal);
 			}
