@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Arcm"]};
+window.SIDEBAR_ITEMS = {"struct":["RawArcm"],"type":["Arcm","KArcm"]};

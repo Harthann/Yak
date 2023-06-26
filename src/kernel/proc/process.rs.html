@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/proc/process.rs`."><title>process.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-f3501f0f5ae15dfb.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.72.0-nightly (f0411ffce 2023-05-30)" data-search-js="search-4926e5fc22a5646a.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../static.files/source-script-11255107d0a65077.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-f0540c1d82cde29b.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../kernel/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/proc/process.rs`."><title>process.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-8092eaa720ad3b6f.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.72.0-nightly (8084f397c 2023-06-25)" data-channel="nightly" data-search-js="search-c507e026dd61038c.js" data-settings-js="settings-de11bff964e9d4e5.js" data-settings-css="settings-8c76f75bfb6bd192.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../../static.files/source-script-11255107d0a65077.js"></script><script defer src="../../../source-files.js"></script><script defer src="../../../static.files/main-0795b7d26be81095.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../../kernel/index.html"><img class="rust-logo" src="../../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -350,16 +350,35 @@
 <a href="#350" id="350">350</a>
 <a href="#351" id="351">351</a>
 <a href="#352" id="352">352</a>
+<a href="#353" id="353">353</a>
+<a href="#354" id="354">354</a>
+<a href="#355" id="355">355</a>
+<a href="#356" id="356">356</a>
+<a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
+<a href="#362" id="362">362</a>
+<a href="#363" id="363">363</a>
+<a href="#364" id="364">364</a>
+<a href="#365" id="365">365</a>
+<a href="#366" id="366">366</a>
+<a href="#367" id="367">367</a>
+<a href="#368" id="368">368</a>
+<a href="#369" id="369">369</a>
+<a href="#370" id="370">370</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>core::ptr::copy_nonoverlapping;
 
 <span class="kw">use </span><span class="kw">crate</span>::boot::KERNEL_BASE;
 
-<span class="kw">use </span><span class="kw">crate</span>::alloc::collections::LinkedList;
-<span class="kw">use </span><span class="kw">crate</span>::boxed::Box;
-
 <span class="kw">use </span><span class="kw">crate</span>::memory::{MemoryZone, TypeZone};
 <span class="kw">use </span><span class="kw">crate</span>::vec::Vec;
+
+<span class="kw">use </span><span class="kw">crate</span>::alloc::collections::btree_map::BTreeMap;
+<span class="kw">use </span><span class="kw">crate</span>::alloc::collections::LinkedList;
+<span class="kw">use </span><span class="kw">crate</span>::utils::arcm::KArcm;
 
 <span class="kw">use </span><span class="kw">crate</span>::proc::task::Task;
 
@@ -385,10 +404,10 @@
 <span class="kw">use </span><span class="kw">crate</span>::fs::FileInfo;
 <span class="kw">use </span>alloc::sync::Arc;
 
-<span class="kw">pub static </span><span class="kw-2">mut </span>NEXT_PID: Id = <span class="number">0</span>;
-<span class="kw">pub static </span><span class="kw-2">mut </span>MASTER_PROCESS: Process = Process::new();
-
 <span class="kw">pub type </span>Pid = Id;
+
+<span class="kw">pub static </span><span class="kw-2">mut </span>NEXT_PID: Pid = <span class="number">0</span>;
+<span class="kw">pub static </span><span class="kw-2">mut </span>PROCESS_TREE: BTreeMap&lt;Pid, KArcm&lt;Process&gt;&gt; = BTreeMap::new();
 
 <span class="attr">#[derive(Debug, PartialEq)]
 </span><span class="kw">pub enum </span>Status {
@@ -401,11 +420,12 @@
 <span class="doccomment">/// Arcm is needed to protect MemoryZone only if the memory zone is shared between threads
 /// otherwise it will be useless.
 </span><span class="kw">pub const </span>MAX_FD: usize = <span class="number">32</span>;
+
 <span class="kw">pub struct </span>Process {
 	<span class="kw">pub </span>pid:             Pid,
 	<span class="kw">pub </span>state:           Status,
-	<span class="kw">pub </span>parent:          <span class="kw-2">*mut </span>Process,
-	<span class="kw">pub </span>childs:          Vec&lt;Box&lt;Process&gt;&gt;,
+	<span class="kw">pub </span>parent:          <span class="prelude-ty">Option</span>&lt;KArcm&lt;Process&gt;&gt;,
+	<span class="kw">pub </span>childs:          Vec&lt;KArcm&lt;Process&gt;&gt;,
 	<span class="kw">pub </span>stack:           MemoryZone,
 	<span class="kw">pub </span>heap:            MemoryZone,
 	<span class="kw">pub </span>kernel_stack:    MemoryZone,
@@ -422,11 +442,11 @@
 
 <span class="kw">const </span>DEFAULT_FILE: <span class="prelude-ty">Option</span>&lt;Arc&lt;FileInfo&gt;&gt; = <span class="prelude-val">None</span>;
 <span class="kw">impl </span>Process {
-	<span class="kw">pub const fn </span>new() -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			pid:             <span class="number">0</span>,
 			state:           Status::Disable,
-			parent:          core::ptr::null_mut(),
+			parent:          <span class="prelude-val">None</span>,
 			childs:          Vec::new(),
 			stack:           MemoryZone::new(),
 			heap:            MemoryZone::new(),
@@ -446,37 +466,34 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>ret: usize = <span class="number">0</span>;
 		<span class="kw">for </span>process <span class="kw">in </span><span class="self">self</span>.childs.iter() {
 			ret += <span class="number">1</span>;
-			ret += process.get_nb_subprocess()
+			ret += process.lock().get_nb_subprocess()
 		}
 		ret
 	}
 
-	<span class="kw">pub fn </span>print_tree(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;{}&quot;</span>, <span class="self">self</span>);
-		<span class="kw">for </span>process <span class="kw">in </span><span class="self">self</span>.childs.iter() {
-			process.print_tree();
+	<span class="kw">pub fn </span>print_tree() {
+		<span class="kw">unsafe </span>{
+			<span class="kw">for </span>process <span class="kw">in </span>PROCESS_TREE.values() {
+				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;{}&quot;</span>, <span class="kw-2">*</span>process.lock());
+			}
 		}
 	}
 
-	<span class="kw">pub fn </span>search_from_pid(<span class="kw-2">&amp;mut </span><span class="self">self</span>, pid: Id) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;mut </span>Process, ErrNo&gt; {
-		<span class="kw">if </span><span class="self">self</span>.pid == pid {
-			<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="self">self</span>);
-		}
-		<span class="kw">for </span>process <span class="kw">in </span><span class="self">self</span>.childs.iter_mut() {
-			<span class="kw">let </span>res = process.search_from_pid(pid);
-			<span class="kw">if </span>res.is_ok() {
-				<span class="kw">return </span>res;
+	<span class="kw">pub fn </span>search_from_pid(pid: Id) -&gt; <span class="prelude-ty">Result</span>&lt;KArcm&lt;Process&gt;, ErrNo&gt; {
+		<span class="kw">unsafe </span>{
+			<span class="kw">match </span>PROCESS_TREE.get_mut(<span class="kw-2">&amp;</span>pid) {
+				<span class="prelude-val">Some</span>(process) =&gt; <span class="prelude-val">Ok</span>(process.clone()),
+				<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(ErrNo::ESRCH)
 			}
 		}
-		<span class="prelude-val">Err</span>(ErrNo::ESRCH)
 	}
 
 	<span class="comment">// TODO: next_pid need to check overflow and if other pid is available
-	</span><span class="kw">pub unsafe fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, parent: <span class="kw-2">&amp;mut </span>Process) {
+	</span><span class="kw">pub unsafe fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, parent: <span class="kw-2">&amp;</span>KArcm&lt;Process&gt;) {
 		<span class="self">self</span>.pid = NEXT_PID;
 		<span class="self">self</span>.state = Status::Run;
-		<span class="self">self</span>.parent = parent;
-		<span class="self">self</span>.owner = parent.owner;
+		<span class="self">self</span>.parent = <span class="prelude-val">Some</span>(parent.clone());
+		<span class="self">self</span>.owner = parent.lock().owner;
 		NEXT_PID += <span class="number">1</span>;
 	}
 
@@ -511,32 +528,52 @@
 		);
 	}
 
-	<span class="kw">pub unsafe fn </span>zombify(<span class="kw-2">&amp;mut </span><span class="self">self</span>, wstatus: i32) {
-		<span class="kw">if </span><span class="self">self</span>.parent.is_null() {
-			<span class="macro">todo!</span>();
+	<span class="kw">pub unsafe fn </span>zombify(pid: Pid, wstatus: i32) {
+		<span class="kw">let </span>binding = Process::search_from_pid(pid).unwrap();
+		<span class="kw">let </span>binding_parent = {
+			<span class="kw">let </span>process = binding.lock();
+			<span class="kw">match </span><span class="kw-2">&amp;</span>process.parent {
+				<span class="prelude-val">Some</span>(x) =&gt; Process::search_from_pid(x.lock().pid),
+				<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Process has no parent&quot;</span>)
+			}
 		}
-		<span class="kw">let </span>parent: <span class="kw-2">&amp;mut </span>Process = <span class="kw-2">&amp;mut *</span><span class="self">self</span>.parent;
-		<span class="kw">while </span><span class="self">self</span>.childs.len() &gt; <span class="number">0 </span>{
+		.unwrap();
+		<span class="kw">let </span><span class="kw-2">mut </span>process = binding.lock();
+		<span class="kw">let </span><span class="kw-2">mut </span>parent = binding_parent.lock();
+		<span class="kw">while </span>process.childs.len() &gt; <span class="number">0 </span>{
 			<span class="comment">// TODO: DON&#39;T MOVE THREADS AND REMOVE THEM
-			</span><span class="kw">let </span>res = <span class="self">self</span>.childs.pop();
+			</span><span class="kw">let </span>res = process.childs.pop();
 			<span class="kw">if </span>res.is_none() {
 				<span class="macro">todo!</span>();
 			}
 			parent.childs.push(res.unwrap());
 			<span class="kw">let </span>len = parent.childs.len();
-			parent.childs[len - <span class="number">1</span>].parent = <span class="self">self</span>.parent;
+			parent.childs[len - <span class="number">1</span>].lock().parent = <span class="prelude-val">Some</span>(binding_parent.clone());
 		}
 		<span class="comment">// Don&#39;t remove and wait for the parent process to do wait4() -&gt; Zombify
-		</span><span class="self">self</span>.state = Status::Zombie;
-		Signal::send_to_process(parent, <span class="self">self</span>.pid, SignalType::SIGCHLD, wstatus);
+		</span>process.state = Status::Zombie;
+		Signal::send_to_process(
+			<span class="kw-2">&amp;mut </span>parent,
+			process.pid,
+			SignalType::SIGCHLD,
+			wstatus
+		);
 	}
 
-	<span class="kw">pub unsafe fn </span>remove(<span class="kw-2">&amp;mut </span><span class="self">self</span>) {
-		<span class="kw">let </span>parent: <span class="kw-2">&amp;mut </span>Process = <span class="kw-2">&amp;mut *</span><span class="self">self</span>.parent;
+	<span class="kw">pub unsafe fn </span>remove(pid: Pid) {
+		<span class="kw">let </span>binding = Process::search_from_pid(pid).unwrap();
+		<span class="kw">let </span>binding_parent = {
+			<span class="kw">let </span>process = binding.lock();
+			<span class="kw">match </span><span class="kw-2">&amp;</span>process.parent {
+				<span class="prelude-val">Some</span>(x) =&gt; Process::search_from_pid(x.lock().pid),
+				<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Process has no parent&quot;</span>)
+			}
+		}
+		.unwrap();
+		<span class="kw">let </span><span class="kw-2">mut </span>parent = binding_parent.lock();
 		<span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
 		<span class="kw">while </span>i &lt; parent.childs.len() {
-			<span class="kw">let </span>ptr: <span class="kw-2">*mut </span>Process = parent.childs[i].as_mut();
-			<span class="kw">if </span>ptr == <span class="kw-2">&amp;mut *</span><span class="self">self </span>{
+			<span class="kw">if </span>parent.childs[i].lock().pid == pid {
 				<span class="kw">break</span>;
 			}
 			i += <span class="number">1</span>;
@@ -544,17 +581,11 @@
 		<span class="kw">if </span>i == parent.childs.len() {
 			<span class="macro">todo!</span>(); <span class="comment">// Problem
 		</span>}
-		<span class="comment">// Removing these free seems to add leaking pages even tho MemoryZone drop perform the same
-		// operation
-		// free_pages(self.stack.offset, self.stack.size / 0x1000);
-		// free_pages(self.heap.offset, self.heap.size / 0x1000);
-		// crate::kprintln!(&quot;heap? {:#x}&quot;, self.heap.offset);
-		// free_pages(self.kernel_stack.offset, self.kernel_stack.size / 0x1000);
-
-		</span><span class="kw">if </span><span class="self">self</span>.test == <span class="bool-val">true </span>{
+		<span class="kw">let </span><span class="kw-2">mut </span>process = binding.lock();
+		<span class="kw">if </span>process.test == <span class="bool-val">true </span>{
 			<span class="kw">use </span><span class="kw">crate</span>::memory::paging::bitmap;
-			<span class="kw">let </span>pd = <span class="kw-2">&amp;mut *</span><span class="self">self</span>.pd;
-			<span class="kw">for </span>i <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.page_tables {
+			<span class="kw">let </span>pd = <span class="kw-2">&amp;mut *</span>process.pd;
+			<span class="kw">for </span>i <span class="kw">in </span><span class="kw-2">&amp;</span>process.page_tables {
 				<span class="kw">let </span>vaddr = i.get_vaddr() <span class="kw">as </span>usize;
 				bitmap::physmap_as_mut().free_page(<span class="macro">get_paddr!</span>(vaddr));
 				page_directory
@@ -568,6 +599,7 @@
 				.set_entry((vaddr &amp; <span class="number">0x3ff000</span>) &gt;&gt; <span class="number">12</span>, <span class="number">0</span>);
 		}
 		parent.childs.remove(i);
+		PROCESS_TREE.remove(<span class="kw-2">&amp;</span>pid);
 	}
 
 	<span class="kw">pub unsafe fn </span>get_signal(
@@ -589,7 +621,7 @@
 		pid: Id,
 		signal: SignalType
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Signal, ErrNo&gt; {
-		MASTER_PROCESS.search_from_pid(pid)<span class="question-mark">?</span>; <span class="comment">// Return ErrNo::ESRCH if doesn&#39;t exist
+		Process::search_from_pid(pid)<span class="question-mark">?</span>; <span class="comment">// Return ErrNo::ESRCH if doesn&#39;t exist
 		</span><span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
 		<span class="kw">while </span>i &lt; <span class="self">self</span>.signals.len() {
 			<span class="kw">if </span><span class="self">self</span>.signals[i].sender == pid
@@ -602,15 +634,16 @@
 		<span class="prelude-val">Err</span>(ErrNo::EAGAIN)
 	}
 
-	<span class="kw">pub fn </span>get_running_process() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span><span class="kw-2">mut </span><span class="self">Self </span>{
-		<span class="kw">unsafe </span>{ <span class="kw-2">&amp;mut *</span>Task::get_running_task().process }
+	<span class="kw">pub fn </span>get_running_process() -&gt; KArcm&lt;<span class="self">Self</span>&gt; {
+		<span class="kw">unsafe </span>{ Task::get_running_task().process.clone() }
 	}
 
 	<span class="kw">pub unsafe fn </span>get_signal_running_process(
 		pid: Id,
 		signal: SignalType
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Signal, ErrNo&gt; {
-		<span class="kw">let </span>process: <span class="kw-2">&amp;mut </span>Process = Process::get_running_process();
+		<span class="kw">let </span>binding = Process::get_running_process();
+		<span class="kw">let </span><span class="kw-2">mut </span>process = binding.lock();
 		<span class="kw">if </span>pid == -<span class="number">1 </span>{
 			process.get_signal(signal)
 		} <span class="kw">else if </span>pid &gt; <span class="number">0 </span>{
@@ -623,7 +656,10 @@
 	}
 
 	<span class="kw">pub unsafe fn </span>setup_pagination(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span><span class="kw-2">mut </span>PageDirectory {
-		<span class="kw">let </span>parent: <span class="kw-2">&amp;</span>Process = <span class="kw-2">&amp;</span>(<span class="kw-2">*</span><span class="self">self</span>.parent);
+		<span class="kw">let </span>parent = <span class="kw">match </span><span class="kw-2">&amp;</span><span class="self">self</span>.parent {
+			<span class="prelude-val">Some</span>(x) =&gt; x.lock(),
+			<span class="prelude-val">None </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Process has no parent&quot;</span>)
+		};
 		<span class="kw">let </span>kernel_pt_paddr: PhysAddr = <span class="macro">get_paddr!</span>(page_directory
 			.get_page_table(KERNEL_BASE &gt;&gt; <span class="number">22</span>)
 			.get_vaddr());
@@ -683,13 +719,13 @@
 		page_dir
 	}
 
-	<span class="kw">pub unsafe fn </span>get_nb_process() -&gt; usize {
-		MASTER_PROCESS.get_nb_subprocess() + <span class="number">1
-	</span>}
+	<span class="kw">pub fn </span>get_nb_process() -&gt; usize {
+		<span class="kw">unsafe </span>{ PROCESS_TREE.len() }
+	}
 
 	<span class="kw">pub unsafe fn </span>print_all_process() {
 		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;       PID        OWNER   STATUS&quot;</span>);
-		MASTER_PROCESS.print_tree();
+		<span class="self">Self</span>::print_tree();
 	}
 
 	<span class="kw">pub fn </span>add_memory_zone(<span class="kw-2">&amp;mut </span><span class="self">self</span>, mz: Arcm&lt;MemoryZone&gt;) {
