@@ -217,6 +217,8 @@ impl PciDevice {
         self.read_bist();
     }
 
+    /// Read the end of the header based on the HeaderType stored in the common header
+    /// The common header need to be readed first in order to know the type of this header
     pub fn read_device_header(&mut self) {
         // Bit 7 indicate if the device as multiple functions
         // Bit 0-2 indicate the header type
@@ -228,6 +230,7 @@ impl PciDevice {
         };
     }
 
+    /// Read the register from 0x4 to 0xf as if it was a Standard header
     fn read_standard_header(&self) -> header::StandardHdr {
         let mut hdr = header::StandardHdr::default();
         for i in 0..=5 {
@@ -245,7 +248,7 @@ impl PciDevice {
         hdr
     }
 
-    /// Call read for both header
+    /// Read both commond header and device header
     pub fn read_all_header(&mut self) {
         self.read_common_header();
         self.read_device_header();
