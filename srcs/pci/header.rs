@@ -27,6 +27,7 @@ impl fmt::Display for Headers {
     }
 }
 
+/// Header layout common for all PCI device
 #[derive(Default,Debug)]
 pub struct PciCommonHdr {
     pub vendor_id:       u16,
@@ -111,6 +112,7 @@ self.cis_ptr, self.subs_vid, self.subs_id, self.rom_bar, self.cap_ptr, self.int_
 #[derive(Debug)]
 pub struct PciBridgeHdr {
 }
+
 impl fmt::Display for PciBridgeHdr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Not yet implemented")
@@ -122,6 +124,7 @@ impl fmt::Display for PciBridgeHdr {
 #[derive(Debug)]
 pub struct CardBusBridgeHdr {
 }
+
 impl fmt::Display for CardBusBridgeHdr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Not yet implemented")
