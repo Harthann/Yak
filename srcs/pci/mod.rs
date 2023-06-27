@@ -235,10 +235,12 @@ impl PciDevice {
 					header::Headers::Standard(self.read_standard_header())
 			},
 			0x1 => {
-				todo!()
+                self.config.header = 
+					header::Headers::PciBridge(self.read_pci_bridge_header())
 			},
 			0x2 => {
-				todo!()
+                self.config.header = 
+					header::Headers::CardBusBridge(self.read_cardbus_bridge_header())
 			},
 			_ => {}
 		};
@@ -261,6 +263,75 @@ impl PciDevice {
 		hdr.max_latency = self.config_read_byte(0, (0xf << 2) | 3);
 		hdr
 	}
+
+	fn read_pci_bridge_header(&self) -> header::PciBridgeHdr {
+        let mut hdr = header::PciBridgeHdr::default();
+
+        hdr.bar0 = self.config_read_reg(0, (0x04 << 2) | 0);
+        hdr.bar1 = self.config_read_reg(0, (0x05 << 2) | 0);
+
+        hdr.sec_lt = self.config_read_byte(0, (0x06 << 2) | 3);
+        hdr.sub_bno = self.config_read_byte(0, (0x06 << 2) | 2);
+        hdr.sec_bno = self.config_read_byte(0, (0x06 << 2) | 1);
+        hdr.prim_bno = self.config_read_byte(0, (0x06 << 2) | 0);
+
+        hdr.sec_status = self.config_read_word(0, (0x07 << 2) | 1);
+        hdr.io_limit = self.config_read_byte(0, (0x07 << 2) | 1);
+        hdr.io_base = self.config_read_byte(0, (0x07 << 2) | 0);
+
+        hdr.mem_limit = self.config_read_word(0, (0x08 << 2) | 1);
+        hdr.mem_base = self.config_read_word(0, (0x08 << 2) | 0);
+
+        hdr.prefetch_mem_limit = self.config_read_word(0, (0x09 << 2) | 1);
+        hdr.prefetch_mem_base = self.config_read_word(0, (0x09 << 2) | 0);
+
+        hdr.prefetch_base_up = self.config_read_reg(0, (0x0a << 2) | 0);
+        hdr.prefetch_limit_up = self.config_read_reg(0, (0x0b << 2) | 0);
+
+        hdr.io_limit_up = self.config_read_word(0, (0x0c << 2) | 1);
+        hdr.io_base_up = self.config_read_word(0, (0x0c << 2) | 0);
+
+        hdr.cap_ptr = self.config_read_byte(0, (0x0d << 2) | 0);
+        hdr.rom_base_addr = self.config_read_reg(0, (0x0e << 2) | 0);
+        hdr.bridge_ctrl = self.config_read_word(0, (0x0f << 2) | 1);
+        hdr.int_pin = self.config_read_byte(0, (0x0f << 2) | 1);
+        hdr.int_line = self.config_read_byte(0, (0x0f << 2) | 0);
+
+        hdr
+    }
+
+	fn read_cardbus_bridge_header(&self) -> header::CardBusBridgeHdr {
+        let mut hdr = header::CardBusBridgeHdr::default();
+        hdr.cb_socket = self.config_read_reg(0, (0x04 << 2) | 0);
+
+        hdr.sec_status = self.config_read_word(0, (0x05 << 2) | 1);
+        hdr.reserved = self.config_read_byte(0, (0x05 << 2) | 1);
+        hdr.cap_offset = self.config_read_byte(0, (0x05 << 2) | 0);
+
+        hdr.cb_latency_timer = self.config_read_byte(0, (0x06 << 2) | 3);
+        hdr.sub_bno = self.config_read_byte(0, (0x06 << 2) | 2);
+        hdr.cb_bno = self.config_read_byte(0, (0x06 << 2) | 1);
+        hdr.pci_bno = self.config_read_byte(0, (0x06 << 2) | 0);
+
+        hdr.mem_baddr_0 = self.config_read_reg(0, (0x07 << 2) | 0);
+        hdr.mem_limit_0 = self.config_read_reg(0, (0x08 << 2) | 0);
+        hdr.mem_baddr_1 = self.config_read_reg(0, (0x09 << 2) | 0);
+        hdr.mem_limit_1 = self.config_read_reg(0, (0x0a << 2) | 0);
+        hdr.io_baddr_0 = self.config_read_reg(0, (0x0b << 2) | 0);
+        hdr.io_limit_0 = self.config_read_reg(0, (0x0c << 2) | 0);
+        hdr.io_baddr_1 = self.config_read_reg(0, (0x0d << 2) | 0);
+        hdr.io_limit_1 = self.config_read_reg(0, (0x0e << 2) | 0);
+
+        hdr.bridge_ctrl = self.config_read_word(0, (0x0f << 2) | 1);
+        hdr.int_pin = self.config_read_byte(0, (0x0f << 2) | 1);
+        hdr.int_line = self.config_read_byte(0, (0x0f << 2) | 0);
+
+        hdr.subs_vid = self.config_read_word(0, (0x10 << 2) | 1);
+        hdr.subs_id = self.config_read_word(0, (0x10 << 2) | 0);
+        hdr.lmod_baddr = self.config_read_reg(0, (0x11 << 2) | 0);
+
+        hdr
+    }
 
 	/// Read both commond header and device header
 	pub fn read_all_header(&mut self) {
