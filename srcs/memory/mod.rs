@@ -42,6 +42,9 @@ pub const MAP_NONBLOCK: u32 = 1 << 11;
 pub const MAP_NORESERVE: u32 = 1 << 12;
 pub const MAP_POPULATE: u32 = 1 << 13;
 
+
+pub const REMAP_FIXED: u32 = 1 << 0;
+
 pub fn init_memory_addr(
 	addr: VirtAddr,
 	size: usize,
@@ -170,6 +173,10 @@ impl MemoryZone {
 			core::slice::from_raw_parts_mut(self.offset as *mut u8, self.size)
 		}
 	}
+
+    pub fn area(&self) -> (VirtAddr, usize) {
+        (self.offset, self.size)
+    }
 
 	/// Add pages to the memory zone, growing upward for most zones. And downward for stacks type
 	/// Should return an error if failed
