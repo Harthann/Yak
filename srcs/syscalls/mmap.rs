@@ -83,7 +83,6 @@ pub fn sys_munmap(addr: *const usize, length: usize) -> i32 {
 
 	// If given size is lower than the total size, we need to shrink the MemoryZone
 	if size < guard.size {
-		crate::dprintln!("Remapping zone");
 		let (offset, size) = guard.area();
 		// Expect may need to be replaced with proper error handling later
 		// The remap function isn't yet implemented, this will result in a panic
