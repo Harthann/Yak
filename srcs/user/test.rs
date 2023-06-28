@@ -195,3 +195,74 @@ fn test_fork2_userspace() {
 		assert_eq!(__WEXITSTATUS!(status), pid + 1);
 	}
 }
+
+// User function to test mmap
+global_asm!(
+	r#"
+.globl userfunc_6
+.globl end_userfunc_6
+userfunc_6:
+    sub esp, 0x4
+
+    mov ebx, 0    // hint
+    mov ecx, 4096 // page size
+    mov edx, 0    // prot
+    mov esi, 2    // flags
+    mov edi, -1   // fd
+    mov ebp, 0    // offset
+    mov eax, 90   // mmap syscall
+    int 0x80
+    cmp eax, 0xff  // Check if mmap failed
+    je .error_6
+    mov [esp], eax // Save ptr
+    mov ecx, 0x00 
+
+    .loop_6:
+    mov ebx, [esp]
+    add ebx, ecx
+    mov BYTE ptr [ebx], 42
+    inc ecx
+    cmp ecx, 4096
+    jl .loop_6
+
+    mov ebx, [esp]  // mmap returned value
+    mov ecx, 4096 // mmap size
+    mov eax, 91   // mumap syscall
+    int 0x80
+    // Uncomment these to test if writing to the map properly cause page fault
+    // mov eax, [esp]
+    // mov BYTE ptr [eax], 53
+
+	mov ebx, 0 // exit
+	mov eax, 1
+	int 0x80
+
+    .error_6:
+    mov ebx, 1
+    mov eax, 1
+    int 0x80
+
+end_userfunc_6:
+"#
+);
+
+extern "C" {
+	fn userfunc_6();
+	fn end_userfunc_6();
+}
+
+#[crate::sys_macros::test_case]
+fn test_mmap_userspace() {
+	unsafe {
+		let mut status: i32 = 0;
+		let pid = exec_fn_userspace(
+			userfunc_6 as u32,
+			end_userfunc_6 as usize - userfunc_6 as usize
+		);
+		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
+		assert_eq!(ret, pid);
+		assert_eq!(__WIFEXITED!(status), true);
+		assert_eq!(__WEXITSTATUS!(status), 0x0);
+	}
+}
+
