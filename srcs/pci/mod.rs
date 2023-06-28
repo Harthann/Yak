@@ -6,6 +6,7 @@ const PCI_CONFIG_ADDRESS: u16 = 0xcf8;
 /// This value is used to read data base on the config adress used. You can write to?
 const PCI_CONFIG_DATA: u16 = 0xcfc;
 
+/// Iterate other all 255 slot of each 255 bus to test if a PCI device is present.
 pub fn pci_scan() {
 	for bus in 0..=255 {
 		for slot in 0..=255 {
@@ -141,6 +142,39 @@ impl PciDevice {
 		crate::io::outl(PCI_CONFIG_ADDRESS, address);
 		crate::io::inl(PCI_CONFIG_DATA)
 	}
+
+    /// Perform IO operation to write value on register to PCI device at bus:slot
+    ///
+	/// # Arguments
+	///
+	/// * `func` -   I don't know yet it's purpose
+	///
+	/// * `offset` - Select which register to read.
+    ///
+	/// | Bits 7-2 | Bits 1-0 |
+	/// |:--------:|:--------:|
+	/// | Register | Ignored  |
+	///
+    /// * `data` - Value to write on the register
+	///
+	/// # Examples
+	///
+	/// ```
+	/// let pci = PciDevice::new(0,0);
+	/// // Will write to the first register
+	/// pci.config_write_reg(0, 0 << 2, 0xffffffff)
+	/// // Will write the second register
+	/// pci.config_write_reg(0, 1 << 2, 0xdeadbeef)
+	/// ```
+    pub fn config_write_reg(&self, func: u8, offset: u8, data: u32) {
+	    let address: u32 = ((self.bus as u32) << 16) as u32
+			| ((self.slot as u32) << 11) as u32
+			| ((func as u32) << 8) as u32
+			| (offset & 0xfc) as u32
+			| 0x80000000;
+	    crate::io::outl(PCI_CONFIG_ADDRESS, address);
+		crate::io::outl(PCI_CONFIG_DATA, data);
+    }
 
 	#[inline]
 	fn read_device_id(&mut self) -> u16 {
