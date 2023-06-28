@@ -265,4 +265,3 @@ fn test_mmap_userspace() {
 		assert_eq!(__WEXITSTATUS!(status), 0x0);
 	}
 }
-
