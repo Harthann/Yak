@@ -196,6 +196,7 @@ fn test_fork2_userspace() {
 	}
 }
 
+const TMMAP_SIZE: u32 = 4096 * 4;
 // User function to test mmap
 global_asm!(
 	r#"
@@ -205,7 +206,7 @@ userfunc_6:
     sub esp, 0x4 * 6
 
     mov DWORD ptr [esp + 0x00], 0    // hint
-    mov DWORD ptr [esp + 0x04], 4096 // page size
+    mov DWORD ptr [esp + 0x04], {tmmap_size} // page size
     mov DWORD ptr [esp + 0x08], 0    // prot
     mov DWORD ptr [esp + 0x0c], 2    // flags
     mov DWORD ptr [esp + 0x10], -1   // fd
@@ -223,12 +224,12 @@ userfunc_6:
     add ebx, ecx
     mov BYTE ptr [ebx], 42
     inc ecx
-    cmp ecx, 4096
+    cmp ecx, {tmmap_size}
     jl .loop_6
 
-    mov ebx, [esp]  // mmap returned value
-    mov ecx, 4096 // mmap size
-    mov eax, 91   // mumap syscall
+    mov ebx, [esp]    // mmap returned value
+    mov ecx, {tmmap_size} // mmap size
+    mov eax, 91       // mumap syscall
     int 0x80
     // Uncomment these to test if writing to the map properly cause page fault
     // mov eax, [esp]
@@ -244,7 +245,7 @@ userfunc_6:
     int 0x80
 
 end_userfunc_6:
-"#
+"#, tmmap_size = const TMMAP_SIZE
 );
 
 extern "C" {
