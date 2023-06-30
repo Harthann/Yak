@@ -1,12 +1,11 @@
-use core::ptr;
-
 use crate::alloc::string::String;
 use crate::interrupts::Registers;
 use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
 use crate::memory::{MemoryZone, TypeZone, VirtAddr};
-use crate::proc::process::{Process, Status, MASTER_PROCESS, NEXT_PID};
+use crate::proc::process::{Process, Status, NEXT_PID, PROCESS_TREE};
 use crate::proc::signal::{SignalHandler, SignalType};
+use crate::proc::Pid;
 
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
@@ -15,6 +14,7 @@ use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
 use crate::alloc::collections::vec_deque::VecDeque;
+use crate::utils::arcm::KArcm;
 
 pub static mut TASKLIST: VecDeque<Task> = VecDeque::new();
 
@@ -25,76 +25,136 @@ pub enum TaskStatus {
 	Interruptible    // Waiting for changing state (wait4 - waitpid)
 }
 
-#[derive(Copy, Clone)]
 pub struct Task {
 	pub regs:    Registers,
 	pub state:   TaskStatus,
-	pub process: *mut Process
+	pub process: KArcm<Process>
 }
 
 impl Task {
-	pub const fn new() -> Self {
+	pub fn new() -> Self {
 		Self {
 			regs:    Registers::new(),
 			state:   TaskStatus::Running,
-			process: ptr::null_mut()
+			process: KArcm::new(Process::new())
 		}
 	}
 
 	pub fn init_multitasking(stack_addr: VirtAddr) {
-		let mut task = Task::new();
 		unsafe {
-			core::arch::asm!(
-				"mov {cr3}, cr3",
-				cr3 = out(reg) task.regs.cr3
-			);
-			MASTER_PROCESS.state = Status::Run;
-			MASTER_PROCESS.setup_kernel_stack(PAGE_WRITABLE);
-			page_directory
-				.claim_index_page_table(
-					KSTACK_ADDR as usize >> 22,
-					PAGE_WRITABLE
-				)
-				.expect("Could not claim kernel stack page");
-			change_kernel_stack(&MASTER_PROCESS);
-			MASTER_PROCESS.stack = MemoryZone::init_addr(
-				stack_addr - (crate::STACK_SIZE - 1),
-				TypeZone::Stack,
-				crate::STACK_SIZE as usize,
-				PAGE_WRITABLE,
-				false
-			);
-			MASTER_PROCESS.heap = MemoryZone::init(
+			let heap = MemoryZone::init(
 				TypeZone::Heap,
 				100 * 0x1000,
 				PAGE_WRITABLE,
 				true
 			);
 			// Init allocator with addr &mut KALLOCATOR
-			KALLOCATOR
-				.init(MASTER_PROCESS.heap.offset, MASTER_PROCESS.heap.size);
-			MASTER_PROCESS.exe = String::from("kernel");
-			MASTER_PROCESS.childs = Vec::with_capacity(8);
-			MASTER_PROCESS.signals = Vec::with_capacity(8);
-			MASTER_PROCESS.owner = 0;
-			NEXT_PID += 1;
-			task.process = &mut MASTER_PROCESS;
+			KALLOCATOR.init(heap.offset, heap.size);
+			let mut task = Task::new();
+			core::arch::asm!(
+				"mov {}, cr3",
+				out(reg) task.regs.cr3
+			);
+			let mut process: Process = Process::new();
+			process.state = Status::Run;
+			process.exe = String::from("kernel");
+			process.setup_kernel_stack(PAGE_WRITABLE);
+			page_directory
+				.claim_index_page_table(
+					KSTACK_ADDR as usize >> 22,
+					PAGE_WRITABLE
+				)
+				.expect("Could not claim kernel stack page");
+			process.stack = MemoryZone::init_addr(
+				stack_addr - (crate::STACK_SIZE - 1),
+				TypeZone::Stack,
+				crate::STACK_SIZE as usize,
+				PAGE_WRITABLE,
+				false
+			);
+			process.heap = heap;
+			process.childs = Vec::with_capacity(8);
+			process.signals = Vec::with_capacity(8);
+			process.owner = 0;
+
+			task.process = KArcm::new(process);
+			PROCESS_TREE.insert(NEXT_PID, task.process.clone());
+			task.process.execute(|mutex| {
+				let process = &mutex.lock();
+				change_kernel_stack(process);
+			});
+
 			TASKLIST.push_back(task);
+			NEXT_PID += 1;
 		}
 	}
 
-	pub unsafe fn remove_task_from_process(process: &mut Process) {
-		let process_ptr: *mut Process = &mut *process;
+	pub unsafe fn remove_task_from_process(pid: Pid) {
 		let len = TASKLIST.len();
 		let mut i = 0;
 		while i < len {
-			let task: &mut Task = Task::get_running_task();
-			if task.process != process_ptr {
-				TASKLIST.push_back(TASKLIST.pop_front().unwrap());
-			} else {
-				TASKLIST.pop_front();
+			if TASKLIST[i].process.lock().pid == pid {
+				TASKLIST.remove(i);
+				break;
 			}
 			i += 1;
+		}
+	}
+
+	unsafe fn handle_signal(
+		regs: &mut Registers,
+		handler: &SignalHandler
+	) -> ! {
+		regs.esp -= core::mem::size_of::<Task>() as u32;
+		(regs.esp as *mut Registers).write(*regs);
+		regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
+				 // Setup args (int signal) and handler call
+		regs.esp -= 4;
+		core::arch::asm!("mov [{esp}], eax",
+			esp = in(reg) regs.esp,
+			in("eax") handler.signal);
+		regs.esp -= 4;
+		core::arch::asm!("mov [{esp}], eax",
+			esp = in(reg) regs.esp,
+			in("eax") handler.handler);
+		regs.eip = wrapper_handler as u32;
+		_rst();
+		schedule_task()
+	}
+
+	unsafe fn do_signal(&mut self) {
+		let len = self.process.lock().signals.len();
+		for i in 0..len {
+			if self.state != TaskStatus::Uninterruptible
+				&& self.process.lock().signals[i].sigtype == SignalType::SIGKILL
+			{
+				todo!(); // sys_kill remove task etc.. ?
+			} else if self.state == TaskStatus::Running {
+				let res = {
+					let process = self.process.lock();
+					let get_handler =
+						|process: &Process| -> Option<SignalHandler> {
+							for handler in process.signal_handlers.iter() {
+								if handler.signal
+									== process.signals[i].sigtype as i32
+								{
+									return Some(handler.clone());
+								}
+							}
+							None
+						};
+					get_handler(&process)
+				};
+				if res.is_some() {
+					self.process.lock().signals.remove(i);
+					self.state = TaskStatus::Uninterruptible;
+					Task::handle_signal(&mut self.regs, &res.unwrap())
+				}
+			} else if self.state == TaskStatus::Interruptible
+				&& self.process.lock().signals[i].sigtype == SignalType::SIGCHLD
+			{
+				self.state = TaskStatus::Running;
+			}
 		}
 	}
 
@@ -132,48 +192,6 @@ unsafe fn _end_handler() {
 	task.state = TaskStatus::Running;
 	_rst();
 	schedule_task();
-}
-
-unsafe fn handle_signal(task: &mut Task, handler: &mut SignalHandler) {
-	task.regs.esp -= core::mem::size_of::<Task>() as u32;
-	(task.regs.esp as *mut Registers).write(task.regs);
-	task.regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
-					  // Setup args (int signal) and handler call
-	task.regs.esp -= 4;
-	core::arch::asm!("mov [{esp}], eax",
-		esp = in(reg) task.regs.esp,
-		in("eax") handler.signal);
-	task.regs.esp -= 4;
-	core::arch::asm!("mov [{esp}], eax",
-		esp = in(reg) task.regs.esp,
-		in("eax") handler.handler);
-	task.regs.eip = wrapper_handler as u32;
-	_rst();
-	schedule_task();
-}
-
-unsafe fn do_signal(task: &mut Task) {
-	let process = &mut *task.process;
-	let len = process.signals.len();
-	for i in 0..len {
-		if task.state != TaskStatus::Uninterruptible
-			&& process.signals[i].sigtype == SignalType::SIGKILL
-		{
-			todo!(); // sys_kill remove task etc.. ?
-		} else if task.state == TaskStatus::Running {
-			for handler in process.signal_handlers.iter_mut() {
-				if handler.signal == process.signals[i].sigtype as i32 {
-					process.signals.remove(i);
-					task.state = TaskStatus::Uninterruptible;
-					handle_signal(task, handler);
-				}
-			}
-		} else if task.state == TaskStatus::Interruptible
-			&& process.signals[i].sigtype == SignalType::SIGCHLD
-		{
-			task.state = TaskStatus::Running;
-		}
-	}
 }
 
 #[naked]
@@ -246,16 +264,18 @@ unsafe extern "C" fn find_task() -> ! {
 	_cli();
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
-		let process: &mut Process = &mut *new_task.process;
 		// TODO: IF SIGNAL JUMP ?
-		if process.signals.len() > 0 {
-			do_signal(new_task);
+		if new_task.process.lock().signals.len() > 0 {
+			new_task.do_signal();
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
-			let task: Registers = new_task.regs;
-			change_kernel_stack(process);
-			switch_task(&task);
+			let new_regs: Registers = new_task.regs;
+			new_task.process.execute(|mutex| {
+				let process = &mutex.lock();
+				change_kernel_stack(process);
+			});
+			switch_task(&new_regs);
 			// never goes there
 		}
 		TASKLIST.push_back(TASKLIST.pop_front().unwrap());

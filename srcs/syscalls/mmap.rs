@@ -29,8 +29,8 @@ pub fn sys_mmap(
 ) -> Result<Arcm<MemoryZone>, ()> {
 	// Parameters given to init will vary depending on flags given
 	let mz = Arcm::new(MemoryZone::init(TypeZone::Anon, size, flags, false));
-	let curr_proc = Process::get_running_process();
-	curr_proc.add_memory_zone(mz.clone());
+	let binding = Process::get_running_process();
+	binding.lock().add_memory_zone(mz.clone());
 	Ok(mz)
 }
 

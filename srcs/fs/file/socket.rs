@@ -2,7 +2,6 @@ use super::raw::RawFileMemory;
 use super::FileOperation;
 use crate::errno::ErrNo;
 use crate::utils::arcm::Arcm;
-use core::cell::RefCell;
 
 /// Represent the different domains of a socket.
 /// AF_UNIX bind the socket to the system as file.

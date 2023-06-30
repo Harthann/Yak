@@ -1,9 +1,9 @@
 //! Processus, Tasks and Signals
 
 use crate::alloc::string::ToString;
-use crate::boxed::Box;
+use crate::utils::arcm::KArcm;
 use crate::vec::Vec;
-use crate::wrappers::{_cli, _rst, _sti};
+use crate::wrappers::{_cli, _rst};
 use crate::{VirtAddr, KSTACK_ADDR};
 use alloc::sync::Arc;
 use core::ffi::CStr;
@@ -19,7 +19,7 @@ pub mod task;
 #[cfg(test)]
 pub mod test;
 
-use process::{Pid, Process};
+use process::{Pid, Process, PROCESS_TREE};
 use task::{schedule_task, Task, TASKLIST};
 
 use crate::syscalls::exit::__W_EXITCODE;
@@ -29,10 +29,13 @@ pub type Id = i32;
 #[no_mangle]
 pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	_cli();
-	let task: Task = TASKLIST.pop_front().unwrap();
-	(*task.process).zombify(__W_EXITCODE!(status as i32, 0));
+	{
+		let task: Task = TASKLIST.pop_front().unwrap();
+		let pid = task.process.lock().pid;
+		Process::zombify(pid, __W_EXITCODE!(status as i32, 0));
+	}
 	_rst();
-	schedule_task();
+	schedule_task()
 	// Never goes there
 }
 
@@ -58,16 +61,19 @@ pub unsafe extern "C" fn exec_fn(
 	args_size: &Vec<usize>,
 	mut args: ...
 ) -> Pid {
-	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let parent: &mut Process = Process::get_running_process();
-
+	let binding = Process::get_running_process();
 	let mut process = Process::new();
-	process.init(parent);
+	let mut new_task: Task = Task::new();
+
+	process.init(&binding);
 	process.exe = CStr::from_ptr(name as *const i8)
 		.to_str()
 		.unwrap()
 		.to_string();
+	let mut parent = binding.lock();
+
+	let pid = process.pid;
 	process.setup_kernel_stack(parent.kernel_stack.flags); // not needed
 	process.setup_stack(
 		parent.stack.size,
@@ -81,12 +87,7 @@ pub unsafe extern "C" fn exec_fn(
 			None => None
 		};
 	}
-	parent.childs.push(Box::new(process));
 
-	let process: &mut Process = parent.childs.last_mut().unwrap();
-	let mut new_task: Task = Task::new();
-
-	new_task.process = process;
 	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
@@ -123,9 +124,13 @@ pub unsafe extern "C" fn exec_fn(
 	new_task.regs.eip = wrapper_fn as VirtAddr;
 	new_task.regs.cr3 = running_task.regs.cr3;
 	new_task.regs.ds = running_task.regs.ds;
+
+	new_task.process = KArcm::new(process);
+	parent.childs.push(new_task.process.clone());
+	PROCESS_TREE.insert(pid, new_task.process.clone());
+
 	TASKLIST.push_back(new_task);
-	_sti();
-	process.pid
+	pid
 }
 
 #[macro_export]

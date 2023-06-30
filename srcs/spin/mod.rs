@@ -42,6 +42,11 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 	/// Once the value as been written the mutex is successfully locked.
 	/// If `const INT` as been set to `true`, interrupt flag is clear
 	fn obtain_lock(&self) {
+		// We must cli before obtaining lock otherwise we could lock and get
+		// interrupted right after it without cli
+		if INT == true {
+			crate::wrappers::_cli();
+		}
 		while self
 			.lock
 			.compare_exchange_weak(
@@ -55,9 +60,6 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 			while self.lock.load(Ordering::Relaxed) != false {
 				spin_loop();
 			}
-		}
-		if INT == true {
-			crate::wrappers::_cli();
 		}
 	}
 
@@ -75,19 +77,24 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 
 	/// Try to lock the mutex. Returning a Guard if successfull
 	pub fn try_lock(&self) -> Option<MutexGuard<T, INT>> {
+		// We must cli before obtaining lock otherwise we could lock and get
+		// interrupted right after it without cli
+		if INT == true {
+			crate::wrappers::_cli();
+		}
 		if self
 			.lock
 			.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
 			.is_ok()
 		{
-			if INT == true {
-				crate::wrappers::_cli();
-			}
 			Some(MutexGuard {
 				lock: &self.lock,
 				data: unsafe { &mut *self.data.get() }
 			})
 		} else {
+			if INT == true {
+				crate::wrappers::_sti();
+			}
 			None
 		}
 	}

@@ -1,4 +1,5 @@
 use crate::proc::signal::SignalType;
+use crate::alloc::boxed::Box;
 use crate::spin::KMutex;
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_signal;
@@ -103,7 +104,6 @@ fn unlock_cmd(_no: i32) {
 	unsafe { LOCK_CMD = false };
 }
 
-use crate::boxed::Box;
 pub fn cli() {
 	let mut emulator: Box<TermEmu> = Box::default();
 	*INPUT_BUFFER.lock() = Some(Queue::new());

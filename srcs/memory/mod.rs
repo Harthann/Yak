@@ -270,7 +270,7 @@ mod tests {
 	#[sys_macros::test_case]
 	fn base_memory_zone() {
 		let used_pages = physmap_as_mut().used;
-		let mut mz = MemoryZone::init(TypeZone::Anon, 0x1000, 0, false);
+		let mz = MemoryZone::init(TypeZone::Anon, 0x1000, 0, false);
 		assert_eq!(used_pages + 1, physmap_as_mut().used);
 		drop(&mz);
 		// assert_eq!(used_pages, physmap_as_mut().used);
@@ -290,7 +290,7 @@ mod tests {
 
 	#[sys_macros::test_case]
 	fn memory_zone_for_files() {
-		let mut mz = MemoryZone::init(
+		let mz = MemoryZone::init(
 			TypeZone::File("This is my file name"),
 			0x1000,
 			super::WRITABLE,

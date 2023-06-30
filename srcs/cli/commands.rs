@@ -94,35 +94,29 @@ fn pmap(command: Vec<String>) {
 		return;
 	}
 
-	use crate::proc::process::MASTER_PROCESS;
-	unsafe {
-		crate::wrappers::_cli();
-		// Send to a specific process
-		let res = MASTER_PROCESS.search_from_pid(pid);
-		if res.is_err() {
-			crate::wrappers::_sti();
-			return;
-		}
-		let process: &mut Process = res.unwrap();
-		let mut used_size: usize = 0;
-		crate::kprintln!("{}:", pid);
-		crate::kprintln!("{}", process.heap);
-		used_size += process.heap.size;
-		crate::kprintln!("{}", process.stack);
-		used_size += process.stack.size;
-		crate::kprintln!("{}", process.kernel_stack);
-		used_size += process.kernel_stack.size;
-		for i in &process.mem_map {
-			let guard = i.lock();
-			crate::kprintln!("{}", *guard);
-			used_size += guard.size;
-		}
-		crate::kprintln!(" total: {:#x}", used_size);
+	// Send to a specific process
+	let binding = match Process::search_from_pid(pid) {
+		Ok(x) => x,
+		Err(_) => return
+	};
+	let process = binding.lock();
+	let mut used_size: usize = 0;
+	crate::kprintln!("{}:", pid);
+	crate::kprintln!("{}", process.heap);
+	used_size += process.heap.size;
+	crate::kprintln!("{}", process.stack);
+	used_size += process.stack.size;
+	crate::kprintln!("{}", process.kernel_stack);
+	used_size += process.kernel_stack.size;
+	for i in &process.mem_map {
+		let guard = i.lock();
+		crate::kprintln!("{}", *guard);
+		used_size += guard.size;
 	}
+	crate::kprintln!(" total: {:#x}", used_size);
 }
 
 fn kill(command: Vec<String>) {
-	let mut wstatus: i32 = 0;
 	let pid: Pid;
 
 	if command.len() != 2 {
@@ -145,7 +139,6 @@ fn kill(command: Vec<String>) {
 		kprintln!("[Error]: {}", res);
 		return;
 	}
-	sys_waitpid(pid, &mut wstatus, 0);
 }
 
 fn reboot(_: Vec<String>) {

@@ -1,36 +1,39 @@
-use crate::spin::Mutex;
+use crate::spin::RawMutex;
 use alloc::sync::Arc;
 use core::ops::{Deref, DerefMut};
+
+pub type Arcm<T> = RawArcm<T, false>;
+pub type KArcm<T> = RawArcm<T, true>;
 
 /// Wrap the given type into an Arc and a Mutex.
 /// Arc allow multiple reference on the same data between threads
 /// Mutex allow any type to be `Send` and ensure safe access to the underlying data
 #[derive(Default)]
-pub struct Arcm<T: ?Sized> {
-	arc: Arc<Mutex<T>>
+pub struct RawArcm<T: ?Sized, const INT: bool> {
+	arc: Arc<RawMutex<T, INT>>
 }
 
-impl<T> Clone for Arcm<T> {
+impl<T, const INT: bool> Clone for RawArcm<T, INT> {
 	fn clone(&self) -> Self {
 		Self { arc: self.arc.clone() }
 	}
 }
-impl<T> Arcm<T> {
-	/// Create a new Arcm by copying the data
+impl<T, const INT: bool> RawArcm<T, INT> {
+	/// Create a new RawArcm by copying the data
 	///
 	/// # Examples
 	/// ```
-	/// let arcm: Arcm<u32> = Arcm::new(5);
+	/// let arcm: RawArcm<u32, false> = RawArcm::new(5);
 	/// ```
 	pub fn new(data: T) -> Self {
-		Self { arc: Arc::new(Mutex::new(data)) }
+		Self { arc: Arc::new(RawMutex::new(data)) }
 	}
 
 	/// Clone the current Arc and send it to the function pass in paramters
 	///
 	/// # Examples
 	/// ```
-	/// let arcm: Arcm<u32> = Arcm::new(5);
+	/// let arcm: RawArcm<u32, false> = RawArcm::new(5);
 	/// arcm.execute(|cloned| {
 	///     *cloned.lock() = 10;
 	/// });
@@ -38,26 +41,26 @@ impl<T> Arcm<T> {
 	/// ```
 	pub fn execute<R>(
 		&self,
-		mut callback: impl FnMut(Arc<Mutex<T>>) -> R
+		mut callback: impl FnMut(Arc<RawMutex<T, INT>>) -> R
 	) -> R {
 		callback(self.arc.clone())
 	}
 }
 
-impl<T: ?Sized> Deref for Arcm<T> {
-	type Target = Arc<Mutex<T>>;
+impl<T: ?Sized, const INT: bool> Deref for RawArcm<T, INT> {
+	type Target = Arc<RawMutex<T, INT>>;
 	fn deref(&self) -> &Self::Target {
 		&self.arc
 	}
 }
 
-impl<T: ?Sized> DerefMut for Arcm<T> {
-	fn deref_mut(&mut self) -> &mut Arc<Mutex<T>> {
+impl<T: ?Sized, const INT: bool> DerefMut for RawArcm<T, INT> {
+	fn deref_mut(&mut self) -> &mut Arc<RawMutex<T, INT>> {
 		&mut self.arc
 	}
 }
 
-/// Allow type coercion from Arcm\<T\> to Arcm\<U\> where U is Unsized and coercion exist from T to U
+/// Allow type coercion from RawArcm\<T\> to RawArcm\<U\> where U is Unsized and coercion exist from T to U
 /// This is used to store `dyn Trait` from a struct that implement the trait for example
 ///
 /// # Examples
@@ -71,11 +74,12 @@ impl<T: ?Sized> DerefMut for Arcm<T> {
 /// }
 /// fn exmaple() {
 ///     let foo: Foobar = Foobar{};
-///     let arcm: Arcm<dyn Foo> = Arcm::new(foo);
+///     let arcm: RawArcm<dyn Foo, false> = RawArcm::new(foo);
 ///     assert_eq!(arcm.lock().bar(), 42);
 /// }
 /// ```
-impl<T, U> core::ops::CoerceUnsized<Arcm<U>> for Arcm<T>
+impl<T, U, const INT: bool> core::ops::CoerceUnsized<RawArcm<U, INT>>
+	for RawArcm<T, INT>
 where
 	T: core::marker::Unsize<U> + ?Sized,
 	U: ?Sized
@@ -85,7 +89,7 @@ where
 #[cfg(test)]
 mod test {
 	use super::Arcm;
-	use crate::boxed::Box;
+	use crate::alloc::boxed::Box;
 
 	#[sys_macros::test_case]
 	fn test_arcm_closure() {

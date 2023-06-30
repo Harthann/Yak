@@ -2,18 +2,16 @@
 
 use core::ptr::copy_nonoverlapping;
 
-use crate::wrappers::{_cli, _sti};
+use crate::utils::arcm::KArcm;
 
 use crate::alloc::string::String;
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
 
-use crate::proc::process::{Pid, Process};
+use crate::proc::process::{Pid, Process, PROCESS_TREE};
 use crate::proc::task::{Task, TASKLIST};
 
 use crate::memory::paging::page_directory::PageDirectory;
-
-use crate::boxed::Box;
 
 #[cfg(test)]
 pub mod test;
@@ -52,13 +50,15 @@ pub unsafe fn exec_fn_userspace(
 	func: VirtAddr,
 	size: usize
 ) -> Pid {
-	_cli();
 	let running_task: &mut Task = Task::get_running_task();
-	let parent: &mut Process = Process::get_running_process();
-
+	let binding = Process::get_running_process();
 	let mut process: Process = Process::new();
-	process.init(parent);
+	let mut new_task: Task = Task::new();
+
+	process.init(&binding);
 	process.exe = name.clone();
+
+	let pid = process.pid;
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
 	process.setup_stack(0x1000, PAGE_WRITABLE | PAGE_USER, false);
 	process.setup_heap(
@@ -66,12 +66,6 @@ pub unsafe fn exec_fn_userspace(
 		PAGE_WRITABLE | PAGE_USER,
 		false
 	);
-	parent.childs.push(Box::new(process));
-
-	let process: &mut Process = parent.childs.last_mut().unwrap();
-	let mut new_task: Task = Task::new();
-
-	new_task.process = process;
 
 	// TODO: free those when process ends ?
 	let page_dir: &mut PageDirectory = process.setup_pagination();
@@ -89,9 +83,14 @@ pub unsafe fn exec_fn_userspace(
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
+	new_task.process = KArcm::new(process);
+
+	let mut parent = binding.lock();
+	parent.childs.push(new_task.process.clone());
+	PROCESS_TREE.insert(pid, new_task.process.clone());
+
 	TASKLIST.push_back(new_task);
-	_sti();
-	process.pid
+	pid
 }
 
 #[macro_export]
