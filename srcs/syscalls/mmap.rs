@@ -61,6 +61,7 @@ pub fn mmap(addr: *const mmap_arg) -> *const u8 {
 		ptr.fd,
 		ptr.offset
 	);
+	let size = ptr.length + (4096 - (ptr.length % 4096));
 	let binding = Process::get_running_process();
 	let mut curr_process = binding.lock();
 
@@ -76,7 +77,7 @@ pub fn mmap(addr: *const mmap_arg) -> *const u8 {
             } else {
                 let pt: &'static mut PageTable = PageTable::new();
                 unsafe {
-                let pt_index = pt.new_frame(get_paddr!(offset), ptr.flags | paging::PAGE_PRESENT | paging::PAGE_USER).expect("Failed to map inside PageTable");
+                let pt_index = pt.new_frames(get_paddr!(offset), (size / 4096) as u32, ptr.flags | paging::PAGE_USER).expect("Mmap failed to create first PageTable");
                 user_pd.set_entry(991, get_paddr!(pt as *const _) | PAGE_WRITABLE | PAGE_PRESENT | paging::PAGE_USER);
                 curr_process.page_tables.push(pt);
                 get_vaddr!(991, pt_index)
