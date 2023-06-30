@@ -1,4 +1,3 @@
-use crate::cli::cli;
 use crate::syscalls::exit::sys_waitpid;
 use crate::vga_buffer::change_color;
 use crate::vga_buffer::color::Color;

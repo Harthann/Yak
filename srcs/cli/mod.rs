@@ -1,5 +1,5 @@
-use crate::proc::signal::SignalType;
 use crate::alloc::boxed::Box;
+use crate::proc::signal::SignalType;
 use crate::spin::KMutex;
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_signal;
