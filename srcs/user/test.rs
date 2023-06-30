@@ -202,14 +202,15 @@ global_asm!(
 .globl userfunc_6
 .globl end_userfunc_6
 userfunc_6:
-    sub esp, 0x4
+    sub esp, 0x4 * 6
 
-    mov ebx, 0    // hint
-    mov ecx, 4096 // page size
-    mov edx, 0    // prot
-    mov esi, 2    // flags
-    mov edi, -1   // fd
-    mov ebp, 0    // offset
+    mov DWORD ptr [esp + 0x00], 0    // hint
+    mov DWORD ptr [esp + 0x04], 4096 // page size
+    mov DWORD ptr [esp + 0x08], 0    // prot
+    mov DWORD ptr [esp + 0x0c], 2    // flags
+    mov DWORD ptr [esp + 0x10], -1   // fd
+    mov DWORD ptr [esp + 0x14], 0    // offset
+    lea ebx, [esp]
     mov eax, 90   // mmap syscall
     int 0x80
     cmp eax, 0xff  // Check if mmap failed

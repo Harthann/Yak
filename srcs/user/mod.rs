@@ -16,6 +16,8 @@ use crate::memory::paging::page_directory::PageDirectory;
 pub mod test;
 
 extern "C" {
+	fn userfunc_6();
+	fn end_userfunc_6();
 	fn userfunc();
 	fn userfunc_end();
 }

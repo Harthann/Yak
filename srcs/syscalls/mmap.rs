@@ -1,27 +1,92 @@
 use crate::memory::paging;
+use crate::memory::paging::{page_directory, PAGE_PRESENT, PAGE_WRITABLE, page_table::PageTable};
 
-pub fn mmap(
-	addr: *const usize,
-	length: usize,
-	prot: u32,
-	flags: u32,
-	fd: i32,
-	offset: usize
-) -> *const u8 {
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct mmap_arg {
+    addr:   usize,
+    length: usize,
+    prot:   u32,
+    flags:  u32,
+    fd:     i32,
+    offset: usize
+}
+
+/// Translate VirtAddr from userspace to kernelspace
+/// This can be optimize a lot.
+pub fn translate_vaddr(addr: VirtAddr) -> VirtAddr {
+    unsafe {
+	let binding = Process::get_running_process();
+	let curr_process = binding.lock();
+
+    let pd_index = (addr as usize >> 22) as usize;
+    let pt_index = ((addr as usize & 0x3ff000) >> 12) as usize;
+    let pt_paddr = (*curr_process.pd).get_entry(pd_index).get_paddr();
+    for i in &curr_process.page_tables {
+        if get_paddr!(i.get_vaddr()) == pt_paddr {
+            let pdik = i.get_vaddr() as usize >> 22;
+            let page_paddr = i.entries[pt_index].get_paddr();
+            for j in 0..1024 {
+                    if page_directory.get_entry(j).get_present() == 1 {
+                        for k in 0..1024 {
+                            let pt = page_directory.get_page_table(j);
+                            if pt.entries[k].get_paddr() == page_paddr {
+                                crate::dprintln!("Found: {:#x} {} {}", get_vaddr!(j, k), j, k);
+                                return get_vaddr!(j, k);
+                            }
+                        }
+                    }
+            }
+            return 0x0;
+        }
+    }
+    return 0x0;
+    }
+}
+
+pub fn mmap(addr: *const mmap_arg) -> *const u8 {
 	//! WARNING: Currently flags sended to MemoryZone are ignored and used to give PageDirectory
 	//! the page flags. The flag PAGE_USER may overlap with one of mmap flags
+
+    let translated_addr = translate_vaddr(addr as VirtAddr);
+    let translated_addr = (translated_addr as usize) + (addr as usize & 0xfff);
+
+    let ptr = unsafe {&*(translated_addr as *const mmap_arg) } ;
 	let mz = sys_mmap(
-		addr as VirtAddr,
-		length,
-		prot,
-		flags | paging::PAGE_USER,
-		fd,
-		offset
+		ptr.addr as VirtAddr,
+		ptr.length,
+		ptr.prot,
+		ptr.flags,
+		ptr.fd,
+		ptr.offset
 	);
+	let binding = Process::get_running_process();
+	let mut curr_process = binding.lock();
+
+    let user_pd = unsafe{ &mut *curr_process.pd};
+
 	let offset = match mz {
-		Ok(x) => x.lock().offset,
+		Ok(x) => {
+            let offset = x.lock().offset;
+            if user_pd.get_entry(991).get_present() == 1 {
+                // try map in pt
+                // if fail try next
+                todo!()
+            } else {
+                let pt: &'static mut PageTable = PageTable::new();
+                unsafe {
+                let pt_index = pt.new_frame(get_paddr!(offset), ptr.flags | paging::PAGE_PRESENT | paging::PAGE_USER).expect("Failed to map inside PageTable");
+                user_pd.set_entry(991, get_paddr!(pt as *const _) | PAGE_WRITABLE | PAGE_PRESENT | paging::PAGE_USER);
+                curr_process.page_tables.push(pt);
+                get_vaddr!(991, pt_index)
+                }
+            }
+        },
 		Err(_) => 0xff
 	};
+
+    crate::dprintln!("Mmap return: {:#x}", offset);
 	offset as *const u8
 }
 
@@ -57,6 +122,9 @@ pub fn sys_mmap(
 pub fn sys_munmap(addr: *const usize, length: usize) -> i32 {
 	let size = length + (4096 - (length % 4096));
 
+    let translated_addr = translate_vaddr(addr as VirtAddr);
+    let translated_addr = (translated_addr as usize) + (addr as usize & 0xfff);
+
 	// Bind and lock the current process
 	let binding = Process::get_running_process();
 	let mut curr_process = binding.lock();
@@ -66,8 +134,8 @@ pub fn sys_munmap(addr: *const usize, length: usize) -> i32 {
 	let mut index = 0;
 	for i in &curr_process.mem_map {
 		let (offset, size) = i.lock().area();
-		if offset >= addr as VirtAddr
-			&& (addr as usize) < offset as usize + size
+		if offset >= translated_addr as VirtAddr
+			&& (translated_addr as usize) < offset as usize + size
 		{
 			break;
 		}
