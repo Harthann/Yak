@@ -203,37 +203,53 @@ global_asm!(
 .globl userfunc_6
 .globl end_userfunc_6
 userfunc_6:
+    // Give space for mmap pointers
+    sub esp, 0x4 * 3
+    // Save space for mmap arg struct
     sub esp, 0x4 * 6
 
-    mov DWORD ptr [esp + 0x00], 0    // hint
+
+    mov DWORD ptr [esp + 0x00], 0            // hint
     mov DWORD ptr [esp + 0x04], {tmmap_size} // page size
-    mov DWORD ptr [esp + 0x08], 0    // prot
-    mov DWORD ptr [esp + 0x0c], 2    // flags
-    mov DWORD ptr [esp + 0x10], -1   // fd
-    mov DWORD ptr [esp + 0x14], 0    // offset
-    lea ebx, [esp]
-    mov eax, 90   // mmap syscall
-    int 0x80
-    cmp eax, 0xff  // Check if mmap failed
-    je .error_6
-    mov [esp], eax // Save ptr
-    mov ecx, 0x00 
+    mov DWORD ptr [esp + 0x08], 0            // prot
+    mov DWORD ptr [esp + 0x0c], 2            // flags
+    mov DWORD ptr [esp + 0x10], -1           // fd
+    mov DWORD ptr [esp + 0x14], 0            // offset
 
-    .loop_6:
-    mov ebx, [esp]
-    add ebx, ecx
-    mov BYTE ptr [ebx], 42
-    inc ecx
-    cmp ecx, {tmmap_size}
-    jl .loop_6
+    // Counter, we'll call mmap 3 times
+    xor edx, edx
+    .loop_6_1:
+        lea ebx, [esp]
+        mov eax, 90   // mmap syscall
+        int 0x80
+        cmp eax, 0xff  // Check if mmap failed
+        je .error_6
+        mov [esp + 0x4 * 6 + 0x4 * edx], eax // Save ptr
+        mov ecx, 0x00 
 
-    mov ebx, [esp]    // mmap returned value
-    mov ecx, {tmmap_size} // mmap size
-    mov eax, 91       // mumap syscall
-    int 0x80
-    // Uncomment these to test if writing to the map properly cause page fault
-    // mov eax, [esp]
-    // mov BYTE ptr [eax], 53
+        .loop_6:
+            mov ebx, [esp + 0x4 * 6 + 0x4 * edx]
+            add ebx, ecx
+            mov BYTE ptr [ebx], 42
+            inc ecx
+        cmp ecx, {tmmap_size}
+        jl .loop_6
+        inc edx
+    cmp edx, 3
+    jl .loop_6_1
+
+    xor edx, edx
+    .loop_6_munmap:
+        mov ebx, [esp + 0x4 * 6 + 0x4 * edx]    // mmap returned value
+        mov ecx, {tmmap_size} // mmap size
+        mov eax, 91       // mumap syscall
+        int 0x80
+        // Uncomment these to test if writing to the map properly cause page fault
+        // mov eax, [esp]
+        // mov BYTE ptr [eax], 53
+        inc edx
+    cmp edx, 3
+    jl .loop_6_munmap
 
 	mov ebx, 0 // exit
 	mov eax, 1
