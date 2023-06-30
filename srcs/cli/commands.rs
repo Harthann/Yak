@@ -30,14 +30,14 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	uptime,
 	date,
 	play,
-	memtrack,
+	valgrind,
 	pmap,
 	kill
 ];
 
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "memtrack", "pmap", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill"
 ];
 
 pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
@@ -49,32 +49,39 @@ pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 	}
 }
 
-fn memtrack(command: Vec<String>) {
-	static mut HEAP_STATE: crate::Tracker = crate::Tracker::new();
-	if command.len() != 2 {
+fn valgrind(command: Vec<String>) {
+	if command.len() < 2 {
 		kprintln!("Invalid argument.");
-		kprintln!("Usage: memstate [start, stop]");
+		kprintln!("Usage: valgrind [command] [command args]");
 		return;
 	}
 
-	match command[1].as_str() {
-		"start" => {
-			crate::kprintln!("Saving current heap usage");
-			unsafe { HEAP_STATE = crate::KTRACKER };
-		},
-		"stop" => unsafe {
-			let mut current_state = crate::KTRACKER;
-			current_state.allocation -= HEAP_STATE.allocation;
-			current_state.allocated_bytes -= HEAP_STATE.allocated_bytes;
-			current_state.freed -= HEAP_STATE.freed;
-			current_state.freed_bytes -= HEAP_STATE.freed_bytes;
-			crate::kprintln!("{}", current_state);
-			crate::kprintln!(
-				"Leaks: {} bytes",
-				current_state.allocated_bytes - current_state.freed_bytes
-			);
-		},
-		_ => crate::kprintln!("Invalid argument")
+	// Save current heap state
+	let heap_state = unsafe { crate::KTRACKER };
+
+	let sub_command = &command[1..command.len()];
+	let cmd_id = KNOWN_CMD.iter().position(|&x| x == sub_command[0]);
+	match cmd_id {
+		Some(index) => COMMANDS[index](sub_command.to_vec()),
+		None => kprintln!("Command: [{}] not found", sub_command[0])
+	}
+
+	let mut current_state = unsafe { crate::KTRACKER };
+	current_state.allocation -= heap_state.allocation;
+	current_state.allocated_bytes -= heap_state.allocated_bytes;
+	current_state.freed -= heap_state.freed;
+	current_state.freed_bytes -= heap_state.freed_bytes;
+	crate::kprintln!("{}", current_state);
+	if current_state.allocated_bytes < current_state.freed_bytes {
+		crate::kprintln!(
+			"Too much bytes freed: {}",
+			current_state.freed_bytes - current_state.allocated_bytes
+		);
+	} else {
+		crate::kprintln!(
+			"Leaks: {} bytes",
+			current_state.allocated_bytes - current_state.freed_bytes
+		);
 	}
 }
 
