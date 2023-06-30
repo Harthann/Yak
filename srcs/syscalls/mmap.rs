@@ -67,28 +67,34 @@ pub fn mmap(addr: *const mmap_arg) -> *const u8 {
 
     let user_pd = unsafe{ &mut *curr_process.pd};
 
-	let offset = match mz {
-		Ok(x) => {
-            let offset = x.lock().offset;
-            if user_pd.get_entry(991).get_present() == 1 {
-                // try map in pt
-                // if fail try next
-                todo!()
-            } else {
-                let pt: &'static mut PageTable = PageTable::new();
-                unsafe {
-                let pt_index = pt.new_frames(get_paddr!(offset), (size / 4096) as u32, ptr.flags | paging::PAGE_USER).expect("Mmap failed to create first PageTable");
-                user_pd.set_entry(991, get_paddr!(pt as *const _) | PAGE_WRITABLE | PAGE_PRESENT | paging::PAGE_USER);
-                curr_process.page_tables.push(pt);
-                get_vaddr!(991, pt_index)
-                }
+    if mz.is_err() {
+        return 0xff as *const u8;
+    }
+    let mz = mz.unwrap();
+    let offset = mz.lock().offset;
+    if user_pd.get_entry(991).get_present() == 1 {
+        let pt_paddr = user_pd.get_entry(991).get_paddr();
+        for i in &mut curr_process.page_tables {
+            if pt_paddr == unsafe{get_paddr!(i.get_vaddr())} {
+                let pt_index = i.new_frames(unsafe{get_paddr!(offset)}, (size / 4096) as u32, ptr.flags | paging::PAGE_USER);
+                return match pt_index {
+                    Ok(index) => get_vaddr!(991, index as usize) as *const u8,
+                    Err(_) => 0xff as *const u8
+                };
             }
-        },
-		Err(_) => 0xff
-	};
-
-    crate::dprintln!("Mmap return: {:#x}", offset);
-	offset as *const u8
+        }
+        // try map in pt
+        // if fail try next
+        todo!()
+    } else {
+        let pt: &'static mut PageTable = PageTable::new();
+        unsafe {
+        let pt_index = pt.new_frames(get_paddr!(offset), (size / 4096) as u32, ptr.flags | paging::PAGE_USER).expect("Mmap failed to create first PageTable");
+        user_pd.set_entry(991, get_paddr!(pt as *const _) | PAGE_WRITABLE | PAGE_PRESENT | paging::PAGE_USER);
+        curr_process.page_tables.push(pt);
+        return get_vaddr!(991, pt_index) as *const u8;
+        }
+    }
 }
 
 use crate::memory::{MemoryZone, TypeZone, VirtAddr};
@@ -147,6 +153,7 @@ pub fn sys_munmap(addr: *const usize, length: usize) -> i32 {
 	let mz = split_list.pop_front();
 
 	// Bind and lock the concerned MemoryZone
+    // This cause panic if we try to unmap non mapped MemoryZone
 	let mzbinding = mz.unwrap();
 	let mut guard = mzbinding.lock();
 
