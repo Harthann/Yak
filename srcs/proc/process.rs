@@ -11,6 +11,7 @@ use crate::alloc::collections::LinkedList;
 use crate::utils::arcm::KArcm;
 
 use crate::proc::task::Task;
+use crate::proc::task::TASK_STACK;
 
 use crate::proc::signal::{Signal, SignalHandler, SignalType};
 use crate::proc::Id;
@@ -324,7 +325,7 @@ impl Process {
 		// another page_table ?
 		page_dir.set_entry(
 			KERNEL_BASE >> 22,
-			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+			kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
 		);
 		page_dir.set_entry(
 			KSTACK_ADDR as usize >> 22,
@@ -341,6 +342,11 @@ impl Process {
 		process_stack.new_index_frame(
 			(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
 			get_paddr!(self.stack.offset),
+			PAGE_WRITABLE | PAGE_USER
+		);
+		process_kernel_stack.new_index_frame(
+			(TASK_STACK.offset as usize & 0x3ff000) >> 12,
+			get_paddr!(TASK_STACK.offset),
 			PAGE_WRITABLE | PAGE_USER
 		);
 		process_kernel_stack.new_index_frame(

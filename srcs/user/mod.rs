@@ -2,6 +2,7 @@
 
 use core::ptr::copy_nonoverlapping;
 
+use crate::KSTACK_ADDR;
 use crate::utils::arcm::KArcm;
 
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
@@ -24,16 +25,18 @@ pub const USER_HEAP_ADDR: VirtAddr = 0x0800000;
 pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
 #[naked]
-unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
+unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
 	core::arch::asm!(
-		"mov ebx, DWORD PTR[esp + 4]",
 		"mov ax, (5 * 8) | 3", // ring 3 data with bottom 2 bits set for ring 3
 		"mov ds, ax",
 		"mov es, ax",
 		"mov fs, ax",
 		"mov gs, ax", // ss is handled by iret
+		"mov eax, DWORD PTR[esp + 8]", // setup cr3 user
+		"mov cr3, eax",
 		// set up the stack frame iret expects
-		"mov eax, esp",
+		"mov eax, DWORD PTR[esp + 12]", // esp user setup by iretd
+		"mov ebx, DWORD PTR[esp + 4]", // func
 		"push (5 * 8) | 3", // data selector
 		"push eax",         // current esp
 		"pushfd",           // eflags
@@ -65,15 +68,26 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	let page_dir: &mut PageDirectory = process.setup_pagination();
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
-	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
-	new_task.regs.cr3 = get_paddr!(page_dir as *const _);
-	new_task.regs.esp -= 4;
+	new_task.regs.esp = process.kernel_stack.offset + process.kernel_stack.size as u32;
+
+	let cr3 = get_paddr!(page_dir as *const _);
+	new_task.regs.cr3 = running_task.regs.cr3;
 	process.test = true;
 
+	new_task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) new_task.regs.esp,
+		func = in(reg) USER_STACK_ADDR + 1);
+	new_task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) new_task.regs.esp,
+		func = in(reg) cr3);
+	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) USER_HEAP_ADDR);
-	new_task.regs.esp = USER_STACK_ADDR - 7;
+
+	new_task.regs.esp = KSTACK_ADDR - 15;
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
