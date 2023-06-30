@@ -2,8 +2,8 @@
 
 use core::ptr::copy_nonoverlapping;
 
-use crate::KSTACK_ADDR;
 use crate::utils::arcm::KArcm;
+use crate::KSTACK_ADDR;
 
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
@@ -31,15 +31,15 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
 		"mov ds, ax",
 		"mov es, ax",
 		"mov fs, ax",
-		"mov gs, ax", // ss is handled by iret
+		"mov gs, ax",                  // ss is handled by iret
 		"mov eax, DWORD PTR[esp + 8]", // setup cr3 user
 		"mov cr3, eax",
 		// set up the stack frame iret expects
 		"mov eax, DWORD PTR[esp + 12]", // esp user setup by iretd
-		"mov ebx, DWORD PTR[esp + 4]", // func
-		"push (5 * 8) | 3", // data selector
-		"push eax",         // current esp
-		"pushfd",           // eflags
+		"mov ebx, DWORD PTR[esp + 4]",  // func
+		"push (5 * 8) | 3",             // data selector
+		"push eax",                     // current esp
+		"pushfd",                       // eflags
 		"push (4 * 8) | 3", /* code selector (ring 3 code with bottom 2 bits set for ring 3) */
 		"push ebx",         // func
 		"iretd",
@@ -68,7 +68,8 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	let page_dir: &mut PageDirectory = process.setup_pagination();
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
-	new_task.regs.esp = process.kernel_stack.offset + process.kernel_stack.size as u32;
+	new_task.regs.esp =
+		process.kernel_stack.offset + process.kernel_stack.size as u32;
 
 	let cr3 = get_paddr!(page_dir as *const _);
 	new_task.regs.cr3 = running_task.regs.cr3;

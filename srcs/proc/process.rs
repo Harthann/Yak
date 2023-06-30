@@ -10,8 +10,7 @@ use crate::alloc::collections::btree_map::BTreeMap;
 use crate::alloc::collections::LinkedList;
 use crate::utils::arcm::KArcm;
 
-use crate::proc::task::Task;
-use crate::proc::task::TASK_STACK;
+use crate::proc::task::{Task, TASK_STACK};
 
 use crate::proc::signal::{Signal, SignalHandler, SignalType};
 use crate::proc::Id;

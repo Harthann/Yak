@@ -9,7 +9,7 @@ use crate::proc::Pid;
 use crate::vec::Vec;
 use crate::wrappers::{_cli, _rst};
 
-use crate::memory::paging::{PAGE_WRITABLE, PAGE_USER};
+use crate::memory::paging::PAGE_WRITABLE;
 use crate::{KALLOCATOR, KSTACK_ADDR};
 
 use crate::alloc::collections::vec_deque::VecDeque;
