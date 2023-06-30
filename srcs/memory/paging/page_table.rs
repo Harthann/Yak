@@ -98,6 +98,29 @@ i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12)
 		}
 		Err(())
 	}
+    
+    //TODO! Check no can't be greater than 1023
+    pub fn new_frames(&mut self, paddr: PhysAddr, no: u32, flags: u32) -> Result<u16, ()> {
+        let index = self.find_space(no)?;
+        for i in 0..no {
+            self.entries[index as usize + i as usize] = (paddr | flags | PAGE_PRESENT).into();
+        }
+        Ok(index as u16)
+    }
+
+    pub fn find_space(&self, no: u32) -> Result<u16, ()> {
+        for i in 0..(1024 - no as usize) {
+            for j in 0..=no as usize {
+                if self.entries[i + j].get_present() == 1 {
+                    break ;
+                } else if j == no as usize {
+                    // Found enough space
+                    return Ok(i as u16)
+                }
+            }
+        };
+        Err(())
+    }
 
 	pub fn get_vaddr(&self) -> VirtAddr {
 		self as *const Self as VirtAddr
