@@ -66,3 +66,24 @@ pub fn inl(port: u16) -> u32 {
 	}
 	input_byte
 }
+
+#[allow(dead_code)]
+pub fn insb(port: u16, dst: &mut [u32], count: u32) {
+	for index in 0..count {
+		dst[index as usize] = inb(port) as u32;
+	}
+}
+
+#[allow(dead_code)]
+pub fn insw(port: u16, dst: &mut [u32], count: u32) {
+	for index in 0..count {
+		dst[index as usize] = inw(port) as u32;
+	}
+}
+
+#[allow(dead_code)]
+pub fn insl(port: u16, dst: &mut [u32], count: u32) {
+	for index in 0..count {
+		dst[index as usize] = inl(port);
+	}
+}

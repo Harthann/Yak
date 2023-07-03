@@ -1,4 +1,4 @@
-use crate::io::{inb, outb};
+use crate::io::{inb, outb, insl};
 
 mod ata;
 mod atapi;
@@ -99,6 +99,32 @@ impl IDE {
 			outb(CHANNELS[channel as usize].ctrl + reg as u16 - 0x0a, data);
 		} else if reg < 0x16 {
 			outb(CHANNELS[channel as usize].bmide + reg as u16 - 0x0e, data);
+		}
+		if reg > 0x07 && reg < 0x0c {
+			IDE::write(
+				channel,
+				ata::ATARegOffset::CONTROL as u8,
+				CHANNELS[channel as usize].n_ien
+			);
+		}
+	}
+
+	unsafe fn read_buffer(channel: u8, reg: u8, buffer: &mut [u32], quads: u32) {
+		if reg > 0x07 && reg < 0x0c {
+			IDE::write(
+				channel,
+				ata::ATARegOffset::CONTROL as u8,
+				0x80 | CHANNELS[channel as usize].n_ien
+			);
+		}
+		if reg < 0x08 {
+			insl(CHANNELS[channel as usize].base + reg as u16 - 0x00, buffer, quads);
+		} else if reg < 0x0c {
+			insl(CHANNELS[channel as usize].base + reg as u16 - 0x06, buffer, quads);
+		} else if reg < 0x0e {
+			insl(CHANNELS[channel as usize].ctrl + reg as u16 - 0x0a, buffer, quads);
+		} else if reg < 0x16 {
+			insl(CHANNELS[channel as usize].bmide + reg as u16 - 0x0e, buffer, quads);
 		}
 		if reg > 0x07 && reg < 0x0c {
 			IDE::write(
