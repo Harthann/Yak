@@ -109,8 +109,25 @@
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::alloc::boxed::Box;
+<span class="kw">use </span><span class="kw">crate</span>::proc::signal::SignalType;
 <span class="kw">use </span><span class="kw">crate</span>::spin::KMutex;
+<span class="kw">use </span><span class="kw">crate</span>::syscalls::exit::sys_waitpid;
+<span class="kw">use </span><span class="kw">crate</span>::syscalls::signal::sys_signal;
 <span class="kw">use </span><span class="kw">crate</span>::utils::queue::Queue;
 <span class="kw">use </span><span class="kw">crate</span>::vga_buffer::WRITER;
 
@@ -205,10 +222,19 @@
 	}
 }
 
+<span class="kw">pub static </span><span class="kw-2">mut </span>LOCK_CMD: bool = <span class="bool-val">false</span>;
+
+<span class="comment">// signal handler for unlocking cmd after init
+</span><span class="kw">fn </span>unlock_cmd(_no: i32) {
+	<span class="kw">unsafe </span>{ LOCK_CMD = <span class="bool-val">false </span>};
+}
+
 <span class="kw">pub fn </span>cli() {
 	<span class="kw">let </span><span class="kw-2">mut </span>emulator: Box&lt;TermEmu&gt; = Box::default();
 	<span class="kw-2">*</span>INPUT_BUFFER.lock() = <span class="prelude-val">Some</span>(Queue::new());
 
+	<span class="kw">unsafe </span>{ LOCK_CMD = <span class="bool-val">false </span>};
+	sys_signal(SignalType::SIGHUP <span class="kw">as </span>i32, unlock_cmd);
 	<span class="kw">loop </span>{
 		<span class="kw">if </span>INPUT_BUFFER.lock().as_ref().unwrap().is_empty() {
 			<span class="kw">unsafe </span>{
@@ -218,6 +244,8 @@
 			<span class="kw">let </span>event = INPUT_BUFFER.lock().as_mut().unwrap().pop();
 			emulator.handle_event(event.<span class="number">0</span>, event.<span class="number">1</span>);
 		}
+		<span class="kw">let </span><span class="kw-2">mut </span>wstatus = <span class="number">0</span>;
+		sys_waitpid(-<span class="number">1</span>, <span class="kw-2">&amp;mut </span>wstatus, <span class="kw">crate</span>::syscalls::exit::WNOHANG);
 	}
 }
 </code></pre></div></section></main></body></html>

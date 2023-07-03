@@ -380,10 +380,23 @@
 <a href="#380" id="380">380</a>
 <a href="#381" id="381">381</a>
 <a href="#382" id="382">382</a>
+<a href="#383" id="383">383</a>
+<a href="#384" id="384">384</a>
+<a href="#385" id="385">385</a>
+<a href="#386" id="386">386</a>
+<a href="#387" id="387">387</a>
+<a href="#388" id="388">388</a>
+<a href="#389" id="389">389</a>
+<a href="#390" id="390">390</a>
+<a href="#391" id="391">391</a>
+<a href="#392" id="392">392</a>
+<a href="#393" id="393">393</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>core::fmt;
 <span class="kw">use </span>core::ptr::copy_nonoverlapping;
 
 <span class="kw">use </span><span class="kw">crate</span>::boot::KERNEL_BASE;
+
+<span class="kw">use </span><span class="kw">crate</span>::alloc::string::String;
 
 <span class="kw">use </span><span class="kw">crate</span>::memory::{MemoryZone, TypeZone};
 <span class="kw">use </span><span class="kw">crate</span>::vec::Vec;
@@ -435,6 +448,7 @@
 
 <span class="kw">pub struct </span>Process {
 	<span class="kw">pub </span>pid:             Pid,
+	<span class="kw">pub </span>exe:             String,
 	<span class="kw">pub </span>state:           Status,
 	<span class="kw">pub </span>parent:          <span class="prelude-ty">Option</span>&lt;KArcm&lt;Process&gt;&gt;,
 	<span class="kw">pub </span>childs:          Vec&lt;KArcm&lt;Process&gt;&gt;,
@@ -457,6 +471,7 @@
 	<span class="kw">pub fn </span>new() -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			pid:             <span class="number">0</span>,
+			exe:             String::new(),
 			state:           Status::Disable,
 			parent:          <span class="prelude-val">None</span>,
 			childs:          Vec::new(),
@@ -503,6 +518,7 @@
 	<span class="comment">// TODO: next_pid need to check overflow and if other pid is available
 	</span><span class="kw">pub unsafe fn </span>init(<span class="kw-2">&amp;mut </span><span class="self">self</span>, parent: <span class="kw-2">&amp;</span>KArcm&lt;Process&gt;) {
 		<span class="self">self</span>.pid = NEXT_PID;
+		<span class="self">self</span>.exe = parent.lock().exe.clone();
 		<span class="self">self</span>.state = Status::Run;
 		<span class="self">self</span>.parent = <span class="prelude-val">Some</span>(parent.clone());
 		<span class="self">self</span>.owner = parent.lock().owner;
@@ -748,7 +764,9 @@
 	}
 
 	<span class="kw">pub unsafe fn </span>print_all_process() {
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;       PID        OWNER   STATUS&quot;</span>);
+		<span class="macro">crate::kprintln!</span>(
+			<span class="string">&quot;       PID                   NAME        OWNER   STATUS&quot;
+		</span>);
 		<span class="self">Self</span>::print_tree();
 	}
 
@@ -759,7 +777,11 @@
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>Process {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
-		<span class="macro">write!</span>(f, <span class="string">&quot;{:10} - {:10} - {:?}&quot;</span>, <span class="self">self</span>.pid, <span class="self">self</span>.owner, <span class="self">self</span>.state)
+		<span class="macro">write!</span>(
+			f,
+			<span class="string">&quot;{:10} - {:&gt;20} - {:10} - {:?}&quot;</span>,
+			<span class="self">self</span>.pid, <span class="self">self</span>.exe, <span class="self">self</span>.owner, <span class="self">self</span>.state
+		)
 	}
 }
 </code></pre></div></section></main></body></html>

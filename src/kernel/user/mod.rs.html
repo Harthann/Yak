@@ -139,6 +139,24 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Testing user space code
 
 </span><span class="kw">use </span>core::ptr::copy_nonoverlapping;
@@ -146,6 +164,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::utils::arcm::KArcm;
 <span class="kw">use </span><span class="kw">crate</span>::KSTACK_ADDR;
 
+<span class="kw">use </span><span class="kw">crate</span>::alloc::string::String;
 <span class="kw">use </span><span class="kw">crate</span>::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 <span class="kw">use </span><span class="kw">crate</span>::memory::VirtAddr;
 
@@ -188,13 +207,18 @@
 	);
 }
 
-<span class="kw">pub unsafe fn </span>exec_fn_userspace(func: VirtAddr, size: usize) -&gt; Pid {
+<span class="kw">pub unsafe fn </span>exec_fn_userspace(
+	name: String,
+	func: VirtAddr,
+	size: usize
+) -&gt; Pid {
 	<span class="kw">let </span>running_task: <span class="kw-2">&amp;mut </span>Task = Task::get_running_task();
 	<span class="kw">let </span>binding = Process::get_running_process();
 	<span class="kw">let </span><span class="kw-2">mut </span>process: Process = Process::new();
 	<span class="kw">let </span><span class="kw-2">mut </span>new_task: Task = Task::new();
 
 	process.init(<span class="kw-2">&amp;</span>binding);
+	process.exe = name.clone();
 
 	<span class="kw">let </span>pid = process.pid;
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
@@ -243,6 +267,18 @@
 	pid
 }
 
+<span class="attr">#[macro_export]
+</span><span class="macro">macro_rules! </span>exec_fn_userspace {
+	(<span class="macro-nonterminal">$func</span>:expr, <span class="macro-nonterminal">$size</span>:expr) =&gt; {{
+		<span class="kw">use </span><span class="kw">crate</span>::alloc::string::ToString;
+		<span class="kw">crate</span>::user::exec_fn_userspace(
+			<span class="macro">stringify!</span>(<span class="macro-nonterminal">$func</span>).to_string(),
+			<span class="macro-nonterminal">$func </span><span class="kw">as </span>u32,
+			<span class="macro-nonterminal">$size
+		</span>)
+	}};
+}
+
 <span class="macro">core::arch::global_asm!</span>(
 	<span class="string">r#&quot;
 .globl userfunc
@@ -272,8 +308,8 @@ userfunc_end:
 
 <span class="kw">pub fn </span>test_user_page() {
 	<span class="kw">unsafe </span>{
-		exec_fn_userspace(
-			userfunc <span class="kw">as </span>u32,
+		<span class="macro">crate::exec_fn_userspace!</span>(
+			userfunc,
 			userfunc_end <span class="kw">as </span>usize - userfunc <span class="kw">as </span>usize
 		);
 	}

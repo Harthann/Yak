@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["NB_SCREEN","SCREEN"],"fn":["cli"],"mod":["commands","input"],"static":["INPUT_BUFFER"],"struct":["TermEmu"]};
+window.SIDEBAR_ITEMS = {"constant":["NB_SCREEN","SCREEN"],"fn":["cli","unlock_cmd"],"mod":["commands","input"],"static":["INPUT_BUFFER","LOCK_CMD"],"struct":["TermEmu"]};
