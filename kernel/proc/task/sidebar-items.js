@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["STACK_SIZE"],"enum":["TaskStatus"],"fn":["_end_handler","find_task","save_task","schedule_task","swap_task","switch_task","wrapper_handler"],"macro":["get_segments","load_cr3"],"static":["TASKLIST","task_stack"],"struct":["Task","TaskStack"]};
+window.SIDEBAR_ITEMS = {"constant":["STACK_SIZE","TASK_STACK_OFFSET"],"enum":["TaskStatus"],"fn":["_end_handler","find_task","save_task","schedule_task","swap_task","switch_task","wrapper_handler"],"macro":["get_segments","load_cr3"],"static":["TASKLIST","TASK_STACK"],"struct":["Task"]};
