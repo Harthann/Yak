@@ -1,5 +1,5 @@
 #[allow(non_snake_case)]
-mod ATAStatus {
+pub mod ATAStatus {
 	pub const BSY: u8  = 0x80; // Busy
 	pub const DRDY: u8 = 0x40; // Drive ready
 	pub const DF: u8   = 0x20; // Drive write fault
@@ -11,7 +11,7 @@ mod ATAStatus {
 }
 
 #[allow(non_snake_case)]
-mod ATAError {
+pub mod ATAError {
 	pub const BBK: u8   = 0x80; // Bad block
 	pub const UNC: u8   = 0x40; // Uncorrectable data
 	pub const MC: u8    = 0x20; // Media changed
@@ -23,7 +23,7 @@ mod ATAError {
 }
 
 #[allow(non_snake_case)]
-enum ATACommand {
+pub enum ATACommand {
 	ReadPio        = 0x20,
 	ReadPioExt     = 0x24,
 	ReadDma        = 0xc8,
@@ -39,7 +39,7 @@ enum ATACommand {
 }
 
 #[allow(non_snake_case)]
-mod ATACmdIdentifyOffset {
+pub mod ATACmdIdentifyOffset {
 	pub const DEVICETYPE: usize   = 0;
 	pub const CYLINDERS: usize    = 2;
 	pub const HEADS: usize        = 6;
@@ -53,13 +53,13 @@ mod ATACmdIdentifyOffset {
 	pub const MAX_LBA_EXT: usize  = 200;
 }
 
-enum ATAType {
+pub enum ATAType {
 	MASTER = 0x00,
 	SLAVE  = 0x01
 }
 
 #[allow(non_snake_case)]
-mod ATARegOffset {
+pub mod ATARegOffset {
 	pub const DATA: usize       = 0x00;
 	pub const ERROR: usize      = 0x01;
 	pub const FEATURES: usize   = 0x01;
@@ -79,12 +79,12 @@ mod ATARegOffset {
 	pub const DEVADDRESS: usize = 0x0d;
 }
 
-enum ATAChannel {
+pub enum ATAChannel {
 	Primary    = 0x00,
 	Secondary  = 0x01
 }
 
-enum ATADirection {
+pub enum ATADirection {
 	Read  = 0x00,
 	Write = 0x01
 }
