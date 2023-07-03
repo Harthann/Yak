@@ -1,3 +1,4 @@
+use crate::alloc::string::String;
 use crate::interrupts::Registers;
 use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
@@ -57,6 +58,7 @@ impl Task {
 			);
 			let mut process: Process = Process::new();
 			process.state = Status::Run;
+			process.exe = String::from("kernel");
 			process.setup_kernel_stack(PAGE_WRITABLE);
 			page_directory
 				.claim_index_page_table(
