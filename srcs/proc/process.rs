@@ -371,9 +371,7 @@ impl Process {
 	}
 
 	pub unsafe fn print_all_process() {
-		crate::kprintln!(
-			"       PID                   NAME        OWNER   STATUS"
-		);
+		crate::kprintln!("{:>10}   {:>10}   {:>20}   {:>10}   {}", "PID", "PPID", "NAME", "OWNER", "STATUS");
 		Self::print_tree();
 	}
 
@@ -384,10 +382,9 @@ impl Process {
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(
-			f,
-			"{:10} - {:>20} - {:10} - {:?}",
-			self.pid, self.exe, self.owner, self.state
-		)
+		match &self.parent {
+			Some(x) => write!(f, "{:>10}   {:>10}   {:>20}   {:>10}   {:?}", self.pid, x.lock().pid, self.exe, self.owner, self.state),
+			None => write!(f, "{:>10}   {:>10}   {:>20}   {:>10}   {:?}", self.pid, "-", self.exe, self.owner, self.state)
+		}
 	}
 }

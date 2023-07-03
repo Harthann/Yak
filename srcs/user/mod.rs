@@ -80,6 +80,7 @@ pub unsafe fn exec_fn_userspace(
 	let cr3 = get_paddr!(page_dir as *const _);
 	new_task.regs.cr3 = running_task.regs.cr3;
 	process.test = true;
+	process.owner = 1;
 
 	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
@@ -154,6 +155,5 @@ pub fn test_user_page() {
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-	let ret = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
-	crate::kprintln!("pid ret: {}", ret);
+	let _ = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
 }
