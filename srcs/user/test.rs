@@ -272,7 +272,7 @@ extern "C" {
 fn test_mmap_userspace() {
 	unsafe {
 		let mut status: i32 = 0;
-		let pid = exec_fn_userspace(
+		let pid = crate::exec_fn_userspace!(
 			userfunc_6 as u32,
 			end_userfunc_6 as usize - userfunc_6 as usize
 		);
