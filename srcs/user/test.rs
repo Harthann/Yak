@@ -4,7 +4,6 @@ use crate::print_fn;
 use crate::proc::process::Process;
 use crate::syscalls::exit::{sys_waitpid, __WEXITSTATUS};
 use crate::syscalls::signal::sys_kill;
-use crate::user::exec_fn_userspace;
 
 global_asm!(
 	r#"
@@ -28,8 +27,8 @@ fn simple_test_userspace() {
 	print_fn!();
 	unsafe {
 		let mut status: i32 = 0;
-		let pid = exec_fn_userspace(
-			userfunc_1 as u32,
+		let pid = crate::exec_fn_userspace!(
+			userfunc_1,
 			end_userfunc_1 as usize - userfunc_1 as usize
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
@@ -59,8 +58,8 @@ fn test_kill_userspace() {
 	print_fn!();
 	unsafe {
 		let mut status: i32 = 0;
-		let pid = exec_fn_userspace(
-			userfunc_2 as u32,
+		let pid = crate::exec_fn_userspace!(
+			userfunc_2,
 			end_userfunc_2 as usize - userfunc_2 as usize
 		);
 		assert_eq!(Process::get_nb_process(), 2);
@@ -98,8 +97,8 @@ fn test_getppid_userspace() {
 	print_fn!();
 	unsafe {
 		let mut status: i32 = 0;
-		let pid = exec_fn_userspace(
-			userfunc_3 as u32,
+		let pid = crate::exec_fn_userspace!(
+			userfunc_3,
 			end_userfunc_3 as usize - userfunc_3 as usize
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
@@ -133,8 +132,8 @@ fn test_fork_userspace() {
 	print_fn!();
 	unsafe {
 		let mut status: i32 = 0;
-		let pid = exec_fn_userspace(
-			userfunc_4 as u32,
+		let pid = crate::exec_fn_userspace!(
+			userfunc_4,
 			end_userfunc_4 as usize - userfunc_4 as usize
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
@@ -185,8 +184,8 @@ fn test_fork2_userspace() {
 	print_fn!();
 	unsafe {
 		let mut status: i32 = 0;
-		let pid = exec_fn_userspace(
-			userfunc_5 as u32,
+		let pid = crate::exec_fn_userspace!(
+			userfunc_5,
 			end_userfunc_5 as usize - userfunc_5 as usize
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
