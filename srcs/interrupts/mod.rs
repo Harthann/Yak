@@ -147,8 +147,6 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 		}
 		if int_no != 3 && int_no != 1 {
 			// TODO: HOW TO GET IF IT'S A TRAP OR NOT
-			#[cfg(feature = "crash_on_panic")]
-			crate::io::outb(0xf4, 0x11);
 			hlt!();
 		}
 	} else if int_no == 0x80 {
