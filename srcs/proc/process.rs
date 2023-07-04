@@ -370,33 +370,21 @@ impl Process {
 	}
 
 	pub fn log_paging(&self) {
-		let mut tmp: Vec<(usize, PhysAddr)> = Vec::new();
 		unsafe {
 			crate::dprintln!("Pid: {}", self.pid);
 			for i in 0..1024 {
 				if (*self.pd).get_entry(i).get_present() == 1 {
-					let paddr = (*self.pd).get_entry(i).get_paddr();
-					tmp.push((i, paddr));
-					let vaddr = (*self.pd).get_entry(i).get_vaddr();
-					crate::dprintln!("Found {:#x} {:#x}", paddr, vaddr);
-					// for j in 0..1024 {
-					//    crate::dprintln!("{:?}", (*self.pd).get_page_table(j) as *const _);
-					//}
+					crate::dprintln!("{}", (*self.pd).get_entry(i));
 				}
 			}
 			for i in &self.page_tables {
 				for j in 0..1024 {
 					if i.entries[j].get_present() == 1 {
-						crate::dprintln!(
-							"{:#x} {:#x}",
-							get_paddr!(i.entries[j].get_vaddr()),
-							i.entries[j].get_vaddr()
-						);
+						crate::dprintln!("{}", i.entries[j]);
 					}
 				}
 			}
 		}
-		panic!("Exit");
 	}
 }
 
