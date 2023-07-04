@@ -25,7 +25,6 @@ pub fn translate_vaddr(addr: VirtAddr) -> VirtAddr {
 		let pt_paddr = (*curr_process.pd).get_entry(pd_index).get_paddr();
 		for i in &curr_process.page_tables {
 			if get_paddr!(i.get_vaddr()) == pt_paddr {
-				let pdik = i.get_vaddr() as usize >> 22;
 				let page_paddr = i.entries[pt_index].get_paddr();
 				for j in 0..1024 {
 					if page_directory.get_entry(j).get_present() == 1 {
