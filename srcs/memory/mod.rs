@@ -278,7 +278,7 @@ mod tests {
 		let used_pages = physmap_as_mut().used;
 		let mz = MemoryZone::init(TypeZone::Anon, 0x1000, 0, false);
 		assert_eq!(used_pages + 1, physmap_as_mut().used);
-		drop(&mz);
+		drop(mz);
 		// assert_eq!(used_pages, physmap_as_mut().used);
 	}
 
