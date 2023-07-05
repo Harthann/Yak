@@ -1,7 +1,6 @@
 use crate::alloc::boxed::Box;
 use crate::proc::signal::SignalType;
 use crate::spin::KMutex;
-use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_signal;
 use crate::utils::queue::Queue;
 use crate::vga_buffer::WRITER;
@@ -119,7 +118,5 @@ pub fn cli() {
 			let event = INPUT_BUFFER.lock().as_mut().unwrap().pop();
 			emulator.handle_event(event.0, event.1);
 		}
-		let mut wstatus = 0;
-		sys_waitpid(-1, &mut wstatus, crate::syscalls::exit::WNOHANG);
 	}
 }

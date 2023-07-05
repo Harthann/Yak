@@ -68,8 +68,6 @@ pub struct Process {
 	pub signal_handlers: Vec<SignalHandler>,
 	pub page_tables:     Vec<&'static mut PageTable>,
 	pub pd:              *mut PageDirectory,
-	// Temporary workaround to differentiate processes from threads
-	pub test:            bool,
 	pub owner:           Id
 }
 
@@ -91,7 +89,6 @@ impl Process {
 			signal_handlers: Vec::new(),
 			page_tables:     Vec::new(),
 			pd:              0x0 as *mut PageDirectory,
-			test:            false,
 			owner:           0
 		}
 	}
@@ -224,7 +221,7 @@ impl Process {
 			todo!(); // Problem
 		}
 		let mut process = binding.lock();
-		if process.test == true {
+		if process.owner != 0 {
 			use crate::memory::paging::bitmap;
 			let pd = &mut *process.pd;
 			for i in &process.page_tables {
@@ -372,7 +369,12 @@ impl Process {
 
 	pub unsafe fn print_all_process() {
 		crate::kprintln!(
-			"       PID                   NAME        OWNER   STATUS"
+			"{:>10}   {:>10}   {:>20}   {:>10}   {}",
+			"PID",
+			"PPID",
+			"NAME",
+			"OWNER",
+			"STATUS"
 		);
 		Self::print_tree();
 	}
@@ -402,10 +404,21 @@ impl Process {
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(
-			f,
-			"{:10} - {:>20} - {:10} - {:?}",
-			self.pid, self.exe, self.owner, self.state
-		)
+		match &self.parent {
+			Some(x) => write!(
+				f,
+				"{:>10}   {:>10}   {:>20}   {:>10}   {:?}",
+				self.pid,
+				x.lock().pid,
+				self.exe,
+				self.owner,
+				self.state
+			),
+			None => write!(
+				f,
+				"{:>10}   {:>10}   {:>20}   {:>10}   {:?}",
+				self.pid, "-", self.exe, self.owner, self.state
+			)
+		}
 	}
 }
