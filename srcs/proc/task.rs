@@ -140,25 +140,21 @@ impl Task {
 			{
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
-				let res = {
-					let process = self.process.lock();
-					let get_handler =
-						|process: &Process| -> Option<SignalHandler> {
-							for handler in process.signal_handlers.iter() {
-								if handler.signal
-									== process.signals[i].sigtype as i32
-								{
-									return Some(handler.clone());
-								}
+				let res =
+					self.process.execute(|guard| -> Option<SignalHandler> {
+						let prc = guard.lock();
+						for handler in prc.signal_handlers.iter() {
+							if handler.signal == prc.signals[i].sigtype as i32 {
+								return Some(handler.clone());
 							}
-							None
-						};
-					get_handler(&process)
-				};
+						}
+						None
+					});
 				if res.is_some() {
 					self.process.lock().signals.remove(i);
 					self.state = TaskStatus::Uninterruptible;
 					Task::handle_signal(&mut self.regs, &res.unwrap())
+					// Never goes here
 				}
 			} else if self.state == TaskStatus::Interruptible
 				&& self.process.lock().signals[i].sigtype == SignalType::SIGCHLD
@@ -279,6 +275,7 @@ unsafe extern "C" fn find_task() -> ! {
 		// TODO: IF SIGNAL JUMP ?
 		if new_task.process.lock().signals.len() > 0 {
 			new_task.do_signal();
+			// Potentially never return
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
