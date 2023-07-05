@@ -1,4 +1,4 @@
-use crate::io::{inb, outb, insl};
+use crate::io::{inb, insl, outb};
 
 mod ata;
 mod atapi;
@@ -13,15 +13,11 @@ struct IDEChannelRegisters {
 	base:  u16, // I/O Base
 	ctrl:  u16, // ControlBase
 	bmide: u16, // Bus Master IDE
-	n_ien: u8 // nIEN (No Interrupt)
+	n_ien: u8   // nIEN (No Interrupt)
 }
 
-static mut CHANNELS: [IDEChannelRegisters; 2] = [IDEChannelRegisters {
-	base: 0,
-	ctrl: 0,
-	bmide: 0,
-	n_ien: 0
-}; 2];
+static mut CHANNELS: [IDEChannelRegisters; 2] =
+	[IDEChannelRegisters { base: 0, ctrl: 0, bmide: 0, n_ien: 0 }; 2];
 
 static mut IDE_BUF: [u8; 2048] = [0; 2048];
 static mut IDE_IRQ_INVOKED: u8 = 0;
@@ -29,27 +25,27 @@ static mut ATAPI_PACKET: [u8; 12] = [0xA8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 #[derive(Clone, Copy)]
 struct IDEDevice {
-	reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
-	channel:      u8, // 0 (Primary Channel) or 1 (Secondary Channel)
-	drive:        u8, // 0 (Master Drive) or 1 (Slave Drive)
+	reserved:     u8,  // 0 (Empty) or 1 (This Drive really exists)
+	channel:      u8,  // 0 (Primary Channel) or 1 (Secondary Channel)
+	drive:        u8,  // 0 (Master Drive) or 1 (Slave Drive)
 	r#type:       u16, // 0: ATA, 1:ATAPI
 	signature:    u16, // Drive Signature
 	capabilities: u16, // Features
 	command_sets: u32, // Command Sets Supported
 	size:         u32, // Size in Sectors
-	model:        [u8; 41] // Model in string
+	model:        [u8; 41]  // Model in string
 }
 
 static mut IDE_DEVICES: [IDEDevice; 4] = [IDEDevice {
-	reserved: 0,
-	channel: 0,
-	drive: 0,
-	r#type: 0,
-	signature: 0,
+	reserved:     0,
+	channel:      0,
+	drive:        0,
+	r#type:       0,
+	signature:    0,
 	capabilities: 0,
 	command_sets: 0,
-	size: 0,
-	model: [0; 41]
+	size:         0,
+	model:        [0; 41]
 }; 4];
 
 struct IDE {}
@@ -58,7 +54,7 @@ impl IDE {
 	unsafe fn read(channel: u8, reg: u8) -> u8 {
 		let mut result: u8 = 0;
 		if reg > 0x07 && reg < 0x0c {
-			IDE::write(	
+			IDE::write(
 				channel,
 				ata::ATARegOffset::CONTROL as u8,
 				0x80 | CHANNELS[channel as usize].n_ien
@@ -109,7 +105,12 @@ impl IDE {
 		}
 	}
 
-	unsafe fn read_buffer(channel: u8, reg: u8, buffer: &mut [u32], quads: u32) {
+	unsafe fn read_buffer(
+		channel: u8,
+		reg: u8,
+		buffer: &mut [u32],
+		quads: u32
+	) {
 		if reg > 0x07 && reg < 0x0c {
 			IDE::write(
 				channel,
@@ -118,13 +119,29 @@ impl IDE {
 			);
 		}
 		if reg < 0x08 {
-			insl(CHANNELS[channel as usize].base + reg as u16 - 0x00, buffer, quads);
+			insl(
+				CHANNELS[channel as usize].base + reg as u16 - 0x00,
+				buffer,
+				quads
+			);
 		} else if reg < 0x0c {
-			insl(CHANNELS[channel as usize].base + reg as u16 - 0x06, buffer, quads);
+			insl(
+				CHANNELS[channel as usize].base + reg as u16 - 0x06,
+				buffer,
+				quads
+			);
 		} else if reg < 0x0e {
-			insl(CHANNELS[channel as usize].ctrl + reg as u16 - 0x0a, buffer, quads);
+			insl(
+				CHANNELS[channel as usize].ctrl + reg as u16 - 0x0a,
+				buffer,
+				quads
+			);
 		} else if reg < 0x16 {
-			insl(CHANNELS[channel as usize].bmide + reg as u16 - 0x0e, buffer, quads);
+			insl(
+				CHANNELS[channel as usize].bmide + reg as u16 - 0x0e,
+				buffer,
+				quads
+			);
 		}
 		if reg > 0x07 && reg < 0x0c {
 			IDE::write(

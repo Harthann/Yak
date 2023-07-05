@@ -2,8 +2,8 @@
 
 use crate::io::{inb, io_wait, outb};
 
-mod ide;
 pub mod handlers;
+mod ide;
 pub mod pit;
 pub use pit::{set_irq0_in_ms, set_pit};
 
