@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["mmap","sys_mmap","sys_munmap"]};
+window.SIDEBAR_ITEMS = {"fn":["mmap","sys_mmap","sys_munmap","translate_vaddr"],"struct":["mmap_arg"]};
