@@ -356,9 +356,6 @@
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
-<a href="#359" id="359">359</a>
-<a href="#360" id="360">360</a>
-<a href="#361" id="361">361</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::alloc::string::String;
 <span class="kw">use </span><span class="kw">crate</span>::interrupts::Registers;
 <span class="kw">use </span><span class="kw">crate</span>::memory::allocator::AllocatorInit;
@@ -501,26 +498,22 @@
 			{
 				<span class="macro">todo!</span>(); <span class="comment">// sys_kill remove task etc.. ?
 			</span>} <span class="kw">else if </span><span class="self">self</span>.state == TaskStatus::Running {
-				<span class="kw">let </span>res = {
-					<span class="kw">let </span>process = <span class="self">self</span>.process.lock();
-					<span class="kw">let </span>get_handler =
-						|process: <span class="kw-2">&amp;</span>Process| -&gt; <span class="prelude-ty">Option</span>&lt;SignalHandler&gt; {
-							<span class="kw">for </span>handler <span class="kw">in </span>process.signal_handlers.iter() {
-								<span class="kw">if </span>handler.signal
-									== process.signals[i].sigtype <span class="kw">as </span>i32
-								{
-									<span class="kw">return </span><span class="prelude-val">Some</span>(handler.clone());
-								}
+				<span class="kw">let </span>res =
+					<span class="self">self</span>.process.execute(|guard| -&gt; <span class="prelude-ty">Option</span>&lt;SignalHandler&gt; {
+						<span class="kw">let </span>prc = guard.lock();
+						<span class="kw">for </span>handler <span class="kw">in </span>prc.signal_handlers.iter() {
+							<span class="kw">if </span>handler.signal == prc.signals[i].sigtype <span class="kw">as </span>i32 {
+								<span class="kw">return </span><span class="prelude-val">Some</span>(handler.clone());
 							}
-							<span class="prelude-val">None
-						</span>};
-					get_handler(<span class="kw-2">&amp;</span>process)
-				};
+						}
+						<span class="prelude-val">None
+					</span>});
 				<span class="kw">if </span>res.is_some() {
 					<span class="self">self</span>.process.lock().signals.remove(i);
 					<span class="self">self</span>.state = TaskStatus::Uninterruptible;
 					Task::handle_signal(<span class="kw-2">&amp;mut </span><span class="self">self</span>.regs, <span class="kw-2">&amp;</span>res.unwrap())
-				}
+					<span class="comment">// Never goes here
+				</span>}
 			} <span class="kw">else if </span><span class="self">self</span>.state == TaskStatus::Interruptible
 				&amp;&amp; <span class="self">self</span>.process.lock().signals[i].sigtype == SignalType::SIGCHLD
 			{
@@ -640,7 +633,8 @@
 		<span class="comment">// TODO: IF SIGNAL JUMP ?
 		</span><span class="kw">if </span>new_task.process.lock().signals.len() &gt; <span class="number">0 </span>{
 			new_task.do_signal();
-		}
+			<span class="comment">// Potentially never return
+		</span>}
 		<span class="kw">if </span>new_task.state != TaskStatus::Interruptible {
 			<span class="comment">// Copy registers to shared memory
 			</span><span class="kw">let </span>new_regs: Registers = new_task.regs;

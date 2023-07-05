@@ -198,7 +198,7 @@
 		</span><span class="string">&quot;mov ebx, DWORD PTR[esp + 4]&quot;</span>,  <span class="comment">// func
 		</span><span class="string">&quot;push (5 * 8) | 3&quot;</span>,             <span class="comment">// data selector
 		</span><span class="string">&quot;push eax&quot;</span>,                     <span class="comment">// current esp
-		</span><span class="string">&quot;pushfd&quot;</span>,                       <span class="comment">// eflags
+		</span><span class="string">&quot;push 0x200&quot;</span>,                   <span class="comment">// eflags =&gt; recover from interrupts
 		</span><span class="string">&quot;push (4 * 8) | 3&quot;</span>, <span class="comment">/* code selector (ring 3 code with bottom 2 bits set for ring 3) */
 		</span><span class="string">&quot;push ebx&quot;</span>,         <span class="comment">// func
 		</span><span class="string">&quot;iretd&quot;</span>,

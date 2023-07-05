@@ -76,6 +76,10 @@
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
 <a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::proc::process::{Pid, Process};
 <span class="kw">use </span><span class="kw">crate</span>::proc::signal::{
 	get_signal_type,
@@ -93,16 +97,20 @@
 
 <span class="kw">pub fn </span>sys_signal(signal: i32, handler: SigHandlerFn) -&gt; SigHandlerFn {
 	<span class="comment">// TODO: check signal validity
-	</span><span class="kw">let </span>binding = Process::get_running_process();
-	<span class="kw">let </span><span class="kw-2">mut </span>process = binding.lock();
-	<span class="kw">let </span>handlers: <span class="kw-2">&amp;mut </span>Vec&lt;SignalHandler&gt; = <span class="kw-2">&amp;mut </span>process.signal_handlers;
-	<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..handlers.len() {
-		<span class="kw">if </span>handlers[i].signal == signal {
-			handlers.remove(i);
-			<span class="kw">break</span>;
+	</span>_cli();
+	{
+		<span class="kw">let </span>binding = Process::get_running_process();
+		<span class="kw">let </span><span class="kw-2">mut </span>process = binding.lock();
+		<span class="kw">let </span>handlers: <span class="kw-2">&amp;mut </span>Vec&lt;SignalHandler&gt; = <span class="kw-2">&amp;mut </span>process.signal_handlers;
+		<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..handlers.len() {
+			<span class="kw">if </span>handlers[i].signal == signal {
+				handlers.remove(i);
+				<span class="kw">break</span>;
+			}
 		}
+		handlers.push(SignalHandler { signal: signal, handler: handler });
 	}
-	handlers.push(SignalHandler { signal: signal, handler: handler });
+	_sti();
 	handler
 }
 

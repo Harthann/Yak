@@ -284,7 +284,7 @@
 	<span class="comment">// init_fn_task - Can&#39;t move to another function ??
 	</span><span class="kw">let </span>sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
-		(process.stack.offset + process.stack.size <span class="kw">as </span>u32) - sum <span class="kw">as </span>u32;
+		(process.stack.offset + process.stack.size <span class="kw">as </span>u32) - (sum + <span class="number">4</span>) <span class="kw">as </span>u32;
 	<span class="kw">let </span><span class="kw-2">mut </span>nb = <span class="number">0</span>;
 	<span class="kw">for </span>arg <span class="kw">in </span>args_size.iter() {
 		<span class="kw">let </span><span class="kw-2">mut </span>n: usize = <span class="kw-2">*</span>arg;

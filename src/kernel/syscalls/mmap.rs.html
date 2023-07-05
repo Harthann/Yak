@@ -193,6 +193,10 @@
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::memory::paging;
 <span class="kw">use </span><span class="kw">crate</span>::memory::paging::page_table::PageTable;
 <span class="kw">use </span><span class="kw">crate</span>::memory::paging::{page_directory, PAGE_PRESENT, PAGE_WRITABLE};
@@ -214,6 +218,10 @@
 	<span class="kw">unsafe </span>{
 		<span class="kw">let </span>binding = Process::get_running_process();
 		<span class="kw">let </span>curr_process = binding.lock();
+
+		<span class="kw">if </span>curr_process.owner == <span class="number">0 </span>{
+			<span class="kw">return </span>addr;
+		}
 
 		<span class="kw">let </span>pd_index = (addr <span class="kw">as </span>usize &gt;&gt; <span class="number">22</span>) <span class="kw">as </span>usize;
 		<span class="kw">let </span>pt_index = ((addr <span class="kw">as </span>usize &amp; <span class="number">0x3ff000</span>) &gt;&gt; <span class="number">12</span>) <span class="kw">as </span>usize;

@@ -253,12 +253,12 @@
 				<span class="kw">let </span>signal: Signal = res.unwrap();
 				<span class="kw">let </span>res = Process::search_from_pid(signal.sender);
 				<span class="kw">if </span>res.is_ok() {
-					<span class="kw">let </span>binding = res.unwrap();
-					<span class="kw">let </span>pid = binding.lock().pid;
-					Process::remove(pid);
+					Process::remove(signal.sender);
 				}
 				<span class="kw">if </span>!wstatus.is_null() {
-					<span class="kw-2">*</span>wstatus = signal.wstatus; <span class="comment">// TODO
+					<span class="kw">let </span>ptr = <span class="kw">super</span>::mmap::translate_vaddr(wstatus <span class="kw">as </span>u32)
+						<span class="kw">as </span><span class="kw-2">*mut </span>i32;
+					<span class="kw-2">*</span>ptr = signal.wstatus; <span class="comment">// TODO
 				</span>}
 				_sti();
 				<span class="kw">return </span>signal.sender;
