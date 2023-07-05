@@ -91,7 +91,7 @@ pub unsafe extern "C" fn exec_fn(
 	// init_fn_task - Can't move to another function ??
 	let sum: usize = args_size.iter().sum();
 	new_task.regs.esp =
-		(process.stack.offset + process.stack.size as u32) - sum as u32;
+		(process.stack.offset + process.stack.size as u32) - (sum + 4) as u32;
 	let mut nb = 0;
 	for arg in args_size.iter() {
 		let mut n: usize = *arg;
