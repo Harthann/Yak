@@ -40,7 +40,7 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
 		"mov ebx, DWORD PTR[esp + 4]",  // func
 		"push (5 * 8) | 3",             // data selector
 		"push eax",                     // current esp
-		"pushfd",                       // eflags
+		"push 0x200",                   // eflags => recover from interrupts
 		"push (4 * 8) | 3", /* code selector (ring 3 code with bottom 2 bits set for ring 3) */
 		"push ebx",         // func
 		"iretd",

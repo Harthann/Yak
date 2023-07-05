@@ -20,6 +20,10 @@ pub fn translate_vaddr(addr: VirtAddr) -> VirtAddr {
 		let binding = Process::get_running_process();
 		let curr_process = binding.lock();
 
+		if curr_process.owner == 0 {
+			return addr;
+		}
+
 		let pd_index = (addr as usize >> 22) as usize;
 		let pt_index = ((addr as usize & 0x3ff000) >> 12) as usize;
 		let pt_paddr = (*curr_process.pd).get_entry(pd_index).get_paddr();
