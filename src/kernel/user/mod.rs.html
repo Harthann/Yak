@@ -156,7 +156,6 @@
 <a href="#156" id="156">156</a>
 <a href="#157" id="157">157</a>
 <a href="#158" id="158">158</a>
-<a href="#159" id="159">159</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Testing user space code
 
 </span><span class="kw">use </span>core::ptr::copy_nonoverlapping;
@@ -219,8 +218,9 @@
 
 	process.init(<span class="kw-2">&amp;</span>binding);
 	process.exe = name.clone();
+	process.owner = <span class="number">1</span>; <span class="comment">// user
 
-	<span class="kw">let </span>pid = process.pid;
+	</span><span class="kw">let </span>pid = process.pid;
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
 	process.setup_stack(<span class="number">0x1000</span>, PAGE_WRITABLE | PAGE_USER, <span class="bool-val">false</span>);
 	process.setup_heap(
@@ -238,7 +238,6 @@
 
 	<span class="kw">let </span>cr3 = <span class="macro">get_paddr!</span>(page_dir <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>);
 	new_task.regs.cr3 = running_task.regs.cr3;
-	process.test = <span class="bool-val">true</span>;
 
 	new_task.regs.esp -= <span class="number">4</span>;
 	<span class="macro">core::arch::asm!</span>(<span class="string">&quot;mov [{esp}], {func}&quot;</span>,
@@ -313,7 +312,6 @@ userfunc_end:
 			userfunc_end <span class="kw">as </span>usize - userfunc <span class="kw">as </span>usize
 		);
 	}
-	<span class="kw">let </span>ret = <span class="kw">crate</span>::syscalls::exit::sys_waitpid(-<span class="number">1</span>, core::ptr::null_mut(), <span class="number">0</span>);
-	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;pid ret: {}&quot;</span>, ret);
+	<span class="kw">let _ </span>= <span class="kw">crate</span>::syscalls::exit::sys_waitpid(-<span class="number">1</span>, core::ptr::null_mut(), <span class="number">0</span>);
 }
 </code></pre></div></section></main></body></html>

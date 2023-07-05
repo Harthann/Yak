@@ -62,7 +62,6 @@
 <a href="#62" id="62">62</a>
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
-<a href="#65" id="65">65</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::proc::process::{Pid, Process, PROCESS_TREE};
 <span class="kw">use </span><span class="kw">crate</span>::proc::task::{Task, TASKLIST};
 
@@ -116,9 +115,8 @@
 		new_task.regs.int_no = u32::MAX; <span class="comment">// trigger for switch_task
 		</span>new_task.regs.cr3 = <span class="macro">get_paddr!</span>(page_dir <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>);
 		new_task.regs.eax = <span class="number">0</span>; <span class="comment">// New forked process return 0
-		</span>process.test = <span class="bool-val">true</span>;
 
-		new_task.process = KArcm::new(process);
+		</span>new_task.process = KArcm::new(process);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>parent = binding.lock();
 		parent.childs.push(new_task.process.clone());

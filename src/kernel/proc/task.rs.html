@@ -430,7 +430,7 @@
 			process.stack = MemoryZone::init_addr(
 				stack_addr - (<span class="kw">crate</span>::STACK_SIZE - <span class="number">1</span>),
 				TypeZone::Stack,
-				<span class="kw">crate</span>::STACK_SIZE <span class="kw">as </span>usize,
+				<span class="kw">crate</span>::STACK_SIZE <span class="kw">as </span>usize * <span class="number">5</span>,
 				PAGE_WRITABLE,
 				<span class="bool-val">false
 			</span>);

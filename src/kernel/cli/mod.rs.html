@@ -120,13 +120,9 @@
 <a href="#120" id="120">120</a>
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::alloc::boxed::Box;
 <span class="kw">use </span><span class="kw">crate</span>::proc::signal::SignalType;
 <span class="kw">use </span><span class="kw">crate</span>::spin::KMutex;
-<span class="kw">use </span><span class="kw">crate</span>::syscalls::exit::sys_waitpid;
 <span class="kw">use </span><span class="kw">crate</span>::syscalls::signal::sys_signal;
 <span class="kw">use </span><span class="kw">crate</span>::utils::queue::Queue;
 <span class="kw">use </span><span class="kw">crate</span>::vga_buffer::WRITER;
@@ -244,8 +240,6 @@
 			<span class="kw">let </span>event = INPUT_BUFFER.lock().as_mut().unwrap().pop();
 			emulator.handle_event(event.<span class="number">0</span>, event.<span class="number">1</span>);
 		}
-		<span class="kw">let </span><span class="kw-2">mut </span>wstatus = <span class="number">0</span>;
-		sys_waitpid(-<span class="number">1</span>, <span class="kw-2">&amp;mut </span>wstatus, <span class="kw">crate</span>::syscalls::exit::WNOHANG);
 	}
 }
 </code></pre></div></section></main></body></html>
