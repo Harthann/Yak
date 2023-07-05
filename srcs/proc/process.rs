@@ -380,6 +380,24 @@ impl Process {
 	pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
 		self.mem_map.push_back(mz);
 	}
+
+	pub fn log_paging(&self) {
+		unsafe {
+			crate::dprintln!("Pid: {}", self.pid);
+			for i in 0..1024 {
+				if (*self.pd).get_entry(i).get_present() == 1 {
+					crate::dprintln!("{}", (*self.pd).get_entry(i));
+				}
+			}
+			for i in &self.page_tables {
+				for j in 0..1024 {
+					if i.entries[j].get_present() == 1 {
+						crate::dprintln!("{}", i.entries[j]);
+					}
+				}
+			}
+		}
+	}
 }
 
 impl fmt::Display for Process {
