@@ -60,6 +60,7 @@ pub unsafe fn exec_fn_userspace(
 
 	process.init(&binding);
 	process.exe = name.clone();
+	process.owner = 1; // user
 
 	let pid = process.pid;
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
@@ -79,7 +80,6 @@ pub unsafe fn exec_fn_userspace(
 
 	let cr3 = get_paddr!(page_dir as *const _);
 	new_task.regs.cr3 = running_task.regs.cr3;
-	process.test = true;
 
 	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
