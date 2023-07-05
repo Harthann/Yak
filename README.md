@@ -1,4 +1,4 @@
-# kfs 'Jellyfish' - 5.0
+# Yak - Yet Another Kernel - 5.0
 
 Our simple Kernel From Scratch made out of asm and rust for i386 - x86.  
 
