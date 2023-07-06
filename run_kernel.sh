@@ -37,7 +37,8 @@ $QEMU_ARGS
 $4
 -audiodev $AUDIODEV,id=audio0 -machine pcspk-audiodev=audio0
 -d int
--drive format=raw,file=$2
+-drive id=disk,file=$2,format=raw,if=none
+-device ide-hd,drive=disk,bus=ide.0
 -serial chardev:char0
 -serial file:$DIR_LOGS/debug_kernel.log
 -no-reboot

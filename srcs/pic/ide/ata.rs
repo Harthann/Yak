@@ -35,11 +35,12 @@ pub enum ATACommand {
 	CacheFlush     = 0xe7,
 	CacheFlushExt  = 0xea,
 	Packet         = 0xa0,
-	IdentifyPacket = 0xa1
+	IdentifyPacket = 0xa1,
+	Identify       = 0xec
 }
 
 #[allow(non_snake_case)]
-pub mod ATACmdIdentifyOffset {
+pub mod ATAIdentify {
 	pub const DEVICETYPE: usize = 0;
 	pub const CYLINDERS: usize = 2;
 	pub const HEADS: usize = 6;
@@ -59,24 +60,24 @@ pub enum ATAType {
 }
 
 #[allow(non_snake_case)]
-pub mod ATARegOffset {
-	pub const DATA: usize = 0x00;
-	pub const ERROR: usize = 0x01;
-	pub const FEATURES: usize = 0x01;
-	pub const SECCOUNT0: usize = 0x02;
-	pub const LBA0: usize = 0x03;
-	pub const LBA1: usize = 0x04;
-	pub const LBA2: usize = 0x05;
-	pub const HDDEVSEL: usize = 0x06;
-	pub const COMMAND: usize = 0x07;
-	pub const STATUS: usize = 0x07;
-	pub const SECCOUNT1: usize = 0x08;
-	pub const LBA3: usize = 0x09;
-	pub const LBA4: usize = 0x0a;
-	pub const LBA5: usize = 0x0b;
-	pub const CONTROL: usize = 0x0c;
-	pub const ALTSTATUS: usize = 0x0c;
-	pub const DEVADDRESS: usize = 0x0d;
+pub mod ATAReg {
+	pub const DATA: u8 = 0x00;
+	pub const ERROR: u8 = 0x01;
+	pub const FEATURES: u8 = 0x01;
+	pub const SECCOUNT0: u8 = 0x02;
+	pub const LBA0: u8 = 0x03;
+	pub const LBA1: u8 = 0x04;
+	pub const LBA2: u8 = 0x05;
+	pub const HDDEVSEL: u8 = 0x06;
+	pub const COMMAND: u8 = 0x07;
+	pub const STATUS: u8 = 0x07;
+	pub const SECCOUNT1: u8 = 0x08;
+	pub const LBA3: u8 = 0x09;
+	pub const LBA4: u8 = 0x0a;
+	pub const LBA5: u8 = 0x0b;
+	pub const CONTROL: u8 = 0x0c;
+	pub const ALTSTATUS: u8 = 0x0c;
+	pub const DEVADDRESS: u8 = 0x0d;
 }
 
 pub enum ATAChannel {

@@ -107,6 +107,7 @@ use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
 use pic::setup_pic8259;
+use pic::ide::IDE;
 
 #[global_allocator]
 static mut KALLOCATOR: LinkedListAllocator = LinkedListAllocator::new();
@@ -155,12 +156,15 @@ pub extern "C" fn kinit() {
 		KTRACKER = Tracker::new();
 	}
 
+	unsafe {IDE::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000)};
+
 	setup_pic8259();
 
 	// Setting up frequency divider to modulate IRQ0 rate, low value tends to get really slow (too much task switching
 	// This setup should be done using frequency, but for readability and ease of use, this is done
 	// with time between each interrupt in ms.
 	pic::set_irq0_in_ms(1.0);
+
 
 	// Reserve some spaces to push things before main
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1 - 32) };
