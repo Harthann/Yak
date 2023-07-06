@@ -1,4 +1,3 @@
-use core::arch::asm;
 use core::ptr::copy;
 use core::mem::{size_of, transmute};
 use core::slice;
