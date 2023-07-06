@@ -24,7 +24,8 @@ sys_macros = { path= "srcs/sys_macros"}
 # You can add feature by naming them in default
 # These feature need to be declare
 # e.g: default = ["multitasking"]
-default = ["multitasking", "debug_features"]
+# e.g: dev = ["multitasking", "debug_features"]
+default = ["multitasking"]
 
 # Declare feature multitasking, depends on nothing
 multitasking = []
@@ -34,5 +35,4 @@ debug_features = ["crash_on_panic"]
 
 mutex_debug = []
 alloc_debug = []
-
 crash_on_panic = []

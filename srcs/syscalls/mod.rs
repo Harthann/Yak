@@ -41,17 +41,10 @@ pub fn syscall_handler(reg: &mut Registers) {
 		_ if reg.eax == Syscall::getppid as u32 => {
 			reg.eax = sys_getppid() as u32
 		},
-		_ if reg.eax == Syscall::getppid as u32 => {
-			reg.eax = mmap(
-				reg.ebx as _,
-				reg.ecx as _,
-				reg.edx as _,
-				reg.esi as _,
-				reg.edi as _,
-				reg.ebp as _
-			) as u32
+		_ if reg.eax == Syscall::mmap as u32 => {
+			reg.eax = mmap(reg.ebx as *const mmap::mmap_arg) as u32
 		},
-		_ if reg.eax == Syscall::getppid as u32 => {
+		_ if reg.eax == Syscall::munmap as u32 => {
 			reg.eax = sys_munmap(reg.ebx as _, reg.ecx as _) as u32
 		},
 		_ if reg.eax == Syscall::wait4 as u32 => {

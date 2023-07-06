@@ -12,13 +12,6 @@ pub struct PageDirectory {
 	entries: [PageDirectoryEntry; 1024]
 }
 
-impl core::ops::Drop for PageDirectory {
-	fn drop(&mut self) {
-		for i in 0..1024 {
-			drop(self.get_page_table(i));
-		}
-	}
-}
 impl PageDirectory {
 	pub fn new(flags: u32) -> &'static mut Self {
 		unsafe {

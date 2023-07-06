@@ -369,7 +369,12 @@ impl Process {
 
 	pub unsafe fn print_all_process() {
 		crate::kprintln!(
-			"       PID                   NAME        OWNER   STATUS"
+			"{:>10}   {:>10}   {:>20}   {:>10}   {}",
+			"PID",
+			"PPID",
+			"NAME",
+			"OWNER",
+			"STATUS"
 		);
 		Self::print_tree();
 	}
@@ -377,14 +382,43 @@ impl Process {
 	pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
 		self.mem_map.push_back(mz);
 	}
+
+	pub fn log_paging(&self) {
+		unsafe {
+			crate::dprintln!("Pid: {}", self.pid);
+			for i in 0..1024 {
+				if (*self.pd).get_entry(i).get_present() == 1 {
+					crate::dprintln!("{}", (*self.pd).get_entry(i));
+				}
+			}
+			for i in &self.page_tables {
+				for j in 0..1024 {
+					if i.entries[j].get_present() == 1 {
+						crate::dprintln!("{}", i.entries[j]);
+					}
+				}
+			}
+		}
+	}
 }
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(
-			f,
-			"{:10} - {:>20} - {:10} - {:?}",
-			self.pid, self.exe, self.owner, self.state
-		)
+		match &self.parent {
+			Some(x) => write!(
+				f,
+				"{:>10}   {:>10}   {:>20}   {:>10}   {:?}",
+				self.pid,
+				x.lock().pid,
+				self.exe,
+				self.owner,
+				self.state
+			),
+			None => write!(
+				f,
+				"{:>10}   {:>10}   {:>20}   {:>10}   {:?}",
+				self.pid, "-", self.exe, self.owner, self.state
+			)
+		}
 	}
 }

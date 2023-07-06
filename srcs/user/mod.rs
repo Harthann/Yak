@@ -40,7 +40,7 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
 		"mov ebx, DWORD PTR[esp + 4]",  // func
 		"push (5 * 8) | 3",             // data selector
 		"push eax",                     // current esp
-		"pushfd",                       // eflags
+		"push 0x200",                   // eflags => recover from interrupts
 		"push (4 * 8) | 3", /* code selector (ring 3 code with bottom 2 bits set for ring 3) */
 		"push ebx",         // func
 		"iretd",
@@ -154,6 +154,5 @@ pub fn test_user_page() {
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-	let ret = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
-	crate::kprintln!("pid ret: {}", ret);
+	let _ = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
 }

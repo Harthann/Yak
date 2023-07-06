@@ -15,16 +15,20 @@ use crate::vec::Vec;
 
 pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 	// TODO: check signal validity
-	let binding = Process::get_running_process();
-	let mut process = binding.lock();
-	let handlers: &mut Vec<SignalHandler> = &mut process.signal_handlers;
-	for i in 0..handlers.len() {
-		if handlers[i].signal == signal {
-			handlers.remove(i);
-			break;
+	_cli();
+	{
+		let binding = Process::get_running_process();
+		let mut process = binding.lock();
+		let handlers: &mut Vec<SignalHandler> = &mut process.signal_handlers;
+		for i in 0..handlers.len() {
+			if handlers[i].signal == signal {
+				handlers.remove(i);
+				break;
+			}
 		}
+		handlers.push(SignalHandler { signal: signal, handler: handler });
 	}
-	handlers.push(SignalHandler { signal: signal, handler: handler });
+	_sti();
 	handler
 }
 

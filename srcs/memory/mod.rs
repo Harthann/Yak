@@ -42,6 +42,8 @@ pub const MAP_NONBLOCK: u32 = 1 << 11;
 pub const MAP_NORESERVE: u32 = 1 << 12;
 pub const MAP_POPULATE: u32 = 1 << 13;
 
+pub const REMAP_FIXED: u32 = 1 << 0;
+
 pub fn init_memory_addr(
 	addr: VirtAddr,
 	size: usize,
@@ -171,6 +173,10 @@ impl MemoryZone {
 		}
 	}
 
+	pub fn area(&self) -> (VirtAddr, usize) {
+		(self.offset, self.size)
+	}
+
 	/// Add pages to the memory zone, growing upward for most zones. And downward for stacks type
 	/// Should return an error if failed
 	pub fn grow(&mut self) -> Result<(), ()> {
@@ -272,7 +278,7 @@ mod tests {
 		let used_pages = physmap_as_mut().used;
 		let mz = MemoryZone::init(TypeZone::Anon, 0x1000, 0, false);
 		assert_eq!(used_pages + 1, physmap_as_mut().used);
-		drop(&mz);
+		drop(mz);
 		// assert_eq!(used_pages, physmap_as_mut().used);
 	}
 
