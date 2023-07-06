@@ -1,32 +1,62 @@
 mod header;
 
+use alloc::collections::LinkedList;
+
 /// This value is used to select which address config you want to use
 /// This address act as a chipselect
 const PCI_CONFIG_ADDRESS: u16 = 0xcf8;
 /// This value is used to read data base on the config adress used. You can write to?
 const PCI_CONFIG_DATA: u16 = 0xcfc;
 
-/// Iterate other all 255 slot of each 255 bus to test if a PCI device is present.
-pub fn pci_scan() {
+/// Scan all pci devices and return a list over them depending on the type searched.
+///
+/// See [osdev pci page](https://wiki.osdev.org/PCI) for more detail on ClassCodes and Subclasses:
+///
+/// * `class_code` - Identifier of the class code for the device, can be 0xff to match all classes
+///
+/// * `sub_class` - Identifier of the subclass for the device, can be 0xff to match all subclasses
+///
+/// # Example
+///
+/// ```
+/// // ClassCode 0x1 is for mass storage devices
+/// // SubClass 0x1 is for ide controllers
+///	let devs = crate::pci::find_pci_devices(0x01, 0x01);
+///    match devs {
+///        Some(list) => {
+///            for i in list {
+///                crate::kprintln!("{}", i);
+///            }
+///        },
+///        _ => {}
+///    }
+///
+/// ```
+pub fn find_pci_devices(class_code: u8, sub_class: u8) -> Option<LinkedList<PciDevice>>{
+    let mut list: LinkedList<PciDevice> = LinkedList::new();
 	for bus in 0..=255 {
 		for slot in 0..=255 {
 			let mut device = PciDevice {
-				bus:    bus,
-				slot:   slot,
+				bus,
+				slot,
 				config: header::PciHdr::default()
 			};
 
 			if device.read_device_id() != 0xffff {
 				device.read_all_header();
-				crate::kprintln!(
-					"Device {}:{}\n{}",
-					bus,
-					slot,
-					device.config.header
-				);
-			}
-		}
-	}
+                // ClassCode, SubClass, ProgIF
+                let (cc, sb, _pif) = device.get_type();
+                if (cc == class_code || class_code == 0xff)
+                    && (sb == sub_class || sub_class == 0xff) {
+                        list.push_back(device);
+                    }
+            }
+        }
+    }
+    match list.len() {
+        0 => None,
+        _ => Some(list)
+    }
 }
 
 /// This struct represent a Pci Device and embed pci config operations read/write
@@ -52,8 +82,8 @@ pub fn pci_scan() {
 /// | Bits 7-2 | Bits 1-0  |
 /// |----------|-----------|
 /// | Register | Word/Byte |
-#[derive(Debug)]
-struct PciDevice {
+#[derive(Debug, Clone, Copy)]
+pub struct PciDevice {
 	bus:    u8,
 	slot:   u8,
 	config: header::PciHdr
@@ -373,6 +403,15 @@ impl PciDevice {
 		self.read_common_header();
 		self.read_device_header();
 	}
+
+
+    /// Give values needed to identify a device type.
+    /// Class_Code, Sub_Class, Prog IF
+    pub fn get_type(&self) -> (u8, u8, u8) {
+        (self.config.common.class_code,
+            self.config.common.subclass,
+            self.config.common.prog_if)
+    }
 }
 
 use core::fmt;
@@ -388,3 +427,4 @@ impl fmt::Display for PciDevice {
 		)
 	}
 }
+
