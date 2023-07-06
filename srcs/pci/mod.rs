@@ -21,7 +21,7 @@ const PCI_CONFIG_DATA: u16 = 0xcfc;
 /// ```
 /// // ClassCode 0x1 is for mass storage devices
 /// // SubClass 0x1 is for ide controllers
-///	let devs = crate::pci::find_pci_devices(0x01, 0x01);
+/// 	let devs = crate::pci::find_pci_devices(0x01, 0x01);
 ///    match devs {
 ///        Some(list) => {
 ///            for i in list {
@@ -30,33 +30,33 @@ const PCI_CONFIG_DATA: u16 = 0xcfc;
 ///        },
 ///        _ => {}
 ///    }
-///
 /// ```
-pub fn find_pci_devices(class_code: u8, sub_class: u8) -> Option<LinkedList<PciDevice>>{
-    let mut list: LinkedList<PciDevice> = LinkedList::new();
+pub fn find_pci_devices(
+	class_code: u8,
+	sub_class: u8
+) -> Option<LinkedList<PciDevice>> {
+	let mut list: LinkedList<PciDevice> = LinkedList::new();
 	for bus in 0..=255 {
 		for slot in 0..=255 {
-			let mut device = PciDevice {
-				bus,
-				slot,
-				config: header::PciHdr::default()
-			};
+			let mut device =
+				PciDevice { bus, slot, config: header::PciHdr::default() };
 
 			if device.read_device_id() != 0xffff {
 				device.read_all_header();
-                // ClassCode, SubClass, ProgIF
-                let (cc, sb, _pif) = device.get_type();
-                if (cc == class_code || class_code == 0xff)
-                    && (sb == sub_class || sub_class == 0xff) {
-                        list.push_back(device);
-                    }
-            }
-        }
-    }
-    match list.len() {
-        0 => None,
-        _ => Some(list)
-    }
+				// ClassCode, SubClass, ProgIF
+				let (cc, sb, _pif) = device.get_type();
+				if (cc == class_code || class_code == 0xff)
+					&& (sb == sub_class || sub_class == 0xff)
+				{
+					list.push_back(device);
+				}
+			}
+		}
+	}
+	match list.len() {
+		0 => None,
+		_ => Some(list)
+	}
 }
 
 /// This struct represent a Pci Device and embed pci config operations read/write
@@ -173,19 +173,19 @@ impl PciDevice {
 		crate::io::inl(PCI_CONFIG_DATA)
 	}
 
-    /// Perform IO operation to write value on register to PCI device at bus:slot
-    ///
+	/// Perform IO operation to write value on register to PCI device at bus:slot
+	///
 	/// # Arguments
 	///
 	/// * `func` -   I don't know yet it's purpose
 	///
 	/// * `offset` - Select which register to read.
-    ///
+	///
 	/// | Bits 7-2 | Bits 1-0 |
 	/// |:--------:|:--------:|
 	/// | Register | Ignored  |
 	///
-    /// * `data` - Value to write on the register
+	/// * `data` - Value to write on the register
 	///
 	/// # Examples
 	///
@@ -196,15 +196,15 @@ impl PciDevice {
 	/// // Will write the second register
 	/// pci.config_write_reg(0, 1 << 2, 0xdeadbeef)
 	/// ```
-    pub fn config_write_reg(&self, func: u8, offset: u8, data: u32) {
-	    let address: u32 = ((self.bus as u32) << 16) as u32
+	pub fn config_write_reg(&self, func: u8, offset: u8, data: u32) {
+		let address: u32 = ((self.bus as u32) << 16) as u32
 			| ((self.slot as u32) << 11) as u32
 			| ((func as u32) << 8) as u32
 			| (offset & 0xfc) as u32
 			| 0x80000000;
-	    crate::io::outl(PCI_CONFIG_ADDRESS, address);
+		crate::io::outl(PCI_CONFIG_ADDRESS, address);
 		crate::io::outl(PCI_CONFIG_DATA, data);
-    }
+	}
 
 	#[inline]
 	fn read_device_id(&mut self) -> u16 {
@@ -404,14 +404,15 @@ impl PciDevice {
 		self.read_device_header();
 	}
 
-
-    /// Give values needed to identify a device type.
-    /// Class_Code, Sub_Class, Prog IF
-    pub fn get_type(&self) -> (u8, u8, u8) {
-        (self.config.common.class_code,
-            self.config.common.subclass,
-            self.config.common.prog_if)
-    }
+	/// Give values needed to identify a device type.
+	/// Class_Code, Sub_Class, Prog IF
+	pub fn get_type(&self) -> (u8, u8, u8) {
+		(
+			self.config.common.class_code,
+			self.config.common.subclass,
+			self.config.common.prog_if
+		)
+	}
 }
 
 use core::fmt;
@@ -427,4 +428,3 @@ impl fmt::Display for PciDevice {
 		)
 	}
 }
-
