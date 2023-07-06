@@ -2,10 +2,13 @@
 
 use core::arch::asm;
 
+use crate::cli::LOCK_CMD;
 use crate::proc::process::{Pid, Process};
+use crate::proc::signal::SignalType;
 use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_kill;
+use crate::syscalls::timer::sys_getppid;
 use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
@@ -27,49 +30,58 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	uptime,
 	date,
 	play,
-	memtrack,
+	valgrind,
 	pmap,
 	kill
 ];
+
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "memtrack", "pmap", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill"
 ];
 
 pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 	unsafe {
 		let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
+		// notify parent that vector has been copied
+		sys_kill(sys_getppid(), SignalType::SIGHUP as i32);
 		COMMANDS[cmd_id](args);
-		crate::syscalls::exit::sys_exit(0);
 	}
 }
 
-fn memtrack(command: Vec<String>) {
-	static mut HEAP_STATE: crate::Tracker = crate::Tracker::new();
-	if command.len() != 2 {
+fn valgrind(command: Vec<String>) {
+	if command.len() < 2 {
 		kprintln!("Invalid argument.");
-		kprintln!("Usage: memstate [start, stop]");
+		kprintln!("Usage: valgrind [command] [command args]");
 		return;
 	}
 
-	match command[1].as_str() {
-		"start" => {
-			crate::kprintln!("Saving current heap usage");
-			unsafe { HEAP_STATE = crate::KTRACKER };
-		},
-		"stop" => unsafe {
-			let mut current_state = crate::KTRACKER;
-			current_state.allocation -= HEAP_STATE.allocation;
-			current_state.allocated_bytes -= HEAP_STATE.allocated_bytes;
-			current_state.freed -= HEAP_STATE.freed;
-			current_state.freed_bytes -= HEAP_STATE.freed_bytes;
-			crate::kprintln!("{}", current_state);
-			crate::kprintln!(
-				"Leaks: {} bytes",
-				current_state.allocated_bytes - current_state.freed_bytes
-			);
-		},
-		_ => crate::kprintln!("Invalid argument")
+	// Save current heap state
+	let heap_state = unsafe { crate::KTRACKER };
+
+	let sub_command = &command[1..command.len()];
+	let cmd_id = KNOWN_CMD.iter().position(|&x| x == sub_command[0]);
+	match cmd_id {
+		Some(index) => COMMANDS[index](sub_command.to_vec()),
+		None => kprintln!("Command: [{}] not found", sub_command[0])
+	}
+
+	let mut current_state = unsafe { crate::KTRACKER };
+	current_state.allocation -= heap_state.allocation;
+	current_state.allocated_bytes -= heap_state.allocated_bytes;
+	current_state.freed -= heap_state.freed;
+	current_state.freed_bytes -= heap_state.freed_bytes;
+	crate::kprintln!("{}", current_state);
+	if current_state.allocated_bytes < current_state.freed_bytes {
+		crate::kprintln!(
+			"Too much bytes freed: {}",
+			current_state.freed_bytes - current_state.allocated_bytes
+		);
+	} else {
+		crate::kprintln!(
+			"Leaks: {} bytes",
+			current_state.allocated_bytes - current_state.freed_bytes
+		);
 	}
 }
 
@@ -129,6 +141,7 @@ fn kill(command: Vec<String>) {
 	}
 
 	let res: i32 = sys_kill(pid, 9); // SIGKILL
+
 	if res != 0 {
 		kprintln!("[Error]: {}", res);
 		return;
@@ -365,17 +378,38 @@ impl Command {
 			crate::kprint!("{}", charcode);
 			match self.is_known() {
 				Some(x) => {
+					unsafe { LOCK_CMD = true };
+					let mut background: bool = false;
 					let mut split: Vec<String> = Vec::new();
 					let splited = self.command.split(&[' ', '\t', '\0'][..]);
 					for arg in splited {
 						split.push(arg.to_string());
 					}
-					let (ptr, len, cap) = split.into_raw_parts();
-					let pid = unsafe {
-						crate::exec_fn!(command_entry, x, ptr, len, cap)
-					};
-					let mut status = 0;
-					sys_waitpid(pid, &mut status, 0);
+					if split.last().unwrap() == "&" {
+						split.pop();
+						background = true;
+					}
+					let (ptr, len, cap) = split.clone().into_raw_parts();
+					unsafe {
+						let pid = crate::exec_fn_name!(
+							split[0],
+							command_entry,
+							x,
+							ptr,
+							len,
+							cap
+						);
+						loop {
+							if LOCK_CMD == false {
+								break;
+							}
+							crate::time::sleep(1);
+						}
+						if background == false {
+							let mut wstatus: i32 = 0;
+							sys_waitpid(pid, &mut wstatus, 0);
+						}
+					}
 				},
 				_ => {
 					if self.command.len() != 0 {

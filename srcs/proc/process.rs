@@ -3,6 +3,8 @@ use core::ptr::copy_nonoverlapping;
 
 use crate::boot::KERNEL_BASE;
 
+use crate::alloc::string::String;
+
 use crate::memory::{MemoryZone, TypeZone};
 use crate::vec::Vec;
 
@@ -10,7 +12,7 @@ use crate::alloc::collections::btree_map::BTreeMap;
 use crate::alloc::collections::LinkedList;
 use crate::utils::arcm::KArcm;
 
-use crate::proc::task::Task;
+use crate::proc::task::{Task, TASK_STACK};
 
 use crate::proc::signal::{Signal, SignalHandler, SignalType};
 use crate::proc::Id;
@@ -53,6 +55,7 @@ pub const MAX_FD: usize = 32;
 
 pub struct Process {
 	pub pid:             Pid,
+	pub exe:             String,
 	pub state:           Status,
 	pub parent:          Option<KArcm<Process>>,
 	pub childs:          Vec<KArcm<Process>>,
@@ -65,8 +68,6 @@ pub struct Process {
 	pub signal_handlers: Vec<SignalHandler>,
 	pub page_tables:     Vec<&'static mut PageTable>,
 	pub pd:              *mut PageDirectory,
-	// Temporary workaround to differentiate processes from threads
-	pub test:            bool,
 	pub owner:           Id
 }
 
@@ -75,6 +76,7 @@ impl Process {
 	pub fn new() -> Self {
 		Self {
 			pid:             0,
+			exe:             String::new(),
 			state:           Status::Disable,
 			parent:          None,
 			childs:          Vec::new(),
@@ -87,7 +89,6 @@ impl Process {
 			signal_handlers: Vec::new(),
 			page_tables:     Vec::new(),
 			pd:              0x0 as *mut PageDirectory,
-			test:            false,
 			owner:           0
 		}
 	}
@@ -121,6 +122,7 @@ impl Process {
 	// TODO: next_pid need to check overflow and if other pid is available
 	pub unsafe fn init(&mut self, parent: &KArcm<Process>) {
 		self.pid = NEXT_PID;
+		self.exe = parent.lock().exe.clone();
 		self.state = Status::Run;
 		self.parent = Some(parent.clone());
 		self.owner = parent.lock().owner;
@@ -219,7 +221,7 @@ impl Process {
 			todo!(); // Problem
 		}
 		let mut process = binding.lock();
-		if process.test == true {
+		if process.owner != 0 {
 			use crate::memory::paging::bitmap;
 			let pd = &mut *process.pd;
 			for i in &process.page_tables {
@@ -324,7 +326,7 @@ impl Process {
 		// another page_table ?
 		page_dir.set_entry(
 			KERNEL_BASE >> 22,
-			kernel_pt_paddr | PAGE_WRITABLE | PAGE_PRESENT | PAGE_USER
+			kernel_pt_paddr | PAGE_PRESENT | PAGE_USER
 		);
 		page_dir.set_entry(
 			KSTACK_ADDR as usize >> 22,
@@ -341,6 +343,11 @@ impl Process {
 		process_stack.new_index_frame(
 			(USER_STACK_ADDR as usize & 0x3ff000) >> 12,
 			get_paddr!(self.stack.offset),
+			PAGE_WRITABLE | PAGE_USER
+		);
+		process_kernel_stack.new_index_frame(
+			(TASK_STACK.offset as usize & 0x3ff000) >> 12,
+			get_paddr!(TASK_STACK.offset),
 			PAGE_WRITABLE | PAGE_USER
 		);
 		process_kernel_stack.new_index_frame(
@@ -361,17 +368,57 @@ impl Process {
 	}
 
 	pub unsafe fn print_all_process() {
-		crate::kprintln!("       PID        OWNER   STATUS");
+		crate::kprintln!(
+			"{:>10}   {:>10}   {:>20}   {:>10}   {}",
+			"PID",
+			"PPID",
+			"NAME",
+			"OWNER",
+			"STATUS"
+		);
 		Self::print_tree();
 	}
 
 	pub fn add_memory_zone(&mut self, mz: Arcm<MemoryZone>) {
 		self.mem_map.push_back(mz);
 	}
+
+	pub fn log_paging(&self) {
+		unsafe {
+			crate::dprintln!("Pid: {}", self.pid);
+			for i in 0..1024 {
+				if (*self.pd).get_entry(i).get_present() == 1 {
+					crate::dprintln!("{}", (*self.pd).get_entry(i));
+				}
+			}
+			for i in &self.page_tables {
+				for j in 0..1024 {
+					if i.entries[j].get_present() == 1 {
+						crate::dprintln!("{}", i.entries[j]);
+					}
+				}
+			}
+		}
+	}
 }
 
 impl fmt::Display for Process {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		write!(f, "{:10} - {:10} - {:?}", self.pid, self.owner, self.state)
+		match &self.parent {
+			Some(x) => write!(
+				f,
+				"{:>10}   {:>10}   {:>20}   {:>10}   {:?}",
+				self.pid,
+				x.lock().pid,
+				self.exe,
+				self.owner,
+				self.state
+			),
+			None => write!(
+				f,
+				"{:>10}   {:>10}   {:>20}   {:>10}   {:?}",
+				self.pid, "-", self.exe, self.owner, self.state
+			)
+		}
 	}
 }

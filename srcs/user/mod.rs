@@ -3,7 +3,9 @@
 use core::ptr::copy_nonoverlapping;
 
 use crate::utils::arcm::KArcm;
+use crate::KSTACK_ADDR;
 
+use crate::alloc::string::String;
 use crate::memory::paging::{PAGE_USER, PAGE_WRITABLE};
 use crate::memory::VirtAddr;
 
@@ -24,19 +26,21 @@ pub const USER_HEAP_ADDR: VirtAddr = 0x0800000;
 pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
 #[naked]
-unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
+unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
 	core::arch::asm!(
-		"mov ebx, DWORD PTR[esp + 4]",
 		"mov ax, (5 * 8) | 3", // ring 3 data with bottom 2 bits set for ring 3
 		"mov ds, ax",
 		"mov es, ax",
 		"mov fs, ax",
-		"mov gs, ax", // ss is handled by iret
+		"mov gs, ax",                  // ss is handled by iret
+		"mov eax, DWORD PTR[esp + 8]", // setup cr3 user
+		"mov cr3, eax",
 		// set up the stack frame iret expects
-		"mov eax, esp",
-		"push (5 * 8) | 3", // data selector
-		"push eax",         // current esp
-		"pushfd",           // eflags
+		"mov eax, DWORD PTR[esp + 12]", // esp user setup by iretd
+		"mov ebx, DWORD PTR[esp + 4]",  // func
+		"push (5 * 8) | 3",             // data selector
+		"push eax",                     // current esp
+		"push 0x200",                   // eflags => recover from interrupts
 		"push (4 * 8) | 3", /* code selector (ring 3 code with bottom 2 bits set for ring 3) */
 		"push ebx",         // func
 		"iretd",
@@ -44,13 +48,19 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr) -> ! {
 	);
 }
 
-pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
+pub unsafe fn exec_fn_userspace(
+	name: String,
+	func: VirtAddr,
+	size: usize
+) -> Pid {
 	let running_task: &mut Task = Task::get_running_task();
 	let binding = Process::get_running_process();
 	let mut process: Process = Process::new();
 	let mut new_task: Task = Task::new();
 
 	process.init(&binding);
+	process.exe = name.clone();
+	process.owner = 1; // user
 
 	let pid = process.pid;
 	process.setup_kernel_stack(PAGE_WRITABLE | PAGE_USER);
@@ -65,15 +75,26 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 	let page_dir: &mut PageDirectory = process.setup_pagination();
 
 	copy_nonoverlapping(func as *mut u8, process.heap.offset as *mut u8, size);
-	new_task.regs.esp = process.stack.offset + process.stack.size as u32;
-	new_task.regs.cr3 = get_paddr!(page_dir as *const _);
-	new_task.regs.esp -= 4;
-	process.test = true;
+	new_task.regs.esp =
+		process.kernel_stack.offset + process.kernel_stack.size as u32;
 
+	let cr3 = get_paddr!(page_dir as *const _);
+	new_task.regs.cr3 = running_task.regs.cr3;
+
+	new_task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) new_task.regs.esp,
+		func = in(reg) USER_STACK_ADDR + 1);
+	new_task.regs.esp -= 4;
+	core::arch::asm!("mov [{esp}], {func}",
+		esp = in(reg) new_task.regs.esp,
+		func = in(reg) cr3);
+	new_task.regs.esp -= 4;
 	core::arch::asm!("mov [{esp}], {func}",
 		esp = in(reg) new_task.regs.esp,
 		func = in(reg) USER_HEAP_ADDR);
-	new_task.regs.esp = USER_STACK_ADDR - 7;
+
+	new_task.regs.esp = KSTACK_ADDR - 15;
 	new_task.regs.eip = jump_usermode as VirtAddr;
 	new_task.regs.ds = running_task.regs.ds;
 
@@ -85,6 +106,18 @@ pub unsafe fn exec_fn_userspace(func: VirtAddr, size: usize) -> Pid {
 
 	TASKLIST.push_back(new_task);
 	pid
+}
+
+#[macro_export]
+macro_rules! exec_fn_userspace {
+	($func:expr, $size:expr) => {{
+		use crate::alloc::string::ToString;
+		crate::user::exec_fn_userspace(
+			stringify!($func).to_string(),
+			$func as u32,
+			$size
+		)
+	}};
 }
 
 core::arch::global_asm!(
@@ -116,11 +149,10 @@ userfunc_end:
 
 pub fn test_user_page() {
 	unsafe {
-		exec_fn_userspace(
-			userfunc as u32,
+		crate::exec_fn_userspace!(
+			userfunc,
 			userfunc_end as usize - userfunc as usize
 		);
 	}
-	let ret = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
-	crate::kprintln!("pid ret: {}", ret);
+	let _ = crate::syscalls::exit::sys_waitpid(-1, core::ptr::null_mut(), 0);
 }

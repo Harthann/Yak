@@ -1,3 +1,4 @@
+use crate::alloc::string::String;
 use crate::interrupts::Registers;
 use crate::memory::allocator::AllocatorInit;
 use crate::memory::paging::page_directory;
@@ -41,6 +42,7 @@ impl Task {
 
 	pub fn init_multitasking(stack_addr: VirtAddr) {
 		unsafe {
+			// Init kernel heap
 			let heap = MemoryZone::init(
 				TypeZone::Heap,
 				100 * 0x1000,
@@ -56,6 +58,7 @@ impl Task {
 			);
 			let mut process: Process = Process::new();
 			process.state = Status::Run;
+			process.exe = String::from("kernel");
 			process.setup_kernel_stack(PAGE_WRITABLE);
 			page_directory
 				.claim_index_page_table(
@@ -66,7 +69,7 @@ impl Task {
 			process.stack = MemoryZone::init_addr(
 				stack_addr - (crate::STACK_SIZE - 1),
 				TypeZone::Stack,
-				crate::STACK_SIZE as usize,
+				crate::STACK_SIZE as usize * 5,
 				PAGE_WRITABLE,
 				false
 			);
@@ -84,6 +87,15 @@ impl Task {
 
 			TASKLIST.push_back(task);
 			NEXT_PID += 1;
+
+			// Init switch_task stack
+			TASK_STACK = MemoryZone::init_addr(
+				TASK_STACK_OFFSET,
+				TypeZone::Stack,
+				STACK_SIZE,
+				PAGE_WRITABLE,
+				false
+			);
 		}
 	}
 
@@ -128,25 +140,21 @@ impl Task {
 			{
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
-				let res = {
-					let process = self.process.lock();
-					let get_handler =
-						|process: &Process| -> Option<SignalHandler> {
-							for handler in process.signal_handlers.iter() {
-								if handler.signal
-									== process.signals[i].sigtype as i32
-								{
-									return Some(handler.clone());
-								}
+				let res =
+					self.process.execute(|guard| -> Option<SignalHandler> {
+						let prc = guard.lock();
+						for handler in prc.signal_handlers.iter() {
+							if handler.signal == prc.signals[i].sigtype as i32 {
+								return Some(handler.clone());
 							}
-							None
-						};
-					get_handler(&process)
-				};
+						}
+						None
+					});
 				if res.is_some() {
 					self.process.lock().signals.remove(i);
 					self.state = TaskStatus::Uninterruptible;
 					Task::handle_signal(&mut self.regs, &res.unwrap())
+					// Never goes here
 				}
 			} else if self.state == TaskStatus::Interruptible
 				&& self.process.lock().signals[i].sigtype == SignalType::SIGCHLD
@@ -250,8 +258,10 @@ use crate::proc::change_kernel_stack;
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
 	core::arch::asm!(
-		"mov esp, offset task_stack + {}",
+		"mov esp, {}",
+		"add esp, {}",
 		"call find_task",
+		const TASK_STACK_OFFSET,
 		const STACK_SIZE,
 		options(noreturn)
 	);
@@ -265,6 +275,7 @@ unsafe extern "C" fn find_task() -> ! {
 		// TODO: IF SIGNAL JUMP ?
 		if new_task.process.lock().signals.len() > 0 {
 			new_task.do_signal();
+			// Potentially never return
 		}
 		if new_task.state != TaskStatus::Interruptible {
 			// Copy registers to shared memory
@@ -281,12 +292,15 @@ unsafe extern "C" fn find_task() -> ! {
 }
 
 unsafe fn switch_task(regs: &Registers) -> ! {
+	// We must write on _cli counter from the kernel process, so we must do it
+	// before switching user context
+	_rst();
+	// don't println! from here
 	if regs.cr3 != get_paddr!((&page_directory) as *const _) {
 		load_cr3!(regs.cr3);
 	}
 	get_segments!(regs.ds);
 	end_of_interrupts(0x20);
-	_rst();
 	if regs.int_no != u32::MAX {
 		// new task
 		core::arch::asm!(
@@ -317,14 +331,8 @@ unsafe fn switch_task(regs: &Registers) -> ! {
 }
 
 const STACK_SIZE: usize = 0x1000;
-
-#[repr(align(4096))]
-struct TaskStack([u8; STACK_SIZE]);
-
-#[no_mangle]
-#[link_section = ".bss"]
-/// Task stack
-static mut task_stack: TaskStack = TaskStack([0; STACK_SIZE]);
+const TASK_STACK_OFFSET: VirtAddr = 0xffb00000;
+pub static mut TASK_STACK: MemoryZone = MemoryZone::new();
 
 macro_rules! load_cr3 {
 	($cr3: expr) => {

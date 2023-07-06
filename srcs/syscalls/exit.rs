@@ -7,8 +7,8 @@ use crate::wrappers::{_cli, _rst, _sti, cli, cli_count, hlt, sti};
 use crate::errno::ErrNo;
 use crate::KSTACK_ADDR;
 
-const WNOHANG: u32 = 0x01;
-const WUNTRACED: u32 = 0x02;
+pub const WNOHANG: u32 = 0x01;
+pub const WUNTRACED: u32 = 0x02;
 
 type Time = usize;
 
@@ -63,12 +63,12 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				let signal: Signal = res.unwrap();
 				let res = Process::search_from_pid(signal.sender);
 				if res.is_ok() {
-					let binding = res.unwrap();
-					let pid = binding.lock().pid;
-					Process::remove(pid);
+					Process::remove(signal.sender);
 				}
 				if !wstatus.is_null() {
-					*wstatus = signal.wstatus; // TODO
+					let ptr = super::mmap::translate_vaddr(wstatus as u32)
+						as *mut i32;
+					*ptr = signal.wstatus; // TODO
 				}
 				_sti();
 				return signal.sender;
