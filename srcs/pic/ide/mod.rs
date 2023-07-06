@@ -258,11 +258,6 @@ impl IDE {
 				0x80 | CHANNELS[channel as usize].n_ien
 			);
 		}
-		asm!(
-			"push es",
-			"mov ax, ds",
-			"mov es, ax"
-		);
 		if reg < 0x08 {
 			insl(
 				CHANNELS[channel as usize].base + reg as u16 - 0x00,
@@ -288,7 +283,6 @@ impl IDE {
 				quads
 			);
 		}
-		asm!("pop es");
 		if reg > 0x07 && reg < 0x0c {
 			IDE::write(
 				channel,
