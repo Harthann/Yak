@@ -1,13 +1,13 @@
 use core::default::Default;
 use core::fmt;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub struct PciHdr {
 	pub common: PciCommonHdr,
 	pub header: Headers
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone, Copy)]
 pub enum Headers {
 	Standard(StandardHdr),
 	PciBridge(PciBridgeHdr),
@@ -36,7 +36,7 @@ impl fmt::Display for Headers {
 }
 
 /// Header layout common for all PCI device
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Copy, Clone)]
 pub struct PciCommonHdr {
 	pub vendor_id:       u16,
 	pub device_id:       u16,
@@ -53,7 +53,7 @@ pub struct PciCommonHdr {
 }
 
 /// Header layout for standard Pci
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct StandardHdr {
 	// Reg [0x4 to 0x9]
 	pub base_addr:   [u32; 6],
@@ -131,7 +131,7 @@ impl fmt::Display for StandardHdr {
 /// |   0xF 	  |  0x3C  | Bridge Control        |-| Interrupt PIN | Interrupt Line  |
 ///
 /// Header layout for Pci to Pci bridge
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct PciBridgeHdr {
 	pub bar0:               u32,
 	pub bar1:               u32,
@@ -197,7 +197,7 @@ impl fmt::Display for PciBridgeHdr {
 /// <tr><td> 0x11</td><td> 0x44</td>
 /// <td colspan="4"> 16-bit PC Card legacy mode base address
 /// </td></tr></tbody></table>
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 pub struct CardBusBridgeHdr {
 	pub cb_socket:        u32,
 	pub sec_status:       u16,
