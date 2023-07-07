@@ -11,3 +11,4 @@ iso/
 start.gdb
 Cargo.lock
 logs
+hard-drive

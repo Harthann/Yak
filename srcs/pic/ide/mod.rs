@@ -448,11 +448,17 @@ impl IDE {
 		err
 	}
 
+	/// Read sector from a drive
+	///
+	/// Parameters:
+	/// + drive: drive number which can be from 0 to 3
+	/// + numsects: number of sectors to be read. If 0, the ATA controller will now we want 256 sectors
+	/// + lba: LBA address --> index of the sector, which allows us to acces disks up to 2TB
+	/// + edi: adress of the buffer we want to fill
 	pub unsafe fn read_sectors(
 		drive: u8,
 		numsects: u8,
 		lba: u32,
-		es: u16,
 		edi: u32
 	) -> u8 {
 		let mut err: u8 = 0;
@@ -474,7 +480,6 @@ impl IDE {
 					drive,
 					lba,
 					numsects,
-					es,
 					edi
 				);
 			} else if IDE_DEVICES[drive as usize].r#type
@@ -485,7 +490,6 @@ impl IDE {
 						drive as u8,
 						lba + i as u32,
 						1,
-						es,
 						edi + i as u32 * 2048
 					);
 				}
@@ -495,11 +499,17 @@ impl IDE {
 		err
 	}
 
+	/// Read sector from a drive
+	///
+	/// Parameters:
+	/// + drive: drive number which can be from 0 to 3
+	/// + numsects: number of sectors to write. If 0, the ATA controller will now we want 256 sectors
+	/// + lba: LBA address --> index of the sector, which allows us to access disks up to 2TB
+	/// + edi: adress of the buffer we want to fill
 	pub unsafe fn write_sectors(
 		drive: u8,
 		numsects: u8,
 		lba: u32,
-		es: u16,
 		edi: u32
 	) -> u8 {
 		let mut err: u8 = 0;
@@ -520,7 +530,6 @@ impl IDE {
 					drive,
 					lba,
 					numsects,
-					es,
 					edi
 				);
 			} else if IDE_DEVICES[drive as usize].r#type
@@ -533,4 +542,35 @@ impl IDE {
 		}
 		err
 	}
+}
+
+#[cfg(test)]
+mod test {
+
+	use crate::IDE;
+	use crate::sys_macros;
+	use crate::alloc::vec;
+
+	#[sys_macros::test_case]
+	fn ide_read_write_sector() {
+		let to_write = vec!['B' as u8; 512];
+		let read_from = vec![0x0 as u8; 512];
+
+		unsafe { IDE::write_sectors(1, 1, 0x0, to_write.as_ptr() as u32) };
+		unsafe { IDE::read_sectors(1, 1, 0x0, read_from.as_ptr() as u32) };
+
+		assert_eq!(to_write, read_from);
+	}
+
+	#[sys_macros::test_case]
+	fn ide_read_write_multiple_sectors() {
+		let to_write = vec!['A' as u8; 1024];
+		let read_from = vec![0x0 as u8; 1024];
+
+		unsafe { IDE::write_sectors(1, 2, 0x0, to_write.as_ptr() as u32) };
+		unsafe { IDE::read_sectors(1, 2, 0x0, read_from.as_ptr() as u32) };
+
+		assert_eq!(to_write, read_from);
+	}
+
 }

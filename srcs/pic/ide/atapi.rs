@@ -17,7 +17,6 @@ impl ATAPI {
 		drive: u8,
 		lba: u32,
 		numsects: u8,
-		selector: u16,
 		mut edi: u32
 	) -> u8 {
 		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
@@ -96,11 +95,7 @@ impl ATAPI {
 				return err;
 			}
 			asm!(
-				"push es",
-				"mov es, ax",
 				"rep insw",
-				"pop es",
-				in("eax") selector,
 				in("ecx") words,
 				in("edx") bus,
 				in("edi") edi

@@ -103,7 +103,6 @@ impl ATA {
 		drive: u8,
 		lba: u32,
 		numsects: u8,
-		selector: u16,
 		mut edi: u32
 	) -> u8 {
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
@@ -241,14 +240,13 @@ impl ATA {
 						return err;
 					}
 					asm!(
-						"push es",
-						"mov es, ax",
+						"push edi",
+						"mov edi, {edi}",
 						"rep insw", // Receive data
-						"pop es",
-						in("eax") selector,
+						"pop edi",
 						in("ecx") words,
 						in("edx") bus,
-						in("edi") edi,
+						edi = in(reg) edi,
 					);
 					edi += words * 2;
 				}
@@ -260,12 +258,8 @@ impl ATA {
 					asm!(
 						"push esi",
 						"mov esi, {reg}",
-						"push ds",
-						"mov ds, ax",
 						"rep outsw", // Send data
-						"pop ds",
 						"pop esi",
-						in("eax") selector,
 						in("ecx") words,
 						in("edx") bus,
 						reg = in(reg) edi
