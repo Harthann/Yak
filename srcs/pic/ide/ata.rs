@@ -111,7 +111,6 @@ impl ATA {
 		// Disable IRQ
 		IDE_IRQ_INVOKED = 0x0;
 		CHANNELS[channel as usize].n_ien = IDE_IRQ_INVOKED + 0x02;
-		crate::kprintln!("write1");
 		IDE::write(channel as u8, ATAReg::CONTROL, CHANNELS[channel as usize].n_ien);
 
 		// (I) Select one from LBA28, LBA48 or CHS
@@ -161,7 +160,6 @@ impl ATA {
 
 		// (IV) Select Drive from the controller
 		if lba_mode == 0 { // Drive & CHS
-			crate::kprintln!("write2");
 			IDE::write(channel as u8, ATAReg::HDDEVSEL, 0xa0 | ((slavebit as u8) << 4) | head);
 		} else { // Drive & LBA
 			IDE::write(channel as u8, ATAReg::HDDEVSEL, 0xe0 | ((slavebit as u8) << 4) | head);
@@ -239,11 +237,13 @@ impl ATA {
 					// Polling
 					IDE::polling(channel as u8, 0);
 					asm!(
+						"push esi",
 						"mov esi, {reg}",
 						"push ds",
 						"mov ds, ax",
 						"rep outsw", // Send data
 						"pop ds",
+						"pop esi",
 						in("eax") selector,
 						in("ecx") words,
 						in("edx") bus,

@@ -69,8 +69,10 @@ impl ATAPI {
 
 		// (VIII) Sending the packet data
 		asm!(
+			"push esi",
 			"mov esi, {esi}",
 			"rep outsw", // Send Packet Data
+			"pop esi",
 			in("ecx") 6,
 			in("edx") bus,
 			esi = in(reg) ATAPI_PACKET.as_ptr()
@@ -165,8 +167,10 @@ impl ATAPI {
 
 			// (VI) Sending the packet data
 			asm!(
+				"push esi",
 				"mov esi, {esi}",
 				"rep outsw",
+				"pop esi",
 				in("ecx") 6,
 				in("edx") bus,
 				esi = in(reg) ATAPI_PACKET.as_ptr()
