@@ -32,9 +32,18 @@ mod poc {
 	}
 }
 
+use crate::pic::ide::IDE;
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	crate::user::test_user_page();
+	kprintln!("-- Write sectors");
+	let test = [0x42];
+	unsafe { IDE::write_sectors(1, 1, 0x0, 0x0, test.as_ptr() as u32) };
+	kprintln!("-- Read sectors");
+	let mut output = [0x0];
+	unsafe { IDE::read_sectors(1, 1, 0x0, 0x0, output.as_mut_ptr() as u32) };
+	kprintln!("output: {:#x?}", output);
+//	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);

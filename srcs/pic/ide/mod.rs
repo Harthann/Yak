@@ -10,7 +10,8 @@ use crate::io::{inb, insl, outb};
 mod ata;
 mod atapi;
 
-use ata::{ATAReg, ATAStatus, ATAError, ATAChannel, ATACommand, ATAIdentify};
+use ata::{ATAReg, ATAStatus, ATAError, ATAChannel, ATACommand, ATAIdentify, ATADirection, ATA};
+use atapi::ATAPI;
 
 enum IDEType {
 	ATA   = 0x00,
@@ -30,7 +31,6 @@ static mut CHANNELS: [IDEChannelRegisters; 2] =
 
 static mut IDE_BUF: [u8; 2048] = [0; 2048];
 static mut IDE_IRQ_INVOKED: u8 = 0;
-static mut ATAPI_PACKET: [u8; 12] = [0xA8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 #[derive(Clone, Copy)]
 struct IDEDevice {
@@ -188,6 +188,19 @@ impl IDE {
 				);
 			}
 		}
+	}
+
+	unsafe fn wait_irq() {
+		loop {
+			if IDE_IRQ_INVOKED != 0 {
+				break ;
+			}
+		}
+		IDE_IRQ_INVOKED = 0;
+	}
+
+	unsafe fn irq() {
+		IDE_IRQ_INVOKED = 1;
 	}
 
 	unsafe fn read(channel: u8, reg: u8) -> u8 {
@@ -382,6 +395,54 @@ impl IDE {
 			["Master", "Slave"][IDE_DEVICES[drive as usize].drive as usize],
 			CStr::from_bytes_until_nul(&IDE_DEVICES[drive as usize].model).unwrap().to_str().unwrap()
 		);
+		err
+	}
+
+	pub unsafe fn read_sectors(drive: u8, numsects: u8, lba: u32, es: u16, edi: u32) -> u8 {
+		let mut err: u8 = 0;
+		// 1- Check if the drive presents
+		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
+			// Drive not found
+			err = 0x1;
+		// 2- Check if inputs are valid
+		} else if (lba + numsects as u32 > IDE_DEVICES[drive as usize].size)
+			&& (IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16) {
+			// Seeking to invalid position
+			err = 0x2;
+		// 3- Read in PIO Mode through Polling & IRQs
+		} else {
+			if IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16 {
+				err = ATA::access(ATADirection::Read as u8, drive, lba, numsects, es, edi);
+			} else if IDE_DEVICES[drive as usize].r#type == IDEType::ATAPI as u16 {
+				for i in 0..numsects {
+					err = ATAPI::read(drive as u8, lba + i as u32, 1, es, edi + i as u32 * 2048);
+				}
+			}
+			err = IDE::print_error(drive as u32, err);
+		}
+		err
+	}
+
+	pub unsafe fn write_sectors(drive: u8, numsects: u8, lba: u32, es: u16, edi: u32) -> u8 {
+		let mut err: u8 = 0;
+		// 1- Check if the drive presents
+		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
+			// Drive not found
+			err = 0x1;
+		// 2- Check if inputs are valid
+		} else if (lba + numsects as u32 > IDE_DEVICES[drive as usize].size)
+			&& (IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16) {
+			err = 0x2;
+		// 3- Read in PIO Mode through Polling & IRQs
+		} else {
+			if IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16 {
+				err = ATA::access(ATADirection::Write as u8, drive, lba, numsects, es, edi);
+			} else if IDE_DEVICES[drive as usize].r#type == IDEType::ATAPI as u16 {
+				// Write-Protected
+				err = 0x4;
+			}
+			err = IDE::print_error(drive as u32, err);
+		}
 		err
 	}
 }

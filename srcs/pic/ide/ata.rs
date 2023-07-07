@@ -1,3 +1,5 @@
+use core::arch::asm;
+
 use super::{IDE_DEVICES, CHANNELS, IDE_IRQ_INVOKED, IDE};
 
 #[allow(non_snake_case)]
@@ -24,6 +26,7 @@ pub mod ATAError {
 	pub const AMNF: u8 = 0x01; // No address mark
 }
 
+#[derive(Clone, Copy)]
 #[allow(non_snake_case)]
 pub enum ATACommand {
 	ReadPio        = 0x20,
@@ -92,10 +95,10 @@ pub enum ATADirection {
 	Write = 0x01
 }
 
-struct ATA {}
+pub struct ATA {}
 
 impl ATA {
-	unsafe fn access(direction: u8, drive: u8, lba: u32, numsects: u8, selector: u16, edi: u32) -> u8 {
+	pub unsafe fn access(direction: u8, drive: u8, lba: u32, numsects: u8, selector: u16, mut edi: u32) -> u8 {
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
@@ -104,11 +107,11 @@ impl ATA {
 		let bus: u32 = CHANNELS[channel as usize].base as u32; // Bus Base, like 0x1f0 which is also data port
 		let words: u32 = 256; // Almost every ATA drive has sector-size of 512-byte
 		let head: u8;
-		let err: u8;
 
 		// Disable IRQ
 		IDE_IRQ_INVOKED = 0x0;
 		CHANNELS[channel as usize].n_ien = IDE_IRQ_INVOKED + 0x02;
+		crate::kprintln!("write1");
 		IDE::write(channel as u8, ATAReg::CONTROL, CHANNELS[channel as usize].n_ien);
 
 		// (I) Select one from LBA28, LBA48 or CHS
@@ -158,6 +161,7 @@ impl ATA {
 
 		// (IV) Select Drive from the controller
 		if lba_mode == 0 { // Drive & CHS
+			crate::kprintln!("write2");
 			IDE::write(channel as u8, ATAReg::HDDEVSEL, 0xa0 | ((slavebit as u8) << 4) | head);
 		} else { // Drive & LBA
 			IDE::write(channel as u8, ATAReg::HDDEVSEL, 0xe0 | ((slavebit as u8) << 4) | head);
@@ -175,6 +179,83 @@ impl ATA {
 		IDE::write(channel as u8, ATAReg::LBA1, lba_io[1]);
 		IDE::write(channel as u8, ATAReg::LBA2, lba_io[2]);
 
+		// (VI) Select the command and send it
+		// Routine that is followed:
+		// If ( DMA & LBA48)   DO_DMA_EXT
+		// If ( DMA & LBA28)   DO_DMA_LBA
+		// If ( DMA & LBA28)   DO_DMA_CHS
+		// If (!DMA & LBA48)   DO_PIO_EXT
+		// If (!DMA & LBA28)   DO_PIO_LBA
+		// If (!DMA & !LBA#)   DO_PIO_CHS
+
+		let cmd = match (lba_mode, dma, direction) {
+			(0, 0, 0) => ATACommand::ReadPio,
+			(1, 0, 0) => ATACommand::ReadPio,
+			(2, 0, 0) => ATACommand::ReadPioExt,
+			(0, 1, 0) => ATACommand::ReadDma,
+			(1, 1, 0) => ATACommand::ReadDma,
+			(2, 1, 0) => ATACommand::ReadDmaExt,
+			(0, 0, 1) => ATACommand::WritePio,
+			(1, 0, 1) => ATACommand::WritePio,
+			(2, 0, 1) => ATACommand::WritePioExt,
+			(0, 1, 1) => ATACommand::WriteDma,
+			(1, 1, 1) => ATACommand::WriteDma,
+			(2, 1, 1) => ATACommand::WriteDmaExt,
+			_ => todo!()
+		};
+		// Send the command
+		IDE::write(channel as u8, ATAReg::COMMAND, cmd as u8);
+
+		if dma != 0 {
+			if direction == 0 {
+				// DMA Read
+			} else {
+				// DMA Write
+			}
+		} else {
+			if direction == 0 {
+				// PIO Read
+				for _ in 0..numsects {
+					// Polling, set error and exit if there is
+					let err: u8 = IDE::polling(channel as u8, 1);
+					if err != 0 {
+						return err;
+					}
+					asm!(
+						"push es",
+						"mov es, ax",
+						"rep insw", // Receive data
+						"pop es",
+						in("eax") selector,
+						in("ecx") words,
+						in("edx") bus,
+						in("edi") edi,
+					);
+					edi += words * 2;
+				}
+			} else {
+				// PIO Write
+				for _ in 0..numsects {
+					// Polling
+					IDE::polling(channel as u8, 0);
+					asm!(
+						"mov esi, {reg}",
+						"push ds",
+						"mov ds, ax",
+						"rep outsw", // Send data
+						"pop ds",
+						in("eax") selector,
+						in("ecx") words,
+						in("edx") bus,
+						reg = in(reg) edi
+					);
+					edi += words * 2;
+				}
+				IDE::write(channel as u8, ATAReg::COMMAND, [ATACommand::CacheFlush, ATACommand::CacheFlush, ATACommand::CacheFlushExt][lba_mode as usize] as u8);
+				// Polling
+				IDE::polling(channel as u8, 0);
+			}
+		}
 		0
 	}
 }
