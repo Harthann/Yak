@@ -547,9 +547,8 @@ impl IDE {
 #[cfg(test)]
 mod test {
 
-	use crate::IDE;
-	use crate::sys_macros;
 	use crate::alloc::vec;
+	use crate::{sys_macros, IDE};
 
 	#[sys_macros::test_case]
 	fn ide_read_write_sector() {
@@ -572,5 +571,4 @@ mod test {
 
 		assert_eq!(to_write, read_from);
 	}
-
 }
