@@ -1,5 +1,16 @@
 
-pub struct inode {
+
+/// Like blocks, each inode has a numerical address.
+/// It is extremely important to note that unlike block addresses, inode addresses start at 1.
+/// With Ext2 versions prior to Major version 1, inodes 1 to 10 are reserved and
+/// should be in an allocated state.
+/// Starting with version 1, the first non-reserved inode is indicated via a field in the Superblock.
+/// Of the reserved inodes, number 2 subjectively has the most significance as it is used for the root directory.
+/// Inodes have a fixed size of either 128 for version 0 Ext2 file systems, or as dictated by the field in the Superblock for version 1 file systems.
+/// All inodes reside in inode tables that belong to block groups.
+/// Therefore, looking up an inode is simply a matter of determining which
+/// block group it belongs to and indexing that block group's inode table.
+pub struct Inode {
     /// Type and Permissions (see below)
     tperm:        u16,
     /// User ID
@@ -87,4 +98,17 @@ const IPERM_UREAD:   u16 = 0x100;
 const IPERM_STICK:   u16 = 0x200;
 const IPERM_SETGID:  u16 = 0x400;
 const IPERM_SETUID:  u16 = 0x800;
+
+// Inode flags
+const IFLAG_SECDEL:     u32 = 0x00000001;
+const IFLAG_KEEPCPY:    u32 = 0x00000002;
+const IFLAG_FILECOMPR:  u32 = 0x00000004;
+const IFLAG_SYNC:       u32 = 0x00000008;
+const IFLAG_IMMUTABLE:  u32 = 0x00000010;
+const IFLAG_OAPPEN:     u32 = 0x00000020;
+const IFLAG_NODUMP:     u32 = 0x00000040;
+const IFLAG_NOUPDATE:   u32 = 0x00000080;
+const IFLAG_HASHINDEX:  u32 = 0x00010000;
+const IFLAG_ASDIR:      u32 = 0x00020000;
+const IFLAG_JOURN:      u32 = 0x00040000;
 
