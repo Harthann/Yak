@@ -43,7 +43,7 @@ pub extern "C" fn kmain() -> ! {
 	let mut output = [0x0];
 	unsafe { IDE::read_sectors(1, 1, 0x0, 0x0, output.as_mut_ptr() as u32) };
 	kprintln!("output: {:#x?}", output);
-//	crate::user::test_user_page();
+	// 	crate::user::test_user_page();
 
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);

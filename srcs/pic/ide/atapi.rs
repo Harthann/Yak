@@ -1,7 +1,7 @@
 use core::arch::asm;
 
-use super::{IDE_DEVICES, CHANNELS, IDE_IRQ_INVOKED, IDE, IDEType};
-use super::ata::{ATAReg, ATACommand, ATAStatus};
+use super::ata::{ATACommand, ATAReg, ATAStatus};
+use super::{IDEType, CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
 
 static mut ATAPI_PACKET: [u8; 12] = [0xa8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -13,7 +13,13 @@ enum ATAPICommand {
 pub struct ATAPI {}
 
 impl ATAPI {
-	pub unsafe fn read(drive: u8, lba: u32, numsects: u8, selector: u16, mut edi: u32) -> u8 {
+	pub unsafe fn read(
+		drive: u8,
+		lba: u32,
+		numsects: u8,
+		selector: u16,
+		mut edi: u32
+	) -> u8 {
 		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
 		let bus: u32 = CHANNELS[channel as usize].base as u32;
@@ -24,7 +30,11 @@ impl ATAPI {
 		// Enable IRQs
 		IDE_IRQ_INVOKED = 0;
 		CHANNELS[channel as usize].n_ien = 0;
-		IDE::write(channel as u8, ATAReg::CONTROL, CHANNELS[channel as usize].n_ien);
+		IDE::write(
+			channel as u8,
+			ATAReg::CONTROL,
+			CHANNELS[channel as usize].n_ien
+		);
 
 		// (I) Setup SCSI Packet
 		ATAPI_PACKET[0] = ATAPICommand::Read as u8;
@@ -103,7 +113,10 @@ impl ATAPI {
 
 		// (XI) Waiting for BSY & DRQ to clear
 		loop {
-			if (IDE::read(channel as u8, ATAReg::STATUS) & (ATAStatus::BSY | ATAStatus::DRQ)) == 0 {
+			if (IDE::read(channel as u8, ATAReg::STATUS)
+				& (ATAStatus::BSY | ATAStatus::DRQ))
+				== 0
+			{
 				break;
 			}
 		}
@@ -116,7 +129,7 @@ impl ATAPI {
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
 		let bus: u32 = CHANNELS[channel as usize].base as u32;
 		// Sector size in words
-//		let words: u32 = 2048 / 2;
+		// 		let words: u32 = 2048 / 2;
 		let mut err: u8;
 
 		// 1- Check if the drive presents
@@ -130,7 +143,11 @@ impl ATAPI {
 			// Enable IRQs
 			IDE_IRQ_INVOKED = 0x0;
 			CHANNELS[channel as usize].n_ien = 0x0;
-			IDE::write(channel as u8, ATAReg::CONTROL, CHANNELS[channel as usize].n_ien);
+			IDE::write(
+				channel as u8,
+				ATAReg::CONTROL,
+				CHANNELS[channel as usize].n_ien
+			);
 
 			// (I) Setup SCSI Packet
 			ATAPI_PACKET[0] = 0x0;
@@ -156,7 +173,11 @@ impl ATAPI {
 			}
 
 			// (IV) Send the Packet Command
-			IDE::write(channel as u8, ATAReg::COMMAND, ATACommand::Packet as u8);
+			IDE::write(
+				channel as u8,
+				ATAReg::COMMAND,
+				ATACommand::Packet as u8
+			);
 
 			// (V) Waiting for the driver to finish or invoke an error
 			// Polling and stop if error

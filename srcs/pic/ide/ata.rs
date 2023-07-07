@@ -1,6 +1,6 @@
 use core::arch::asm;
 
-use super::{IDE_DEVICES, CHANNELS, IDE_IRQ_INVOKED, IDE};
+use super::{CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
 
 #[allow(non_snake_case)]
 pub mod ATAStatus {
@@ -98,7 +98,14 @@ pub enum ATADirection {
 pub struct ATA {}
 
 impl ATA {
-	pub unsafe fn access(direction: u8, drive: u8, lba: u32, numsects: u8, selector: u16, mut edi: u32) -> u8 {
+	pub unsafe fn access(
+		direction: u8,
+		drive: u8,
+		lba: u32,
+		numsects: u8,
+		selector: u16,
+		mut edi: u32
+	) -> u8 {
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
@@ -111,12 +118,16 @@ impl ATA {
 		// Disable IRQ
 		IDE_IRQ_INVOKED = 0x0;
 		CHANNELS[channel as usize].n_ien = IDE_IRQ_INVOKED + 0x02;
-		IDE::write(channel as u8, ATAReg::CONTROL, CHANNELS[channel as usize].n_ien);
+		IDE::write(
+			channel as u8,
+			ATAReg::CONTROL,
+			CHANNELS[channel as usize].n_ien
+		);
 
 		// (I) Select one from LBA28, LBA48 or CHS
 		// Sure Drive should support LBA in this case or you
 		// are giving a wrong LBA
-		if lba >= 0x10000000 { 
+		if lba >= 0x10000000 {
 			// LBA48
 			lba_mode = 2;
 			lba_io[0] = ((lba & 0x000000FF) >> 0) as u8;
@@ -135,12 +146,12 @@ impl ATA {
 			lba_io[3] = 0; // These Registers are not used here
 			lba_io[4] = 0; // These Registers are not used here
 			lba_io[5] = 0; // These Registers are not used here
-			head  = ((lba & 0xF000000) >> 24) as u8;
+			head = ((lba & 0xF000000) >> 24) as u8;
 		} else {
 			// CHS:
 			lba_mode = 0;
 			let sect: u8 = ((lba % 63) + 1) as u8;
-			let cyl: u16 = ((lba + 1  - sect as u32) / (16 * 63)) as u16;
+			let cyl: u16 = ((lba + 1 - sect as u32) / (16 * 63)) as u16;
 			lba_io[0] = sect;
 			lba_io[1] = ((cyl >> 0) & 0xFF) as u8;
 			lba_io[2] = ((cyl >> 8) & 0xFF) as u8;
@@ -148,7 +159,7 @@ impl ATA {
 			lba_io[4] = 0;
 			lba_io[5] = 0;
 			// Head number is written to HDDEVSEL lower 4-bits
-			head = ((lba + 1  - sect as u32) % (16 * 63) / (63)) as u8;
+			head = ((lba + 1 - sect as u32) % (16 * 63) / (63)) as u8;
 		}
 
 		// (II) See if drive supports DMA or not
@@ -159,10 +170,20 @@ impl ATA {
 		}
 
 		// (IV) Select Drive from the controller
-		if lba_mode == 0 { // Drive & CHS
-			IDE::write(channel as u8, ATAReg::HDDEVSEL, 0xa0 | ((slavebit as u8) << 4) | head);
-		} else { // Drive & LBA
-			IDE::write(channel as u8, ATAReg::HDDEVSEL, 0xe0 | ((slavebit as u8) << 4) | head);
+		if lba_mode == 0 {
+			// Drive & CHS
+			IDE::write(
+				channel as u8,
+				ATAReg::HDDEVSEL,
+				0xa0 | ((slavebit as u8) << 4) | head
+			);
+		} else {
+			// Drive & LBA
+			IDE::write(
+				channel as u8,
+				ATAReg::HDDEVSEL,
+				0xe0 | ((slavebit as u8) << 4) | head
+			);
 		}
 
 		// (V) Write Parameters
@@ -251,7 +272,15 @@ impl ATA {
 					);
 					edi += words * 2;
 				}
-				IDE::write(channel as u8, ATAReg::COMMAND, [ATACommand::CacheFlush, ATACommand::CacheFlush, ATACommand::CacheFlushExt][lba_mode as usize] as u8);
+				IDE::write(
+					channel as u8,
+					ATAReg::COMMAND,
+					[
+						ATACommand::CacheFlush,
+						ATACommand::CacheFlush,
+						ATACommand::CacheFlushExt
+					][lba_mode as usize] as u8
+				);
 				// Polling
 				IDE::polling(channel as u8, 0);
 			}
