@@ -80,48 +80,46 @@ pub struct Inode {
 use core::mem::transmute;
 impl From<&[u8]> for Inode {
     fn from(buffer: &[u8]) -> Self {
-        if buffer.len() != 127 {
+        if buffer.len() != 128 {
             panic!("Wrong size while converting slice to Superblock");
         }
         // Safe beceause len is forced to be 83
-        unsafe {
         let mut inode = Self {
-            tperm:        *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(0)),
-            uid:          *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(2)),
-            size_lh:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(4)),
-            lat:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(8)),
-            creatt:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(12)),
-            lmt:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(16)),
-            delt:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(20)),
-            gid:          *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(24)),
-            cound_hl:     *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(26)),
-            count_ds:     *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(28)),
-            flags:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(32)),
-            os_specific1: *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(36)),
-            dbp0:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(40)),
-            dbp1:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(44)),
-            dbp2:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(48)),
-            dbp3:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(52)),
-            dbp4:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(56)),
-            dbp5:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(60)),
-            dbp6:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(64)),
-            dbp7:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(68)),
-            dbp8:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(72)),
-            dbp9:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(76)),
-            dbp10:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(80)),
-            dbp11:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(84)),
-            sibp:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(88)),
-            dibp:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(92)),
-            tibp:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(96)),
-            gen_no:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(100)),
-            facl:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(104)),
-            size_uh:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(108)),
-            block_addr:   *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(112)),
+            tperm:        u16::from_le_bytes(buffer[0..2].try_into().unwrap()),
+            uid:          u16::from_le_bytes(buffer[2..4].try_into().unwrap()),
+            size_lh:      u32::from_le_bytes(buffer[4..8].try_into().unwrap()),
+            lat:          u32::from_le_bytes(buffer[8..12].try_into().unwrap()),
+            creatt:       u32::from_le_bytes(buffer[12..16].try_into().unwrap()),
+            lmt:          u32::from_le_bytes(buffer[16..20].try_into().unwrap()),
+            delt:         u32::from_le_bytes(buffer[20..24].try_into().unwrap()),
+            gid:          u16::from_le_bytes(buffer[24..26].try_into().unwrap()),
+            cound_hl:     u16::from_le_bytes(buffer[26..28].try_into().unwrap()),
+            count_ds:     u32::from_le_bytes(buffer[28..32].try_into().unwrap()),
+            flags:        u32::from_le_bytes(buffer[32..36].try_into().unwrap()),
+            os_specific1: u32::from_le_bytes(buffer[36..40].try_into().unwrap()),
+            dbp0:         u32::from_le_bytes(buffer[40..44].try_into().unwrap()),
+            dbp1:         u32::from_le_bytes(buffer[44..48].try_into().unwrap()),
+            dbp2:         u32::from_le_bytes(buffer[48..52].try_into().unwrap()),
+            dbp3:         u32::from_le_bytes(buffer[52..56].try_into().unwrap()),
+            dbp4:         u32::from_le_bytes(buffer[56..60].try_into().unwrap()),
+            dbp5:         u32::from_le_bytes(buffer[60..64].try_into().unwrap()),
+            dbp6:         u32::from_le_bytes(buffer[64..68].try_into().unwrap()),
+            dbp7:         u32::from_le_bytes(buffer[68..72].try_into().unwrap()),
+            dbp8:         u32::from_le_bytes(buffer[72..76].try_into().unwrap()),
+            dbp9:         u32::from_le_bytes(buffer[76..80].try_into().unwrap()),
+            dbp10:        u32::from_le_bytes(buffer[80..84].try_into().unwrap()),
+            dbp11:        u32::from_le_bytes(buffer[84..88].try_into().unwrap()),
+            sibp:         u32::from_le_bytes(buffer[88..92].try_into().unwrap()),
+            dibp:         u32::from_le_bytes(buffer[92..96].try_into().unwrap()),
+            tibp:         u32::from_le_bytes(buffer[96..100].try_into().unwrap()),
+            gen_no:       u32::from_le_bytes(buffer[100..104].try_into().unwrap()),
+            facl:         u32::from_le_bytes(buffer[104..108].try_into().unwrap()),
+            size_uh:      u32::from_le_bytes(buffer[108..112].try_into().unwrap()),
+            block_addr:   u32::from_le_bytes(buffer[112..116].try_into().unwrap()),
             os_specific2: [0; 12]
         };
-        inode.os_specific2[0..12].copy_from_slice(&buffer[113..127]);
+        inode.os_specific2[0..12].copy_from_slice(&buffer[116..128]);
         inode
-        }
     }
 }
 
