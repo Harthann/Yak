@@ -76,6 +76,7 @@ mod multiboot;
 #[macro_use]
 mod syscalls;
 mod io;
+mod pci;
 mod pic;
 mod proc;
 mod time;
@@ -106,7 +107,7 @@ mod test;
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
-use pic::ide::IDE;
+use pci::ide::IDE;
 use pic::setup_pic8259;
 
 #[global_allocator]

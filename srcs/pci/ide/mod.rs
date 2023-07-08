@@ -1,7 +1,6 @@
 use core::ffi::CStr;
 use core::mem::{size_of, transmute};
 use core::ptr::copy;
-use core::slice;
 
 use crate::io::{inb, insl, outb};
 use crate::kprintln;
@@ -157,10 +156,7 @@ impl IDE {
 				IDE::read_buffer(
 					i,
 					ATAReg::DATA,
-					slice::from_raw_parts_mut(
-						IDE_BUF.as_mut_ptr() as *mut u32,
-						512
-					),
+					IDE_BUF.align_to_mut::<u32>().1,
 					128
 				);
 
