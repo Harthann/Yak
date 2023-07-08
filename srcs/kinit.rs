@@ -157,7 +157,10 @@ pub extern "C" fn kinit() {
 		KTRACKER = Tracker::new();
 	}
 
-	unsafe { IDE::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000).expect("Error while reading disks") };
+	unsafe {
+		IDE::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000)
+			.expect("Error while reading disks")
+	};
 
 	setup_pic8259();
 

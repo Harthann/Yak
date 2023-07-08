@@ -89,7 +89,12 @@ impl ATAPI {
 		Ok((((buffer[0].to_be() + 1) * buffer[1].to_be()) / 1024) * 2)
 	}
 
-	pub unsafe fn read(drive: u8, lba: u32, numsects: u8, mut edi: u32) -> Result<(), u8> {
+	pub unsafe fn read(
+		drive: u8,
+		lba: u32,
+		numsects: u8,
+		mut edi: u32
+	) -> Result<(), u8> {
 		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
 		let bus: u32 = CHANNELS[channel as usize].base as u32;

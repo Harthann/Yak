@@ -2,7 +2,6 @@
 
 use core::arch::asm;
 
-
 // Notes:
 //
 // Those are rust function instead of naked because the compiler does a great job

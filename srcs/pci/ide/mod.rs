@@ -73,7 +73,7 @@ impl IDE {
 		bar2: u32,
 		bar3: u32,
 		bar4: u32
-	) -> Result <(), u8> {
+	) -> Result<(), u8> {
 		let mut ide_buf: [u8; 2048] = [0; 2048];
 
 		// 1- Detect I/O Ports which interface IDE Controller
@@ -501,7 +501,9 @@ impl IDE {
 						edi + i as u32 * 2048
 					) {
 						Ok(_) => {},
-						Err(err) => return Err(IDE::print_error(drive as u32, err))
+						Err(err) => {
+							return Err(IDE::print_error(drive as u32, err))
+						},
 					}
 				}
 			}
@@ -521,7 +523,7 @@ impl IDE {
 		numsects: u8,
 		lba: u32,
 		edi: u32
-	) -> Result <(), u8> {
+	) -> Result<(), u8> {
 		// 1- Check if the drive presents
 		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
 			// Drive not found
@@ -566,8 +568,10 @@ mod test {
 		let to_write = vec!['B' as u8; 512];
 		let read_from = vec![0x0 as u8; 512];
 
-		let _ = unsafe { IDE::write_sectors(1, 1, 0x0, to_write.as_ptr() as u32) };
-		let _ = unsafe { IDE::read_sectors(1, 1, 0x0, read_from.as_ptr() as u32) };
+		let _ =
+			unsafe { IDE::write_sectors(1, 1, 0x0, to_write.as_ptr() as u32) };
+		let _ =
+			unsafe { IDE::read_sectors(1, 1, 0x0, read_from.as_ptr() as u32) };
 
 		assert_eq!(to_write, read_from);
 	}
@@ -577,8 +581,10 @@ mod test {
 		let to_write = vec!['A' as u8; 1024];
 		let read_from = vec![0x0 as u8; 1024];
 
-		let _ = unsafe { IDE::write_sectors(1, 2, 0x0, to_write.as_ptr() as u32) };
-		let _ = unsafe { IDE::read_sectors(1, 2, 0x0, read_from.as_ptr() as u32) };
+		let _ =
+			unsafe { IDE::write_sectors(1, 2, 0x0, to_write.as_ptr() as u32) };
+		let _ =
+			unsafe { IDE::read_sectors(1, 2, 0x0, read_from.as_ptr() as u32) };
 
 		assert_eq!(to_write, read_from);
 	}
