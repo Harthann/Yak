@@ -36,6 +36,7 @@ mod poc {
 pub extern "C" fn kmain() -> ! {
 	crate::user::test_user_page();
 
+    crate::fs::ext2::read_supeblock();
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(
