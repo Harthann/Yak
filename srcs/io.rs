@@ -2,12 +2,22 @@
 
 use core::arch::asm;
 
+
+// Notes:
+//
+// Those are rust function instead of naked because the compiler does a great job
+// and inline them inside functions. The only thing we should care about is to
+// preserve registers that should be by convention (otherwise there are scratch
+// registers).
+//
+// x86 preserved registers are: ebx, esi, edi, ebp
+//
+
 #[allow(dead_code)]
 pub fn io_wait() {
 	outb(0x80, 0);
 }
 
-#[allow(dead_code)]
 pub fn outb(port: u16, cmd: u8) {
 	unsafe {
 		asm!("out dx, al",
@@ -16,7 +26,6 @@ pub fn outb(port: u16, cmd: u8) {
 	}
 }
 
-#[allow(dead_code)]
 pub fn outw(port: u16, cmd: u16) {
 	unsafe {
 		asm!("out dx, ax",
@@ -25,7 +34,6 @@ pub fn outw(port: u16, cmd: u16) {
 	}
 }
 
-#[allow(dead_code)]
 pub fn outl(port: u16, cmd: u32) {
 	unsafe {
 		asm!("out dx, eax",
@@ -34,7 +42,48 @@ pub fn outl(port: u16, cmd: u32) {
 	}
 }
 
-#[allow(dead_code)]
+pub fn outsb(port: u16, src: *const u8, count: u32) {
+	unsafe {
+		asm!(
+			"push esi",
+			"mov esi, {esi}",
+			"rep outsb",
+			"pop esi",
+			in("ecx") count,
+			esi = in(reg) src,
+			in("dx") port
+		);
+	}
+}
+
+pub fn outsw(port: u16, src: *const u16, count: u32) {
+	unsafe {
+		asm!(
+			"push esi",
+			"mov esi, {esi}",
+			"rep outsw",
+			"pop esi",
+			in("ecx") count,
+			esi = in(reg) src,
+			in("dx") port
+		);
+	}
+}
+
+pub fn outsl(port: u16, src: *const u32, count: u32) {
+	unsafe {
+		asm!(
+			"push esi",
+			"mov esi, {esi}",
+			"rep outsd",
+			"pop esi",
+			in("ecx") count,
+			esi = in(reg) src,
+			in("dx") port
+		);
+	}
+}
+
 pub fn inb(port: u16) -> u8 {
 	let mut input_byte: u8;
 	unsafe {
@@ -45,7 +94,6 @@ pub fn inb(port: u16) -> u8 {
 	input_byte
 }
 
-#[allow(dead_code)]
 pub fn inw(port: u16) -> u16 {
 	let mut input_byte: u16;
 	unsafe {
@@ -56,7 +104,6 @@ pub fn inw(port: u16) -> u16 {
 	input_byte
 }
 
-#[allow(dead_code)]
 pub fn inl(port: u16) -> u32 {
 	let mut input_byte: u32;
 	unsafe {
@@ -67,23 +114,44 @@ pub fn inl(port: u16) -> u32 {
 	input_byte
 }
 
-#[allow(dead_code)]
-pub fn insb(port: u16, dst: &mut [u8], count: u32) {
-	for index in 0..count {
-		dst[index as usize] = inb(port) as u8;
+pub fn insb(port: u16, dst: *mut u8, count: u32) {
+	unsafe {
+		asm!(
+			"push edi",
+			"mov edi, {edi}",
+			"rep insb",
+			"pop edi",
+			in("ecx") count,
+			edi = in(reg) dst,
+			in("dx") port
+		);
 	}
 }
 
-#[allow(dead_code)]
-pub fn insw(port: u16, dst: &mut [u16], count: u32) {
-	for index in 0..count {
-		dst[index as usize] = inw(port) as u16;
+pub fn insw(port: u16, dst: *mut u16, count: u32) {
+	unsafe {
+		asm!(
+			"push edi",
+			"mov edi, {edi}",
+			"rep insw",
+			"pop edi",
+			in("ecx") count,
+			edi = in(reg) dst,
+			in("dx") port
+		);
 	}
 }
 
-#[allow(dead_code)]
-pub fn insl(port: u16, dst: &mut [u32], count: u32) {
-	for index in 0..count {
-		dst[index as usize] = inl(port);
+pub fn insl(port: u16, dst: *mut u32, count: u32) {
+	unsafe {
+		asm!(
+			"push edi",
+			"mov edi, {edi}",
+			"rep insd",
+			"pop edi",
+			in("ecx") count,
+			edi = in(reg) dst,
+			in("dx") port
+		);
 	}
 }

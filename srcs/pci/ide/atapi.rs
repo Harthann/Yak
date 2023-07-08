@@ -1,7 +1,7 @@
-use core::arch::asm;
-
 use super::ata::{ATACommand, ATAReg, ATAStatus};
 use super::{IDEType, CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
+
+use crate::io;
 
 static mut ATAPI_PACKET: [u8; 12] = [0xa8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
@@ -71,27 +71,15 @@ impl ATAPI {
 		}
 
 		// (VIII) Sending the packet data
-		asm!(
-			"push esi",
-			"mov esi, {esi}",
-			"rep outsw", // Send Packet Data
-			"pop esi",
-			in("ecx") 6,
-			in("edx") bus,
-			esi = in(reg) ATAPI_PACKET.as_ptr()
-		);
+		io::outsw(bus as u16, ATAPI_PACKET.align_to::<u16>().1.as_ptr(), 6);
 
 		// (IX) Receiving Data
 		let err: u8 = IDE::polling(channel as u8, 1);
 		if err != 0 {
 			return err;
 		}
-		asm!(
-			"rep insw",
-			in("ecx") 4,
-			in("edx") bus,
-			in("edi") edi
-		);
+		io::insw(bus as u16, edi as *mut _, 4);
+
 		// (X) Waiting for BSY & DRQ to clear
 		loop {
 			if (IDE::read(channel as u8, ATAReg::STATUS)
@@ -164,15 +152,7 @@ impl ATAPI {
 		}
 
 		// (VIII) Sending the packet data
-		asm!(
-			"push esi",
-			"mov esi, {esi}",
-			"rep outsw", // Send Packet Data
-			"pop esi",
-			in("ecx") 6,
-			in("edx") bus,
-			esi = in(reg) ATAPI_PACKET.as_ptr()
-		);
+		io::outsw(bus as u16, ATAPI_PACKET.align_to::<u16>().1.as_ptr(), 6);
 
 		// (IX) Receiving Data
 		for _ in 0..numsects {
@@ -181,12 +161,7 @@ impl ATAPI {
 			if err != 0 {
 				return err;
 			}
-			asm!(
-				"rep insw",
-				in("ecx") words,
-				in("edx") bus,
-				in("edi") edi
-			);
+			io::insw(bus as u16, edi as *mut _, words);
 			edi += words * 2;
 		}
 
@@ -267,15 +242,8 @@ impl ATAPI {
 			}
 
 			// (VI) Sending the packet data
-			asm!(
-				"push esi",
-				"mov esi, {esi}",
-				"rep outsw",
-				"pop esi",
-				in("ecx") 6,
-				in("edx") bus,
-				esi = in(reg) ATAPI_PACKET.as_ptr()
-			);
+			io::outsw(bus as u16, ATAPI_PACKET.align_to::<u16>().1.as_ptr(), 6);
+
 			IDE::wait_irq();
 			// Polling and get error code
 			err = IDE::polling(channel as u8, 1);

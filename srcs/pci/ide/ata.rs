@@ -1,6 +1,6 @@
-use core::arch::asm;
-
 use super::{CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
+
+use crate::io;
 
 #[allow(non_snake_case)]
 pub mod ATAStatus {
@@ -239,15 +239,7 @@ impl ATA {
 					if err != 0 {
 						return err;
 					}
-					asm!(
-						"push edi",
-						"mov edi, {edi}",
-						"rep insw", // Receive data
-						"pop edi",
-						in("ecx") words,
-						in("edx") bus,
-						edi = in(reg) edi,
-					);
+					io::insw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
 			} else {
@@ -255,15 +247,7 @@ impl ATA {
 				for _ in 0..numsects {
 					// Polling
 					IDE::polling(channel as u8, 0);
-					asm!(
-						"push esi",
-						"mov esi, {reg}",
-						"rep outsw", // Send data
-						"pop esi",
-						in("ecx") words,
-						in("edx") bus,
-						reg = in(reg) edi
-					);
+					io::outsw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
 				IDE::write(

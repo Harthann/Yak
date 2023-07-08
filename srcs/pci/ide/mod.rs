@@ -326,25 +326,25 @@ impl IDE {
 		if reg < 0x08 {
 			insl(
 				CHANNELS[channel as usize].base + reg as u16 - 0x00,
-				buffer,
+				buffer.as_mut_ptr(),
 				quads
 			);
 		} else if reg < 0x0c {
 			insl(
 				CHANNELS[channel as usize].base + reg as u16 - 0x06,
-				buffer,
+				buffer.as_mut_ptr(),
 				quads
 			);
 		} else if reg < 0x0e {
 			insl(
 				CHANNELS[channel as usize].ctrl + reg as u16 - 0x0a,
-				buffer,
+				buffer.as_mut_ptr(),
 				quads
 			);
 		} else if reg < 0x16 {
 			insl(
 				CHANNELS[channel as usize].bmide + reg as u16 - 0x0e,
-				buffer,
+				buffer.as_mut_ptr(),
 				quads
 			);
 		}
