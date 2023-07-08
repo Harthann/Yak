@@ -69,7 +69,7 @@ impl Task {
 			process.stack = MemoryZone::init_addr(
 				stack_addr - (crate::STACK_SIZE - 1),
 				TypeZone::Stack,
-				crate::STACK_SIZE as usize * 5,
+				crate::STACK_SIZE as usize,
 				PAGE_WRITABLE,
 				false
 			);

@@ -73,7 +73,7 @@ impl IDE {
 		bar2: u32,
 		bar3: u32,
 		bar4: u32
-	) {
+	) -> Result <(), u8> {
 		let mut ide_buf: [u8; 2048] = [0; 2048];
 
 		// 1- Detect I/O Ports which interface IDE Controller
@@ -204,14 +204,7 @@ impl IDE {
 						);
 					}
 				} else {
-					let mut buffer: [u32; 2] = [0; 2];
-					let err = ATAPI::capacity(i, 0, buffer.as_mut_ptr() as u32);
-					if err == 0 {
-						// (((Last LBA + 1) * Block size) / 1024) * 2
-						IDE_DEVICES[count].size = (((buffer[0].to_be() + 1)
-							* buffer[1].to_be()) / 1024)
-							* 2;
-					}
+					IDE_DEVICES[count].size = ATAPI::capacity(i, 0)?;
 				}
 
 				// (VIII) String indicates model of device
@@ -241,6 +234,8 @@ impl IDE {
 				);
 			}
 		}
+
+		Ok(())
 	}
 
 	unsafe fn wait_irq() {
@@ -357,7 +352,7 @@ impl IDE {
 		}
 	}
 
-	unsafe fn polling(channel: u8, advanced_check: u32) -> u8 {
+	unsafe fn polling(channel: u8, advanced_check: u32) -> Result<(), u8> {
 		// (I) Delay 400 nanosecond for BSY to be set
 		// Reading port wastes 100ns
 		for _ in 0..4 {
@@ -375,22 +370,22 @@ impl IDE {
 
 			// (III) Check for errors
 			if (state & ATAStatus::ERR) != 0 {
-				return 2;
+				return Err(2);
 			}
 
 			// (IV) Check if device fault
 			if (state & ATAStatus::DF) != 0 {
-				return 1;
+				return Err(1);
 			}
 
 			// (V) Check DRQ
 			// BSY = 0; DF = 0; Err = 0; So we should check for DRQ now
 			if (state & ATAStatus::DRQ) == 0 {
-				return 3;
+				return Err(3);
 			}
 		}
 		// No Error
-		0
+		Ok(())
 	}
 
 	unsafe fn print_error(drive: u32, mut err: u8) -> u8 {
@@ -471,43 +466,47 @@ impl IDE {
 		numsects: u8,
 		lba: u32,
 		edi: u32
-	) -> u8 {
-		let mut err: u8 = 0;
+	) -> Result<(), u8> {
 		// 1- Check if the drive presents
 		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
 			// Drive not found
-			err = 0x1;
+			return Err(0x1);
 		// 2- Check if inputs are valid
 		} else if (lba + numsects as u32 > IDE_DEVICES[drive as usize].size)
 			&& (IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16)
 		{
 			// Seeking to invalid position
-			err = 0x2;
+			return Err(0x2);
 		// 3- Read in PIO Mode through Polling & IRQs
 		} else {
 			if IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16 {
-				err = ATA::access(
+				match ATA::access(
 					ATADirection::Read as u8,
 					drive,
 					lba,
 					numsects,
 					edi
-				);
+				) {
+					Ok(_) => {},
+					Err(err) => return Err(IDE::print_error(drive as u32, err))
+				}
 			} else if IDE_DEVICES[drive as usize].r#type
 				== IDEType::ATAPI as u16
 			{
 				for i in 0..numsects {
-					err = ATAPI::read(
+					match ATAPI::read(
 						drive as u8,
 						lba + i as u32,
 						1,
 						edi + i as u32 * 2048
-					);
+					) {
+						Ok(_) => {},
+						Err(err) => return Err(IDE::print_error(drive as u32, err))
+					}
 				}
 			}
-			err = IDE::print_error(drive as u32, err);
 		}
-		err
+		Ok(())
 	}
 
 	/// Read sector from a drive
@@ -522,36 +521,37 @@ impl IDE {
 		numsects: u8,
 		lba: u32,
 		edi: u32
-	) -> u8 {
-		let mut err: u8 = 0;
+	) -> Result <(), u8> {
 		// 1- Check if the drive presents
 		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
 			// Drive not found
-			err = 0x1;
+			return Err(0x1);
 		// 2- Check if inputs are valid
 		} else if (lba + numsects as u32 > IDE_DEVICES[drive as usize].size)
 			&& (IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16)
 		{
-			err = 0x2;
+			return Err(0x2);
 		// 3- Read in PIO Mode through Polling & IRQs
 		} else {
 			if IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16 {
-				err = ATA::access(
+				match ATA::access(
 					ATADirection::Write as u8,
 					drive,
 					lba,
 					numsects,
 					edi
-				);
+				) {
+					Ok(_) => {},
+					Err(err) => return Err(IDE::print_error(drive as u32, err))
+				}
 			} else if IDE_DEVICES[drive as usize].r#type
 				== IDEType::ATAPI as u16
 			{
 				// Write-Protected
-				err = 0x4;
+				return Err(0x4);
 			}
-			err = IDE::print_error(drive as u32, err);
 		}
-		err
+		Ok(())
 	}
 }
 
@@ -566,8 +566,8 @@ mod test {
 		let to_write = vec!['B' as u8; 512];
 		let read_from = vec![0x0 as u8; 512];
 
-		unsafe { IDE::write_sectors(1, 1, 0x0, to_write.as_ptr() as u32) };
-		unsafe { IDE::read_sectors(1, 1, 0x0, read_from.as_ptr() as u32) };
+		let _ = unsafe { IDE::write_sectors(1, 1, 0x0, to_write.as_ptr() as u32) };
+		let _ = unsafe { IDE::read_sectors(1, 1, 0x0, read_from.as_ptr() as u32) };
 
 		assert_eq!(to_write, read_from);
 	}
@@ -577,8 +577,8 @@ mod test {
 		let to_write = vec!['A' as u8; 1024];
 		let read_from = vec![0x0 as u8; 1024];
 
-		unsafe { IDE::write_sectors(1, 2, 0x0, to_write.as_ptr() as u32) };
-		unsafe { IDE::read_sectors(1, 2, 0x0, read_from.as_ptr() as u32) };
+		let _ = unsafe { IDE::write_sectors(1, 2, 0x0, to_write.as_ptr() as u32) };
+		let _ = unsafe { IDE::read_sectors(1, 2, 0x0, read_from.as_ptr() as u32) };
 
 		assert_eq!(to_write, read_from);
 	}

@@ -129,7 +129,7 @@ use crate::gdt::{gdt_desc, GDTR};
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xff0fffff;
-const STACK_SIZE: u32 = 0x1000;
+const STACK_SIZE: u32 = 0x1000 * 4;
 
 // Kernel initialisation
 #[no_mangle]
@@ -157,7 +157,7 @@ pub extern "C" fn kinit() {
 		KTRACKER = Tracker::new();
 	}
 
-	unsafe { IDE::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000) };
+	unsafe { IDE::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000).expect("Error while reading disks") };
 
 	setup_pic8259();
 

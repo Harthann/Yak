@@ -104,7 +104,7 @@ impl ATA {
 		lba: u32,
 		numsects: u8,
 		mut edi: u32
-	) -> u8 {
+	) -> Result<(), u8> {
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
@@ -235,10 +235,7 @@ impl ATA {
 				// PIO Read
 				for _ in 0..numsects {
 					// Polling, set error and exit if there is
-					let err: u8 = IDE::polling(channel as u8, 1);
-					if err != 0 {
-						return err;
-					}
+					IDE::polling(channel as u8, 1)?;
 					io::insw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
@@ -246,7 +243,7 @@ impl ATA {
 				// PIO Write
 				for _ in 0..numsects {
 					// Polling
-					IDE::polling(channel as u8, 0);
+					IDE::polling(channel as u8, 0)?;
 					io::outsw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
@@ -260,9 +257,9 @@ impl ATA {
 					][lba_mode as usize] as u8
 				);
 				// Polling
-				IDE::polling(channel as u8, 0);
+				IDE::polling(channel as u8, 0)?;
 			}
 		}
-		0
+		Ok(())
 	}
 }

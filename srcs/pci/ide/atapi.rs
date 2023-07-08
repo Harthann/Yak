@@ -3,8 +3,6 @@ use super::{IDEType, CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
 
 use crate::io;
 
-static mut ATAPI_PACKET: [u8; 12] = [0xa8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
-
 enum ATAPICommand {
 	Capacity = 0x25,
 	Read     = 0xa8,
@@ -14,10 +12,11 @@ enum ATAPICommand {
 pub struct ATAPI {}
 
 impl ATAPI {
-	pub unsafe fn capacity(drive: u8, lba: u32, edi: u32) -> u8 {
+	pub unsafe fn capacity(drive: u8, lba: u32) -> Result<u32, u8> {
 		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
 		let bus: u32 = CHANNELS[channel as usize].base as u32;
+		let mut buffer: [u32; 2] = [0; 2];
 
 		// Enable IRQs
 		IDE_IRQ_INVOKED = 0;
@@ -29,18 +28,20 @@ impl ATAPI {
 		);
 
 		// (I) Setup SCSI Packet
-		ATAPI_PACKET[0] = ATAPICommand::Capacity as u8;
-		ATAPI_PACKET[1] = 0x0;
-		ATAPI_PACKET[2] = ((lba >> 24) & 0xff) as u8;
-		ATAPI_PACKET[3] = ((lba >> 16) & 0xff) as u8;
-		ATAPI_PACKET[4] = ((lba >> 8) & 0xff) as u8;
-		ATAPI_PACKET[5] = ((lba >> 0) & 0xff) as u8;
-		ATAPI_PACKET[6] = 0x0;
-		ATAPI_PACKET[7] = 0x0;
-		ATAPI_PACKET[8] = 0x0;
-		ATAPI_PACKET[9] = 0x0;
-		ATAPI_PACKET[10] = 0x0;
-		ATAPI_PACKET[11] = 0x0;
+		let packet: [u8; 12] = [
+			ATAPICommand::Capacity as u8,
+			0x0,
+			((lba >> 24) & 0xff) as u8,
+			((lba >> 16) & 0xff) as u8,
+			((lba >> 8) & 0xff) as u8,
+			((lba >> 0) & 0xff) as u8,
+			0x0,
+			0x0,
+			0x0,
+			0x0,
+			0x0,
+			0x0
+		];
 
 		// (II) Select the drive
 		IDE::write(channel as u8, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
@@ -65,20 +66,14 @@ impl ATAPI {
 		IDE::write(channel as u8, ATAReg::COMMAND, ATACommand::Packet as u8);
 
 		// (VII) Waiting for the driver to finish or return an error code
-		let err: u8 = IDE::polling(channel as u8, 1);
-		if err != 0 {
-			return err;
-		}
+		IDE::polling(channel as u8, 1)?;
 
 		// (VIII) Sending the packet data
-		io::outsw(bus as u16, ATAPI_PACKET.align_to::<u16>().1.as_ptr(), 6);
+		io::outsw(bus as u16, packet.align_to::<u16>().1.as_ptr(), 6);
 
 		// (IX) Receiving Data
-		let err: u8 = IDE::polling(channel as u8, 1);
-		if err != 0 {
-			return err;
-		}
-		io::insw(bus as u16, edi as *mut _, 4);
+		IDE::polling(channel as u8, 1)?;
+		io::insw(bus as u16, buffer.align_to_mut::<u16>().1.as_mut_ptr(), 4);
 
 		// (X) Waiting for BSY & DRQ to clear
 		loop {
@@ -90,10 +85,11 @@ impl ATAPI {
 			}
 		}
 
-		0
+		// (((Last LBA + 1) * Block size) / 1024) * 2
+		Ok((((buffer[0].to_be() + 1) * buffer[1].to_be()) / 1024) * 2)
 	}
 
-	pub unsafe fn read(drive: u8, lba: u32, numsects: u8, mut edi: u32) -> u8 {
+	pub unsafe fn read(drive: u8, lba: u32, numsects: u8, mut edi: u32) -> Result<(), u8> {
 		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
 		let bus: u32 = CHANNELS[channel as usize].base as u32;
@@ -111,18 +107,20 @@ impl ATAPI {
 		);
 
 		// (I) Setup SCSI Packet
-		ATAPI_PACKET[0] = ATAPICommand::Read as u8;
-		ATAPI_PACKET[1] = 0x0;
-		ATAPI_PACKET[2] = ((lba >> 24) & 0xff) as u8;
-		ATAPI_PACKET[3] = ((lba >> 16) & 0xff) as u8;
-		ATAPI_PACKET[4] = ((lba >> 8) & 0xff) as u8;
-		ATAPI_PACKET[5] = ((lba >> 0) & 0xff) as u8;
-		ATAPI_PACKET[6] = 0x0;
-		ATAPI_PACKET[7] = 0x0;
-		ATAPI_PACKET[8] = 0x0;
-		ATAPI_PACKET[9] = numsects;
-		ATAPI_PACKET[10] = 0x0;
-		ATAPI_PACKET[11] = 0x0;
+		let packet: [u8; 12] = [
+			ATAPICommand::Read as u8,
+			0x0,
+			((lba >> 24) & 0xff) as u8,
+			((lba >> 16) & 0xff) as u8,
+			((lba >> 8) & 0xff) as u8,
+			((lba >> 0) & 0xff) as u8,
+			0x0,
+			0x0,
+			0x0,
+			numsects,
+			0x0,
+			0x0
+		];
 
 		// (II) Select the drive
 		IDE::write(channel as u8, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
@@ -146,21 +144,15 @@ impl ATAPI {
 		IDE::write(channel as u8, ATAReg::COMMAND, ATACommand::Packet as u8);
 
 		// (VII) Waiting for the driver to finish or return an error code
-		let err: u8 = IDE::polling(channel as u8, 1);
-		if err != 0 {
-			return err;
-		}
+		IDE::polling(channel as u8, 1)?;
 
 		// (VIII) Sending the packet data
-		io::outsw(bus as u16, ATAPI_PACKET.align_to::<u16>().1.as_ptr(), 6);
+		io::outsw(bus as u16, packet.align_to::<u16>().1.as_ptr(), 6);
 
 		// (IX) Receiving Data
 		for _ in 0..numsects {
 			IDE::wait_irq();
-			let err: u8 = IDE::polling(channel as u8, 1);
-			if err != 0 {
-				return err;
-			}
+			IDE::polling(channel as u8, 1)?;
 			io::insw(bus as u16, edi as *mut _, words);
 			edi += words * 2;
 		}
@@ -178,21 +170,20 @@ impl ATAPI {
 			}
 		}
 
-		0
+		Ok(())
 	}
 
-	pub unsafe fn eject(drive: u8) -> u8 {
+	pub unsafe fn eject(drive: u8) -> Result<(), u8> {
 		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
 		let bus: u32 = CHANNELS[channel as usize].base as u32;
-		let mut err: u8;
 
 		// 1- Check if the drive presents
 		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
-			err = 0x1;
+			return Err(0x1);
 		// 2- Check if drive isn't ATAPI
 		} else if IDE_DEVICES[drive as usize].r#type == IDEType::ATA as u16 {
-			err = 20;
+			return Err(20);
 		// 3- Eject ATAPI Driver
 		} else {
 			// Enable IRQs
@@ -205,18 +196,20 @@ impl ATAPI {
 			);
 
 			// (I) Setup SCSI Packet
-			ATAPI_PACKET[0] = ATAPICommand::Eject as u8;
-			ATAPI_PACKET[1] = 0x0;
-			ATAPI_PACKET[2] = 0x0;
-			ATAPI_PACKET[3] = 0x2;
-			ATAPI_PACKET[4] = 0x0;
-			ATAPI_PACKET[5] = 0x0;
-			ATAPI_PACKET[6] = 0x0;
-			ATAPI_PACKET[7] = 0x0;
-			ATAPI_PACKET[8] = 0x0;
-			ATAPI_PACKET[9] = 0x0;
-			ATAPI_PACKET[10] = 0x0;
-			ATAPI_PACKET[11] = 0x0;
+			let packet: [u8; 12] = [
+				ATAPICommand::Eject as u8,
+				0x0,
+				0x0,
+				0x2,
+				0x0,
+				0x0,
+				0x0,
+				0x0,
+				0x0,
+				0x0,
+				0x0,
+				0x0
+			];
 
 			// (II) Select the Drive
 			IDE::write(channel as u8, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
@@ -236,23 +229,18 @@ impl ATAPI {
 
 			// (V) Waiting for the driver to finish or invoke an error
 			// Polling and stop if error
-			err = IDE::polling(channel as u8, 1);
-			if err != 0 {
-				return err;
-			}
+			IDE::polling(channel as u8, 1)?;
 
 			// (VI) Sending the packet data
-			io::outsw(bus as u16, ATAPI_PACKET.align_to::<u16>().1.as_ptr(), 6);
+			io::outsw(bus as u16, packet.align_to::<u16>().1.as_ptr(), 6);
 
 			IDE::wait_irq();
 			// Polling and get error code
-			err = IDE::polling(channel as u8, 1);
-			if err == 3 {
-				// DRQ is not needed here
-				err = 0;
+			match IDE::polling(channel as u8, 1) {
+				Err(err) if err != 3 => return Err(err),
+				_ => {}
 			}
-			err = IDE::print_error(drive as u32, err);
 		}
-		err
+		Ok(())
 	}
 }
