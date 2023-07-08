@@ -2,7 +2,8 @@
 // mount_no indicate the number of mount since last fsck
 // mount_no_max indicate the number of mount between each fsck
 /// Superblock always take 1024 bytes with/without Extended block
-struct BaseSuperblock {
+#[derive(Default)]
+pub struct BaseSuperblock {
     ///Total number of inodes in file system
     inode_tnum:       u32,
     ///Total number of blocks in file system
@@ -54,6 +55,58 @@ struct BaseSuperblock {
     ///Group ID that can use reserved blocks 
     gid:              u16,
     extension: Option<ExtendedSuperblock>
+}
+
+use core::mem::transmute;
+impl From<&[u8]> for BaseSuperblock {
+    fn from(buffer: &[u8]) -> Self {
+        if buffer.len() != 83 {
+            panic!("Wrong size while converting slice to Superblock");
+        }
+        // Safe beceause len is forced to be 83
+        unsafe {
+        Self {
+            inode_tnum:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(0)),
+            blocks_tnum:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(4)),
+            rblocks_num:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(8)),
+            blocks_unalloc:   *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(12)),
+            inode_unalloc:    *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(16)),
+            superblock_block: *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(20)),
+            block_size:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(24)),
+            frag_size:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(28)),
+            bgroup_bno :      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(32)),
+            bgroup_fno:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(36)),
+            bgroup_ino:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(40)),
+            last_mt:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(44)),
+            last_wt:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(48)),
+            mount_no:         *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(52)),
+            mount_no_max:     *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(54)),
+            ext2_sig:         *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(56)),
+            fs_state:         *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(58)),
+            err_handle:       *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(60)),
+            minor:            *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(62)),
+            last_fsck:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(64)),
+            fsck_interval:    *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(68)),
+            osid:             *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(72)),
+            major:            *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(76)),
+            uid:              *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(80)),
+            gid:              *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(82)),
+            extension: None
+        }
+        }
+    }
+}
+
+use core::fmt;
+impl fmt::Display for BaseSuperblock {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "Superblock: {{
+Sig: {:#x}
+Version: {}.{}
+Block Size: {:#x}
+}}", self.ext2_sig, self.major, self.minor, 1024 << self.block_size)
+    }
 }
 
 /// Present if Major >= 1
