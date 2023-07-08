@@ -181,23 +181,37 @@ impl IDE {
 					transmute(&mut IDE_DEVICES[count].command_sets),
 					size_of::<u32>()
 				);
-				// (VII) Get Size
-				if (IDE_DEVICES[count].command_sets & (1 << 26)) != 0 {
-					// Device uses 48-Bit Addressing
-					copy(
-						ide_buf
-							.as_ptr()
-							.offset(ATAIdentify::MAX_LBA_EXT as isize),
-						transmute(&mut IDE_DEVICES[count].size),
-						size_of::<u32>()
-					);
+
+				if IDE_DEVICES[count].r#type == IDEType::ATA as u16 {
+					// (VII) Get Size
+					if (IDE_DEVICES[count].command_sets & (1 << 26)) != 0 {
+						// Device uses 48-Bit Addressing
+						copy(
+							ide_buf
+								.as_ptr()
+								.offset(ATAIdentify::MAX_LBA_EXT as isize),
+							transmute(&mut IDE_DEVICES[count].size),
+							size_of::<u32>()
+						);
+					} else {
+						// Device uses CHS or 28-Bit Addressing
+						copy(
+							ide_buf
+								.as_ptr()
+								.offset(ATAIdentify::MAX_LBA as isize),
+							transmute(&mut IDE_DEVICES[count].size),
+							size_of::<u32>()
+						);
+					}
 				} else {
-					// Device uses CHS or 28-Bit Addressing
-					copy(
-						ide_buf.as_ptr().offset(ATAIdentify::MAX_LBA as isize),
-						transmute(&mut IDE_DEVICES[count].size),
-						size_of::<u32>()
-					);
+					let mut buffer: [u32; 2] = [0; 2];
+					let err = ATAPI::capacity(i, 0, buffer.as_mut_ptr() as u32);
+					if err == 0 {
+						// (((Last LBA + 1) * Block size) / 1024) * 2
+						IDE_DEVICES[count].size = (((buffer[0].to_be() + 1)
+							* buffer[1].to_be()) / 1024)
+							* 2;
+					}
 				}
 
 				// (VIII) String indicates model of device
