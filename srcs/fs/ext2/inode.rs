@@ -74,8 +74,57 @@ pub struct Inode {
     /// Block address of fragment
     block_addr:   u32,
     /// Operating System Specific Value #2
-    op_specific2: [u8; 12]
+    os_specific2: [u8; 12]
 }
+
+use core::mem::transmute;
+impl From<&[u8]> for Inode {
+    fn from(buffer: &[u8]) -> Self {
+        if buffer.len() != 127 {
+            panic!("Wrong size while converting slice to Superblock");
+        }
+        // Safe beceause len is forced to be 83
+        unsafe {
+        let mut inode = Self {
+            tperm:        *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(0)),
+            uid:          *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(2)),
+            size_lh:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(4)),
+            lat:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(8)),
+            creatt:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(12)),
+            lmt:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(16)),
+            delt:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(20)),
+            gid:          *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(24)),
+            cound_hl:     *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(26)),
+            count_ds:     *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(28)),
+            flags:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(32)),
+            os_specific1: *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(36)),
+            dbp0:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(40)),
+            dbp1:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(44)),
+            dbp2:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(48)),
+            dbp3:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(52)),
+            dbp4:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(56)),
+            dbp5:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(60)),
+            dbp6:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(64)),
+            dbp7:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(68)),
+            dbp8:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(72)),
+            dbp9:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(76)),
+            dbp10:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(80)),
+            dbp11:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(84)),
+            sibp:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(88)),
+            dibp:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(92)),
+            tibp:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(96)),
+            gen_no:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(100)),
+            facl:         *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(104)),
+            size_uh:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(108)),
+            block_addr:   *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(112)),
+            os_specific2: [0; 12]
+        };
+        inode.os_specific2[0..12].copy_from_slice(&buffer[113..127]);
+        inode
+        }
+    }
+}
+
 
 // Inode type occupy bit [12-15]
 const ITYPE_FIFO:    u16 = 0x1 << 12;

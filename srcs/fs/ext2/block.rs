@@ -51,48 +51,70 @@ pub struct BaseSuperblock {
     ///Major portion of version (combine with Minor portion above to construct full version field)
     major:            u32,
     ///User ID that can use reserved blocks
-    uid:              u16,
+    pub uid:              u16,
     ///Group ID that can use reserved blocks 
-    gid:              u16,
+    pub gid:              u16,
     extension: Option<ExtendedSuperblock>
+}
+
+impl BaseSuperblock {
+    pub fn sig(&self) -> u16 {
+        self.ext2_sig
+    }
+    pub fn version(&self) -> (u32, u16) {
+        (self.major, self.minor)
+    }
+
+    pub fn bsize(&self) -> u32 {
+        1024 << self.block_size
+    }
+    pub fn block_per_grp(&self) -> u32 {
+        self.bgroup_bno
+    }
+    pub fn inode_per_grp(&self) -> u32 {
+        self.bgroup_ino
+    }
+
+    pub fn set_extension(&mut self, extension: ExtendedSuperblock) {
+        self.extension = Some(extension);
+    }
+
 }
 
 use core::mem::transmute;
 impl From<&[u8]> for BaseSuperblock {
     fn from(buffer: &[u8]) -> Self {
-        if buffer.len() != 83 {
+        if buffer.len() != 84 {
             panic!("Wrong size while converting slice to Superblock");
         }
-        // Safe beceause len is forced to be 83
-        unsafe {
+        // Safe beceause len is forced to be 84
         Self {
-            inode_tnum:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(0)),
-            blocks_tnum:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(4)),
-            rblocks_num:      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(8)),
-            blocks_unalloc:   *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(12)),
-            inode_unalloc:    *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(16)),
-            superblock_block: *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(20)),
-            block_size:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(24)),
-            frag_size:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(28)),
-            bgroup_bno :      *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(32)),
-            bgroup_fno:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(36)),
-            bgroup_ino:       *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(40)),
-            last_mt:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(44)),
-            last_wt:          *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(48)),
-            mount_no:         *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(52)),
-            mount_no_max:     *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(54)),
-            ext2_sig:         *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(56)),
-            fs_state:         *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(58)),
-            err_handle:       *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(60)),
-            minor:            *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(62)),
-            last_fsck:        *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(64)),
-            fsck_interval:    *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(68)),
-            osid:             *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(72)),
-            major:            *transmute::<*const u8, *const u32>(buffer.as_ptr().offset(76)),
-            uid:              *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(80)),
-            gid:              *transmute::<*const u8, *const u16>(buffer.as_ptr().offset(82)),
+            inode_tnum:       u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
+            blocks_tnum:      u32::from_le_bytes(buffer[4..8].try_into().unwrap()),
+            rblocks_num:      u32::from_le_bytes(buffer[8..12].try_into().unwrap()),
+            blocks_unalloc:   u32::from_le_bytes(buffer[12..16].try_into().unwrap()),
+            inode_unalloc:    u32::from_le_bytes(buffer[16..20].try_into().unwrap()),
+            superblock_block: u32::from_le_bytes(buffer[20..24].try_into().unwrap()),
+            block_size:       u32::from_le_bytes(buffer[24..28].try_into().unwrap()),
+            frag_size:        u32::from_le_bytes(buffer[28..32].try_into().unwrap()),
+            bgroup_bno :      u32::from_le_bytes(buffer[32..36].try_into().unwrap()),
+            bgroup_fno:       u32::from_le_bytes(buffer[36..40].try_into().unwrap()),
+            bgroup_ino:       u32::from_le_bytes(buffer[40..44].try_into().unwrap()),
+            last_mt:          u32::from_le_bytes(buffer[44..48].try_into().unwrap()),
+            last_wt:          u32::from_le_bytes(buffer[48..52].try_into().unwrap()),
+            mount_no:         u16::from_le_bytes(buffer[52..54].try_into().unwrap()),
+            mount_no_max:     u16::from_le_bytes(buffer[54..56].try_into().unwrap()),
+            ext2_sig:         u16::from_le_bytes(buffer[56..58].try_into().unwrap()),
+            fs_state:         u16::from_le_bytes(buffer[58..60].try_into().unwrap()),
+            err_handle:       u16::from_le_bytes(buffer[60..62].try_into().unwrap()),
+            minor:            u16::from_le_bytes(buffer[62..64].try_into().unwrap()),
+            last_fsck:        u32::from_le_bytes(buffer[64..68].try_into().unwrap()),
+            fsck_interval:    u32::from_le_bytes(buffer[68..72].try_into().unwrap()),
+            osid:             u32::from_le_bytes(buffer[72..76].try_into().unwrap()),
+            major:            u32::from_le_bytes(buffer[76..80].try_into().unwrap()),
+            uid:              u16::from_le_bytes(buffer[80..82].try_into().unwrap()),
+            gid:              u16::from_le_bytes(buffer[82..84].try_into().unwrap()),
             extension: None
-        }
         }
     }
 }
@@ -124,7 +146,7 @@ const FSCREAT_OTHER: u16 = 4;
 
 /// Present if Major >= 1
 /// Bytes from 236 to 1023 aren't used
-struct ExtendedSuperblock {
+pub struct ExtendedSuperblock {
  	///First non-reserved inode in file system. (In versions < 1.0, this is fixed as 11)
     first_inode: u32,
  	///Size of each inode structure in bytes. (In versions < 1.0, this is fixed as 128)
@@ -159,6 +181,39 @@ struct ExtendedSuperblock {
     journ_dev: u32,
  	///Head of orphan inode list
     orphan_inode_lst: u32
+}
+
+impl From<&[u8]> for ExtendedSuperblock {
+    fn from(buffer: &[u8]) -> Self {
+        if buffer.len() != 152 {
+            panic!("Wrong size for Extended Super block parsing");
+        }
+        let mut exblock = Self {
+            first_inode:           u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
+            inode_size:            u16::from_le_bytes(buffer[4..6].try_into().unwrap()),
+            bgroup_superblock:     u16::from_le_bytes(buffer[6..8].try_into().unwrap()),
+            opt_features:          u32::from_le_bytes(buffer[8..12].try_into().unwrap()),
+            req_features:          u32::from_le_bytes(buffer[12..16].try_into().unwrap()),
+            ro_features:           u32::from_le_bytes(buffer[16..20].try_into().unwrap()),
+            fsid:                  [0; 16],
+            vol_name:              [0; 16],
+            last_path:             [0; 64],
+            compr:                 u32::from_le_bytes(buffer[116..120].try_into().unwrap()),
+            prealloc_blocks_files: buffer[120],
+            prealloc_block_dir:    buffer[121],
+            unused:                0x0,
+            journ_id:              [0; 16],
+            journ_inode:           u32::from_le_bytes(buffer[140..144].try_into().unwrap()),
+            journ_dev:             u32::from_le_bytes(buffer[144..148].try_into().unwrap()),
+            orphan_inode_lst:      u32::from_le_bytes(buffer[148..152].try_into().unwrap())
+        };
+        exblock.fsid[0..16].copy_from_slice(&buffer[20..36]);
+        exblock.vol_name[0..16].copy_from_slice(&buffer[36..52]);
+        exblock.last_path[0..64].copy_from_slice(&buffer[52..116]);
+        exblock.journ_id[0..16].copy_from_slice(&buffer[124..140]);
+
+        exblock
+    }
 }
 
 const OPTFEAT_PREALLOC:   u32 = 0x0001;
