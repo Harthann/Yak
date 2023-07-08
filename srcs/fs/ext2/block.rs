@@ -109,6 +109,19 @@ Block Size: {:#x}
     }
 }
 
+const FSSTATE_CLEAN: u16 = 1;
+const FSSTATE_ERROR: u16 = 2;
+
+const FSERROR_IGN:  u16 = 1;
+const FSERROR_MRO:  u16 = 2;
+const FSERROR_KPAN: u16 = 3;
+
+const FSCREAT_LINUX: u16 = 0;
+const FSCREAT_GNU:   u16 = 1;
+const FSCREAT_MASIX: u16 = 2;
+const FSCREAT_FBSD:  u16 = 3;
+const FSCREAT_OTHER: u16 = 4;
+
 /// Present if Major >= 1
 /// Bytes from 236 to 1023 aren't used
 struct ExtendedSuperblock {
@@ -123,7 +136,7 @@ struct ExtendedSuperblock {
  	///Required features present (features that are required to be supported to read or write. see below)
     req_features: u32,
  	///Features that if not supported, the volume must be mounted read-only see below)
-    w_features: u32,
+    ro_features: u32,
  	///File system ID (what is output by blkid)
     fsid: [u8; 16],
  	///Volume name (C-style string: characters terminated by a 0 byte)
@@ -147,5 +160,24 @@ struct ExtendedSuperblock {
  	///Head of orphan inode list
     orphan_inode_lst: u32
 }
+
+const OPTFEAT_PREALLOC:   u32 = 0x0001;
+const OPTFEAT_AFSSERV:    u32 = 0x0002;
+const OPTFEAT_JOURN:      u32 = 0x0004;
+const OPTFEAT_INODEEXT:   u32 = 0x0008;
+const OPTFEAT_RESIZE:     u32 = 0x0010;
+const OPTFEAT_HASH_INDEX: u32 = 0x0020;
+
+const REQFEAT_COMPR:        u32 = 0x0001;
+const REQFEAT_DE_TYPEFIELD: u32 = 0x0002;
+const REQFEAT_REPLAY_JOURN: u32 = 0x0004;
+const REQFEAT_JOURN_DEV:    u32 = 0x0008;
+
+const ROFEAT_SPARS:      u32 = 0x0001;
+const ROFEAT_64B:        u32 = 0x0002;
+const ROFEAT_DIR_BTRE:   u32 = 0x0004;
+
+
+
 
 
