@@ -37,7 +37,6 @@ struct IDEChannelRegisters {
 static mut CHANNELS: [IDEChannelRegisters; 2] =
 	[IDEChannelRegisters { base: 0, ctrl: 0, bmide: 0, n_ien: 0 }; 2];
 
-static mut IDE_BUF: [u8; 2048] = [0; 2048];
 static mut IDE_IRQ_INVOKED: u8 = 0;
 
 #[derive(Clone, Copy)]
@@ -75,6 +74,8 @@ impl IDE {
 		bar3: u32,
 		bar4: u32
 	) {
+		let mut ide_buf: [u8; 2048] = [0; 2048];
+
 		// 1- Detect I/O Ports which interface IDE Controller
 		CHANNELS[ATAChannel::Primary as usize].base =
 			(bar0 & 0xfffffffc) as u16;
@@ -156,7 +157,7 @@ impl IDE {
 				IDE::read_buffer(
 					i,
 					ATAReg::DATA,
-					IDE_BUF.align_to_mut::<u32>().1,
+					ide_buf.align_to_mut::<u32>().1,
 					128
 				);
 
@@ -166,17 +167,17 @@ impl IDE {
 				IDE_DEVICES[count].channel = i;
 				IDE_DEVICES[count].drive = j;
 				copy(
-					IDE_BUF.as_ptr().offset(ATAIdentify::DEVICETYPE as isize),
+					ide_buf.as_ptr().offset(ATAIdentify::DEVICETYPE as isize),
 					transmute(&mut IDE_DEVICES[count].signature),
 					size_of::<u16>()
 				);
 				copy(
-					IDE_BUF.as_ptr().offset(ATAIdentify::CAPABILITIES as isize),
+					ide_buf.as_ptr().offset(ATAIdentify::CAPABILITIES as isize),
 					transmute(&mut IDE_DEVICES[count].capabilities),
 					size_of::<u16>()
 				);
 				copy(
-					IDE_BUF.as_ptr().offset(ATAIdentify::COMMANDSETS as isize),
+					ide_buf.as_ptr().offset(ATAIdentify::COMMANDSETS as isize),
 					transmute(&mut IDE_DEVICES[count].command_sets),
 					size_of::<u32>()
 				);
@@ -184,7 +185,7 @@ impl IDE {
 				if (IDE_DEVICES[count].command_sets & (1 << 26)) != 0 {
 					// Device uses 48-Bit Addressing
 					copy(
-						IDE_BUF
+						ide_buf
 							.as_ptr()
 							.offset(ATAIdentify::MAX_LBA_EXT as isize),
 						transmute(&mut IDE_DEVICES[count].size),
@@ -193,7 +194,7 @@ impl IDE {
 				} else {
 					// Device uses CHS or 28-Bit Addressing
 					copy(
-						IDE_BUF.as_ptr().offset(ATAIdentify::MAX_LBA as isize),
+						ide_buf.as_ptr().offset(ATAIdentify::MAX_LBA as isize),
 						transmute(&mut IDE_DEVICES[count].size),
 						size_of::<u32>()
 					);
@@ -202,9 +203,9 @@ impl IDE {
 				// (VIII) String indicates model of device
 				for k in (0..40).step_by(2) {
 					IDE_DEVICES[count].model[k] =
-						IDE_BUF[ATAIdentify::MODEL as usize + k + 1];
+						ide_buf[ATAIdentify::MODEL as usize + k + 1];
 					IDE_DEVICES[count].model[k + 1] =
-						IDE_BUF[ATAIdentify::MODEL as usize + k];
+						ide_buf[ATAIdentify::MODEL as usize + k];
 				}
 				IDE_DEVICES[count].model[40] = 0;
 
