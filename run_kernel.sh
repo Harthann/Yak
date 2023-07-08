@@ -12,7 +12,7 @@ cp -f $1 iso/boot/$2
 # Set timeout value to 0 for test or 5 for normal boot
 [ "$3" == "test" ] && timeout=0 || timeout=5
 
-[ "$3" == "test" ] && qemu-img create hard-drive 2M || qemu-img create hard-drive 0M
+[ "$3" == "test" ] && qemu-img create hard-drive 2M || ./create-img.bsh hard-drive
 
 # Changing grub timeout (sed command is different between Mac and Linux)
 [ "$(uname)" == "Darwin" ] && sed -i '' 's/timeout=.*/timeout='$timeout'/' iso/boot/grub/grub.cfg \
@@ -42,7 +42,7 @@ $4
 -drive id=disk,file=$2,format=raw,if=none
 -device ide-hd,drive=disk,bus=ide.0
 
--drive id=disk1,file=img.ext2,format=raw,if=none
+-drive id=disk1,file=hard-drive,format=raw,if=none
 -device ide-hd,drive=disk1,bus=ide.1
 
 -serial chardev:char0

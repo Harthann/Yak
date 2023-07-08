@@ -2,7 +2,7 @@
 set -eu
 
 root_dir=dumbfs
-img_file=img.ext2
+img_file=$1
 
 # Create a 32M ext2 without sudo.
 # If 32M is not enough for the contents of the directory,
