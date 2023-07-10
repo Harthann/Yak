@@ -5,9 +5,9 @@
 #[derive(Default)]
 pub struct BaseSuperblock {
     ///Total number of inodes in file system
-    inode_tnum:       u32,
+    inode_count:       u32,
     ///Total number of blocks in file system
-    blocks_tnum:      u32,
+    blocks_count:      u32,
     ///Number of blocks reserved for superuser (see offset 80)
     rblocks_num:      u32,
     ///Total number of unallocated blocks
@@ -74,6 +74,15 @@ impl BaseSuperblock {
     pub fn inode_per_grp(&self) -> u32 {
         self.bgroup_ino
     }
+    pub fn inode_count(&self) -> u32 {
+        self.inode_count
+    }
+    pub fn block_count(&self) -> u32 {
+        self.blocks_count
+    }
+    pub fn block_grp_count(&self) -> u32 {
+        (self.blocks_count / self.bgroup_bno) + (self.blocks_count % self.bgroup_bno != 0) as u32
+    }
 
     pub fn set_extension(&mut self, extension: ExtendedSuperblock) {
         self.extension = Some(extension);
@@ -89,8 +98,8 @@ impl From<&[u8]> for BaseSuperblock {
         }
         // Safe beceause len is forced to be 84
         Self {
-            inode_tnum:       u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
-            blocks_tnum:      u32::from_le_bytes(buffer[4..8].try_into().unwrap()),
+            inode_count:      u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
+            blocks_count:     u32::from_le_bytes(buffer[4..8].try_into().unwrap()),
             rblocks_num:      u32::from_le_bytes(buffer[8..12].try_into().unwrap()),
             blocks_unalloc:   u32::from_le_bytes(buffer[12..16].try_into().unwrap()),
             inode_unalloc:    u32::from_le_bytes(buffer[16..20].try_into().unwrap()),

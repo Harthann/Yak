@@ -10,6 +10,7 @@
 /// All inodes reside in inode tables that belong to block groups.
 /// Therefore, looking up an inode is simply a matter of determining which
 /// block group it belongs to and indexing that block group's inode table.
+#[derive(Debug)]
 pub struct Inode {
     /// Type and Permissions (see below)
     tperm:        u16,
@@ -36,7 +37,7 @@ pub struct Inode {
     /// Operating System Specific value #1
     os_specific1: u32,
     /// Direct Block Pointer 0
-    dbp0:         u32,
+    pub dbp0:         u32,
     /// Direct Block Pointer 1
     dbp1:         u32,
     /// Direct Block Pointer 2
@@ -158,4 +159,29 @@ const IFLAG_NOUPDATE:   u32 = 0x00000080;
 const IFLAG_HASHINDEX:  u32 = 0x00010000;
 const IFLAG_ASDIR:      u32 = 0x00020000;
 const IFLAG_JOURN:      u32 = 0x00040000;
+
+
+pub struct Dentry {
+    inode: u32,
+    pub dentry_size: u16,
+    name_length: u8,
+    r#type: u8,
+    pub name: crate::string::String
+}
+
+use crate::alloc::string::ToString;
+impl From<&[u8]> for Dentry {
+    fn from(buffer: &[u8]) -> Self {
+        let mut dentry = Self {
+            inode: u32::from_le_bytes(buffer[0..4].try_into().unwrap()),
+            dentry_size: u16::from_le_bytes(buffer[4..6].try_into().unwrap()),
+            name_length: u8::from_le_bytes(buffer[6..7].try_into().unwrap()),
+            r#type: u8::from_le_bytes(buffer[7..8].try_into().unwrap()),
+            name: crate::string::String::new()
+
+        };
+        dentry.name = core::str::from_utf8(&buffer[8..8+dentry.name_length as usize]).expect("Error").to_string();
+        dentry
+    }
+}
 
