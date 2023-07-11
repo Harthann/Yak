@@ -68,6 +68,15 @@ impl BaseSuperblock {
     pub fn bsize(&self) -> u32 {
         1024 << self.block_size
     }
+    pub fn inode_size(&self) -> u16 {
+        if self.major < 1 {
+            return 128;
+        }
+        match &self.extension {
+            Some(ext) => ext.inode_size,
+            _ => panic!("Superblock extension not set with major >= 1")
+        }
+    }
     pub fn block_per_grp(&self) -> u32 {
         self.bgroup_bno
     }
@@ -131,12 +140,16 @@ impl From<&[u8]> for BaseSuperblock {
 use core::fmt;
 impl fmt::Display for BaseSuperblock {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let lwt = crate::time::ctime(self.last_wt);
+        let lct = crate::time::ctime(self.last_fsck);
         write!(f,
                "Superblock: {{
 Sig: {:#x}
 Version: {}.{}
 Block Size: {:#x}
-}}", self.ext2_sig, self.major, self.minor, 1024 << self.block_size)
+Last write time: {lwt},
+Last check time: {lct},
+}}", self.ext2_sig, self.major, self.minor, 1024 << self.block_size,)
     }
 }
 

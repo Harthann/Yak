@@ -81,7 +81,7 @@ pub struct Inode {
 use core::mem::transmute;
 impl From<&[u8]> for Inode {
     fn from(buffer: &[u8]) -> Self {
-        if buffer.len() != 128 {
+        if buffer.len() < 128 {
             panic!("Wrong size while converting slice to Superblock");
         }
         // Safe beceause len is forced to be 83
@@ -124,6 +124,30 @@ impl From<&[u8]> for Inode {
     }
 }
 
+use core::fmt;
+impl fmt::Display for Inode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let size: u64 = self.size_lh as u64 | ((self.size_uh as u64) << 32);
+
+        let mut perms: crate::string::String = crate::string::String::new();
+        if self.tperm & IPERM_OREAD != 0 { perms.push('r'); } else { perms.push('-'); }
+        if self.tperm & IPERM_OWRIT != 0 { perms.push('w'); } else { perms.push('-'); }
+        if self.tperm & IPERM_OEXEC != 0 { perms.push('x'); } else { perms.push('-'); }
+
+        if self.tperm & IPERM_GREAD != 0 { perms.push('r'); } else { perms.push('-'); }
+        if self.tperm & IPERM_GWRIT != 0 { perms.push('w'); } else { perms.push('-'); }
+        if self.tperm & IPERM_GEXEC != 0 { perms.push('x'); } else { perms.push('-'); }
+
+        if self.tperm & IPERM_UREAD != 0 { perms.push('r'); } else { perms.push('-'); }
+        if self.tperm & IPERM_UWRIT != 0 { perms.push('w'); } else { perms.push('-'); }
+        if self.tperm & IPERM_UEXEC != 0 { perms.push('x'); } else { perms.push('-'); }
+
+        let date = crate::time::ctime(self.lmt);
+        write!(f, "{perms} {hardlinks} {uid} {gid} {size:>4} {date}",
+               hardlinks=self.cound_hl, uid=self.uid, gid=self.gid)
+    }
+}
+
 
 // Inode type occupy bit [12-15]
 const ITYPE_FIFO:    u16 = 0x1 << 12;
@@ -161,11 +185,12 @@ const IFLAG_ASDIR:      u32 = 0x00020000;
 const IFLAG_JOURN:      u32 = 0x00040000;
 
 
+#[derive(Debug)]
 pub struct Dentry {
-    inode: u32,
+    pub inode: u32,
     pub dentry_size: u16,
     name_length: u8,
-    r#type: u8,
+    pub r#type: u8,
     pub name: crate::string::String
 }
 

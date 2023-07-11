@@ -11,7 +11,7 @@ const DISKNO: u8 = 1;
 use crate::pci::ide::IDE;
 
 struct Ext2 {
-    sblock: block::BaseSuperblock
+    pub sblock: block::BaseSuperblock
 }
 
 impl Ext2 {
@@ -27,6 +27,10 @@ impl Ext2 {
 
     pub fn inode_to_bgroup(&self, inode: u32) -> u32 {
         (inode - 1) / self.sblock.inode_per_grp()
+    }
+
+    pub fn inode_size(&self) -> u16 {
+        self.sblock.inode_size()
     }
 
     pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
@@ -56,18 +60,23 @@ impl Ext2 {
         entry
     }
 
-    pub fn get_inode_entry(&self, entry: usize) -> inode::Inode {
-        let inode_table_block = self.get_gdt_entry(0/* group number */).inode_table;
+    // TODO! Deduce group from requested inode
+    pub fn get_inode_entry(&self, mut entry: usize) -> inode::Inode {
+        if entry < 1 {
+            panic!("Ext2fs inodes start indexing at 1");
+        }
+        let inode_table_block = self.get_gdt_entry(self.inode_to_bgroup(entry as u32) as usize).inode_table;
         let block = self.read_block(inode_table_block);
         
-        let index = entry * core::mem::size_of::<inode::Inode>();
-        let inode = inode::Inode::from(&block[index..index + core::mem::size_of::<inode::Inode>()]);
+        let index = (entry - 1) * self.inode_size() as usize;
+        let size = self.inode_size();
+        let inode = inode::Inode::from(&block[index..index + self.inode_size() as usize]);
         inode
     }
 }
 
 pub fn read_superblock() -> block::BaseSuperblock {
-    let mut buffer: [u8; 2 * SECTOR_SIZE as usize] = [0; 2 * SECTOR_SIZE as usize];
+    let mut buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
 
     unsafe {
         IDE::read_sectors(DISKNO, 1, 2, buffer.as_ptr() as u32);
@@ -85,6 +94,7 @@ pub fn is_ext2() -> bool {
 }
 
 pub fn list_dir() -> crate::vec::Vec<inode::Dentry> {
+    test_ext2();
     let ext2 = Ext2::new();
     let inode = ext2.get_inode_entry(2).dbp0;
     let block = ext2.read_block(inode);
@@ -102,15 +112,22 @@ pub fn list_dir() -> crate::vec::Vec<inode::Dentry> {
 
 pub fn test_ext2() {
     let ext2 = Ext2::new();
-    let entry = ext2.get_gdt_entry(0);
-    let inode = ext2.get_inode_entry(2).dbp0;
-    let block = ext2.read_block(inode);
-    
+    // Get inode of root directory (always index 2)
+    let inode = ext2.get_inode_entry(2 as usize);
+    // Read the block of root directory
+    let block = ext2.read_block(inode.dbp0);
+
+
     let mut entry_start = 0;
     while entry_start != 4096 {
         let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
         entry_start = entry_start + dentry.dentry_size as usize;
-        //crate::kprintln!("{} {}", dentry.dentry_size, dentry.name);
+        let tmp = ext2.get_inode_entry(dentry.inode as usize);
+        let dtype = match dentry.r#type {
+            2 => 'd',
+            _ => '-'
+        };
+        crate::kprintln!("{}{} {}", dtype, tmp, dentry.name);
     }
 }
 
