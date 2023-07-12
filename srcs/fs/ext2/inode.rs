@@ -10,7 +10,7 @@
 /// All inodes reside in inode tables that belong to block groups.
 /// Therefore, looking up an inode is simply a matter of determining which
 /// block group it belongs to and indexing that block group's inode table.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Inode {
     /// Type and Permissions (see below)
     tperm:        u16,
@@ -78,6 +78,21 @@ pub struct Inode {
     os_specific2: [u8; 12]
 }
 
+impl Inode {
+    pub fn size(&self) -> u64 {
+        self.size_lh as u64 | ((self.size_uh as u64) << 32)
+    }
+
+    pub fn get_hardlinks(&self) -> u16 {
+        self.cound_hl
+    }
+
+    pub fn get_perms(&self) -> u16 {
+        // Get only perms and ignore type
+        self.tperm & 0x7777
+    }
+}
+
 use core::mem::transmute;
 impl From<&[u8]> for Inode {
     fn from(buffer: &[u8]) -> Self {
@@ -127,7 +142,7 @@ impl From<&[u8]> for Inode {
 use core::fmt;
 impl fmt::Display for Inode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let size: u64 = self.size_lh as u64 | ((self.size_uh as u64) << 32);
+        let size: u64 = self.size();
 
         let mut perms: crate::string::String = crate::string::String::new();
         if self.tperm & IPERM_OREAD != 0 { perms.push('r'); } else { perms.push('-'); }
@@ -150,48 +165,60 @@ impl fmt::Display for Inode {
 
 
 // Inode type occupy bit [12-15]
-const ITYPE_FIFO:    u16 = 0x1 << 12;
-const ITYPE_CHARDEV: u16 = 0x2 << 12;
-const ITYPE_DIR:     u16 = 0x4 << 12;
-const ITYPE_BLOCK:   u16 = 0x6 << 12;
-const ITYPE_REGU:    u16 = 0x8 << 12;
-const ITYPE_SYMF:    u16 = 0xa << 12;
-const ITYPE_SOCK:    u16 = 0xc << 12;
+pub const ITYPE_FIFO:    u16 = 0x1 << 12;
+pub const ITYPE_CHARDEV: u16 = 0x2 << 12;
+pub const ITYPE_DIR:     u16 = 0x4 << 12;
+pub const ITYPE_BLOCK:   u16 = 0x6 << 12;
+pub const ITYPE_REGU:    u16 = 0x8 << 12;
+pub const ITYPE_SYMF:    u16 = 0xa << 12;
+pub const ITYPE_SOCK:    u16 = 0xc << 12;
 // Inode perm occupy bit [0-11]
-const IPERM_OEXEC:   u16 = 0x001;
-const IPERM_OWRIT:   u16 = 0x002;
-const IPERM_OREAD:   u16 = 0x004;
-const IPERM_GEXEC:   u16 = 0x008;
-const IPERM_GWRIT:   u16 = 0x010;
-const IPERM_GREAD:   u16 = 0x020;
-const IPERM_UEXEC:   u16 = 0x040;
-const IPERM_UWRIT:   u16 = 0x080;
-const IPERM_UREAD:   u16 = 0x100;
-const IPERM_STICK:   u16 = 0x200;
-const IPERM_SETGID:  u16 = 0x400;
-const IPERM_SETUID:  u16 = 0x800;
+pub const IPERM_OEXEC:   u16 = 0x001;
+pub const IPERM_OWRIT:   u16 = 0x002;
+pub const IPERM_OREAD:   u16 = 0x004;
+pub const IPERM_GEXEC:   u16 = 0x008;
+pub const IPERM_GWRIT:   u16 = 0x010;
+pub const IPERM_GREAD:   u16 = 0x020;
+pub const IPERM_UEXEC:   u16 = 0x040;
+pub const IPERM_UWRIT:   u16 = 0x080;
+pub const IPERM_UREAD:   u16 = 0x100;
+pub const IPERM_STICK:   u16 = 0x200;
+pub const IPERM_SETGID:  u16 = 0x400;
+pub const IPERM_SETUID:  u16 = 0x800;
 
 // Inode flags
-const IFLAG_SECDEL:     u32 = 0x00000001;
-const IFLAG_KEEPCPY:    u32 = 0x00000002;
-const IFLAG_FILECOMPR:  u32 = 0x00000004;
-const IFLAG_SYNC:       u32 = 0x00000008;
-const IFLAG_IMMUTABLE:  u32 = 0x00000010;
-const IFLAG_OAPPEN:     u32 = 0x00000020;
-const IFLAG_NODUMP:     u32 = 0x00000040;
-const IFLAG_NOUPDATE:   u32 = 0x00000080;
-const IFLAG_HASHINDEX:  u32 = 0x00010000;
-const IFLAG_ASDIR:      u32 = 0x00020000;
-const IFLAG_JOURN:      u32 = 0x00040000;
+pub const IFLAG_SECDEL:     u32 = 0x00000001;
+pub const IFLAG_KEEPCPY:    u32 = 0x00000002;
+pub const IFLAG_FILECOMPR:  u32 = 0x00000004;
+pub const IFLAG_SYNC:       u32 = 0x00000008;
+pub const IFLAG_IMMUTABLE:  u32 = 0x00000010;
+pub const IFLAG_OAPPEN:     u32 = 0x00000020;
+pub const IFLAG_NODUMP:     u32 = 0x00000040;
+pub const IFLAG_NOUPDATE:   u32 = 0x00000080;
+pub const IFLAG_HASHINDEX:  u32 = 0x00010000;
+pub const IFLAG_ASDIR:      u32 = 0x00020000;
+pub const IFLAG_JOURN:      u32 = 0x00040000;
 
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Dentry {
     pub inode: u32,
     pub dentry_size: u16,
     name_length: u8,
     pub r#type: u8,
     pub name: crate::string::String
+}
+
+#[repr(u8)]
+pub enum Dtype {
+    Unkown,
+    Regular,
+    Directory,
+    Chardev,
+    Blockdev,
+    Fifo,
+    Socket,
+    Sym
 }
 
 use crate::alloc::string::ToString;

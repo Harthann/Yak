@@ -1,4 +1,4 @@
-mod inode;
+pub mod inode;
 mod block;
 mod gdt;
 
@@ -10,7 +10,7 @@ const DISKNO: u8 = 1;
 
 use crate::pci::ide::IDE;
 
-struct Ext2 {
+pub struct Ext2 {
     pub sblock: block::BaseSuperblock
 }
 
@@ -60,8 +60,7 @@ impl Ext2 {
         entry
     }
 
-    // TODO! Deduce group from requested inode
-    pub fn get_inode_entry(&self, mut entry: usize) -> inode::Inode {
+    pub fn get_inode_entry(&self, entry: usize) -> inode::Inode {
         if entry < 1 {
             panic!("Ext2fs inodes start indexing at 1");
         }
@@ -70,9 +69,11 @@ impl Ext2 {
         
         let index = (entry - 1) * self.inode_size() as usize;
         let size = self.inode_size();
+        crate::dprintln!("Trying to get inode: {} found at index: {}", entry, index);
         let inode = inode::Inode::from(&block[index..index + self.inode_size() as usize]);
         inode
     }
+
 }
 
 pub fn read_superblock() -> block::BaseSuperblock {

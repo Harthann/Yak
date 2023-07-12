@@ -14,6 +14,7 @@ use crate::vec::Vec;
 mod test;
 
 pub mod ext2;
+pub mod vfs;
 mod file;
 pub use file::*;
 
