@@ -13,7 +13,7 @@ use crate::vec::Vec;
 use crate::vga_buffer::{hexdump, screenclear};
 use crate::{io, kprint, kprintln};
 
-const NB_CMDS: usize = 16;
+const NB_CMDS: usize = 18;
 const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
@@ -32,12 +32,15 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	play,
 	valgrind,
 	pmap,
-	kill
+	kill,
+    ls,
+    cat
 ];
 
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill", "ls",
+    "cat"
 ];
 
 pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
@@ -47,6 +50,27 @@ pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 		sys_kill(sys_getppid(), SignalType::SIGHUP as i32);
 		COMMANDS[cmd_id](args);
 	}
+}
+
+pub fn cat(command: Vec<String>) {
+    let file_content = crate::fs::ext2::get_file_content(command[1].as_str());
+    for i in file_content {
+        crate::kprint!("{}", i);
+    }
+}
+
+pub fn ls(command: Vec<String>) {
+    let path = match command.len() {
+        1 => "/",
+        _ => command[1].as_str(),
+    };
+    crate::dprintln!("Ls: {}", path);
+    let dentries = crate::fs::ext2::list_dir(path);
+
+    for i in dentries {
+        crate::kprint!("{} ", i.name);
+    }
+    crate::kprintln!("");
 }
 
 fn valgrind(command: Vec<String>) {

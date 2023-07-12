@@ -177,3 +177,16 @@ pub fn socket_pair(
 	sockets[1] = index2;
 	Ok(0)
 }
+
+
+pub fn fill_vfs() {
+    let ext2 = ext2::Ext2::new();
+    // Get inode of root directory (always index 2)
+    let inode = ext2.get_inode_entry(2 as usize);
+    // Read the block of root directory
+    crate::dprintln!("{:#?}", inode);
+    // Should be root direntry
+    let mut block = ext2.read_block(inode.dbp0);
+
+
+}

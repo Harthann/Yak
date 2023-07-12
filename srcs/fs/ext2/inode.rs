@@ -204,7 +204,7 @@ pub const IFLAG_JOURN:      u32 = 0x00040000;
 pub struct Dentry {
     pub inode: u32,
     pub dentry_size: u16,
-    name_length: u8,
+    pub name_length: u8,
     pub r#type: u8,
     pub name: crate::string::String
 }
