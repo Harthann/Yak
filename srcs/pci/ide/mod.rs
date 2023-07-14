@@ -1,6 +1,5 @@
 use core::ffi::CStr;
-use core::mem::{size_of, transmute};
-use core::ptr::copy;
+use core::mem::size_of;
 
 use crate::io::{inb, insl, outb};
 use crate::kprintln;
@@ -222,54 +221,43 @@ impl IDEController {
 				self.devices[count].r#type = r#type as u16;
 				self.devices[count].channel = Some(channels[i].clone());
 				self.devices[count].drive = j;
-				unsafe {
-					copy(
-						ide_buf
-							.as_ptr()
-							.offset(ATAIdentify::DEVICETYPE as isize),
-						transmute(&mut self.devices[count].signature),
-						size_of::<u16>()
-					);
-					copy(
-						ide_buf
-							.as_ptr()
-							.offset(ATAIdentify::CAPABILITIES as isize),
-						transmute(&mut self.devices[count].capabilities),
-						size_of::<u16>()
-					);
-					copy(
-						ide_buf
-							.as_ptr()
-							.offset(ATAIdentify::COMMANDSETS as isize),
-						transmute(&mut self.devices[count].command_sets),
-						size_of::<u32>()
-					);
-				}
+				self.devices[count].signature = u16::from_le_bytes(
+					ide_buf[ATAIdentify::DEVICETYPE
+						..ATAIdentify::DEVICETYPE + size_of::<u16>()]
+						.try_into()
+						.unwrap()
+				);
+				self.devices[count].capabilities = u16::from_le_bytes(
+					ide_buf[ATAIdentify::CAPABILITIES
+						..ATAIdentify::CAPABILITIES + size_of::<u16>()]
+						.try_into()
+						.unwrap()
+				);
+				self.devices[count].command_sets = u32::from_le_bytes(
+					ide_buf[ATAIdentify::COMMANDSETS
+						..ATAIdentify::COMMANDSETS + size_of::<u32>()]
+						.try_into()
+						.unwrap()
+				);
 
 				if self.devices[count].r#type == IDEType::ATA as u16 {
 					// (VII) Get Size
 					if (self.devices[count].command_sets & (1 << 26)) != 0 {
 						// Device uses 48-Bit Addressing
-						unsafe {
-							copy(
-								ide_buf
-									.as_ptr()
-									.offset(ATAIdentify::MAX_LBA_EXT as isize),
-								transmute(&mut self.devices[count].size),
-								size_of::<u32>()
-							);
-						}
+						self.devices[count].size = u32::from_le_bytes(
+							ide_buf[ATAIdentify::MAX_LBA_EXT
+								..ATAIdentify::MAX_LBA_EXT + size_of::<u32>()]
+								.try_into()
+								.unwrap()
+						);
 					} else {
 						// Device uses CHS or 28-Bit Addressing
-						unsafe {
-							copy(
-								ide_buf
-									.as_ptr()
-									.offset(ATAIdentify::MAX_LBA as isize),
-								transmute(&mut self.devices[count].size),
-								size_of::<u32>()
-							);
-						}
+						self.devices[count].size = u32::from_le_bytes(
+							ide_buf[ATAIdentify::MAX_LBA
+								..ATAIdentify::MAX_LBA + size_of::<u32>()]
+								.try_into()
+								.unwrap()
+						);
 					}
 				} else {
 					let device: &mut IDEDevice = &mut self.devices[i as usize];
