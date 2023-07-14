@@ -1,5 +1,12 @@
 use super::ata::{ATACommand, ATAReg, ATAStatus};
-use super::{IDEType, CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
+use super::{
+	IDEChannelRegisters,
+	IDEType,
+	CHANNELS,
+	IDE,
+	IDE_DEVICES,
+	IDE_IRQ_INVOKED
+};
 
 use crate::io;
 
@@ -13,19 +20,16 @@ pub struct ATAPI {}
 
 impl ATAPI {
 	pub unsafe fn capacity(drive: u8, lba: u32) -> Result<u32, u8> {
-		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
+		let channel: &mut IDEChannelRegisters =
+			&mut CHANNELS[IDE_DEVICES[drive as usize].channel as usize];
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
-		let bus: u32 = CHANNELS[channel as usize].base as u32;
+		let bus: u32 = channel.base as u32;
 		let mut buffer: [u32; 2] = [0; 2];
 
 		// Enable IRQs
 		IDE_IRQ_INVOKED = 0;
-		CHANNELS[channel as usize].n_ien = 0;
-		IDE::write(
-			channel as u8,
-			ATAReg::CONTROL,
-			CHANNELS[channel as usize].n_ien
-		);
+		channel.n_ien = 0;
+		IDE::write(channel, ATAReg::CONTROL, channel.n_ien);
 
 		// (I) Setup SCSI Packet
 		let packet: [u8; 12] = [
@@ -44,40 +48,40 @@ impl ATAPI {
 		];
 
 		// (II) Select the drive
-		IDE::write(channel as u8, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
+		IDE::write(channel, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
 
 		// (III) Delay 400 nanoseconds for select to complete
 		for _ in 0..4 {
 			// Reading the Alternate Status port wastes 100ns
-			IDE::read(channel as u8, ATAReg::ALTSTATUS);
+			IDE::read(channel, ATAReg::ALTSTATUS);
 		}
 
 		// (IV) Inform the Controller that we use PIO mode
-		IDE::write(channel as u8, ATAReg::FEATURES, 0);
+		IDE::write(channel, ATAReg::FEATURES, 0);
 
 		// (V) Tell the Controller the size of buffer (16 bytes will be returned)
 		let size: usize = 0x0008;
 		// Lower Byte of Sector size
-		IDE::write(channel as u8, ATAReg::LBA1, (size & 0xff) as u8);
+		IDE::write(channel, ATAReg::LBA1, (size & 0xff) as u8);
 		// Upper Byte of Sector size
-		IDE::write(channel as u8, ATAReg::LBA2, (size >> 8) as u8);
+		IDE::write(channel, ATAReg::LBA2, (size >> 8) as u8);
 
 		// (VI) Send the Packet Command
-		IDE::write(channel as u8, ATAReg::COMMAND, ATACommand::Packet as u8);
+		IDE::write(channel, ATAReg::COMMAND, ATACommand::Packet as u8);
 
 		// (VII) Waiting for the driver to finish or return an error code
-		IDE::polling(channel as u8, 1)?;
+		IDE::polling(channel, 1)?;
 
 		// (VIII) Sending the packet data
 		io::outsw(bus as u16, packet.align_to::<u16>().1.as_ptr(), 6);
 
 		// (IX) Receiving Data
-		IDE::polling(channel as u8, 1)?;
+		IDE::polling(channel, 1)?;
 		io::insw(bus as u16, buffer.align_to_mut::<u16>().1.as_mut_ptr(), 4);
 
 		// (X) Waiting for BSY & DRQ to clear
 		loop {
-			if (IDE::read(channel as u8, ATAReg::STATUS)
+			if (IDE::read(channel, ATAReg::STATUS)
 				& (ATAStatus::BSY | ATAStatus::DRQ))
 				== 0
 			{
@@ -95,21 +99,18 @@ impl ATAPI {
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
+		let channel: &mut IDEChannelRegisters =
+			&mut CHANNELS[IDE_DEVICES[drive as usize].channel as usize];
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
-		let bus: u32 = CHANNELS[channel as usize].base as u32;
+		let bus: u32 = channel.base as u32;
 		// Sector Size
 		// ATAPI drives have a sector size of 2048 bytes
 		let words: u32 = 1024;
 
 		// Enable IRQs
 		IDE_IRQ_INVOKED = 0;
-		CHANNELS[channel as usize].n_ien = 0;
-		IDE::write(
-			channel as u8,
-			ATAReg::CONTROL,
-			CHANNELS[channel as usize].n_ien
-		);
+		channel.n_ien = 0;
+		IDE::write(channel, ATAReg::CONTROL, channel.n_ien);
 
 		// (I) Setup SCSI Packet
 		let packet: [u8; 12] = [
@@ -128,28 +129,28 @@ impl ATAPI {
 		];
 
 		// (II) Select the drive
-		IDE::write(channel as u8, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
+		IDE::write(channel, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
 
 		// (III) Delay 400 nanoseconds for select to complete
 		for _ in 0..4 {
 			// Reading the Alternate Status port wastes 100ns
-			IDE::read(channel as u8, ATAReg::ALTSTATUS);
+			IDE::read(channel, ATAReg::ALTSTATUS);
 		}
 
 		// (IV) Inform the Controller that we use PIO mode
-		IDE::write(channel as u8, ATAReg::FEATURES, 0);
+		IDE::write(channel, ATAReg::FEATURES, 0);
 
 		// (V) Tell the Controller the size of buffer
 		// Lower Byte of Sector size
-		IDE::write(channel as u8, ATAReg::LBA1, ((words * 2) & 0xff) as u8);
+		IDE::write(channel, ATAReg::LBA1, ((words * 2) & 0xff) as u8);
 		// Upper Byte of Sector size
-		IDE::write(channel as u8, ATAReg::LBA2, ((words * 2) >> 8) as u8);
+		IDE::write(channel, ATAReg::LBA2, ((words * 2) >> 8) as u8);
 
 		// (VI) Send the Packet Command
-		IDE::write(channel as u8, ATAReg::COMMAND, ATACommand::Packet as u8);
+		IDE::write(channel, ATAReg::COMMAND, ATACommand::Packet as u8);
 
 		// (VII) Waiting for the driver to finish or return an error code
-		IDE::polling(channel as u8, 1)?;
+		IDE::polling(channel, 1)?;
 
 		// (VIII) Sending the packet data
 		io::outsw(bus as u16, packet.align_to::<u16>().1.as_ptr(), 6);
@@ -157,7 +158,7 @@ impl ATAPI {
 		// (IX) Receiving Data
 		for _ in 0..numsects {
 			IDE::wait_irq();
-			IDE::polling(channel as u8, 1)?;
+			IDE::polling(channel, 1)?;
 			io::insw(bus as u16, edi as *mut _, words);
 			edi += words * 2;
 		}
@@ -167,7 +168,7 @@ impl ATAPI {
 
 		// (XI) Waiting for BSY & DRQ to clear
 		loop {
-			if (IDE::read(channel as u8, ATAReg::STATUS)
+			if (IDE::read(channel, ATAReg::STATUS)
 				& (ATAStatus::BSY | ATAStatus::DRQ))
 				== 0
 			{
@@ -179,9 +180,10 @@ impl ATAPI {
 	}
 
 	pub unsafe fn eject(drive: u8) -> Result<(), u8> {
-		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32;
+		let channel: &mut IDEChannelRegisters =
+			&mut CHANNELS[IDE_DEVICES[drive as usize].channel as usize];
 		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32;
-		let bus: u32 = CHANNELS[channel as usize].base as u32;
+		let bus: u32 = channel.base as u32;
 
 		// 1- Check if the drive presents
 		if drive > 3 || IDE_DEVICES[drive as usize].reserved == 0 {
@@ -193,12 +195,8 @@ impl ATAPI {
 		} else {
 			// Enable IRQs
 			IDE_IRQ_INVOKED = 0x0;
-			CHANNELS[channel as usize].n_ien = 0x0;
-			IDE::write(
-				channel as u8,
-				ATAReg::CONTROL,
-				CHANNELS[channel as usize].n_ien
-			);
+			channel.n_ien = 0x0;
+			IDE::write(channel, ATAReg::CONTROL, channel.n_ien);
 
 			// (I) Setup SCSI Packet
 			let packet: [u8; 12] = [
@@ -217,31 +215,27 @@ impl ATAPI {
 			];
 
 			// (II) Select the Drive
-			IDE::write(channel as u8, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
+			IDE::write(channel, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
 
 			// (III) Delay 400 nanosecond for select to complete
 			for _ in 0..4 {
 				// Reading Alternate Status Port Wastes 100ns
-				IDE::read(channel as u8, ATAReg::ALTSTATUS);
+				IDE::read(channel, ATAReg::ALTSTATUS);
 			}
 
 			// (IV) Send the Packet Command
-			IDE::write(
-				channel as u8,
-				ATAReg::COMMAND,
-				ATACommand::Packet as u8
-			);
+			IDE::write(channel, ATAReg::COMMAND, ATACommand::Packet as u8);
 
 			// (V) Waiting for the driver to finish or invoke an error
 			// Polling and stop if error
-			IDE::polling(channel as u8, 1)?;
+			IDE::polling(channel, 1)?;
 
 			// (VI) Sending the packet data
 			io::outsw(bus as u16, packet.align_to::<u16>().1.as_ptr(), 6);
 
 			IDE::wait_irq();
 			// Polling and get error code
-			match IDE::polling(channel as u8, 1) {
+			match IDE::polling(channel, 1) {
 				Err(err) if err != 3 => return Err(err),
 				_ => {}
 			}
