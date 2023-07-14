@@ -26,24 +26,55 @@ impl Ext2 {
         self.sblock.sig() == 0xef53
     }
 
+    /// Convert an inode number to it's corresponding Group Number
+    ///
+    /// * `inode` - Inode number to convert
+    ///
+    /// # Example 
+    /// ```
+    /// let ext2 = Ext2::new();
+    /// let groupno = ext2.inode_to_bgroup(45);
+    /// ```
     pub fn inode_to_bgroup(&self, inode: u32) -> u32 {
         (inode - 1) / self.sblock.inode_per_grp()
     }
+
+    /// Convert an inode number to it's corresponding Block Number inside it's group
+    ///
+    /// * `inode` - Inode number to convert
+    ///
+    /// # Example 
+    /// ```
+    /// let ext2 = Ext2::new();
+    /// let blockno = ext2.inode_to_block(45);
+    /// ```
     pub fn inode_to_block(&self, inode: u32) -> u32 {
         let inode_table_block = self.get_gdt_entry(self.inode_to_bgroup(inode as u32) as usize).inode_table;
         let offset = (inode - 1) * self.inode_size() as u32;
         inode_table_block + offset / self.sblock.bsize()
     }
+
+    /// Convert an inode number to it's offset inside block
+    ///
+    /// * `inode` - Inode number to convert
+    ///
+    /// # Example 
+    /// ```
+    /// let ext2 = Ext2::new();
+    /// let offset = ext2.inode_to_offset(45);
+    /// ```
     pub fn inode_to_offset(&self, inode: u32) -> u32 {
         let inode_per_block = self.sblock.bsize() as usize /  self.inode_size() as usize;
         ((inode - 1) % inode_per_block as u32) * self.inode_size() as u32
     }
 
+    /// Give inode size indicated by Superblock
     pub fn inode_size(&self) -> u16 {
         self.sblock.inode_size()
     }
 
-    pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
+    /// Read an entire block from disk
+    fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
         let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
         let bsize = self.sblock.bsize() as usize;
         let sector_per_block = bsize / SECTOR_SIZE as usize;
@@ -60,7 +91,8 @@ impl Ext2 {
         block
     }
 
-    pub fn get_gdt_entry(&self, entry: usize) -> gdt::GdtEntry {
+    /// Read disk to recover Group Descriptor Table entry given an index
+    fn get_gdt_entry(&self, entry: usize) -> gdt::GdtEntry {
         let entry_per_sector = SECTOR_SIZE as usize / core::mem::size_of::<gdt::GdtEntry>();
         let sector_no = entry / entry_per_sector;
 
@@ -70,6 +102,20 @@ impl Ext2 {
         entry
     }
 
+    /// Read disk to recover inode struct correcponding to the index passed as parameter
+    ///
+    /// * `entry` - Inode index to read
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let ext2 = Ext2::new();
+    ///
+    /// // Inode 2 is always inode to root dir
+    /// let inode = ext2.get_inode_entry(2);
+    /// crate::kprintln!("{:#?}", inode);
+    ///
+    /// ```
     pub fn get_inode_entry(&self, entry: usize) -> inode::Inode {
         if entry < 1 {
             panic!("Ext2fs inodes start indexing at 1");
@@ -83,6 +129,23 @@ impl Ext2 {
 
     /// Find file inside dentry given the dentry inode and file searched.
     /// Currently ignore error cases and remain basic
+    ///
+    /// * `inodeno` - Inode number of a directory
+    ///
+    /// * `filename` - Filename to look for inside this directory
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let ext2 = Ext2::new();
+    /// // Look for "dev" inside inode 2 (inode 2 is the inode for root directory)
+    /// let dentry = ext2.dentry_find(2, "dev");
+    /// match dentry {
+    ///     None => crate::kprintln!("File not found"),
+    ///     Some(dir) => crate::kprintln!("Found: {:#?}", dir)
+    /// };
+    ///
+    /// ```
     pub fn dentry_find(&self, inodeno: usize, filename: &str) -> Option<inode::Dentry> {
         // Retrieve inode at index inodeno
         let inode = self.get_inode_entry(inodeno);
@@ -99,11 +162,42 @@ impl Ext2 {
         None
     }
 
+    /// Find file given it's path, start search from root directory
+    ///
+    /// * `path` - Absolute path to searched entry
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let ext2 = Ext2::new();
+    /// let opt = ext2.get_inode_of("/dev/vga");
+    /// match opt {
+    ///     Some((inodeno, inode)) => crate::kprintln!("Found at inode {}:\n{:#?}", inodeno, inode);
+    ///     None => crate::kprintln!("Not found")
+    /// };
+    /// ```
     pub fn get_inode_of(&self, path: &str) -> Option<(usize, inode::Inode)> {
-        self._get_inode_of(path.trim_start_matches('/'), 2)
+        self.recurs_find(path.trim_start_matches('/'), 2)
     }
 
-    fn _get_inode_of(&self, path: &str, inodeno: usize) -> Option<(usize, inode::Inode)> {
+    /// Perform recursive call to find file pass as argument starting at inodeno
+    ///
+    /// * `path` - Relative path to file from given inode directory number
+    ///
+    /// * `inodeno` - Inode number of directory
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// let ext2 = Ext2::new();
+    /// // Look for vga named entry inside directory represented by inode 13
+    /// let opt = ext2.recurs_find("vga", 13)
+    /// match opt {
+    ///     None => crate::kprintln!("Entry does not exist"),
+    ///     Some((inodeno, _)) => crate::kprintln!("Entry exist at inode {}", inodeno)
+    /// };
+    /// ```
+    pub fn recurs_find(&self, path: &str, inodeno: usize) -> Option<(usize, inode::Inode)> {
         if path.len() == 0 {
             // Caller has found the entry we search
             return Some((inodeno, self.get_inode_entry(inodeno)));
@@ -114,7 +208,8 @@ impl Ext2 {
             None => path
         };
         let dentry = self.dentry_find(inodeno, filename)?;
-        self._get_inode_of(path.trim_start_matches(filename).trim_start_matches('/'), dentry.inode as usize)
+        let newpath = path.trim_start_matches(filename).trim_start_matches('/');
+        self.recurs_find(newpath, dentry.inode as usize)
     }
 }
 
@@ -137,91 +232,43 @@ pub fn is_ext2() -> bool {
 }
 
 use crate::vec::Vec;
+/// Helper function to get content of a file.
+/// Does not yet check if found entry is really a file.
+/// Does not yet take into account file bigger than 4096
 pub fn get_file_content(path: &str) -> Vec<char> {
-    let index = path.rfind('/');
-    let filename = match index {
-        None => path,
-        Some(x) => &path[x+1..path.len()]
-    };
-    crate::dprintln!("Looking for {filename} in {path}");
-    let dentries = list_dir(path.trim_end_matches(filename));
-    let mut file: Vec<char> = Vec::new();
     let ext2 = Ext2::new();
-    for i in dentries {
-        if i.name == filename {
-            let inode = ext2.get_inode_entry(i.inode as usize);
+    let opt = ext2.get_inode_of(path);
+    match opt {
+        None => Vec::new(),
+        Some((_, inode)) => {
             let block = ext2.read_block(inode.dbp0);
-            for i in 0..inode.size() {
-                file.push(block[i as usize] as char);
-            }
+            let file: Vec<char> = block[0..inode.size() as usize].iter()
+                                                                 .map(|x| *x as char)
+                                                                 .collect();
+            file
         }
     }
-    file
 }
 
+/// Helper function to list all entries in a directory
+/// Does not yet check if found entry is a directory or not
 pub fn list_dir(path: &str) -> crate::vec::Vec<inode::Dentry> {
-    _list_dir(path.trim_start_matches('/'), 2)
-}
-
-pub fn _list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
     let ext2 = Ext2::new();
-    let inodeentry = ext2.get_inode_entry(inode);
-    crate::dprintln!("Found inode: {} {:#?}", inode, inodeentry);
-    let block = ext2.read_block(inodeentry.dbp0);
-
-    let opt = path.find('/');
-    if path.len() == 0 {
-        // list current dir
-        crate::dprintln!("Looking in current dir block: {}", inode);
-        let mut dentries: crate::vec::Vec<inode::Dentry> = crate::vec::Vec::new();
-        let mut entry_start = 0;
-        while entry_start != 4096 {
-            let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
-            
-            entry_start = entry_start + dentry.dentry_size as usize;
-            dentries.push(dentry);
+    let inode = ext2.get_inode_of(path);
+    return match inode {
+        None => crate::vec::Vec::new(),
+        Some((_, inode)) => {
+            let block = ext2.read_block(inode.dbp0);
+            let mut dentries: crate::vec::Vec<inode::Dentry> = crate::vec::Vec::new();
+            let mut entry_start = 0;
+            while entry_start != 4096 {
+                let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
+                
+                entry_start = entry_start + dentry.dentry_size as usize;
+                dentries.push(dentry);
+            }
+            dentries
         }
-        return dentries;
-    }
-    let filename = match opt {
-        Some(index) => &path[..index],
-        None => path
     };
-    crate::dprintln!("Looking in subdirectories: {} {}", path, filename);
-    
-    let mut entry_start = 0;
-    while entry_start != 4096 {
-        let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
-        entry_start = entry_start + dentry.dentry_size as usize;
-        if dentry.name == filename {
-            crate::dprintln!("Found dentry: {:#?}", dentry);
-            return _list_dir(path.trim_start_matches(filename).trim_start_matches('/'), dentry.inode as usize);
-        }
-    }
-    return crate::alloc::vec::Vec::new();
-}
-
-
-pub fn test_ext2() {
-    let ext2 = Ext2::new();
-    // Get inode of root directory (always index 2)
-    let inode = ext2.get_inode_entry(2 as usize);
-    // Read the block of root directory
-    crate::dprintln!("{:#?}", inode);
-    let mut block = ext2.read_block(inode.dbp0);
-
-
-    let mut entry_start = 0;
-    while entry_start < 4096 {
-        let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
-        crate::kprintln!("{} {} {}", entry_start, dentry.dentry_size, dentry.name);
-        entry_start = entry_start + dentry.dentry_size as usize;
-        let tmp = ext2.get_inode_entry(dentry.inode as usize);
-        let dtype = match dentry.r#type {
-            2 => 'd',
-            _ => '-'
-        };
-        //crate::kprintln!("{}{} {}", dtype, tmp, dentry.name);
-    }
 }
 
