@@ -107,7 +107,7 @@ mod test;
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
-use pci::ide::IDE;
+use pci::ide::IDEController;
 use pic::setup_pic8259;
 
 #[global_allocator]
@@ -157,10 +157,7 @@ pub extern "C" fn kinit() {
 		KTRACKER = Tracker::new();
 	}
 
-	unsafe {
-		IDE::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000)
-			.expect("Error while reading disks")
-	};
+	IDEController::initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000);
 
 	setup_pic8259();
 
