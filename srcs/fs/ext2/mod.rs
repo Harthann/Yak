@@ -28,6 +28,8 @@ impl Ext2 {
 
     /// Convert an inode number to it's corresponding Group Number
     ///
+    /// # Arguments 
+    ///
     /// * `inode` - Inode number to convert
     ///
     /// # Example 
@@ -40,6 +42,8 @@ impl Ext2 {
     }
 
     /// Convert an inode number to it's corresponding Block Number inside it's group
+    ///
+    /// # Arguments 
     ///
     /// * `inode` - Inode number to convert
     ///
@@ -55,6 +59,8 @@ impl Ext2 {
     }
 
     /// Convert an inode number to it's offset inside block
+    ///
+    /// # Arguments 
     ///
     /// * `inode` - Inode number to convert
     ///
@@ -104,6 +110,8 @@ impl Ext2 {
 
     /// Read disk to recover inode struct correcponding to the index passed as parameter
     ///
+    /// # Arguments 
+    ///
     /// * `entry` - Inode index to read
     ///
     /// # Example
@@ -129,6 +137,8 @@ impl Ext2 {
 
     /// Find file inside dentry given the dentry inode and file searched.
     /// Currently ignore error cases and remain basic
+    ///
+    /// # Arguments 
     ///
     /// * `inodeno` - Inode number of a directory
     ///
@@ -164,6 +174,8 @@ impl Ext2 {
 
     /// Find file given it's path, start search from root directory
     ///
+    /// # Arguments 
+    ///
     /// * `path` - Absolute path to searched entry
     ///
     /// # Example
@@ -181,6 +193,8 @@ impl Ext2 {
     }
 
     /// Perform recursive call to find file pass as argument starting at inodeno
+    ///
+    /// # Arguments 
     ///
     /// * `path` - Relative path to file from given inode directory number
     ///
