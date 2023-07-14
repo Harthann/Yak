@@ -1,4 +1,10 @@
-use super::{IDEChannelRegisters, IDEController, IDEDevice, IDE, IDE_IRQ_INVOKED};
+use super::{
+	IDEChannelRegisters,
+	IDEController,
+	IDEDevice,
+	IDE,
+	IDE_IRQ_INVOKED
+};
 
 use crate::io;
 
@@ -109,8 +115,9 @@ impl ATA {
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
 		// Read the channel
-		let channel: &mut IDEChannelRegisters = unsafe {IDE.get_channel(drive)};
-		let drive: &IDEDevice = unsafe {IDE.get_device(drive)};
+		let channel: &mut IDEChannelRegisters =
+			unsafe { IDE.get_channel(drive) };
+		let drive: &IDEDevice = unsafe { IDE.get_device(drive) };
 		// Read the Drive [Master/Slave]
 		let slavebit: u32 = drive.drive as u32;
 		// Bus Base, like 0x1f0 which is also data port
@@ -120,8 +127,8 @@ impl ATA {
 		let head: u8;
 
 		// Disable IRQ
-		unsafe {IDE_IRQ_INVOKED = 0x0};
-		channel.n_ien = unsafe {IDE_IRQ_INVOKED + 0x02};
+		unsafe { IDE_IRQ_INVOKED = 0x0 };
+		channel.n_ien = unsafe { IDE_IRQ_INVOKED + 0x02 };
 		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
 		// (I) Select one from LBA28, LBA48 or CHS
@@ -166,7 +173,9 @@ impl ATA {
 		dma = 0; // We don't support DMA
 
 		// (III) Wait if the drive is busy
-		while (IDEController::read(channel, ATAReg::STATUS) & ATAStatus::BSY) != 0 {}
+		while (IDEController::read(channel, ATAReg::STATUS) & ATAStatus::BSY)
+			!= 0
+		{}
 
 		// (IV) Select Drive from the controller
 		if lba_mode == 0 {

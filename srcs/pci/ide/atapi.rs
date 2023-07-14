@@ -1,9 +1,9 @@
 use super::ata::{ATACommand, ATAReg, ATAStatus};
 use super::{
 	IDEChannelRegisters,
-	IDEType,
 	IDEController,
 	IDEDevice,
+	IDEType,
 	IDE,
 	IDE_IRQ_INVOKED
 };
@@ -20,13 +20,14 @@ pub struct ATAPI {}
 
 impl ATAPI {
 	pub fn capacity(drive: u8, lba: u32) -> Result<u32, u8> {
-		let channel: &mut IDEChannelRegisters = unsafe {IDE.get_channel(drive)};
-		let slavebit: u32 = unsafe {IDE.get_device(drive).drive as u32};
+		let channel: &mut IDEChannelRegisters =
+			unsafe { IDE.get_channel(drive) };
+		let slavebit: u32 = unsafe { IDE.get_device(drive).drive as u32 };
 		let bus: u32 = channel.base as u32;
 		let mut buffer: [u32; 2] = [0; 2];
 
 		// Enable IRQs
-		unsafe {IDE_IRQ_INVOKED = 0};
+		unsafe { IDE_IRQ_INVOKED = 0 };
 		channel.n_ien = 0;
 		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
@@ -66,17 +67,29 @@ impl ATAPI {
 		IDEController::write(channel, ATAReg::LBA2, (size >> 8) as u8);
 
 		// (VI) Send the Packet Command
-		IDEController::write(channel, ATAReg::COMMAND, ATACommand::Packet as u8);
+		IDEController::write(
+			channel,
+			ATAReg::COMMAND,
+			ATACommand::Packet as u8
+		);
 
 		// (VII) Waiting for the driver to finish or return an error code
 		IDEController::polling(channel, 1)?;
 
 		// (VIII) Sending the packet data
-		io::outsw(bus as u16, unsafe {packet.align_to::<u16>().1.as_ptr()}, 6);
+		io::outsw(
+			bus as u16,
+			unsafe { packet.align_to::<u16>().1.as_ptr() },
+			6
+		);
 
 		// (IX) Receiving Data
 		IDEController::polling(channel, 1)?;
-		io::insw(bus as u16, unsafe {buffer.align_to_mut::<u16>().1.as_mut_ptr()}, 4);
+		io::insw(
+			bus as u16,
+			unsafe { buffer.align_to_mut::<u16>().1.as_mut_ptr() },
+			4
+		);
 
 		// (X) Waiting for BSY & DRQ to clear
 		loop {
@@ -98,15 +111,16 @@ impl ATAPI {
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-		let channel: &mut IDEChannelRegisters = unsafe {IDE.get_channel(drive)};
-		let slavebit: u32 = unsafe {IDE.get_device(drive).drive as u32};
+		let channel: &mut IDEChannelRegisters =
+			unsafe { IDE.get_channel(drive) };
+		let slavebit: u32 = unsafe { IDE.get_device(drive).drive as u32 };
 		let bus: u32 = channel.base as u32;
 		// Sector Size
 		// ATAPI drives have a sector size of 2048 bytes
 		let words: u32 = 1024;
 
 		// Enable IRQs
-		unsafe {IDE_IRQ_INVOKED = 0};
+		unsafe { IDE_IRQ_INVOKED = 0 };
 		channel.n_ien = 0;
 		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
@@ -145,24 +159,32 @@ impl ATAPI {
 		IDEController::write(channel, ATAReg::LBA2, ((words * 2) >> 8) as u8);
 
 		// (VI) Send the Packet Command
-		IDEController::write(channel, ATAReg::COMMAND, ATACommand::Packet as u8);
+		IDEController::write(
+			channel,
+			ATAReg::COMMAND,
+			ATACommand::Packet as u8
+		);
 
 		// (VII) Waiting for the driver to finish or return an error code
 		IDEController::polling(channel, 1)?;
 
 		// (VIII) Sending the packet data
-		io::outsw(bus as u16, unsafe {packet.align_to::<u16>().1.as_ptr()}, 6);
+		io::outsw(
+			bus as u16,
+			unsafe { packet.align_to::<u16>().1.as_ptr() },
+			6
+		);
 
 		// (IX) Receiving Data
 		for _ in 0..numsects {
-			unsafe {IDEController::wait_irq()};
+			unsafe { IDEController::wait_irq() };
 			IDEController::polling(channel, 1)?;
 			io::insw(bus as u16, edi as *mut _, words);
 			edi += words * 2;
 		}
 
 		// (X) Waiting for an IRQ
-		unsafe {IDEController::wait_irq()};
+		unsafe { IDEController::wait_irq() };
 
 		// (XI) Waiting for BSY & DRQ to clear
 		loop {
@@ -178,8 +200,9 @@ impl ATAPI {
 	}
 
 	pub fn eject(drive: u8) -> Result<(), u8> {
-		let channel: &mut IDEChannelRegisters = unsafe {IDE.get_channel(drive)};
-		let device: &IDEDevice = unsafe {IDE.get_device(drive)};
+		let channel: &mut IDEChannelRegisters =
+			unsafe { IDE.get_channel(drive) };
+		let device: &IDEDevice = unsafe { IDE.get_device(drive) };
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 
@@ -192,7 +215,7 @@ impl ATAPI {
 		// 3- Eject ATAPI Driver
 		} else {
 			// Enable IRQs
-			unsafe {IDE_IRQ_INVOKED = 0x0};
+			unsafe { IDE_IRQ_INVOKED = 0x0 };
 			channel.n_ien = 0x0;
 			IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
@@ -213,7 +236,11 @@ impl ATAPI {
 			];
 
 			// (II) Select the Drive
-			IDEController::write(channel, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
+			IDEController::write(
+				channel,
+				ATAReg::HDDEVSEL,
+				(slavebit << 4) as u8
+			);
 
 			// (III) Delay 400 nanosecond for select to complete
 			for _ in 0..4 {
@@ -222,16 +249,24 @@ impl ATAPI {
 			}
 
 			// (IV) Send the Packet Command
-			IDEController::write(channel, ATAReg::COMMAND, ATACommand::Packet as u8);
+			IDEController::write(
+				channel,
+				ATAReg::COMMAND,
+				ATACommand::Packet as u8
+			);
 
 			// (V) Waiting for the driver to finish or invoke an error
 			// Polling and stop if error
 			IDEController::polling(channel, 1)?;
 
 			// (VI) Sending the packet data
-			io::outsw(bus as u16, unsafe {packet.align_to::<u16>().1.as_ptr()}, 6);
+			io::outsw(
+				bus as u16,
+				unsafe { packet.align_to::<u16>().1.as_ptr() },
+				6
+			);
 
-			unsafe {IDEController::wait_irq()};
+			unsafe { IDEController::wait_irq() };
 			// Polling and get error code
 			match IDEController::polling(channel, 1) {
 				Err(err) if err != 3 => return Err(err),
