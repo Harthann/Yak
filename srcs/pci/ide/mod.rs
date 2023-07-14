@@ -4,7 +4,9 @@ use core::ptr::copy;
 
 use crate::io::{inb, insl, outb};
 use crate::kprintln;
+use crate::spin::KMutex;
 use crate::time::sleep;
+use crate::utils::arcm::Arcm;
 
 mod ata;
 mod atapi;
@@ -22,7 +24,8 @@ use ata::{
 use atapi::ATAPI;
 
 static mut IDE_IRQ_INVOKED: u8 = 0;
-pub static mut IDE: IDEController = IDEController::new();
+pub static IDE: KMutex<IDEController> =
+	KMutex::<IDEController>::new(IDEController::new());
 
 enum IDEType {
 	ATA   = 0x00,
@@ -31,28 +34,28 @@ enum IDEType {
 
 #[derive(Clone, Copy)]
 struct IDEChannelRegisters {
-	base:  u16, // I/O Base
-	ctrl:  u16, // ControlBase
-	bmide: u16, // Bus Master IDE
-	n_ien: u8   // nIEN (No Interrupt)
+	r#type: ATAChannel, // 0 - Primary Channel, 1 - Secondary Channel
+	base:   u16,        // I/O Base
+	ctrl:   u16,        // ControlBase
+	bmide:  u16,        // Bus Master IDE
+	n_ien:  u8          // nIEN (No Interrupt)
 }
 
 impl IDEChannelRegisters {
-	const fn new() -> Self {
-		Self { base: 0, ctrl: 0, bmide: 0, n_ien: 0 }
+	const fn new(channel: ATAChannel) -> Self {
+		Self { r#type: channel, base: 0, ctrl: 0, bmide: 0, n_ien: 0 }
 	}
 }
 
-#[derive(Clone, Copy)]
-struct IDEDevice {
-	reserved:     u8,  // 0 (Empty) or 1 (This Drive really exists)
-	channel:      u8,  // 0 (Primary Channel) or 1 (Secondary Channel)
-	drive:        u8,  // 0 (Master Drive) or 1 (Slave Drive)
-	r#type:       u16, // 0: ATA, 1:ATAPI
-	signature:    u16, // Drive Signature
-	capabilities: u16, // Features
-	command_sets: u32, // Command Sets Supported
-	size:         u32, // Size in Sectors
+pub struct IDEDevice {
+	reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
+	channel:      Option<Arcm<IDEChannelRegisters>>,
+	drive:        u8,       // 0 (Master Drive) or 1 (Slave Drive)
+	r#type:       u16,      // 0: ATA, 1:ATAPI
+	signature:    u16,      // Drive Signature
+	capabilities: u16,      // Features
+	command_sets: u32,      // Command Sets Supported
+	size:         u32,      // Size in Sectors
 	model:        [u8; 41]  // Model in string
 }
 
@@ -60,7 +63,7 @@ impl IDEDevice {
 	const fn new() -> Self {
 		Self {
 			reserved:     0,
-			channel:      0,
+			channel:      None,
 			drive:        0,
 			r#type:       0,
 			signature:    0,
@@ -73,26 +76,22 @@ impl IDEDevice {
 }
 
 pub struct IDEController {
-	channels: [IDEChannelRegisters; 2],
-	devices:  [IDEDevice; 4]
+	devices: [IDEDevice; 4]
 }
 
 impl IDEController {
 	pub const fn new() -> Self {
 		Self {
-			channels: [IDEChannelRegisters::new(); 2],
-			devices:  [IDEDevice::new(); 4]
+			devices: [
+				IDEDevice::new(),
+				IDEDevice::new(),
+				IDEDevice::new(),
+				IDEDevice::new()
+			]
 		}
 	}
 
-	pub fn initialize(bar0: u32, bar1: u32, bar2: u32, bar3: u32, bar4: u32) {
-		unsafe {
-			IDE.init(bar0, bar1, bar2, bar3, bar4)
-				.expect("Error while reading disks");
-		}
-	}
-
-	pub fn init(
+	pub fn initialize(
 		&mut self,
 		bar0: u32,
 		bar1: u32,
@@ -102,28 +101,32 @@ impl IDEController {
 	) -> Result<(), u8> {
 		let mut ide_buf: [u8; 2048] = [0; 2048];
 
+		let channels: [Arcm<IDEChannelRegisters>; 2] = [
+			Arcm::new(IDEChannelRegisters::new(ATAChannel::Primary)),
+			Arcm::new(IDEChannelRegisters::new(ATAChannel::Secondary))
+		];
 		// 1- Detect I/O Ports which interface IDE Controller
-		self.channels[ATAChannel::Primary as usize].base =
+		channels[ATAChannel::Primary as usize].lock().base =
 			(bar0 & 0xfffffffc) as u16;
-		self.channels[ATAChannel::Primary as usize].ctrl =
+		channels[ATAChannel::Primary as usize].lock().ctrl =
 			(bar1 & 0xfffffffc) as u16;
-		self.channels[ATAChannel::Secondary as usize].base =
+		channels[ATAChannel::Secondary as usize].lock().base =
 			(bar2 & 0xfffffffc) as u16;
-		self.channels[ATAChannel::Secondary as usize].ctrl =
+		channels[ATAChannel::Secondary as usize].lock().ctrl =
 			(bar3 & 0xfffffffc) as u16;
-		self.channels[ATAChannel::Primary as usize].bmide =
+		channels[ATAChannel::Primary as usize].lock().bmide =
 			((bar4 & 0xfffffffc) + 0) as u16;
-		self.channels[ATAChannel::Secondary as usize].bmide =
+		channels[ATAChannel::Secondary as usize].lock().bmide =
 			((bar4 & 0xfffffffc) + 8) as u16;
 
 		// 2- Disable IRQs
 		IDEController::write(
-			&self.channels[ATAChannel::Primary as usize],
+			&channels[ATAChannel::Primary as usize].lock(),
 			ATAReg::CONTROL,
 			2
 		);
 		IDEController::write(
-			&self.channels[ATAChannel::Secondary as usize],
+			&channels[ATAChannel::Secondary as usize].lock(),
 			ATAReg::CONTROL,
 			2
 		);
@@ -134,14 +137,13 @@ impl IDEController {
 			for j in 0..2 {
 				let mut err: u8 = 0;
 				let mut r#type: u8 = IDEType::ATA as u8;
-				let channel: &IDEChannelRegisters = &self.channels[i];
 
 				// Assuming that no drive here
 				self.devices[count].reserved = 0;
 
 				// (I) Select Drive
 				IDEController::write(
-					channel,
+					&mut channels[i].lock(),
 					ATAReg::HDDEVSEL,
 					0xa0 | (j << 4)
 				);
@@ -149,7 +151,7 @@ impl IDEController {
 
 				// (II) Send ATA Identify Command
 				IDEController::write(
-					channel,
+					&mut channels[i].lock(),
 					ATAReg::COMMAND,
 					ATACommand::Identify as u8
 				);
@@ -157,13 +159,17 @@ impl IDEController {
 
 				// (III) Polling
 				// If Status = 0, No Device
-				if IDEController::read(channel, ATAReg::STATUS) == 0 {
+				if IDEController::read(&mut channels[i].lock(), ATAReg::STATUS)
+					== 0
+				{
 					continue;
 				}
 
 				loop {
-					let status: u8 =
-						IDEController::read(channel, ATAReg::STATUS);
+					let status: u8 = IDEController::read(
+						&mut channels[i].lock(),
+						ATAReg::STATUS
+					);
 					if (status & ATAStatus::ERR) != 0 {
 						err = 1;
 						break;
@@ -177,8 +183,14 @@ impl IDEController {
 
 				// (IV) Probe for ATAPI Devices
 				if err != 0 {
-					let cl: u8 = IDEController::read(channel, ATAReg::LBA1);
-					let ch: u8 = IDEController::read(channel, ATAReg::LBA2);
+					let cl: u8 = IDEController::read(
+						&mut channels[i].lock(),
+						ATAReg::LBA1
+					);
+					let ch: u8 = IDEController::read(
+						&mut channels[i].lock(),
+						ATAReg::LBA2
+					);
 
 					if cl == 0x14 && ch == 0xeb {
 						r#type = IDEType::ATAPI as u8;
@@ -190,7 +202,7 @@ impl IDEController {
 					}
 
 					IDEController::write(
-						channel,
+						&mut channels[i].lock(),
 						ATAReg::COMMAND,
 						ATACommand::IdentifyPacket as u8
 					);
@@ -199,7 +211,7 @@ impl IDEController {
 
 				// (V) Read Identification Space of the Device
 				IDEController::read_buffer(
-					channel,
+					&mut channels[i].lock(),
 					ATAReg::DATA,
 					unsafe { ide_buf.align_to_mut::<u32>().1 },
 					128
@@ -208,7 +220,7 @@ impl IDEController {
 				// (VI) Read Device Parameters
 				self.devices[count].reserved = 1;
 				self.devices[count].r#type = r#type as u16;
-				self.devices[count].channel = i as u8;
+				self.devices[count].channel = Some(channels[i].clone());
 				self.devices[count].drive = j;
 				unsafe {
 					copy(
@@ -260,7 +272,8 @@ impl IDEController {
 						}
 					}
 				} else {
-					self.devices[count].size = ATAPI::capacity(i as u8, 0)?;
+					let device: &mut IDEDevice = &mut self.devices[i as usize];
+					self.devices[count].size = ATAPI::capacity(device, 0)?;
 				}
 
 				// (VIII) String indicates model of device
@@ -422,22 +435,28 @@ impl IDEController {
 		Ok(())
 	}
 
-	fn print_error(drive: u8, mut err: u8) -> u8 {
-		let device: &IDEDevice = unsafe { IDE.get_device(drive) };
+	fn print_error(&mut self, drive: u8, mut err: u8) -> u8 {
+		let device: &IDEDevice = &self.devices[drive as usize];
+
 		if err == 0 {
 			return err;
 		}
 		kprintln!("IDE:");
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => {
+				kprintln!("- Channel non-initialized");
+				return 23;
+			}
+		};
+		let channel: &IDEChannelRegisters = &binding.lock();
 		match err {
 			1 => {
 				kprintln!("- Device Fault");
 				err = 19;
 			},
 			2 => {
-				let st: u8 = IDEController::read(
-					unsafe { IDE.get_channel(drive) },
-					ATAReg::ERROR
-				);
+				let st: u8 = IDEController::read(channel, ATAReg::ERROR);
 				if (st & ATAError::AMNF) != 0 {
 					kprintln!("- No Address Mark Found");
 					err = 7;
@@ -478,7 +497,7 @@ impl IDEController {
 		}
 		kprintln!(
 			"    - [{} {}] {}",
-			["Primary", "Secondary"][device.channel as usize],
+			["Primary", "Secondary"][channel.r#type as usize],
 			["Master", "Slave"][device.drive as usize],
 			CStr::from_bytes_until_nul(&device.model)
 				.unwrap()
@@ -496,12 +515,14 @@ impl IDEController {
 	/// + lba: LBA address --> index of the sector, which allows us to acces disks up to 2TB
 	/// + edi: adress of the buffer we want to fill
 	pub fn read_sectors(
+		&mut self,
 		drive: u8,
 		numsects: u8,
 		lba: u32,
 		edi: u32
 	) -> Result<(), u8> {
-		let device: &IDEDevice = unsafe { IDE.get_device(drive) };
+		let device: &mut IDEDevice = &mut self.devices[drive as usize];
+
 		// 1- Check if the drive presents
 		if drive > 3 || device.reserved == 0 {
 			// Drive not found
@@ -517,28 +538,24 @@ impl IDEController {
 			if device.r#type == IDEType::ATA as u16 {
 				match ATA::access(
 					ATADirection::Read as u8,
-					drive,
+					device,
 					lba,
 					numsects,
 					edi
 				) {
 					Ok(_) => {},
-					Err(err) => {
-						return Err(IDEController::print_error(drive, err))
-					},
+					Err(err) => return Err(self.print_error(drive, err))
 				}
 			} else if device.r#type == IDEType::ATAPI as u16 {
 				for i in 0..numsects {
 					match ATAPI::read(
-						drive as u8,
+						device,
 						lba + i as u32,
 						1,
 						edi + i as u32 * 2048
 					) {
 						Ok(_) => {},
-						Err(err) => {
-							return Err(IDEController::print_error(drive, err))
-						},
+						Err(err) => return Err(self.print_error(drive, err))
 					}
 				}
 			}
@@ -554,12 +571,14 @@ impl IDEController {
 	/// + lba: LBA address --> index of the sector, which allows us to access disks up to 2TB
 	/// + edi: adress of the buffer we want to fill
 	pub fn write_sectors(
+		&mut self,
 		drive: u8,
 		numsects: u8,
 		lba: u32,
 		edi: u32
 	) -> Result<(), u8> {
-		let device: &IDEDevice = unsafe { IDE.get_device(drive) };
+		let device: &mut IDEDevice = &mut self.devices[drive as usize];
+
 		// 1- Check if the drive presents
 		if drive > 3 || device.reserved == 0 {
 			// Drive not found
@@ -574,15 +593,13 @@ impl IDEController {
 			if device.r#type == IDEType::ATA as u16 {
 				match ATA::access(
 					ATADirection::Write as u8,
-					drive,
+					device,
 					lba,
 					numsects,
 					edi
 				) {
 					Ok(_) => {},
-					Err(err) => {
-						return Err(IDEController::print_error(drive, err))
-					},
+					Err(err) => return Err(self.print_error(drive, err))
 				}
 			} else if device.r#type == IDEType::ATAPI as u16 {
 				// Write-Protected
@@ -591,31 +608,25 @@ impl IDEController {
 		}
 		Ok(())
 	}
-
-	fn get_device(&mut self, drive: u8) -> &mut IDEDevice {
-		&mut self.devices[drive as usize]
-	}
-
-	fn get_channel(&mut self, drive: u8) -> &mut IDEChannelRegisters {
-		&mut self.channels[self.devices[drive as usize].channel as usize]
-	}
 }
 
 #[cfg(test)]
 mod test {
 
 	use crate::alloc::vec;
-	use crate::{sys_macros, IDEController};
+	use crate::{sys_macros, IDE};
 
 	#[sys_macros::test_case]
 	fn ide_read_write_sector() {
 		let to_write = vec!['B' as u8; 512];
 		let read_from = vec![0x0 as u8; 512];
 
-		let _ =
-			IDEController::write_sectors(1, 1, 0x0, to_write.as_ptr() as u32);
-		let _ =
-			IDEController::read_sectors(1, 1, 0x0, read_from.as_ptr() as u32);
+		let _ = IDE
+			.lock()
+			.write_sectors(1, 1, 0x0, to_write.as_ptr() as u32);
+		let _ = IDE
+			.lock()
+			.read_sectors(1, 1, 0x0, read_from.as_ptr() as u32);
 
 		assert_eq!(to_write, read_from);
 	}
@@ -625,10 +636,12 @@ mod test {
 		let to_write = vec!['A' as u8; 1024];
 		let read_from = vec![0x0 as u8; 1024];
 
-		let _ =
-			IDEController::write_sectors(1, 2, 0x0, to_write.as_ptr() as u32);
-		let _ =
-			IDEController::read_sectors(1, 2, 0x0, read_from.as_ptr() as u32);
+		let _ = IDE
+			.lock()
+			.write_sectors(1, 2, 0x0, to_write.as_ptr() as u32);
+		let _ = IDE
+			.lock()
+			.read_sectors(1, 2, 0x0, read_from.as_ptr() as u32);
 
 		assert_eq!(to_write, read_from);
 	}

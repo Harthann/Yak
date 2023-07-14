@@ -1,10 +1,4 @@
-use super::{
-	IDEChannelRegisters,
-	IDEController,
-	IDEDevice,
-	IDE,
-	IDE_IRQ_INVOKED
-};
+use super::{IDEChannelRegisters, IDEController, IDEDevice, IDE_IRQ_INVOKED};
 
 use crate::io;
 
@@ -91,6 +85,7 @@ pub mod ATAReg {
 	pub const DEVADDRESS: u8 = 0x0d;
 }
 
+#[derive(Clone, Copy)]
 pub enum ATAChannel {
 	Primary   = 0x00,
 	Secondary = 0x01
@@ -106,20 +101,18 @@ pub struct ATA {}
 impl ATA {
 	pub fn access(
 		direction: u8,
-		drive: u8,
+		device: &mut IDEDevice,
 		lba: u32,
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
+		let binding = device.channel.as_mut().ok_or(1)?;
+		let channel: &mut IDEChannelRegisters = &mut binding.lock();
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
-		// Read the channel
-		let channel: &mut IDEChannelRegisters =
-			unsafe { IDE.get_channel(drive) };
-		let drive: &IDEDevice = unsafe { IDE.get_device(drive) };
 		// Read the Drive [Master/Slave]
-		let slavebit: u32 = drive.drive as u32;
+		let slavebit: u32 = device.drive as u32;
 		// Bus Base, like 0x1f0 which is also data port
 		let bus: u32 = channel.base as u32;
 		// Almost every ATA drive has sector-size of 512-byte
@@ -144,7 +137,7 @@ impl ATA {
 			lba_io[4] = 0; // LBA28 is integer, so 32-bits are enough to access 2TB
 			lba_io[5] = 0; // LBA28 is integer, so 32-bits are enough to access 2TB
 			head = 0; // Lower 4-bits of HDDEVSEL are not used here
-		} else if drive.capabilities & 0x200 != 0 {
+		} else if device.capabilities & 0x200 != 0 {
 			// LBA48
 			lba_mode = 1;
 			lba_io[0] = ((lba & 0x00000FF) >> 0) as u8;

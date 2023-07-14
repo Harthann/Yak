@@ -4,7 +4,6 @@ use super::{
 	IDEController,
 	IDEDevice,
 	IDEType,
-	IDE,
 	IDE_IRQ_INVOKED
 };
 
@@ -19,10 +18,10 @@ enum ATAPICommand {
 pub struct ATAPI {}
 
 impl ATAPI {
-	pub fn capacity(drive: u8, lba: u32) -> Result<u32, u8> {
-		let channel: &mut IDEChannelRegisters =
-			unsafe { IDE.get_channel(drive) };
-		let slavebit: u32 = unsafe { IDE.get_device(drive).drive as u32 };
+	pub fn capacity(device: &mut IDEDevice, lba: u32) -> Result<u32, u8> {
+		let binding = device.channel.as_mut().ok_or(1)?;
+		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 		let mut buffer: [u32; 2] = [0; 2];
 
@@ -106,14 +105,14 @@ impl ATAPI {
 	}
 
 	pub fn read(
-		drive: u8,
+		device: &mut IDEDevice,
 		lba: u32,
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-		let channel: &mut IDEChannelRegisters =
-			unsafe { IDE.get_channel(drive) };
-		let slavebit: u32 = unsafe { IDE.get_device(drive).drive as u32 };
+		let binding = device.channel.as_mut().ok_or(1)?;
+		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 		// Sector Size
 		// ATAPI drives have a sector size of 2048 bytes
@@ -199,15 +198,14 @@ impl ATAPI {
 		Ok(())
 	}
 
-	pub fn eject(drive: u8) -> Result<(), u8> {
-		let channel: &mut IDEChannelRegisters =
-			unsafe { IDE.get_channel(drive) };
-		let device: &IDEDevice = unsafe { IDE.get_device(drive) };
+	pub fn eject(device: &mut IDEDevice) -> Result<(), u8> {
+		let binding = device.channel.as_mut().ok_or(1)?;
+		let channel: &mut IDEChannelRegisters = &mut binding.lock();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 
 		// 1- Check if the drive presents
-		if drive > 3 || device.reserved == 0 {
+		if device.reserved == 0 {
 			return Err(0x1);
 		// 2- Check if drive isn't ATAPI
 		} else if device.r#type == IDEType::ATA as u16 {
