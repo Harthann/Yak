@@ -214,7 +214,7 @@ impl Ext2 {
 }
 
 pub fn read_superblock() -> block::BaseSuperblock {
-    let mut buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
+    let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
 
     unsafe {
         IDE::read_sectors(DISKNO, 1, 2, buffer.as_ptr() as u32);
@@ -241,10 +241,8 @@ pub fn get_file_content(path: &str) -> Vec<char> {
     match opt {
         None => Vec::new(),
         Some((_, inode)) => {
-            let block = ext2.read_block(inode.dbp0);
-            let file: Vec<char> = block[0..inode.size() as usize].iter()
-                                                                 .map(|x| *x as char)
-                                                                 .collect();
+            let block = &ext2.read_block(inode.dbp0)[0..inode.size() as usize];
+            let file: Vec<char> = block.iter().map(|x| *x as char).collect();
             file
         }
     }
