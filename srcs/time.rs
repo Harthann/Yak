@@ -95,3 +95,63 @@ pub fn microsleep() {
 		crate::io::io_wait();
 	}
 }
+
+
+macro_rules! isleap {
+    ($arg: tt) => {
+        (($arg % 4) == 0 && ($arg % 100) != 0) || (($arg % 400) == 0)
+    }
+}
+//#define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
+const WDAYS: [&str; 7] = [
+	"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+];
+const MONTHS: [&str; 12] = [
+	"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+	"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+const MONTHCNT: [u8; 12] = [
+	31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
+];
+
+// This implementation seems incorrect
+pub fn ctime(mut timestamp: u32) -> crate::string::String {
+	let ss = timestamp % 60;
+	timestamp /= 60;	/* minutes */
+	let mm = timestamp % 60;
+	timestamp /= 60;	/* hours */
+	let hh = timestamp % 24;
+	timestamp /= 24;	/* days */
+	let wday = (4 + timestamp) % 7;	/* weekday, 'twas thursday when time started */
+
+    let mut year = 1970;
+    while timestamp >= 365 {
+        timestamp = timestamp - match isleap!(year) {
+            true => 366,
+            false => 365
+        };
+		//timestamp -= ? 366: 365;
+        year = year + 1;
+    }
+
+	timestamp = timestamp + 1;	/* days are 1-based */
+
+    let mut month = 0;
+    while timestamp > MONTHCNT[month] as u32 {
+		timestamp = timestamp - MONTHCNT[month] as u32;
+        month = month + 1;
+    }
+
+	if month > 2 && isleap!(year) {
+		timestamp = timestamp - 1;
+    }
+    let date = crate::alloc::format!("{} {}{:3} {:02}:{:02}:{:02} {}",
+             WDAYS[wday as usize], MONTHS[month], timestamp, hh, mm, ss, year);
+    /*
+	snprintf(buf, sizeof buf, "%s %s%3d %02d:%02d:%02d %d\n",
+	    ((wday  < 0 || wday  >=  7)? "???": wdays[wday]),
+	    ((month < 0 || month >= 12)? "???": months[month]),
+	    (int)timestamp, hh, mm, ss, year);
+        */
+    return date;
+}
