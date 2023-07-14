@@ -40,7 +40,6 @@ pub extern "C" fn kmain() -> ! {
     if crate::fs::ext2::is_ext2() == false {
         panic!("Wrong file system detected on disk 1.");
     }
-    crate::fs::ext2::test_ext2();
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(
