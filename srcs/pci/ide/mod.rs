@@ -3,7 +3,7 @@ use core::mem::size_of;
 
 use crate::io::{inb, insl, outb};
 use crate::kprintln;
-use crate::spin::KMutex;
+use crate::spin::{KMutex, Mutex};
 use crate::time::sleep;
 use crate::utils::arcm::Arcm;
 
@@ -22,7 +22,7 @@ use ata::{
 };
 use atapi::ATAPI;
 
-static mut IDE_IRQ_INVOKED: u8 = 0;
+static IDE_IRQ_INVOKED: Mutex<u8> = Mutex::<u8>::new(0);
 pub static IDE: KMutex<IDEController> =
 	KMutex::<IDEController>::new(IDEController::new());
 
@@ -295,17 +295,17 @@ impl IDEController {
 		Ok(())
 	}
 
-	unsafe fn wait_irq() {
+	fn wait_irq() {
 		loop {
-			if IDE_IRQ_INVOKED != 0 {
+			if *IDE_IRQ_INVOKED.lock() != 0 {
 				break;
 			}
 		}
-		IDE_IRQ_INVOKED = 0;
+		*IDE_IRQ_INVOKED.lock() = 0;
 	}
 
-	unsafe fn irq() {
-		IDE_IRQ_INVOKED = 1;
+	fn irq() {
+		*IDE_IRQ_INVOKED.lock() = 1;
 	}
 
 	fn read(channel: &IDEChannelRegisters, reg: u8) -> u8 {

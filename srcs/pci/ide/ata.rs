@@ -120,8 +120,8 @@ impl ATA {
 		let head: u8;
 
 		// Disable IRQ
-		unsafe { IDE_IRQ_INVOKED = 0x0 };
-		channel.n_ien = unsafe { IDE_IRQ_INVOKED + 0x02 };
+		*IDE_IRQ_INVOKED.lock() = 0x0;
+		channel.n_ien = 0x02;
 		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
 		// (I) Select one from LBA28, LBA48 or CHS

@@ -26,7 +26,7 @@ impl ATAPI {
 		let mut buffer: [u32; 2] = [0; 2];
 
 		// Enable IRQs
-		unsafe { IDE_IRQ_INVOKED = 0 };
+		*IDE_IRQ_INVOKED.lock() = 0;
 		channel.n_ien = 0;
 		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
@@ -78,7 +78,7 @@ impl ATAPI {
 		// (VIII) Sending the packet data
 		io::outsw(
 			bus as u16,
-			unsafe { packet.align_to::<u16>().1.as_ptr() },
+			packet.as_ptr() as *const _,
 			6
 		);
 
@@ -86,7 +86,7 @@ impl ATAPI {
 		IDEController::polling(channel, 1)?;
 		io::insw(
 			bus as u16,
-			unsafe { buffer.align_to_mut::<u16>().1.as_mut_ptr() },
+			buffer.as_mut_ptr() as *mut _,
 			4
 		);
 
@@ -119,7 +119,7 @@ impl ATAPI {
 		let words: u32 = 1024;
 
 		// Enable IRQs
-		unsafe { IDE_IRQ_INVOKED = 0 };
+		*IDE_IRQ_INVOKED.lock() = 0;
 		channel.n_ien = 0;
 		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
@@ -170,20 +170,20 @@ impl ATAPI {
 		// (VIII) Sending the packet data
 		io::outsw(
 			bus as u16,
-			unsafe { packet.align_to::<u16>().1.as_ptr() },
+			packet.as_ptr() as *const _,
 			6
 		);
 
 		// (IX) Receiving Data
 		for _ in 0..numsects {
-			unsafe { IDEController::wait_irq() };
+			IDEController::wait_irq();
 			IDEController::polling(channel, 1)?;
 			io::insw(bus as u16, edi as *mut _, words);
 			edi += words * 2;
 		}
 
 		// (X) Waiting for an IRQ
-		unsafe { IDEController::wait_irq() };
+		IDEController::wait_irq();
 
 		// (XI) Waiting for BSY & DRQ to clear
 		loop {
@@ -213,7 +213,7 @@ impl ATAPI {
 		// 3- Eject ATAPI Driver
 		} else {
 			// Enable IRQs
-			unsafe { IDE_IRQ_INVOKED = 0x0 };
+			*IDE_IRQ_INVOKED.lock() = 0x0;
 			channel.n_ien = 0x0;
 			IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
@@ -260,11 +260,11 @@ impl ATAPI {
 			// (VI) Sending the packet data
 			io::outsw(
 				bus as u16,
-				unsafe { packet.align_to::<u16>().1.as_ptr() },
+				packet.as_ptr() as *const _,
 				6
 			);
 
-			unsafe { IDEController::wait_irq() };
+			IDEController::wait_irq();
 			// Polling and get error code
 			match IDEController::polling(channel, 1) {
 				Err(err) if err != 3 => return Err(err),
