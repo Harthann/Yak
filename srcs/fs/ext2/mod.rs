@@ -15,6 +15,7 @@ pub struct Ext2 {
 }
 
 impl Ext2 {
+    // Temporary hardcoded values (disk number, sector size etc)
     pub fn new() -> Self {
         Self {
             sblock:read_superblock()
@@ -27,6 +28,15 @@ impl Ext2 {
 
     pub fn inode_to_bgroup(&self, inode: u32) -> u32 {
         (inode - 1) / self.sblock.inode_per_grp()
+    }
+    pub fn inode_to_block(&self, inode: u32) -> u32 {
+        let inode_table_block = self.get_gdt_entry(self.inode_to_bgroup(inode as u32) as usize).inode_table;
+        let offset = (inode - 1) * self.inode_size() as u32;
+        inode_table_block + offset / self.sblock.bsize()
+    }
+    pub fn inode_to_offset(&self, inode: u32) -> u32 {
+        let inode_per_block = self.sblock.bsize() as usize /  self.inode_size() as usize;
+        ((inode - 1) % inode_per_block as u32) * self.inode_size() as u32
     }
 
     pub fn inode_size(&self) -> u16 {
@@ -64,16 +74,48 @@ impl Ext2 {
         if entry < 1 {
             panic!("Ext2fs inodes start indexing at 1");
         }
-        let inode_table_block = self.get_gdt_entry(self.inode_to_bgroup(entry as u32) as usize).inode_table;
-        
-        let index = (entry - 1) * self.inode_size() as usize;
-        let block = self.read_block(inode_table_block + (index / self.sblock.bsize() as usize) as u32);
-        let index = index % self.sblock.bsize() as usize;
+        let block = self.read_block(self.inode_to_block(entry as u32));
+        let index = self.inode_to_offset(entry as u32) as usize;
         crate::dprintln!("Trying to get inode: {} found at index: {}", entry, index);
         let inode = inode::Inode::from(&block[index..index + self.inode_size() as usize]);
         inode
     }
 
+    /// Find file inside dentry given the dentry inode and file searched.
+    /// Currently ignore error cases and remain basic
+    pub fn dentry_find(&self, inodeno: usize, filename: &str) -> Option<inode::Dentry> {
+        // Retrieve inode at index inodeno
+        let inode = self.get_inode_entry(inodeno);
+        // Read block pointed by inode
+        let block = self.read_block(inode.dbp0);
+        let mut entry_start = 0;
+        while entry_start != 4096 {
+            let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
+            entry_start = entry_start + dentry.dentry_size as usize;
+            if dentry.name == filename {
+                return Some(dentry);
+            }
+        }
+        None
+    }
+
+    pub fn get_inode_of(&self, path: &str) -> Option<(usize, inode::Inode)> {
+        self._get_inode_of(path.trim_start_matches('/'), 2)
+    }
+
+    fn _get_inode_of(&self, path: &str, inodeno: usize) -> Option<(usize, inode::Inode)> {
+        if path.len() == 0 {
+            // Caller has found the entry we search
+            return Some((inodeno, self.get_inode_entry(inodeno)));
+        }
+        let opt = path.find('/');
+        let filename = match opt {
+            Some(index) => &path[..index],
+            None => path
+        };
+        let dentry = self.dentry_find(inodeno, filename)?;
+        self._get_inode_of(path.trim_start_matches(filename).trim_start_matches('/'), dentry.inode as usize)
+    }
 }
 
 pub fn read_superblock() -> block::BaseSuperblock {
@@ -133,8 +175,6 @@ pub fn _list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
         crate::dprintln!("Looking in current dir block: {}", inode);
         let mut dentries: crate::vec::Vec<inode::Dentry> = crate::vec::Vec::new();
         let mut entry_start = 0;
-        let tmpinode = inode::Inode::from(&block[entry_start..block.len()]);
-        crate::dprintln!("Found inode: {:#?}", tmpinode);
         while entry_start != 4096 {
             let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
             
