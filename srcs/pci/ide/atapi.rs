@@ -76,19 +76,11 @@ impl ATAPI {
 		IDEController::polling(channel, 1)?;
 
 		// (VIII) Sending the packet data
-		io::outsw(
-			bus as u16,
-			packet.as_ptr() as *const _,
-			6
-		);
+		io::outsw(bus as u16, packet.as_ptr() as *const _, 6);
 
 		// (IX) Receiving Data
 		IDEController::polling(channel, 1)?;
-		io::insw(
-			bus as u16,
-			buffer.as_mut_ptr() as *mut _,
-			4
-		);
+		io::insw(bus as u16, buffer.as_mut_ptr() as *mut _, 4);
 
 		// (X) Waiting for BSY & DRQ to clear
 		loop {
@@ -168,11 +160,7 @@ impl ATAPI {
 		IDEController::polling(channel, 1)?;
 
 		// (VIII) Sending the packet data
-		io::outsw(
-			bus as u16,
-			packet.as_ptr() as *const _,
-			6
-		);
+		io::outsw(bus as u16, packet.as_ptr() as *const _, 6);
 
 		// (IX) Receiving Data
 		for _ in 0..numsects {
@@ -258,11 +246,7 @@ impl ATAPI {
 			IDEController::polling(channel, 1)?;
 
 			// (VI) Sending the packet data
-			io::outsw(
-				bus as u16,
-				packet.as_ptr() as *const _,
-				6
-			);
+			io::outsw(bus as u16, packet.as_ptr() as *const _, 6);
 
 			IDEController::wait_irq();
 			// Polling and get error code
