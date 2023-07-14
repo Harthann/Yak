@@ -103,14 +103,11 @@ pub fn get_file_content(path: &str) -> Vec<char> {
     };
     crate::dprintln!("Looking for {filename} in {path}");
     let dentries = list_dir(path.trim_end_matches(filename));
-    crate::dprintln!("Found {} entries", dentries.len());
     let mut file: Vec<char> = Vec::new();
     let ext2 = Ext2::new();
     for i in dentries {
         if i.name == filename {
-            crate::dprintln!("Found correspondig dentry: {}", filename);
             let inode = ext2.get_inode_entry(i.inode as usize);
-            crate::dprintln!("{:#?}", inode);
             let block = ext2.read_block(inode.dbp0);
             for i in 0..inode.size() {
                 file.push(block[i as usize] as char);
