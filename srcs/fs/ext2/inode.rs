@@ -91,6 +91,10 @@ impl Inode {
         // Get only perms and ignore type
         self.tperm & 0x7777
     }
+
+    pub fn is_dir(&self) -> bool {
+        self.tperm & ITYPE_DIR != 0
+    }
 }
 
 use core::mem::transmute;

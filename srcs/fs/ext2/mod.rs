@@ -264,9 +264,9 @@ pub fn get_file_content(path: &str) -> Vec<char> {
 
 /// Helper function to list all entries in a directory
 /// Does not yet check if found entry is a directory or not
-pub fn list_dir(path: &str) -> crate::vec::Vec<inode::Dentry> {
+pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
     let ext2 = Ext2::new();
-    let inode = ext2.get_inode_of(path);
+    let inode = ext2.recurs_find(path, inode);
     return match inode {
         None => crate::vec::Vec::new(),
         Some((_, inode)) => {
