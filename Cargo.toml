@@ -25,7 +25,7 @@ sys_macros = { path= "srcs/sys_macros"}
 # These feature need to be declare
 # e.g: default = ["multitasking"]
 # e.g: dev = ["multitasking", "debug_features"]
-default = ["multitasking"]
+default = ["multitasking", "debug_features"]
 
 # Declare feature multitasking, depends on nothing
 multitasking = []

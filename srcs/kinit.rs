@@ -76,6 +76,7 @@ mod multiboot;
 #[macro_use]
 mod syscalls;
 mod io;
+mod pci;
 mod pic;
 mod proc;
 mod time;
@@ -106,6 +107,7 @@ mod test;
 use cli::Command;
 use memory::allocator::linked_list::LinkedListAllocator;
 use memory::paging::{init_paging, page_directory};
+use pci::ide::IDE;
 use pic::setup_pic8259;
 
 #[global_allocator]
@@ -127,7 +129,7 @@ use crate::gdt::{gdt_desc, GDTR};
 
 const KSTACK_ADDR: VirtAddr = 0xffbfffff;
 const STACK_ADDR: VirtAddr = 0xff0fffff;
-const STACK_SIZE: u32 = 0x1000;
+const STACK_SIZE: u32 = 0x1000 * 4;
 
 // Kernel initialisation
 #[no_mangle]
@@ -150,10 +152,9 @@ pub extern "C" fn kinit() {
 	gdt::tss::init_tss(KSTACK_ADDR + 1);
 	reload_tss!();
 
-	// init tracker after init first process
-	unsafe {
-		KTRACKER = Tracker::new();
-	}
+	IDE.lock()
+		.initialize(0x1F0, 0x3F6, 0x170, 0x376, 0x000)
+		.expect("Cannot read from disks");
 
 	setup_pic8259();
 
@@ -161,6 +162,11 @@ pub extern "C" fn kinit() {
 	// This setup should be done using frequency, but for readability and ease of use, this is done
 	// with time between each interrupt in ms.
 	pic::set_irq0_in_ms(1.0);
+
+	// init tracker after init first process
+	unsafe {
+		KTRACKER = Tracker::new();
+	}
 
 	// Reserve some spaces to push things before main
 	unsafe { core::arch::asm!("mov esp, {}", in(reg) STACK_ADDR + 1 - 32) };
