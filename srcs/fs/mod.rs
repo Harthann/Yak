@@ -176,4 +176,3 @@ pub fn socket_pair(
 	sockets[1] = index2;
 	Ok(0)
 }
-

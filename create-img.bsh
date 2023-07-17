@@ -17,5 +17,5 @@ mke2fs \
   -r 1 \
   -t ext2 \
   "$img_file" \
-  32M \
+  128M \
 ;

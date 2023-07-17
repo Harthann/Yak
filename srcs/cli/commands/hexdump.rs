@@ -1,6 +1,6 @@
-use crate::kprintln;
-use crate::alloc::vec::Vec;
 use crate::alloc::string::String;
+use crate::alloc::vec::Vec;
+use crate::kprintln;
 use crate::vga_buffer::hexdump;
 
 pub fn hextou(string: &str) -> Option<usize> {

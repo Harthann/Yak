@@ -2,4 +2,5 @@
 
 pub mod arcm;
 pub mod flags;
+pub mod math;
 pub mod queue;

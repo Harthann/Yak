@@ -32,14 +32,11 @@ mod poc {
 	}
 }
 
-
-
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-
-    if crate::fs::ext2::is_ext2() == false {
-        panic!("Wrong file system detected on disk 1.");
-    }
+	if crate::fs::ext2::is_ext2() == false {
+		panic!("Wrong file system detected on disk 1.");
+	}
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(

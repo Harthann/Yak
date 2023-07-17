@@ -1,27 +1,27 @@
 use core::arch::asm;
 
 use crate::cli::LOCK_CMD;
+use crate::proc::signal::SignalType;
 use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
-use crate::syscalls::timer::sys_getppid;
-use crate::proc::signal::SignalType;
 use crate::syscalls::signal::sys_kill;
+use crate::syscalls::timer::sys_getppid;
 use crate::vec::Vec;
-use crate::{io, kprint, kprintln};
 use crate::vga_buffer::screenclear;
+use crate::{io, kprint, kprintln};
 
 // Commands modules
-mod time;
-mod hexdump;
 mod debugfs;
-mod valgrind;
+mod hexdump;
 mod process;
+mod time;
+mod valgrind;
 
-use valgrind::valgrind;
-use process::{ps, pmap, kill};
 use debugfs::debugfs;
 use hexdump::hexdump_parser;
-use time::{jiffies, uptime, date};
+use process::{kill, pmap, ps};
+use time::{date, jiffies, uptime};
+use valgrind::valgrind;
 
 const NB_CMDS: usize = 17;
 const MAX_CMD_LENGTH: usize = 250;
@@ -43,12 +43,13 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	valgrind,
 	pmap,
 	kill,
-    debugfs
+	debugfs
 ];
 
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill", "debugfs",
+	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill",
+	"debugfs"
 ];
 
 fn reboot(_: Vec<String>) {
@@ -85,7 +86,6 @@ fn halt(_: Vec<String>) {
 		asm!("hlt");
 	}
 }
-
 
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
@@ -259,4 +259,3 @@ impl Command {
 		}
 	}
 }
-

@@ -1,9 +1,9 @@
-use crate::alloc::vec::Vec;
 use crate::alloc::string::String;
+use crate::alloc::vec::Vec;
 use crate::kprintln;
 
-use crate::proc::process::{Pid, Process};
 use crate::cli::commands::hexdump::atou;
+use crate::proc::process::{Pid, Process};
 use crate::syscalls::signal::sys_kill;
 
 pub fn pmap(command: Vec<String>) {
@@ -72,5 +72,3 @@ pub fn kill(command: Vec<String>) {
 pub fn ps(_: Vec<String>) {
 	unsafe { Process::print_all_process() };
 }
-
-
