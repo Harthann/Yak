@@ -151,9 +151,7 @@ impl Bitmaps {
 }
 
 pub fn physmap_as_mut() -> &'static mut Bitmaps {
-	unsafe {
-		&mut PHYSMAP
-	}
+	unsafe { &mut PHYSMAP }
 }
 
 use core::fmt;

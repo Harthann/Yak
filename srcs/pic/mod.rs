@@ -130,7 +130,6 @@ pub fn pic_remap(offset1: u8, offset2: u8) {
 
 pub fn irq_set_mask(mut irq: usize) {
 	let port: u16;
-	
 
 	if irq < 8 {
 		port = PIC1_DATA;
@@ -144,7 +143,6 @@ pub fn irq_set_mask(mut irq: usize) {
 
 pub fn irq_clear_mask(mut irq: usize) {
 	let port: u16;
-	
 
 	if irq < 8 {
 		port = PIC1_DATA;

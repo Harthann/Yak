@@ -110,7 +110,7 @@ pub fn mmap(addr: *const mmap_arg) -> *const u8 {
 				.expect("Mmap failed to create first PageTable");
 			user_pd.set_entry(
 				991,
-				get_paddr!(pt as *const _)
+				(get_paddr!(pt as *const _))
 					| PAGE_WRITABLE | PAGE_PRESENT
 					| paging::PAGE_USER
 			);

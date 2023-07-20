@@ -12,12 +12,12 @@ mod overworld;
 
 #[repr(u32)]
 enum BeatType {
-	WHOLE     = 1,
-	HALF      = 2,
-	QUARTER   = 4,
-	EIGTH     = 8,
-	SIXTEENTH = 16,
-	THIRTY2ND = 32
+	Whole     = 1,
+	Half      = 2,
+	Quarter   = 4,
+	Eighth    = 8,
+	Sixteenth = 16,
+	Thirty2nd = 32
 }
 
 struct Partition {
@@ -36,13 +36,13 @@ impl Partition {
 		let whole_note = (60000 / bpm) * beat_type as usize;
 		Partition {
 			bpm,
-			whole_note_duration:     whole_note,
-			half_note_duration:      whole_note / 2,
-			quarter_note_duration:   whole_note / 4,
-			eigth_note_duration:     whole_note / 8,
+			whole_note_duration: whole_note,
+			half_note_duration: whole_note / 2,
+			quarter_note_duration: whole_note / 4,
+			eigth_note_duration: whole_note / 8,
 			sixteenth_note_duration: whole_note / 16,
 			thirty2nd_note_duration: whole_note / 32,
-			notes:                   Vec::new()
+			notes: Vec::new()
 		}
 	}
 
@@ -53,19 +53,19 @@ impl Partition {
 		note_type: NoteType
 	) -> &mut Self {
 		let duration: usize = match note_tempo {
-			NoteTempo::WHOLE => self.whole_note_duration,
-			NoteTempo::HALF => self.half_note_duration,
-			NoteTempo::QUARTER => self.quarter_note_duration,
-			NoteTempo::EIGTH => self.eigth_note_duration,
-			NoteTempo::SIXTEENTH => self.sixteenth_note_duration,
-			NoteTempo::THIRTY2ND => self.thirty2nd_note_duration
+			NoteTempo::Whole => self.whole_note_duration,
+			NoteTempo::Half => self.half_note_duration,
+			NoteTempo::Quarter => self.quarter_note_duration,
+			NoteTempo::Eighth => self.eigth_note_duration,
+			NoteTempo::Sixteenth => self.sixteenth_note_duration,
+			NoteTempo::Thirty2nd => self.thirty2nd_note_duration
 		};
 		match note_type {
-			NoteType::BASE => self.notes.push(Note::new(frequency, duration)),
-			NoteType::DOTTED => {
+			NoteType::Base => self.notes.push(Note::new(frequency, duration)),
+			NoteType::Dotted => {
 				self.notes.push(Note::new(frequency, duration * 3 / 2))
 			},
-			NoteType::TRIPLET => {
+			NoteType::Triplet => {
 				self.notes.push(Note::new(frequency, duration / 3));
 				self.notes.push(Note::new(frequency, duration / 3));
 				self.notes.push(Note::new(frequency, duration / 3));
@@ -80,12 +80,12 @@ impl Partition {
 		note_tempo: NoteTempo
 	) {
 		let duration: usize = match note_tempo {
-			NoteTempo::WHOLE => self.whole_note_duration,
-			NoteTempo::HALF => self.half_note_duration,
-			NoteTempo::QUARTER => self.quarter_note_duration,
-			NoteTempo::EIGTH => self.eigth_note_duration,
-			NoteTempo::SIXTEENTH => self.sixteenth_note_duration,
-			NoteTempo::THIRTY2ND => self.thirty2nd_note_duration
+			NoteTempo::Whole => self.whole_note_duration,
+			NoteTempo::Half => self.half_note_duration,
+			NoteTempo::Quarter => self.quarter_note_duration,
+			NoteTempo::Eighth => self.eigth_note_duration,
+			NoteTempo::Sixteenth => self.sixteenth_note_duration,
+			NoteTempo::Thirty2nd => self.thirty2nd_note_duration
 		};
 		self.notes.push(Note::new(frequencies.0, duration / 3));
 		self.notes.push(Note::new(frequencies.1, duration / 3));
@@ -99,12 +99,12 @@ impl Partition {
 		div: usize
 	) {
 		let duration: usize = match note_tempo {
-			NoteTempo::WHOLE => self.whole_note_duration,
-			NoteTempo::HALF => self.half_note_duration,
-			NoteTempo::QUARTER => self.quarter_note_duration,
-			NoteTempo::EIGTH => self.eigth_note_duration,
-			NoteTempo::SIXTEENTH => self.sixteenth_note_duration,
-			NoteTempo::THIRTY2ND => self.thirty2nd_note_duration
+			NoteTempo::Whole => self.whole_note_duration,
+			NoteTempo::Half => self.half_note_duration,
+			NoteTempo::Quarter => self.quarter_note_duration,
+			NoteTempo::Eighth => self.eigth_note_duration,
+			NoteTempo::Sixteenth => self.sixteenth_note_duration,
+			NoteTempo::Thirty2nd => self.thirty2nd_note_duration
 		};
 		self.notes.push(Note::new(frequency, duration / div));
 	}

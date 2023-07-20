@@ -113,7 +113,7 @@ pub fn free_page(vaddr: VirtAddr) {
 
 macro_rules! get_paddr {
 	($vaddr:expr) => {
-		crate::memory::paging::page_directory
+		$crate::memory::paging::page_directory
 			.get_page_table(($vaddr as usize) >> 22)
 			.entries[(($vaddr as usize) & 0x3ff000) >> 12]
 			.get_paddr()

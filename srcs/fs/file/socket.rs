@@ -26,10 +26,9 @@ pub enum SocketType {
 /// Represent the protocol bound to the socket.
 /// Generally only one protocol is implemented for each socket type.
 /// Currently no protocol are implemented
-#[allow(non_camel_case_types)]
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum SocketProtocol {
-	DEFAULT
+	Default
 }
 
 // Maybe replace Vec<u8> with reference on slice
@@ -210,7 +209,7 @@ mod test {
 		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
-			SocketProtocol::DEFAULT
+			SocketProtocol::Default
 		)
 		.expect("Error creating sockets");
 		sockets
@@ -241,7 +240,7 @@ mod test {
 		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
-			SocketProtocol::DEFAULT
+			SocketProtocol::Default
 		)
 		.expect("Error creating sockets");
 		sockets
@@ -266,14 +265,13 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn test_read_socket_0() {
-		
 		let input: [u8; 7] = [21, 245, 9, 29, 56, 13, 23];
 		let mut buffer: [u8; 10] = [0; 10];
 
 		let sockets: (Socket, Socket) = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
-			SocketProtocol::DEFAULT
+			SocketProtocol::Default
 		)
 		.expect("Error creating sockets");
 		match sockets.1.buffer {
@@ -292,14 +290,13 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn test_read_socket_1() {
-		
 		let input: &str = "This is not a drill!";
 		let mut buffer: [u8; 10] = [0; 10];
 
 		let sockets: (Socket, Socket) = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
-			SocketProtocol::DEFAULT
+			SocketProtocol::Default
 		)
 		.expect("Error creating sockets");
 		match sockets.0.buffer {
@@ -319,7 +316,6 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn test_read_socket_tiny_buffer() {
-		
 		let input: &str = "This is not a drill!";
 		let mut buffer: [u8; 1] = [0; 1];
 		let mut readed: usize = 0;
@@ -327,7 +323,7 @@ mod test {
 		let sockets: (Socket, Socket) = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
-			SocketProtocol::DEFAULT
+			SocketProtocol::Default
 		)
 		.expect("Error creating sockets");
 		match sockets.0.buffer {
@@ -356,7 +352,7 @@ mod test {
 		sockets = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
-			SocketProtocol::DEFAULT
+			SocketProtocol::Default
 		)
 		.expect("Error creating sockets");
 		sockets

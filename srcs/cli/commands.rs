@@ -44,7 +44,7 @@ pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
 	unsafe {
 		let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
 		// notify parent that vector has been copied
-		sys_kill(sys_getppid(), SignalType::SIGHUP as i32);
+		sys_kill(sys_getppid(), SignalType::SigHup as i32);
 		COMMANDS[cmd_id](args);
 	}
 }

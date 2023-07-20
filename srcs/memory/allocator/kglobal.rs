@@ -58,9 +58,7 @@ impl KGlobal {
 		zeroed: bool
 	) -> Result<NonNull<u8>, AllocError> {
 		match layout.size() {
-			0 => {
-				Ok(NonNull::dangling())
-			},
+			0 => Ok(NonNull::dangling()),
 			_size => {
 				let raw_ptr = unsafe {
 					if zeroed {

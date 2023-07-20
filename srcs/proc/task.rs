@@ -136,7 +136,7 @@ impl Task {
 		let len = self.process.lock().signals.len();
 		for i in 0..len {
 			if self.state != TaskStatus::Uninterruptible
-				&& self.process.lock().signals[i].sigtype == SignalType::SIGKILL
+				&& self.process.lock().signals[i].sigtype == SignalType::SigKill
 			{
 				todo!(); // sys_kill remove task etc.. ?
 			} else if self.state == TaskStatus::Running {
@@ -150,14 +150,14 @@ impl Task {
 						}
 						None
 					});
-				if res.is_some() {
+				if let Some(handler) = res {
 					self.process.lock().signals.remove(i);
 					self.state = TaskStatus::Uninterruptible;
-					Task::handle_signal(&mut self.regs, &res.unwrap())
+					Task::handle_signal(&mut self.regs, &handler)
 					// Never goes here
 				}
 			} else if self.state == TaskStatus::Interruptible
-				&& self.process.lock().signals[i].sigtype == SignalType::SIGCHLD
+				&& self.process.lock().signals[i].sigtype == SignalType::SigChld
 			{
 				self.state = TaskStatus::Running;
 			}

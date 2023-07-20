@@ -149,10 +149,10 @@ macro_rules! exec_fn_name {
 	};
 	($name:expr, $func:expr, $($rest:expr),+) => {
 		{
-			let mut args_size: $crate::vec::Vec<usize> = crate::vec::Vec::new();
-			crate::size_of_args!(args_size, $($rest),+);
+			let mut args_size: $crate::vec::Vec<usize> = $crate::vec::Vec::new();
+			$crate::size_of_args!(args_size, $($rest),+);
 			$name.push_str("\0");
-			crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size, $($rest),+)
+			$crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size, $($rest),+)
 		}
 	}
 }
@@ -167,9 +167,9 @@ macro_rules! exec_fn {
 	};
 	($func:expr, $($rest:expr),+) => {
 		{
-			let mut args_size: $crate::vec::Vec<usize> = crate::vec::Vec::new();
-			crate::size_of_args!(args_size, $($rest),+);
-			crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size, $($rest),+)
+			let mut args_size: $crate::vec::Vec<usize> = $crate::vec::Vec::new();
+			$crate::size_of_args!(args_size, $($rest),+);
+			$crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size, $($rest),+)
 		}
 	}
 }

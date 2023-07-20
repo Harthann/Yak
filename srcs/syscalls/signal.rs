@@ -54,7 +54,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				return -(res.err().unwrap() as i32);
 			}
 			let signal_type = res.unwrap();
-			if signal_type == SignalType::SIGKILL {
+			if signal_type == SignalType::SigKill {
 				Process::zombify(pid, __W_STOPCODE!(signal_type as i32));
 				Task::remove_task_from_process(pid);
 				_sti();

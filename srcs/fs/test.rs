@@ -39,10 +39,8 @@ impl fs::FileOperation for Buffer {
 fn test_file() {
 	let buffer: Buffer = Buffer::new();
 	let buffer2: Buffer = Buffer::new();
-	fs::create_from_raw("test_file", buffer)
-		.expect("Failed to create file");
-	fs::create_from_raw("test_file2", buffer2)
-		.expect("Failed to create file");
+	fs::create_from_raw("test_file", buffer).expect("Failed to create file");
+	fs::create_from_raw("test_file2", buffer2).expect("Failed to create file");
 	fs::delete("test_file");
 	fs::delete("test_file2");
 }
@@ -136,7 +134,7 @@ fn test_socket_pair() {
 	socket_pair(
 		SocketDomain::AF_UNIX,
 		SocketType::SOCK_DGRAM,
-		SocketProtocol::DEFAULT,
+		SocketProtocol::Default,
 		&mut sockets
 	)
 	.expect("Failed to create socket pair");
@@ -192,7 +190,7 @@ fn test_socket_thread() {
 	socket_pair(
 		SocketDomain::AF_UNIX,
 		SocketType::SOCK_DGRAM,
-		SocketProtocol::DEFAULT,
+		SocketProtocol::Default,
 		&mut sockets
 	)
 	.expect("Failed to create socket pair");

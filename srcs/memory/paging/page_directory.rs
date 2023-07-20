@@ -21,7 +21,7 @@ impl PageDirectory {
 					page_dir.clear();
 					page_dir.set_entry(
 						1023,
-						get_paddr!(offset) | flags | PAGE_PRESENT
+						(get_paddr!(offset)) | flags | PAGE_PRESENT
 					);
 					page_dir
 				},
@@ -165,8 +165,8 @@ impl PageDirectory {
 		while i < 1023 {
 			if self.get_entry(i).get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
-				if res.is_ok() {
-					return Ok(get_vaddr!(i, res.unwrap()));
+				if let Ok(page_frame) = res {
+					return Ok(get_vaddr!(i, page_frame));
 				}
 			}
 			i += 1;
