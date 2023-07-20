@@ -9,7 +9,7 @@ mod poc {
 	struct Poc;
 
 	#[sys_macros::poc_insertion]
-	fn insertion_poc() {
+	pub fn insertion_poc() {
 		crate::kprintln!("Insertion poc core");
 	}
 
@@ -37,6 +37,7 @@ pub extern "C" fn kmain() -> ! {
 	if crate::fs::ext2::is_ext2() == false {
 		panic!("Wrong file system detected on disk 1.");
 	}
+    poc::insertion_poc();
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(

@@ -1,5 +1,5 @@
 mod bitmap;
-mod block;
+pub mod block;
 mod gdt;
 pub mod inode;
 
@@ -9,6 +9,9 @@ const DISKNO: u8 = 1;
 use crate::pci::ide::IDE;
 use crate::utils::math::roundup;
 
+/// Current read/write use entire block to perform operations
+/// In the filesystem created to test it this means we read/write 16 sectors for each operations
+/// This is pretty ineffective and will probably need optimisation in later version
 pub struct Ext2 {
 	pub sblock: block::BaseSuperblock
 }
@@ -80,7 +83,7 @@ impl Ext2 {
 	}
 
 	/// Read an entire block from disk
-	fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
+	pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
 		let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
 		let bsize = self.sblock.bsize() as usize;
 		let sector_per_block = bsize / SECTOR_SIZE as usize;
@@ -88,17 +91,16 @@ impl Ext2 {
 		let sector_no = bsize / SECTOR_SIZE as usize;
 		let mut block: crate::vec::Vec<u8> = crate::vec::Vec::new();
 
-		for i in 0..sector_no {
-			unsafe {
+        let block_no = block_no + self.sblock.superblock_block;
+		for i in 0..sector_no { unsafe {
 				IDE::read_sectors(
 					DISKNO,
 					1,
 					(block_no * sector_per_block as u32) + i as u32,
 					buffer.as_ptr() as u32
 				);
-				block.extend_from_slice(&buffer[0..SECTOR_SIZE as usize]);
-			}
-		}
+				block.extend_from_slice(&buffer);
+		}};
 		block
 	}
 
@@ -108,17 +110,21 @@ impl Ext2 {
 
 		let sector_no = bsize / SECTOR_SIZE as usize;
 
-		for i in 0..sector_no {
-			unsafe {
-				IDE::write_sectors(
-					DISKNO,
-					1,
-					(block_no * sector_per_block as u32) + i as u32,
-					block.as_ptr() as u32
-				);
-			}
-		}
+        let block_no = block_no + self.sblock.superblock_block;
+        unsafe {
+			IDE::write_sectors(
+				DISKNO,
+				sector_no as u8,
+				block_no * sector_per_block as u32,
+				block.as_ptr() as u32
+			);
+        };
 	}
+    fn write_slice(&mut self, block_no: u32, offset: usize, slice: &[u8]) {
+        let mut block = self.read_block(block_no);
+        block[offset..offset+slice.len()].copy_from_slice(slice);
+        self.write_block(block_no, &block);
+    }
 
 	fn write_inode(&mut self, inodeno: usize, inode: inode::Inode) {
 		todo!()
@@ -157,6 +163,22 @@ impl Ext2 {
         self.write_block(inode_no.bitmap_inode, &map.map);
     }
 
+    pub fn alloc_node(&mut self, group: usize) -> usize {
+        let mut map = self.read_inode_map(group);
+        let nodeno = map.get_free_node().unwrap();
+        self.sblock.inode_unalloc -= 1;
+        self.write_slice(0, 1024, &*self.sblock.into_boxed_slice());
+        self.write_inode_map(group, map);
+        nodeno
+    }
+    pub fn alloc_block(&mut self, group: usize) -> usize {
+        let mut map = self.read_block_map(group);
+        let nodeno = map.get_free_node().unwrap();
+        self.sblock.blocks_unalloc -= 1;
+        self.write_slice(0, 1024, &*self.sblock.into_boxed_slice());
+        self.write_block_map(group, map);
+        nodeno
+    }
 
 
 	/// Read disk to recover inode struct correcponding to the index passed as parameter

@@ -33,7 +33,7 @@ impl Bitmap {
 	}
 
     pub fn mask(&self, index: usize) -> u8 {
-        0b10000000 >> index
+        0b00000001 << index
     }
 
 	pub fn set_node(&mut self, index: usize) {

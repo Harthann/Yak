@@ -23,25 +23,14 @@ fn cat(command: Vec<String>) {
 	}
 }
 
+use crate::fs::ext2;
 fn test(command: Vec<String>) {
 	let mut ext2 = crate::fs::ext2::Ext2::new();
 	//let mut dentry = crate::fs::ext2::inode::Dentry::default();
-    let mut bmap = ext2.read_block_map(0);
-    let mut imap = ext2.read_inode_map(0);
-    crate::kprintln!("Space {} {}", bmap.get_space().0, bmap.get_space().1);
-    crate::kprintln!("Space {} {}", imap.get_space().0, imap.get_space().1);
-    let dentry_block = bmap.get_free_node().unwrap();
-    let dentry_inode = imap.get_free_node().unwrap();
-    crate::kprintln!("Free node {} {}", dentry_inode, dentry_block);
 
-    ext2.write_block_map(0, bmap);
-    ext2.write_inode_map(0, imap);
-
-	//dentry.name = String::from("hell");
-	//dentry.name_length = dentry.name.len() as u8;
-	//dentry.r#type = crate::fs::ext2::inode::Dtype::Directory as u8;
-	//dentry.dentry_size = crate::utils::math::roundup(8 + dentry.name_length as u16, 4);
-	//ext2.add_dentry(2, dentry);
+    let node = ext2.alloc_node(0);
+    let block = ext2.alloc_block(0);
+    crate::dprintln!("Node {}", node);
 }
 
 fn ls(command: Vec<String>) {

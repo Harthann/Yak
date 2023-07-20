@@ -1,7 +1,7 @@
 // mount_no indicate the number of mount since last fsck
 // mount_no_max indicate the number of mount between each fsck
 /// Superblock always take 1024 bytes with/without Extended block
-#[derive(Default)]
+#[derive(Default, Debug, PartialEq, Eq)]
 pub struct BaseSuperblock {
 	/// Total number of inodes in file system
 	inode_count:      u32,
@@ -10,11 +10,11 @@ pub struct BaseSuperblock {
 	/// Number of blocks reserved for superuser (see offset 80)
 	rblocks_num:      u32,
 	/// Total number of unallocated blocks
-	blocks_unalloc:   u32,
+	pub blocks_unalloc:   u32,
 	/// Total number of unallocated inodes
-	inode_unalloc:    u32,
+	pub inode_unalloc:    u32,
 	/// Block number of the block containing the superblock (also the starting block number, NOT always zero.)
-	superblock_block: u32,
+	pub superblock_block: u32,
 	/// log2 (block size) - 10. (In other words, the number to shift 1,024 to the left by to obtain the block size)
 	block_size:       u32,
 	/// log2 (fragment size) - 10. (In other words, the number to shift 1,024 to the left by to obtain the fragment size)
@@ -186,6 +186,41 @@ impl From<&[u8]> for BaseSuperblock {
 	}
 }
 
+impl BaseSuperblock {
+	pub fn into_boxed_slice(&self) -> crate::alloc::boxed::Box<[u8]> {
+        let mut vec = crate::alloc::vec::Vec::new();
+        
+		vec.extend_from_slice(&self.inode_count.to_le_bytes());
+		vec.extend_from_slice(&self.blocks_count.to_le_bytes());
+		vec.extend_from_slice(&self.rblocks_num.to_le_bytes());
+		vec.extend_from_slice(&self.blocks_unalloc.to_le_bytes());
+		vec.extend_from_slice(&self.inode_unalloc.to_le_bytes());
+		vec.extend_from_slice(&self.superblock_block.to_le_bytes());
+		vec.extend_from_slice(&self.block_size.to_le_bytes());
+		vec.extend_from_slice(&self.frag_size.to_le_bytes());
+		vec.extend_from_slice(&self.bgroup_bno.to_le_bytes());
+		vec.extend_from_slice(&self.bgroup_fno.to_le_bytes());
+		vec.extend_from_slice(&self.bgroup_ino.to_le_bytes());
+		vec.extend_from_slice(&self.last_mt.to_le_bytes());
+		vec.extend_from_slice(&self.last_wt.to_le_bytes());
+		vec.extend_from_slice(&self.mount_no.to_le_bytes());
+		vec.extend_from_slice(&self.mount_no_max.to_le_bytes());
+		vec.extend_from_slice(&self.ext2_sig.to_le_bytes());
+		vec.extend_from_slice(&self.fs_state.to_le_bytes());
+		vec.extend_from_slice(&self.err_handle.to_le_bytes());
+		vec.extend_from_slice(&self.minor.to_le_bytes());
+		vec.extend_from_slice(&self.last_fsck.to_le_bytes());
+		vec.extend_from_slice(&self.fsck_interval.to_le_bytes());
+		vec.extend_from_slice(&self.osid.to_le_bytes());
+		vec.extend_from_slice(&self.major.to_le_bytes());
+		vec.extend_from_slice(&self.uid.to_le_bytes());
+		vec.extend_from_slice(&self.gid.to_le_bytes());
+
+        vec.into_boxed_slice()
+	}
+}
+
+
 use core::fmt;
 impl fmt::Display for BaseSuperblock {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -223,6 +258,7 @@ const FSCREAT_OTHER: u16 = 4;
 
 /// Present if Major >= 1
 /// Bytes from 236 to 1023 aren't used
+#[derive(Debug, PartialEq, Eq)]
 pub struct ExtendedSuperblock {
 	/// First non-reserved inode in file system. (In versions < 1.0, this is fixed as 11)
 	first_inode:           u32,
