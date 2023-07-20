@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["inb","inl","inw","io_wait","outb","outl","outw"]};
+window.SIDEBAR_ITEMS = {"fn":["inb","inl","insb","insl","insw","inw","io_wait","outb","outl","outsb","outsl","outsw","outw"]};

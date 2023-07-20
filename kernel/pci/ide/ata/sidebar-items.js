@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["ATAChannel","ATACommand","ATADirection","ATAType"],"mod":["ATAError","ATAIdentify","ATAReg","ATAStatus"],"struct":["ATA"]};
