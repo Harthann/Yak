@@ -39,9 +39,9 @@ impl fs::FileOperation for Buffer {
 fn test_file() {
 	let buffer: Buffer = Buffer::new();
 	let buffer2: Buffer = Buffer::new();
-	let _file = fs::create_from_raw("test_file", buffer)
+	fs::create_from_raw("test_file", buffer)
 		.expect("Failed to create file");
-	let _file2 = fs::create_from_raw("test_file2", buffer2)
+	fs::create_from_raw("test_file2", buffer2)
 		.expect("Failed to create file");
 	fs::delete("test_file");
 	fs::delete("test_file2");

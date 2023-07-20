@@ -151,14 +151,14 @@ mod tests {
 		let flags = Flags::<AtomicU8>::default();
 		assert_eq!(flags.0.load(Ordering::Relaxed), 0);
 		for i in 0..8 {
-			assert_eq!(flags.is_enable(i), false);
-			assert_eq!(flags.is_disable(i), true);
+			assert!(!flags.is_enable(i));
+			assert!(flags.is_disable(i));
 			flags.enable(i);
-			assert_eq!(flags.is_enable(i), true);
-			assert_eq!(flags.is_disable(i), false);
+			assert!(flags.is_enable(i));
+			assert!(!flags.is_disable(i));
 			flags.disable(i);
-			assert_eq!(flags.is_enable(i), false);
-			assert_eq!(flags.is_disable(i), true);
+			assert!(!flags.is_enable(i));
+			assert!(flags.is_disable(i));
 		}
 	}
 }

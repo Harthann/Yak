@@ -11,7 +11,7 @@ const IDT_SIZE: usize = 48;
 const IDT_MAX_DESCRIPTORS: usize = 256;
 
 const EXCEPTION_SIZE: usize = 32;
-const STR_EXCEPTION: [&'static str; EXCEPTION_SIZE] = [
+const STR_EXCEPTION: [&str; EXCEPTION_SIZE] = [
 	"Divide-by-zero",
 	"Debug",
 	"Non-maskable Interrupt",
@@ -151,20 +151,18 @@ pub unsafe extern "C" fn exception_handler(regs: &mut Registers) {
 		}
 	} else if int_no == 0x80 {
 		syscall_handler(regs);
-	} else {
-		if int_no < PIC1_IRQ_OFFSET as usize
-			|| int_no > PIC2_IRQ_OFFSET as usize + 7
-		{
-			crate::kprintln!(
-				"\nUnknown exception (code: {}):\n{:#x?}",
-				int_no,
-				regs
-			);
-			hlt!();
-		} else {
-			crate::pic::handler(regs, int_no);
-		}
-	}
+	} else if int_no < PIC1_IRQ_OFFSET as usize
+ 			|| int_no > PIC2_IRQ_OFFSET as usize + 7
+ 		{
+ 			crate::kprintln!(
+ 				"\nUnknown exception (code: {}):\n{:#x?}",
+ 				int_no,
+ 				regs
+ 			);
+ 			hlt!();
+ 		} else {
+ 			crate::pic::handler(regs, int_no);
+ 		}
 	// Rust VecDeque seems to move reference when push/pop so we'll make a new one
 	let task = Task::get_running_task();
 	task.regs = *regs; // get back registers if updated by syscall (e.g: waitpid)

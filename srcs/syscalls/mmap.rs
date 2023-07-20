@@ -24,8 +24,8 @@ pub fn translate_vaddr(addr: VirtAddr) -> VirtAddr {
 			return addr;
 		}
 
-		let pd_index = (addr as usize >> 22) as usize;
-		let pt_index = ((addr as usize & 0x3ff000) >> 12) as usize;
+		let pd_index = addr as usize >> 22;
+		let pt_index = (addr as usize & 0x3ff000) >> 12;
 		let pt_paddr = (*curr_process.pd).get_entry(pd_index).get_paddr();
 		for i in &curr_process.page_tables {
 			if get_paddr!(i.get_vaddr()) == pt_paddr {
@@ -49,7 +49,7 @@ pub fn translate_vaddr(addr: VirtAddr) -> VirtAddr {
 				return 0x0;
 			}
 		}
-		return 0x0;
+		0x0
 	}
 }
 
@@ -115,7 +115,7 @@ pub fn mmap(addr: *const mmap_arg) -> *const u8 {
 					| paging::PAGE_USER
 			);
 			curr_process.page_tables.push(pt);
-			return get_vaddr!(991, pt_index) as *const u8;
+			get_vaddr!(991, pt_index) as *const u8
 		}
 	}
 }
@@ -165,7 +165,7 @@ pub fn sys_munmap(addr: *const usize, length: usize) -> i32 {
 	for i in &curr_process.mem_map {
 		let (offset, size) = i.lock().area();
 		if offset >= translated_addr as VirtAddr
-			&& (translated_addr as usize) < offset as usize + size
+			&& translated_addr < offset as usize + size
 		{
 			break;
 		}

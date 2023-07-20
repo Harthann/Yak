@@ -18,7 +18,7 @@ fn test_exec_fn_no_args() {
 		let mut wstatus: i32 = 0;
 		let ret = sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(wstatus), true);
+		assert!(__WIFEXITED!(wstatus));
 		assert_eq!(__WEXITSTATUS!(wstatus), 2);
 	}
 }
@@ -37,7 +37,7 @@ fn test_exec_fn_simple_args() {
 		let mut wstatus: i32 = 0;
 		let ret = sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(wstatus), true);
+		assert!(__WIFEXITED!(wstatus));
 		assert_eq!(__WEXITSTATUS!(wstatus), 9);
 	}
 }
@@ -56,7 +56,7 @@ fn test_exec_fn_diff_args() {
 		let mut wstatus: i32 = 0;
 		let ret = sys_waitpid(pid, &mut wstatus, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(wstatus), true);
+		assert!(__WIFEXITED!(wstatus));
 		assert_eq!(__WEXITSTATUS!(wstatus), 22);
 	}
 }
@@ -142,7 +142,7 @@ fn test_sigkill() {
 		let res: i32 = sys_kill(pid, 9); // SIGKILL
 		assert_eq!(res, 0);
 		sys_waitpid(pid, &mut wstatus, 0);
-		assert_eq!(__WIFSIGNALED!(wstatus), true);
+		assert!(__WIFSIGNALED!(wstatus));
 		assert_eq!(__WEXITSTATUS!(wstatus), 9);
 		assert_eq!(Process::get_nb_process(), 1);
 	}
@@ -168,7 +168,7 @@ fn test_simple_signal() {
 		let res: i32 = sys_kill(pid, 8);
 		assert_eq!(res, 0);
 		sys_waitpid(pid, &mut wstatus, 0);
-		assert_eq!(__WIFEXITED!(wstatus), true);
+		assert!(__WIFEXITED!(wstatus));
 		assert_eq!(__WEXITSTATUS!(wstatus), 42);
 		assert_eq!(Process::get_nb_process(), 1);
 	}
@@ -204,7 +204,7 @@ fn test_signal_subprocess() {
 		let pid = exec_fn!(sub_test);
 		let mut wstatus: i32 = 0;
 		sys_waitpid(pid, &mut wstatus, 0);
-		assert_eq!(__WIFEXITED!(wstatus), true);
+		assert!(__WIFEXITED!(wstatus));
 		assert_eq!(__WEXITSTATUS!(wstatus), 42);
 		assert_eq!(Process::get_nb_process(), 1);
 	}
@@ -221,7 +221,7 @@ unsafe fn sub_test_pid() {
 	let child_pid: i32 = exec_fn!(subsub_test_pid, sys_getpid());
 	let mut wstatus: i32 = 0;
 	sys_waitpid(child_pid, &mut wstatus, 0);
-	assert_eq!(__WIFEXITED!(wstatus), true);
+	assert!(__WIFEXITED!(wstatus));
 	assert_eq!(__WEXITSTATUS!(wstatus), child_pid);
 }
 

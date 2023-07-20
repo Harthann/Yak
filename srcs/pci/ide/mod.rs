@@ -114,7 +114,7 @@ impl IDEController {
 		channels[ATAChannel::Secondary as usize].lock().ctrl =
 			(bar3 & 0xfffffffc) as u16;
 		channels[ATAChannel::Primary as usize].lock().bmide =
-			((bar4 & 0xfffffffc) + 0) as u16;
+			(bar4 & 0xfffffffc) as u16;
 		channels[ATAChannel::Secondary as usize].lock().bmide =
 			((bar4 & 0xfffffffc) + 8) as u16;
 
@@ -259,16 +259,16 @@ impl IDEController {
 						);
 					}
 				} else {
-					let device: &mut IDEDevice = &mut self.devices[i as usize];
+					let device: &mut IDEDevice = &mut self.devices[i];
 					self.devices[count].size = ATAPI::capacity(device, 0)?;
 				}
 
 				// (VIII) String indicates model of device
 				for k in (0..40).step_by(2) {
 					self.devices[count].model[k] =
-						ide_buf[ATAIdentify::MODEL as usize + k + 1];
+						ide_buf[ATAIdentify::MODEL + k + 1];
 					self.devices[count].model[k + 1] =
-						ide_buf[ATAIdentify::MODEL as usize + k];
+						ide_buf[ATAIdentify::MODEL + k];
 				}
 				self.devices[count].model[40] = 0;
 
@@ -317,7 +317,7 @@ impl IDEController {
 			);
 		}
 		if reg < 0x08 {
-			result = inb(channel.base + reg as u16 - 0x00);
+			result = inb(channel.base + reg as u16);
 		} else if reg < 0x0c {
 			result = inb(channel.base + reg as u16 - 0x06);
 		} else if reg < 0x0e {
@@ -328,7 +328,7 @@ impl IDEController {
 		if reg > 0x07 && reg < 0x0c {
 			IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 		}
-		return result;
+		result
 	}
 
 	fn write(channel: &IDEChannelRegisters, reg: u8, data: u8) {
@@ -340,7 +340,7 @@ impl IDEController {
 			);
 		}
 		if reg < 0x08 {
-			outb(channel.base + reg as u16 - 0x00, data);
+			outb(channel.base + reg as u16, data);
 		} else if reg < 0x0c {
 			outb(channel.base + reg as u16 - 0x06, data);
 		} else if reg < 0x0e {
@@ -367,7 +367,7 @@ impl IDEController {
 			);
 		}
 		if reg < 0x08 {
-			insl(channel.base + reg as u16 - 0x00, buffer.as_mut_ptr(), quads);
+			insl(channel.base + reg as u16, buffer.as_mut_ptr(), quads);
 		} else if reg < 0x0c {
 			insl(channel.base + reg as u16 - 0x06, buffer.as_mut_ptr(), quads);
 		} else if reg < 0x0e {
@@ -392,7 +392,7 @@ impl IDEController {
 
 		// (II) Wait for BSY to be cleared
 		while (IDEController::read(channel, ATAReg::STATUS)
-			& ATAStatus::BSY as u8)
+			& ATAStatus::BSY)
 			!= 0
 		{
 			// Wait for BSY to be zero
@@ -521,32 +521,30 @@ impl IDEController {
 			// Seeking to invalid position
 			return Err(0x2);
 		// 3- Read in PIO Mode through Polling & IRQs
-		} else {
-			if device.r#type == IDEType::ATA as u16 {
-				match ATA::access(
-					ATADirection::Read as u8,
-					device,
-					lba,
-					numsects,
-					edi
-				) {
-					Ok(_) => {},
-					Err(err) => return Err(self.print_error(drive, err))
-				}
-			} else if device.r#type == IDEType::ATAPI as u16 {
-				for i in 0..numsects {
-					match ATAPI::read(
-						device,
-						lba + i as u32,
-						1,
-						edi + i as u32 * 2048
-					) {
-						Ok(_) => {},
-						Err(err) => return Err(self.print_error(drive, err))
-					}
-				}
-			}
-		}
+		} else if device.r#type == IDEType::ATA as u16 {
+  				match ATA::access(
+  					ATADirection::Read as u8,
+  					device,
+  					lba,
+  					numsects,
+  					edi
+  				) {
+  					Ok(_) => {},
+  					Err(err) => return Err(self.print_error(drive, err))
+  				}
+  			} else if device.r#type == IDEType::ATAPI as u16 {
+  				for i in 0..numsects {
+  					match ATAPI::read(
+  						device,
+  						lba + i as u32,
+  						1,
+  						edi + i as u32 * 2048
+  					) {
+  						Ok(_) => {},
+  						Err(err) => return Err(self.print_error(drive, err))
+  					}
+  				}
+  			}
 		Ok(())
 	}
 
@@ -576,23 +574,21 @@ impl IDEController {
 		{
 			return Err(0x2);
 		// 3- Read in PIO Mode through Polling & IRQs
-		} else {
-			if device.r#type == IDEType::ATA as u16 {
-				match ATA::access(
-					ATADirection::Write as u8,
-					device,
-					lba,
-					numsects,
-					edi
-				) {
-					Ok(_) => {},
-					Err(err) => return Err(self.print_error(drive, err))
-				}
-			} else if device.r#type == IDEType::ATAPI as u16 {
-				// Write-Protected
-				return Err(0x4);
-			}
-		}
+		} else if device.r#type == IDEType::ATA as u16 {
+  				match ATA::access(
+  					ATADirection::Write as u8,
+  					device,
+  					lba,
+  					numsects,
+  					edi
+  				) {
+  					Ok(_) => {},
+  					Err(err) => return Err(self.print_error(drive, err))
+  				}
+  			} else if device.r#type == IDEType::ATAPI as u16 {
+  				// Write-Protected
+  				return Err(0x4);
+  			}
 		Ok(())
 	}
 }
@@ -605,8 +601,8 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn ide_read_write_sector() {
-		let to_write = vec!['B' as u8; 512];
-		let read_from = vec![0x0 as u8; 512];
+		let to_write = vec![b'B'; 512];
+		let read_from = vec![0x0_u8; 512];
 
 		let _ = IDE
 			.lock()
@@ -620,8 +616,8 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn ide_read_write_multiple_sectors() {
-		let to_write = vec!['A' as u8; 1024];
-		let read_from = vec![0x0 as u8; 1024];
+		let to_write = vec![b'A'; 1024];
+		let read_from = vec![0x0_u8; 1024];
 
 		let _ = IDE
 			.lock()

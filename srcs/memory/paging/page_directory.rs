@@ -366,9 +366,9 @@ impl PageDirectory {
 					.free_page(self.get_entry(index).get_paddr());
 				self.set_entry(index, 0);
 				refresh_tlb!();
-				return Ok(());
+				Ok(())
 			} else {
-				return Err(());
+				Err(())
 			}
 		}
 	}
@@ -451,7 +451,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_dirty(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b01000000) >> 6) as u8
 		}
@@ -459,7 +459,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_global(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b100000000) >> 8) as u8
 		}
@@ -476,7 +476,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_pat(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b1000000000000) >> 12) as u8
 		}
@@ -484,7 +484,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_rsvd(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b100000000000000000000) >> 20) as u8
 		}

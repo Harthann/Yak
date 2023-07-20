@@ -23,7 +23,7 @@ pub struct Note {
 
 impl Note {
 	pub fn new(frequency: f32, duration: usize) -> Self {
-		Note { frequency: frequency, duration: duration }
+		Note { frequency, duration }
 	}
 
 	pub fn play(&self) {

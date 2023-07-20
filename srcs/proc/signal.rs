@@ -93,7 +93,7 @@ pub struct Signal {
 
 impl Signal {
 	pub const fn new(pid: Id, sigtype: SignalType, wstatus: i32) -> Self {
-		Self { sender: pid, sigtype: sigtype, wstatus: wstatus }
+		Self { sender: pid, sigtype, wstatus }
 	}
 
 	pub fn send_to_pid(
@@ -104,7 +104,7 @@ impl Signal {
 	) -> Result<Id, ErrNo> {
 		let binding = Process::search_from_pid(pid)?;
 		let mut process = binding.lock();
-		Self::send_to_process(&mut *process, sender_pid, sigtype, wstatus);
+		Self::send_to_process(&mut process, sender_pid, sigtype, wstatus);
 		Ok(pid)
 	}
 

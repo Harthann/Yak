@@ -266,11 +266,11 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn test_read_socket_0() {
-		let sockets: (Socket, Socket);
+		
 		let input: [u8; 7] = [21, 245, 9, 29, 56, 13, 23];
 		let mut buffer: [u8; 10] = [0; 10];
 
-		sockets = create_socket_pair(
+		let sockets: (Socket, Socket) = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
@@ -292,11 +292,11 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn test_read_socket_1() {
-		let sockets: (Socket, Socket);
+		
 		let input: &str = "This is not a drill!";
 		let mut buffer: [u8; 10] = [0; 10];
 
-		sockets = create_socket_pair(
+		let sockets: (Socket, Socket) = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
@@ -305,7 +305,7 @@ mod test {
 		match sockets.0.buffer {
 			Some(buffers) => {
 				buffers[1].lock()[0..input.len()]
-					.copy_from_slice(&input.as_bytes());
+					.copy_from_slice(input.as_bytes());
 				buffers[1].lock().woffset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")
@@ -319,12 +319,12 @@ mod test {
 
 	#[sys_macros::test_case]
 	fn test_read_socket_tiny_buffer() {
-		let sockets: (Socket, Socket);
+		
 		let input: &str = "This is not a drill!";
 		let mut buffer: [u8; 1] = [0; 1];
 		let mut readed: usize = 0;
 
-		sockets = create_socket_pair(
+		let sockets: (Socket, Socket) = create_socket_pair(
 			SocketDomain::AF_UNIX,
 			SocketType::SOCK_DGRAM,
 			SocketProtocol::DEFAULT
@@ -333,7 +333,7 @@ mod test {
 		match sockets.0.buffer {
 			Some(buffers) => {
 				buffers[1].lock()[0..input.len()]
-					.copy_from_slice(&input.as_bytes());
+					.copy_from_slice(input.as_bytes());
 				buffers[1].lock().woffset += input.len();
 			},
 			None => panic!("Socket buffer improperly set")

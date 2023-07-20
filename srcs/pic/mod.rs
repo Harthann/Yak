@@ -51,7 +51,7 @@ const PIC2_CMD: u16 = PIC2;
 const PIC2_DATA: u16 = PIC2 + 1;
 
 pub const PIC1_IRQ_OFFSET: u8 = 0x20;
-pub const PIC1_IRQ_TIMER: u8 = PIC1_IRQ_OFFSET + 0;
+pub const PIC1_IRQ_TIMER: u8 = PIC1_IRQ_OFFSET;
 pub const PIC1_IRQ_KEYBOARD: u8 = PIC1_IRQ_OFFSET + 1;
 pub const PIC1_IRQ_SLAVE: u8 = PIC1_IRQ_OFFSET + 2;
 pub const PIC1_IRQ_SERIAL1: u8 = PIC1_IRQ_OFFSET + 3;
@@ -61,7 +61,7 @@ pub const PIC1_IRQ_FLOPPY: u8 = PIC1_IRQ_OFFSET + 6;
 pub const PIC1_IRQ_PARA1: u8 = PIC1_IRQ_OFFSET + 7;
 
 pub const PIC2_IRQ_OFFSET: u8 = 0x28;
-pub const PIC2_IRQ_CLOCK: u8 = PIC2_IRQ_OFFSET + 0;
+pub const PIC2_IRQ_CLOCK: u8 = PIC2_IRQ_OFFSET;
 pub const PIC2_IRQ_ACPI: u8 = PIC2_IRQ_OFFSET + 1;
 pub const PIC2_IRQ_AVAILABLE0: u8 = PIC2_IRQ_OFFSET + 2;
 pub const PIC2_IRQ_AVAILABLE1: u8 = PIC2_IRQ_OFFSET + 3;
@@ -130,7 +130,7 @@ pub fn pic_remap(offset1: u8, offset2: u8) {
 
 pub fn irq_set_mask(mut irq: usize) {
 	let port: u16;
-	let value: u8;
+	
 
 	if irq < 8 {
 		port = PIC1_DATA;
@@ -138,13 +138,13 @@ pub fn irq_set_mask(mut irq: usize) {
 		port = PIC2_DATA;
 		irq -= 8;
 	}
-	value = inb(port) | (1 << irq);
+	let value: u8 = inb(port) | (1 << irq);
 	outb(port, value);
 }
 
 pub fn irq_clear_mask(mut irq: usize) {
 	let port: u16;
-	let value: u8;
+	
 
 	if irq < 8 {
 		port = PIC1_DATA;
@@ -152,7 +152,7 @@ pub fn irq_clear_mask(mut irq: usize) {
 		port = PIC2_DATA;
 		irq -= 8;
 	}
-	value = inb(port) & !(1 << irq);
+	let value: u8 = inb(port) & !(1 << irq);
 	outb(port, value);
 }
 

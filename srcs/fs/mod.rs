@@ -85,8 +85,8 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 		.iter()
 		.position(|elem| elem.is_none())
 		.ok_or(ErrNo::EMFILE)?;
-	curr_process.fds[index] = Some(Arc::clone(&found_file));
-	return Ok(index);
+	curr_process.fds[index] = Some(Arc::clone(found_file));
+	Ok(index)
 }
 
 /// Close a file given its file descriptor. This does not delete the file from the system

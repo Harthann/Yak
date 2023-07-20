@@ -32,7 +32,7 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	{
 		let task: Task = TASKLIST.pop_front().unwrap();
 		let pid = task.process.lock().pid;
-		Process::zombify(pid, __W_EXITCODE!(status as i32, 0));
+		Process::zombify(pid, __W_EXITCODE!(status, 0));
 	}
 	_rst();
 	schedule_task()
@@ -82,10 +82,7 @@ pub unsafe extern "C" fn exec_fn(
 	);
 	// Copying all open fd from parent. Should not copy 0 and 1 but create new one instead
 	for i in 0..process::MAX_FD {
-		process.fds[i] = match &parent.fds[i] {
-			Some(fd) => Some(Arc::clone(&fd)),
-			None => None
-		};
+		process.fds[i] = parent.fds[i].as_ref().map(Arc::clone);
 	}
 
 	// init_fn_task - Can't move to another function ??
@@ -137,7 +134,7 @@ pub unsafe extern "C" fn exec_fn(
 macro_rules! size_of_args {
 	($vector:expr, $name:expr) => { $vector.push(core::mem::size_of_val(&$name)); };
 	($vector: expr, $x:expr, $($rest:expr),+) => {
-		crate::size_of_args!($vector, $x); crate::size_of_args!($vector, $($rest),+)
+		$crate::size_of_args!($vector, $x); $crate::size_of_args!($vector, $($rest),+)
 	}
 }
 
@@ -145,14 +142,14 @@ macro_rules! size_of_args {
 macro_rules! exec_fn_name {
 	($name:expr, $func:expr) => {
 		{
-			let args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			let args_size: $crate::vec::Vec<usize> = $crate::vec::Vec::new();
 			$name.push_str("\0");
-			crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size)
+			$crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size)
 		}
 	};
 	($name:expr, $func:expr, $($rest:expr),+) => {
 		{
-			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			let mut args_size: $crate::vec::Vec<usize> = crate::vec::Vec::new();
 			crate::size_of_args!(args_size, $($rest),+);
 			$name.push_str("\0");
 			crate::proc::exec_fn($name.as_ptr(), $func as u32, &args_size, $($rest),+)
@@ -164,13 +161,13 @@ macro_rules! exec_fn_name {
 macro_rules! exec_fn {
 	($func:expr) => {
 		{
-			let args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
-			crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size)
+			let args_size: $crate::vec::Vec<usize> = $crate::vec::Vec::new();
+			$crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size)
 		}
 	};
 	($func:expr, $($rest:expr),+) => {
 		{
-			let mut args_size: crate::vec::Vec<usize> = crate::vec::Vec::new();
+			let mut args_size: $crate::vec::Vec<usize> = crate::vec::Vec::new();
 			crate::size_of_args!(args_size, $($rest),+);
 			crate::proc::exec_fn(concat!(stringify!($func), "\0").as_ptr(), $func as u32, &args_size, $($rest),+)
 		}
@@ -185,7 +182,7 @@ pub fn change_kernel_stack(process: &Process) {
 			.get_page_table((KSTACK_ADDR as usize) >> 22)
 			.new_index_frame(
 				((KSTACK_ADDR as usize) & 0x3ff000) >> 12,
-				get_paddr!(process.kernel_stack.offset as u32),
+				get_paddr!(process.kernel_stack.offset),
 				PAGE_WRITABLE
 			);
 		refresh_tlb!();

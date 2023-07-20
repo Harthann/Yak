@@ -19,6 +19,6 @@ impl Partition {
 		partition.add_note(D4, NoteTempo::EIGTH, NoteType::BASE);
 		partition.add_note(D4, NoteTempo::EIGTH, NoteType::BASE);
 
-		return partition;
+		partition
 	}
 }

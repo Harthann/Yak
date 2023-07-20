@@ -26,7 +26,7 @@ pub fn sys_signal(signal: i32, handler: SigHandlerFn) -> SigHandlerFn {
 				break;
 			}
 		}
-		handlers.push(SignalHandler { signal: signal, handler: handler });
+		handlers.push(SignalHandler { signal, handler });
 	}
 	_sti();
 	handler
@@ -58,7 +58,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 				Process::zombify(pid, __W_STOPCODE!(signal_type as i32));
 				Task::remove_task_from_process(pid);
 				_sti();
-				return 0;
+				0
 			} else {
 				let res = Signal::send_to_pid(pid, sender_pid, signal_type, 0);
 				if res.is_err() {
@@ -66,7 +66,7 @@ pub fn sys_kill(pid: Pid, signal: i32) -> i32 {
 					return -(res.err().unwrap() as i32);
 				}
 				_sti();
-				return 0;
+				0
 			}
 		}
 	} else if pid == 0 {

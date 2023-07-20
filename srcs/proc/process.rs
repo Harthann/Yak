@@ -88,7 +88,7 @@ impl Process {
 			signals:         Vec::new(),
 			signal_handlers: Vec::new(),
 			page_tables:     Vec::new(),
-			pd:              0x0 as *mut PageDirectory,
+			pd:              core::ptr::null_mut::<PageDirectory>(),
 			owner:           0
 		}
 	}
@@ -172,7 +172,7 @@ impl Process {
 		.unwrap();
 		let mut process = binding.lock();
 		let mut parent = binding_parent.lock();
-		while process.childs.len() > 0 {
+		while !process.childs.is_empty() {
 			// TODO: DON'T MOVE THREADS AND REMOVE THEM
 			let res = process.childs.pop();
 			if res.is_none() {
@@ -183,7 +183,7 @@ impl Process {
 			parent.childs[len - 1].lock().parent = Some(binding_parent.clone());
 		}
 		// Transfer signals from childs to parent
-		while process.signals.len() != 0 {
+		while !process.signals.is_empty() {
 			let signal = process.signals.remove(0);
 			if signal.sigtype == SignalType::SIGCHLD {
 				parent.signals.push(signal);

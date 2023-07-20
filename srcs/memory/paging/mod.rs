@@ -72,7 +72,7 @@ pub fn init_paging() {
 }
 
 pub fn kalloc_pages(nb: usize, flags: u32) -> Result<VirtAddr, ()> {
-	unsafe { Ok(page_directory.kget_page_frames(nb, flags)?) }
+	unsafe { page_directory.kget_page_frames(nb, flags) }
 }
 
 pub fn alloc_pages_at_addr(
@@ -80,7 +80,7 @@ pub fn alloc_pages_at_addr(
 	nb: usize,
 	flags: u32
 ) -> Result<VirtAddr, ()> {
-	unsafe { Ok(page_directory.get_page_frames_at_addr(vaddr, nb, flags)?) }
+	unsafe { page_directory.get_page_frames_at_addr(vaddr, nb, flags) }
 }
 
 pub fn kalloc_pages_at_addr(
@@ -88,17 +88,17 @@ pub fn kalloc_pages_at_addr(
 	nb: usize,
 	flags: u32
 ) -> Result<VirtAddr, ()> {
-	unsafe { Ok(page_directory.kget_page_frames_at_addr(vaddr, nb, flags)?) }
+	unsafe { page_directory.kget_page_frames_at_addr(vaddr, nb, flags) }
 }
 
 // Allocate 'nb' page frames
 pub fn alloc_pages(nb: usize, flags: u32) -> Result<VirtAddr, ()> {
-	unsafe { Ok(page_directory.get_page_frames(nb, flags)?) }
+	unsafe { page_directory.get_page_frames(nb, flags) }
 }
 
 // Allocate a page frame
 pub fn alloc_page(flags: u32) -> Result<VirtAddr, ()> {
-	unsafe { Ok(page_directory.get_page_frame(flags)?) }
+	unsafe { page_directory.get_page_frame(flags) }
 }
 
 // free multiple pages

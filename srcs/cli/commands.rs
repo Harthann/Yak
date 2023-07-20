@@ -144,7 +144,6 @@ fn kill(command: Vec<String>) {
 
 	if res != 0 {
 		kprintln!("[Error]: {}", res);
-		return;
 	}
 }
 
@@ -221,7 +220,7 @@ fn hextou(string: &str) -> Option<usize> {
 		let byte = i.to_digit(16).unwrap();
 		addr = (addr << 4) | (byte & 0xf) as usize;
 	}
-	return Some(addr);
+	Some(addr)
 }
 
 fn atou(string: &str) -> Option<usize> {
@@ -320,7 +319,7 @@ impl Command {
 		if self.command.len() < MAX_CMD_LENGTH {
 			self.command.insert(self.index, x);
 			self.index += 1;
-			return Ok(());
+			Ok(())
 		} else {
 			Err(())
 		}
@@ -338,18 +337,18 @@ impl Command {
 	pub fn is_known(&self) -> Option<usize> {
 		let mut j = 0;
 		while j < KNOWN_CMD.len() {
-			let cmd: &str = self.command.split(" ").nth(0)?;
-			if Some(cmd) == Some(&KNOWN_CMD[j].to_string()) {
+			let cmd: &str = self.command.split(' ').next()?;
+			if Some(cmd) == Some(KNOWN_CMD[j]) {
 				return Some(j);
 			}
 			j += 1;
 		}
-		return None;
+		None
 	}
 
 	pub fn handle(&mut self, charcode: char) {
 		if charcode == '\x08' {
-			if self.command.len() != 0 && self.index != 0 {
+			if !self.command.is_empty() && self.index != 0 {
 				self.command.remove(self.index - 1);
 				let tmp: &str =
 					&self.command[self.index - 1..self.command.len()];
@@ -363,7 +362,7 @@ impl Command {
 					.lock()
 					.move_cursor(-(tmp.len() as i32));
 			}
-		} else if charcode >= ' ' && charcode <= '~' {
+		} else if (' '..='~').contains(&charcode) {
 			if self.insert(charcode).is_err() {
 				kprintln!("Can't handle longer command, clearing buffer");
 				kprint!("$> ");
@@ -400,19 +399,19 @@ impl Command {
 							cap
 						);
 						loop {
-							if LOCK_CMD == false {
+							if !LOCK_CMD {
 								break;
 							}
 							crate::time::sleep(1);
 						}
-						if background == false {
+						if !background {
 							let mut wstatus: i32 = 0;
 							sys_waitpid(pid, &mut wstatus, 0);
 						}
 					}
 				},
 				_ => {
-					if self.command.len() != 0 {
+					if !self.command.is_empty() {
 						kprintln!("Unknown command. Type `help` to list available commands");
 					}
 				},

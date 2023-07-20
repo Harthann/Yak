@@ -31,7 +31,7 @@ impl PageTable {
 	pub fn new() -> &'static mut Self {
 		unsafe {
 			let res = page_directory.get_page_frame(PAGE_WRITABLE);
-			if !res.is_ok() {
+			if res.is_err() {
 				todo!();
 			}
 			&mut *(res.unwrap() as *mut _)
@@ -68,7 +68,7 @@ i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12)
 		let mut i: usize = 0;
 
 		while i < 1024 {
-			self.entries[i] = (0x0 as u32).into();
+			self.entries[i] = 0x0_u32.into();
 			i += 1;
 		}
 	}
@@ -111,7 +111,7 @@ i <= (page_directory_entry & 0x3ff000) >> 12) || i == (0xb8000 >> 12)
 			self.entries[index as usize + i as usize] =
 				(paddr | flags | PAGE_PRESENT).into();
 		}
-		Ok(index as u16)
+		Ok(index)
 	}
 
 	pub fn find_space(&self, no: u32) -> Result<u16, ()> {

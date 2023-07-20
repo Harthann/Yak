@@ -59,7 +59,7 @@ impl KGlobal {
 	) -> Result<NonNull<u8>, AllocError> {
 		match layout.size() {
 			0 => {
-				return Ok(NonNull::dangling());
+				Ok(NonNull::dangling())
 			},
 			_size => {
 				let raw_ptr = unsafe {

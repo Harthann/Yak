@@ -20,7 +20,7 @@ macro_rules! function {
 #[macro_export]
 macro_rules! print_fn {
 	() => {
-		crate::kprint!("{:40}{}", crate::function!(), "");
+		$crate::kprint!("{:40}{}", $crate::function!(), "");
 	};
 }
 
@@ -41,7 +41,7 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 		let pages_before_test = physmap_as_mut().used;
 		test.run();
 		let pages_after_test = physmap_as_mut().used;
-		if leaks() == true {
+		if leaks() {
 			crate::memory_state();
 			panic!("Memory leaks test failed");
 		}
@@ -63,7 +63,7 @@ pub fn test_runner(tests: &[&dyn Fn()]) {
 
 #[cfg(test)]
 pub trait Testable {
-	fn run(&self) -> ();
+	fn run(&self);
 }
 
 #[cfg(test)]

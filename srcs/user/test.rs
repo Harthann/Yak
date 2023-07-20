@@ -33,7 +33,7 @@ fn simple_test_userspace() {
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(status), true);
+		assert!(__WIFEXITED!(status));
 		assert_eq!(__WEXITSTATUS!(status), 42);
 	}
 }
@@ -67,7 +67,7 @@ fn test_kill_userspace() {
 		assert_eq!(res, 0);
 		let ret = sys_waitpid(pid, &mut status, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFSIGNALED!(status), true);
+		assert!(__WIFSIGNALED!(status));
 		assert_eq!(__WEXITSTATUS!(status), 9);
 		assert_eq!(Process::get_nb_process(), 1);
 	}
@@ -103,7 +103,7 @@ fn test_getppid_userspace() {
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(status), true);
+		assert!(__WIFEXITED!(status));
 		assert_eq!(__WEXITSTATUS!(status), 0);
 	}
 }
@@ -138,11 +138,11 @@ fn test_fork_userspace() {
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(status), true);
+		assert!(__WIFEXITED!(status));
 		assert_eq!(__WEXITSTATUS!(status), 42);
 		let ret = crate::syscalls::exit::sys_waitpid(pid + 1, &mut status, 0);
 		assert_eq!(ret, pid + 1);
-		assert_eq!(__WIFEXITED!(status), true);
+		assert!(__WIFEXITED!(status));
 		assert_eq!(__WEXITSTATUS!(status), 42);
 	}
 }
@@ -190,7 +190,7 @@ fn test_fork2_userspace() {
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(status), true);
+		assert!(__WIFEXITED!(status));
 		assert_eq!(__WEXITSTATUS!(status), pid + 1);
 	}
 }
@@ -278,7 +278,7 @@ fn test_mmap_userspace() {
 		);
 		let ret = crate::syscalls::exit::sys_waitpid(pid, &mut status, 0);
 		assert_eq!(ret, pid);
-		assert_eq!(__WIFEXITED!(status), true);
+		assert!(__WIFEXITED!(status));
 		assert_eq!(__WEXITSTATUS!(status), 0x0);
 	}
 }

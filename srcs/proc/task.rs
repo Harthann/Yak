@@ -273,7 +273,7 @@ unsafe extern "C" fn find_task() -> ! {
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?
-		if new_task.process.lock().signals.len() > 0 {
+		if !new_task.process.lock().signals.is_empty() {
 			new_task.do_signal();
 			// Potentially never return
 		}

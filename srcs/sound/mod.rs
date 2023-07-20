@@ -35,7 +35,7 @@ impl Partition {
 	pub fn new(bpm: usize, beat_type: BeatType) -> Self {
 		let whole_note = (60000 / bpm) * beat_type as usize;
 		Partition {
-			bpm:                     bpm,
+			bpm,
 			whole_note_duration:     whole_note,
 			half_note_duration:      whole_note / 2,
 			quarter_note_duration:   whole_note / 4,
