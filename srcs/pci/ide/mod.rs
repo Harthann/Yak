@@ -191,9 +191,8 @@ impl IDEController {
 						ATAReg::LBA2
 					);
 
-					if cl == 0x14 && ch == 0xeb {
-						r#type = IDEType::ATAPI as u8;
-					} else if cl == 0x69 && ch == 0x96 {
+					if (cl == 0x14 && ch == 0xeb) || (cl == 0x69 && ch == 0x96)
+					{
 						r#type = IDEType::ATAPI as u8;
 					} else {
 						// Unknown Type (may not be a device)

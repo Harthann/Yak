@@ -375,7 +375,7 @@ impl PageDirectory {
 
 	// Get the page_table at the specified index
 	// The page table 0 index every page_table
-	pub fn get_page_table(&self, index: usize) -> &mut PageTable {
+	pub fn get_page_table(&mut self, index: usize) -> &mut PageTable {
 		unsafe { &mut *(get_vaddr!(1023, index) as *mut _) }
 	}
 

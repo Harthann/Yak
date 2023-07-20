@@ -229,8 +229,10 @@ impl ATA {
 		if dma != 0 {
 			if direction == 0 {
 				// DMA Read
+				todo!();
 			} else {
 				// DMA Write
+				todo!();
 			}
 		} else {
 			if direction == 0 {
