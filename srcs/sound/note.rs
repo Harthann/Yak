@@ -2,18 +2,18 @@ use crate::pic::pit::play_sound;
 use crate::sound::sleep;
 
 pub enum NoteTempo {
-	WHOLE,
-	HALF,
-	QUARTER,
-	EIGTH,
-	SIXTEENTH,
-	THIRTY2ND
+	Whole,
+	Half,
+	Quarter,
+	Eighth,
+	Sixteenth,
+	Thirty2nd
 }
 
 pub enum NoteType {
-	BASE,
-	DOTTED,
-	TRIPLET
+	Base,
+	Dotted,
+	Triplet
 }
 
 pub struct Note {
@@ -23,7 +23,7 @@ pub struct Note {
 
 impl Note {
 	pub fn new(frequency: f32, duration: usize) -> Self {
-		Note { frequency: frequency, duration: duration }
+		Note { frequency, duration }
 	}
 
 	pub fn play(&self) {

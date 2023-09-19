@@ -1,5 +1,5 @@
 use crate::proc::process::{Pid, Process};
-use crate::proc::signal::{Signal, SignalType};
+use crate::proc::signal::SignalType;
 use crate::proc::task::{Task, TaskStatus};
 
 use crate::wrappers::{_cli, _rst, _sti, cli, cli_count, hlt, sti};
@@ -58,9 +58,8 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 		_cli();
 		loop {
 			let res =
-				Process::get_signal_running_process(pid, SignalType::SIGCHLD);
-			if res.is_ok() {
-				let signal: Signal = res.unwrap();
+				Process::get_signal_running_process(pid, SignalType::SigChld);
+			if let Ok(signal) = res {
 				let res = Process::search_from_pid(signal.sender);
 				if res.is_ok() {
 					Process::remove(signal.sender);
@@ -72,9 +71,9 @@ pub fn sys_waitpid(pid: Pid, wstatus: *mut i32, options: u32) -> Pid {
 				}
 				_sti();
 				return signal.sender;
-			} else if res == Err(ErrNo::ESRCH) {
+			} else if res == Err(ErrNo::Srch) {
 				_sti();
-				return -(ErrNo::ECHILD as i32);
+				return -(ErrNo::Child as i32);
 			}
 			if options & WNOHANG != 0 {
 				_sti();
@@ -101,9 +100,9 @@ pub fn sys_exit(status: i32) -> ! {
 		"push eax",
 		"call _exit",
 		status = in(reg) status,
-		kstack = const KSTACK_ADDR);
+		kstack = const KSTACK_ADDR,
+		options(noreturn));
 		// Never goes there
-		loop {}
 	}
 }
 

@@ -12,75 +12,75 @@ pub struct SignalHandler {
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum SignalType {
-	SIGHUP    = 1,
-	SIGINT    = 2,
-	SIGQUIT   = 3,
-	SIGILL    = 4,
-	SIGTRAP   = 5,
-	SIGABRT   = 6,
-	SIGBUS    = 7,
-	SIGFPE    = 8,
-	SIGKILL   = 9,
-	SIGUSR1   = 10,
-	SIGSEGV   = 11,
-	SIGUSR2   = 12,
-	SIGPIPE   = 13,
-	SIGALRM   = 14,
-	SIGTERM   = 15,
-	SIGSTKFLT = 16,
-	SIGCHLD   = 17,
-	SIGCONT   = 18,
-	SIGTSTOP  = 19,
-	SIGTSTP   = 20,
-	SIGTTIN   = 21,
-	SIGTTOU   = 22,
-	SIGURG    = 23,
-	SIGXCPU   = 24,
-	SIGXFSZ   = 25,
-	SIGVTALRM = 26,
-	SIGPROF   = 27,
-	SIGWINCH  = 28,
-	SIGIO     = 29,
-	SIGPWR    = 30,
-	SIGSYS    = 31,
-	SIGRTMIN  = 32
+	SigHup    = 1,  // Hangup
+	SigInt    = 2,  // Terminal interrupt signal
+	SigQuit   = 3,  // Terminal quit signal
+	SigIll    = 4,  // Illegal instruction
+	SigTrap   = 5,  // Trace/breakpoint trap
+	SigAbrt   = 6,  // Process abort signal
+	SigBus    = 7,  // Access to an undefined portion of a memory object
+	SigFpe    = 8,  // Erroneous arithmetic operation
+	SigKill   = 9,  // Kill (cannot be caught or ignored)
+	SigUsr1   = 10, // User-defined signal 1
+	SigSegv   = 11, // Invalid memory reference
+	SigUsr2   = 12, // User-defined signal 2
+	SigPipe   = 13, // Write on a pipe with no one to read it
+	SigAlrm   = 14, // Alarm clock
+	SigTerm   = 15, // Termination signal
+	SigStkFlt = 16, // The coprocessor experiences a stack fault
+	SigChld   = 17, // Child process terminated, stopped, or continued
+	SigCont   = 18, // Continue executing, if stopped
+	SigStop   = 19, // Stop executing (cannot be caught or ignored)
+	SigTStp   = 20, // Terminal stop signal
+	SigTTIn   = 21, // Background process attempting read
+	SigTTOu   = 22, // Background process attempting write
+	SigUrg    = 23, // Out-of-band data is available at a socket
+	SigXCpu   = 24, // CPU time limit exceeded
+	SigXFSz   = 25, // File size limit exceeded
+	SigVtAlrm = 26, // Virtual timer expired
+	SigProf   = 27, // Profiling timer expired
+	SigWinCh  = 28, // When its controlling terminal changes its size
+	SigIO     = 29, // A file descriptor is ready to perform input or output
+	SigPwr    = 30, // System experiences power failure
+	SigSys    = 31, // Bad system call
+	SigRTMin  = 32  // First real-time signal
 }
 
 pub fn get_signal_type(nb: i32) -> Result<SignalType, ErrNo> {
 	match nb {
-		_ if nb == SignalType::SIGHUP as i32 => Ok(SignalType::SIGHUP),
-		_ if nb == SignalType::SIGINT as i32 => Ok(SignalType::SIGINT),
-		_ if nb == SignalType::SIGQUIT as i32 => Ok(SignalType::SIGQUIT),
-		_ if nb == SignalType::SIGILL as i32 => Ok(SignalType::SIGILL),
-		_ if nb == SignalType::SIGTRAP as i32 => Ok(SignalType::SIGTRAP),
-		_ if nb == SignalType::SIGABRT as i32 => Ok(SignalType::SIGABRT),
-		_ if nb == SignalType::SIGBUS as i32 => Ok(SignalType::SIGBUS),
-		_ if nb == SignalType::SIGFPE as i32 => Ok(SignalType::SIGFPE),
-		_ if nb == SignalType::SIGKILL as i32 => Ok(SignalType::SIGKILL),
-		_ if nb == SignalType::SIGUSR1 as i32 => Ok(SignalType::SIGUSR1),
-		_ if nb == SignalType::SIGSEGV as i32 => Ok(SignalType::SIGSEGV),
-		_ if nb == SignalType::SIGUSR2 as i32 => Ok(SignalType::SIGUSR2),
-		_ if nb == SignalType::SIGPIPE as i32 => Ok(SignalType::SIGPIPE),
-		_ if nb == SignalType::SIGALRM as i32 => Ok(SignalType::SIGALRM),
-		_ if nb == SignalType::SIGTERM as i32 => Ok(SignalType::SIGTERM),
-		_ if nb == SignalType::SIGSTKFLT as i32 => Ok(SignalType::SIGSTKFLT),
-		_ if nb == SignalType::SIGCHLD as i32 => Ok(SignalType::SIGCHLD),
-		_ if nb == SignalType::SIGCONT as i32 => Ok(SignalType::SIGCONT),
-		_ if nb == SignalType::SIGTSTOP as i32 => Ok(SignalType::SIGTSTOP),
-		_ if nb == SignalType::SIGTSTP as i32 => Ok(SignalType::SIGTSTP),
-		_ if nb == SignalType::SIGTTIN as i32 => Ok(SignalType::SIGTTIN),
-		_ if nb == SignalType::SIGTTOU as i32 => Ok(SignalType::SIGTTOU),
-		_ if nb == SignalType::SIGURG as i32 => Ok(SignalType::SIGURG),
-		_ if nb == SignalType::SIGXCPU as i32 => Ok(SignalType::SIGXCPU),
-		_ if nb == SignalType::SIGXFSZ as i32 => Ok(SignalType::SIGXFSZ),
-		_ if nb == SignalType::SIGVTALRM as i32 => Ok(SignalType::SIGVTALRM),
-		_ if nb == SignalType::SIGPROF as i32 => Ok(SignalType::SIGPROF),
-		_ if nb == SignalType::SIGWINCH as i32 => Ok(SignalType::SIGWINCH),
-		_ if nb == SignalType::SIGIO as i32 => Ok(SignalType::SIGIO),
-		_ if nb == SignalType::SIGPWR as i32 => Ok(SignalType::SIGPWR),
-		_ if nb == SignalType::SIGSYS as i32 => Ok(SignalType::SIGSYS),
-		_ if nb == SignalType::SIGRTMIN as i32 => Ok(SignalType::SIGRTMIN),
-		_ => Err(ErrNo::EINVAL)
+		_ if nb == SignalType::SigHup as i32 => Ok(SignalType::SigHup),
+		_ if nb == SignalType::SigInt as i32 => Ok(SignalType::SigInt),
+		_ if nb == SignalType::SigQuit as i32 => Ok(SignalType::SigQuit),
+		_ if nb == SignalType::SigIll as i32 => Ok(SignalType::SigIll),
+		_ if nb == SignalType::SigTrap as i32 => Ok(SignalType::SigTrap),
+		_ if nb == SignalType::SigAbrt as i32 => Ok(SignalType::SigAbrt),
+		_ if nb == SignalType::SigBus as i32 => Ok(SignalType::SigBus),
+		_ if nb == SignalType::SigFpe as i32 => Ok(SignalType::SigFpe),
+		_ if nb == SignalType::SigKill as i32 => Ok(SignalType::SigKill),
+		_ if nb == SignalType::SigUsr1 as i32 => Ok(SignalType::SigUsr2),
+		_ if nb == SignalType::SigSegv as i32 => Ok(SignalType::SigSegv),
+		_ if nb == SignalType::SigUsr2 as i32 => Ok(SignalType::SigUsr1),
+		_ if nb == SignalType::SigPipe as i32 => Ok(SignalType::SigPipe),
+		_ if nb == SignalType::SigAlrm as i32 => Ok(SignalType::SigAlrm),
+		_ if nb == SignalType::SigTerm as i32 => Ok(SignalType::SigTerm),
+		_ if nb == SignalType::SigStkFlt as i32 => Ok(SignalType::SigStkFlt),
+		_ if nb == SignalType::SigChld as i32 => Ok(SignalType::SigChld),
+		_ if nb == SignalType::SigCont as i32 => Ok(SignalType::SigCont),
+		_ if nb == SignalType::SigStop as i32 => Ok(SignalType::SigStop),
+		_ if nb == SignalType::SigTStp as i32 => Ok(SignalType::SigTStp),
+		_ if nb == SignalType::SigTTIn as i32 => Ok(SignalType::SigTTIn),
+		_ if nb == SignalType::SigTTOu as i32 => Ok(SignalType::SigTTOu),
+		_ if nb == SignalType::SigUrg as i32 => Ok(SignalType::SigUrg),
+		_ if nb == SignalType::SigXCpu as i32 => Ok(SignalType::SigXCpu),
+		_ if nb == SignalType::SigXFSz as i32 => Ok(SignalType::SigXFSz),
+		_ if nb == SignalType::SigVtAlrm as i32 => Ok(SignalType::SigVtAlrm),
+		_ if nb == SignalType::SigProf as i32 => Ok(SignalType::SigProf),
+		_ if nb == SignalType::SigWinCh as i32 => Ok(SignalType::SigWinCh),
+		_ if nb == SignalType::SigIO as i32 => Ok(SignalType::SigIO),
+		_ if nb == SignalType::SigPwr as i32 => Ok(SignalType::SigPwr),
+		_ if nb == SignalType::SigSys as i32 => Ok(SignalType::SigSys),
+		_ if nb == SignalType::SigRTMin as i32 => Ok(SignalType::SigRTMin),
+		_ => Err(ErrNo::Inval)
 	}
 }
 
@@ -93,7 +93,7 @@ pub struct Signal {
 
 impl Signal {
 	pub const fn new(pid: Id, sigtype: SignalType, wstatus: i32) -> Self {
-		Self { sender: pid, sigtype: sigtype, wstatus: wstatus }
+		Self { sender: pid, sigtype, wstatus }
 	}
 
 	pub fn send_to_pid(
@@ -104,7 +104,7 @@ impl Signal {
 	) -> Result<Id, ErrNo> {
 		let binding = Process::search_from_pid(pid)?;
 		let mut process = binding.lock();
-		Self::send_to_process(&mut *process, sender_pid, sigtype, wstatus);
+		Self::send_to_process(&mut process, sender_pid, sigtype, wstatus);
 		Ok(pid)
 	}
 

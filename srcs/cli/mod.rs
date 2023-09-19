@@ -108,7 +108,7 @@ pub fn cli() {
 	*INPUT_BUFFER.lock() = Some(Queue::new());
 
 	unsafe { LOCK_CMD = false };
-	sys_signal(SignalType::SIGHUP as i32, unlock_cmd);
+	sys_signal(SignalType::SigHup as i32, unlock_cmd);
 	loop {
 		if INPUT_BUFFER.lock().as_ref().unwrap().is_empty() {
 			unsafe {

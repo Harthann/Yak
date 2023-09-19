@@ -31,7 +31,7 @@ impl Bitmaps {
 		if self.maps[i] & 1 << shift != 0 {
 			return Err(i);
 		}
-		self.maps[i as usize] |= 1 << shift;
+		self.maps[i] |= 1 << shift;
 		self.used += 1;
 		Ok((i * SECTOR_SIZE + (shift as usize) * PAGE_SIZE) as PhysAddr)
 	}
@@ -151,9 +151,7 @@ impl Bitmaps {
 }
 
 pub fn physmap_as_mut() -> &'static mut Bitmaps {
-	unsafe {
-		return &mut PHYSMAP;
-	}
+	unsafe { &mut PHYSMAP }
 }
 
 use core::fmt;
@@ -187,7 +185,7 @@ mod test {
 
 		unsafe {
 			let pd_addr = page_directory.get_vaddr() & 0x3ff000 as PhysAddr;
-			let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as u32;
+			let nmb_claim_pages = (pd_addr / 0x1000) + 1024;
 
 			// At start the kernel claim kernel code and memory pages to initialize the bitmap
 			// claim occur at adress 0x0 to 1MiB then from it to pd_addr / 0x1000 + 1024
@@ -228,7 +226,7 @@ mod test {
 			let nmb_claim_pages = ((pd_addr / 0x1000) + 1024) as usize;
 
 			let res = physmap.claim_range(x as u32, nmb_claim_pages);
-			assert_eq!(res, Err(x as usize / SECTOR_SIZE as usize));
+			assert_eq!(res, Err(x / SECTOR_SIZE));
 			assert_eq!(used, physmap.used);
 
 			x = physmap.get_page().unwrap() as usize;
@@ -283,7 +281,7 @@ mod test {
 		assert_eq!(used + 50, physmap.used);
 		for i in 0..50 {
 			used = physmap.used;
-			physmap.free_page((addr + i * PAGE_SIZE as u32) as u32);
+			physmap.free_page(addr + i * PAGE_SIZE as u32);
 			assert_eq!(used - 1, physmap.used);
 		}
 		// Here page is already free so the counter shouldn't be decremented

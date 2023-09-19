@@ -168,7 +168,7 @@ fn keyboard_to_ascii(key: u8) -> Option<char> {
 	let mut charcode: u8 = unsafe { KEYMAP.keys[key as usize] as u8 };
 
 	// If key is alphabetic, check if shift or caps are on
-	if charcode >= b'a' && charcode <= b'z' {
+	if charcode.is_ascii_lowercase() {
 		if SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftLeft as u8)
 			|| SPECIAL_KEYS.is_enable(SpecialKeyFlag::ShiftRight as u8)
 			|| SPECIAL_KEYS.is_enable(SpecialKeyFlag::Caps as u8)
@@ -183,7 +183,7 @@ fn keyboard_to_ascii(key: u8) -> Option<char> {
 			charcode = unsafe { KEYMAP.caps_keys[key as usize] as u8 };
 		}
 	}
-	return Some(charcode as char);
+	Some(charcode as char)
 }
 
 /// Check if keyboard event is ready

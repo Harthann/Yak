@@ -126,7 +126,7 @@ pub unsafe fn claim_multiboot() {
 			6 => {
 				let mmap: *const MemMap = tag_ptr as *const MemMap;
 				let entry_number: u32 =
-					((*mmap).size - 16) / (*mmap).entry_size as u32;
+					((*mmap).size - 16) / (*mmap).entry_size;
 				let mut mmap_entry: *const MemMapEntry =
 					(*mmap).entries.as_ptr();
 				let mut i: u32 = 0;
@@ -210,7 +210,7 @@ pub fn read_tags() {
 					kprintln!("Memory map");
 					let mmap: *const MemMap = tag_ptr as *const MemMap;
 					let entry_number: u32 =
-						((*mmap).size - 16) / (*mmap).entry_size as u32;
+						((*mmap).size - 16) / (*mmap).entry_size;
 					let mut mmap_entry: *const MemMapEntry =
 						(*mmap).entries.as_ptr();
 					let mut i: u32 = 0;

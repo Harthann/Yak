@@ -120,7 +120,7 @@ impl LinkedListAllocator {
 
 		while let Some(ref mut region) = current.next {
 			if let Ok(alloc_start) =
-				Self::alloc_from_region(&region, size, align)
+				Self::alloc_from_region(region, size, align)
 			{
 				let next = region.next.take();
 				let ret = Some((current.next.take().unwrap(), alloc_start));

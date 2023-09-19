@@ -9,7 +9,7 @@ pub struct Cursor {
 
 impl Cursor {
 	pub const fn new(x: usize, y: usize, color_code: ColorCode) -> Cursor {
-		Cursor { pos: y * BUFFER_WIDTH + x, color_code: color_code }
+		Cursor { pos: y * BUFFER_WIDTH + x, color_code }
 	}
 
 	pub fn update(&self) {

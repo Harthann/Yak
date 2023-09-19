@@ -60,8 +60,8 @@ pub mod ATAIdentify {
 }
 
 pub enum ATAType {
-	MASTER = 0x00,
-	SLAVE  = 0x01
+	Master = 0x00,
+	Slave  = 0x01
 }
 
 #[allow(non_snake_case)]
@@ -109,7 +109,7 @@ impl ATA {
 		let binding = device.channel.as_mut().ok_or(1)?;
 		let channel: &mut IDEChannelRegisters = &mut binding.lock();
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
-		let dma: u8; // 0: No DMA, 1: DMA
+				  // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
 		// Read the Drive [Master/Slave]
 		let slavebit: u32 = device.drive as u32;
@@ -130,7 +130,7 @@ impl ATA {
 		if lba >= 0x10000000 {
 			// LBA48
 			lba_mode = 2;
-			lba_io[0] = ((lba & 0x000000FF) >> 0) as u8;
+			lba_io[0] = (lba & 0x000000FF) as u8;
 			lba_io[1] = ((lba & 0x0000FF00) >> 8) as u8;
 			lba_io[2] = ((lba & 0x00FF0000) >> 16) as u8;
 			lba_io[3] = ((lba & 0xFF000000) >> 24) as u8;
@@ -140,7 +140,7 @@ impl ATA {
 		} else if device.capabilities & 0x200 != 0 {
 			// LBA48
 			lba_mode = 1;
-			lba_io[0] = ((lba & 0x00000FF) >> 0) as u8;
+			lba_io[0] = (lba & 0x00000FF) as u8;
 			lba_io[1] = ((lba & 0x000FF00) >> 8) as u8;
 			lba_io[2] = ((lba & 0x0FF0000) >> 16) as u8;
 			lba_io[3] = 0; // These Registers are not used here
@@ -153,7 +153,7 @@ impl ATA {
 			let sect: u8 = ((lba % 63) + 1) as u8;
 			let cyl: u16 = ((lba + 1 - sect as u32) / (16 * 63)) as u16;
 			lba_io[0] = sect;
-			lba_io[1] = ((cyl >> 0) & 0xFF) as u8;
+			lba_io[1] = (cyl & 0xFF) as u8;
 			lba_io[2] = ((cyl >> 8) & 0xFF) as u8;
 			lba_io[3] = 0;
 			lba_io[4] = 0;
@@ -163,7 +163,7 @@ impl ATA {
 		}
 
 		// (II) See if drive supports DMA or not
-		dma = 0; // We don't support DMA
+		let dma: u8 = 0; // We don't support DMA
 
 		// (III) Wait if the drive is busy
 		while (IDEController::read(channel, ATAReg::STATUS) & ATAStatus::BSY)
@@ -229,38 +229,38 @@ impl ATA {
 		if dma != 0 {
 			if direction == 0 {
 				// DMA Read
+				todo!();
 			} else {
 				// DMA Write
+				todo!();
+			}
+		} else if direction == 0 {
+			// PIO Read
+			for _ in 0..numsects {
+				// Polling, set error and exit if there is
+				IDEController::polling(channel, 1)?;
+				io::insw(bus as u16, edi as *mut _, words);
+				edi += words * 2;
 			}
 		} else {
-			if direction == 0 {
-				// PIO Read
-				for _ in 0..numsects {
-					// Polling, set error and exit if there is
-					IDEController::polling(channel, 1)?;
-					io::insw(bus as u16, edi as *mut _, words);
-					edi += words * 2;
-				}
-			} else {
-				// PIO Write
-				for _ in 0..numsects {
-					// Polling
-					IDEController::polling(channel, 0)?;
-					io::outsw(bus as u16, edi as *mut _, words);
-					edi += words * 2;
-				}
-				IDEController::write(
-					channel,
-					ATAReg::COMMAND,
-					[
-						ATACommand::CacheFlush,
-						ATACommand::CacheFlush,
-						ATACommand::CacheFlushExt
-					][lba_mode as usize] as u8
-				);
+			// PIO Write
+			for _ in 0..numsects {
 				// Polling
 				IDEController::polling(channel, 0)?;
+				io::outsw(bus as u16, edi as *mut _, words);
+				edi += words * 2;
 			}
+			IDEController::write(
+				channel,
+				ATAReg::COMMAND,
+				[
+					ATACommand::CacheFlush,
+					ATACommand::CacheFlush,
+					ATACommand::CacheFlushExt
+				][lba_mode as usize] as u8
+			);
+			// Polling
+			IDEController::polling(channel, 0)?;
 		}
 		Ok(())
 	}

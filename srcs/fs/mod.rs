@@ -33,7 +33,7 @@ pub fn create(file: FileInfo) -> Result<(), ErrNo> {
 		},
 		Some(file) => {
 			crate::kprintln!("Found file {}", file.name);
-			Err(ErrNo::EEXIST)
+			Err(ErrNo::Exist)
 		}
 	}
 }
@@ -75,7 +75,7 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 	let found_file = guard
 		.iter()
 		.find(|elem| elem.name == name)
-		.ok_or(ErrNo::ENOENT)?;
+		.ok_or(ErrNo::NoEnt)?;
 	let binding = Process::get_running_process();
 	let mut curr_process = binding.lock();
 
@@ -84,9 +84,9 @@ pub fn open(name: &str) -> Result<usize, ErrNo> {
 		.fds
 		.iter()
 		.position(|elem| elem.is_none())
-		.ok_or(ErrNo::EMFILE)?;
-	curr_process.fds[index] = Some(Arc::clone(&found_file));
-	return Ok(index);
+		.ok_or(ErrNo::MFile)?;
+	curr_process.fds[index] = Some(Arc::clone(found_file));
+	Ok(index)
 }
 
 /// Close a file given its file descriptor. This does not delete the file from the system
@@ -104,13 +104,13 @@ pub fn close(fd: usize) {
 /// which imply you can't r/w another file at the same time.
 pub fn read(fd: usize, dst: &mut [u8], length: usize) -> Result<usize, ErrNo> {
 	if fd >= MAX_FD {
-		return Err(ErrNo::EBADF);
+		return Err(ErrNo::BadF);
 	}
 
 	let binding = Process::get_running_process();
 	let guard2 = binding.execute(|guard| {
 		let mut curr_process = guard.lock();
-		let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
+		let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::BadF)?;
 		Ok(file.op.clone())
 	})?;
 	let fileop = guard2.lock();
@@ -123,13 +123,13 @@ use crate::proc::process::Process;
 /// which imply you can't r/w another file at the same time.
 pub fn write(fd: usize, src: &[u8], length: usize) -> Result<usize, ErrNo> {
 	if fd >= MAX_FD {
-		return Err(ErrNo::EBADF);
+		return Err(ErrNo::BadF);
 	}
 
 	let binding = Process::get_running_process();
 	let guard2 = binding.execute(|guard| {
 		let mut curr_process = guard.lock();
-		let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::EBADF)?;
+		let file = curr_process.fds[fd].as_mut().ok_or(ErrNo::BadF)?;
 		Ok(file.op.clone())
 	})?;
 	let mut fileop = guard2.lock();
@@ -160,7 +160,7 @@ pub fn socket_pair(
 		.fds
 		.iter()
 		.position(|elem| elem.is_none())
-		.ok_or(ErrNo::EMFILE)?;
+		.ok_or(ErrNo::MFile)?;
 	curr_process.fds[index] = Some(Arc::new(socket1));
 
 	// Open second socket
@@ -168,7 +168,7 @@ pub fn socket_pair(
 		.fds
 		.iter()
 		.position(|elem| elem.is_none())
-		.ok_or(ErrNo::EMFILE)?;
+		.ok_or(ErrNo::MFile)?;
 	curr_process.fds[index2] = Some(Arc::new(socket2));
 
 	sockets[0] = index;

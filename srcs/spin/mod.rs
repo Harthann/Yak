@@ -44,7 +44,7 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 	fn obtain_lock(&self) {
 		// We must cli before obtaining lock otherwise we could lock and get
 		// interrupted right after it without cli
-		if INT == true {
+		if INT {
 			crate::wrappers::_cli();
 		}
 		while self
@@ -57,7 +57,7 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 			)
 			.is_err()
 		{
-			while self.lock.load(Ordering::Relaxed) != false {
+			while self.lock.load(Ordering::Relaxed) {
 				spin_loop();
 			}
 		}
@@ -79,7 +79,7 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 	pub fn try_lock(&self) -> Option<MutexGuard<T, INT>> {
 		// We must cli before obtaining lock otherwise we could lock and get
 		// interrupted right after it without cli
-		if INT == true {
+		if INT {
 			crate::wrappers::_cli();
 		}
 		if self
@@ -92,7 +92,7 @@ impl<T: ?Sized, const INT: bool> RawMutex<T, INT> {
 				data: unsafe { &mut *self.data.get() }
 			})
 		} else {
-			if INT == true {
+			if INT {
 				crate::wrappers::_sti();
 			}
 			None
@@ -112,13 +112,13 @@ impl<T: ?Sized, const INT: bool> fmt::Debug for RawMutex<T, INT> {
 
 impl<'a, T: ?Sized, const INT: bool> Deref for MutexGuard<'a, T, INT> {
 	type Target = T;
-	fn deref<'b>(&'b self) -> &'b T {
+	fn deref(&self) -> &T {
 		&*self.data
 	}
 }
 
 impl<'a, T: ?Sized, const INT: bool> DerefMut for MutexGuard<'a, T, INT> {
-	fn deref_mut<'b>(&'b mut self) -> &'b mut T {
+	fn deref_mut(&mut self) -> &mut T {
 		&mut *self.data
 	}
 }
@@ -126,7 +126,7 @@ impl<'a, T: ?Sized, const INT: bool> DerefMut for MutexGuard<'a, T, INT> {
 impl<'a, T: ?Sized, const INT: bool> Drop for MutexGuard<'a, T, INT> {
 	fn drop(&mut self) {
 		self.lock.store(false, Ordering::Release);
-		if INT == true {
+		if INT {
 			crate::wrappers::_sti();
 		}
 	}

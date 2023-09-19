@@ -21,7 +21,7 @@ impl PageDirectory {
 					page_dir.clear();
 					page_dir.set_entry(
 						1023,
-						get_paddr!(offset) | flags | PAGE_PRESENT
+						(get_paddr!(offset)) | flags | PAGE_PRESENT
 					);
 					page_dir
 				},
@@ -165,8 +165,8 @@ impl PageDirectory {
 		while i < 1023 {
 			if self.get_entry(i).get_present() == 1 {
 				let res = self.get_page_table(i).new_frame(paddr, flags);
-				if res.is_ok() {
-					return Ok(get_vaddr!(i, res.unwrap()));
+				if let Ok(page_frame) = res {
+					return Ok(get_vaddr!(i, page_frame));
 				}
 			}
 			i += 1;
@@ -366,16 +366,16 @@ impl PageDirectory {
 					.free_page(self.get_entry(index).get_paddr());
 				self.set_entry(index, 0);
 				refresh_tlb!();
-				return Ok(());
+				Ok(())
 			} else {
-				return Err(());
+				Err(())
 			}
 		}
 	}
 
 	// Get the page_table at the specified index
 	// The page table 0 index every page_table
-	pub fn get_page_table(&self, index: usize) -> &mut PageTable {
+	pub fn get_page_table(&mut self, index: usize) -> &mut PageTable {
 		unsafe { &mut *(get_vaddr!(1023, index) as *mut _) }
 	}
 
@@ -451,7 +451,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_dirty(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b01000000) >> 6) as u8
 		}
@@ -459,7 +459,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_global(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b100000000) >> 8) as u8
 		}
@@ -476,7 +476,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_pat(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b1000000000000) >> 12) as u8
 		}
@@ -484,7 +484,7 @@ impl PageDirectoryEntry {
 
 	pub fn get_rsvd(&self) -> u8 {
 		if self.get_ps() == 0 {
-			return 0;
+			0
 		} else {
 			((self.value & 0b100000000000000000000) >> 20) as u8
 		}

@@ -59,7 +59,7 @@ pub unsafe fn exec_fn_userspace(
 	let mut new_task: Task = Task::new();
 
 	process.init(&binding);
-	process.exe = name.clone();
+	process.exe = name;
 	process.owner = 1; // user
 
 	let pid = process.pid;
@@ -111,8 +111,8 @@ pub unsafe fn exec_fn_userspace(
 #[macro_export]
 macro_rules! exec_fn_userspace {
 	($func:expr, $size:expr) => {{
-		use crate::alloc::string::ToString;
-		crate::user::exec_fn_userspace(
+		use $crate::alloc::string::ToString;
+		$crate::user::exec_fn_userspace(
 			stringify!($func).to_string(),
 			$func as u32,
 			$size
