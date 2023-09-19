@@ -39,12 +39,10 @@ $QEMU_ARGS
 $4
 -audiodev $AUDIODEV,id=audio0 -machine pcspk-audiodev=audio0
 -d int
--drive id=disk,file=$2,format=raw,if=none
--device ide-hd,drive=disk,bus=ide.0
-
--drive id=disk1,file=hard-drive,format=raw,if=none
--device ide-hd,drive=disk1,bus=ide.1
-
+-drive id=cdrom,file=$2,format=raw,if=none
+-device ide-cd,drive=cdrom,bus=ide.0
+-drive id=disk,file=hard-drive,format=raw,if=none
+-device ide-hd,drive=disk,bus=ide.1
 -serial chardev:char0
 -serial file:$DIR_LOGS/debug_kernel.log
 -no-reboot

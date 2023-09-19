@@ -1,6 +1,6 @@
-use core::arch::asm;
+use super::{IDEChannelRegisters, IDEController, IDEDevice, IDE_IRQ_INVOKED};
 
-use super::{CHANNELS, IDE, IDE_DEVICES, IDE_IRQ_INVOKED};
+use crate::io;
 
 #[allow(non_snake_case)]
 pub mod ATAStatus {
@@ -85,6 +85,7 @@ pub mod ATAReg {
 	pub const DEVADDRESS: u8 = 0x0d;
 }
 
+#[derive(Clone, Copy)]
 pub enum ATAChannel {
 	Primary   = 0x00,
 	Secondary = 0x01
@@ -98,30 +99,30 @@ pub enum ATADirection {
 pub struct ATA {}
 
 impl ATA {
-	pub unsafe fn access(
+	pub fn access(
 		direction: u8,
-		drive: u8,
+		device: &mut IDEDevice,
 		lba: u32,
 		numsects: u8,
 		mut edi: u32
-	) -> u8 {
+	) -> Result<(), u8> {
+		let binding = device.channel.as_mut().ok_or(1)?;
+		let channel: &mut IDEChannelRegisters = &mut binding.lock();
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
-		let channel: u32 = IDE_DEVICES[drive as usize].channel as u32; // Read the channel
-		let slavebit: u32 = IDE_DEVICES[drive as usize].drive as u32; // Read the Drive [Master/Slave]
-		let bus: u32 = CHANNELS[channel as usize].base as u32; // Bus Base, like 0x1f0 which is also data port
-		let words: u32 = 256; // Almost every ATA drive has sector-size of 512-byte
+		// Read the Drive [Master/Slave]
+		let slavebit: u32 = device.drive as u32;
+		// Bus Base, like 0x1f0 which is also data port
+		let bus: u32 = channel.base as u32;
+		// Almost every ATA drive has sector-size of 512-byte
+		let words: u32 = 512 / 2;
 		let head: u8;
 
 		// Disable IRQ
-		IDE_IRQ_INVOKED = 0x0;
-		CHANNELS[channel as usize].n_ien = IDE_IRQ_INVOKED + 0x02;
-		IDE::write(
-			channel as u8,
-			ATAReg::CONTROL,
-			CHANNELS[channel as usize].n_ien
-		);
+		*IDE_IRQ_INVOKED.lock() = 0x0;
+		channel.n_ien = 0x02;
+		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
 
 		// (I) Select one from LBA28, LBA48 or CHS
 		// Sure Drive should support LBA in this case or you
@@ -136,7 +137,7 @@ impl ATA {
 			lba_io[4] = 0; // LBA28 is integer, so 32-bits are enough to access 2TB
 			lba_io[5] = 0; // LBA28 is integer, so 32-bits are enough to access 2TB
 			head = 0; // Lower 4-bits of HDDEVSEL are not used here
-		} else if IDE_DEVICES[drive as usize].capabilities & 0x200 != 0 {
+		} else if device.capabilities & 0x200 != 0 {
 			// LBA48
 			lba_mode = 1;
 			lba_io[0] = ((lba & 0x00000FF) >> 0) as u8;
@@ -165,21 +166,22 @@ impl ATA {
 		dma = 0; // We don't support DMA
 
 		// (III) Wait if the drive is busy
-		while (IDE::read(channel as u8, ATAReg::STATUS) & ATAStatus::BSY) != 0 {
-		}
+		while (IDEController::read(channel, ATAReg::STATUS) & ATAStatus::BSY)
+			!= 0
+		{}
 
 		// (IV) Select Drive from the controller
 		if lba_mode == 0 {
 			// Drive & CHS
-			IDE::write(
-				channel as u8,
+			IDEController::write(
+				channel,
 				ATAReg::HDDEVSEL,
 				0xa0 | ((slavebit as u8) << 4) | head
 			);
 		} else {
 			// Drive & LBA
-			IDE::write(
-				channel as u8,
+			IDEController::write(
+				channel,
 				ATAReg::HDDEVSEL,
 				0xe0 | ((slavebit as u8) << 4) | head
 			);
@@ -187,15 +189,15 @@ impl ATA {
 
 		// (V) Write Parameters
 		if lba_mode == 2 {
-			IDE::write(channel as u8, ATAReg::SECCOUNT1, 0);
-			IDE::write(channel as u8, ATAReg::LBA3, lba_io[3]);
-			IDE::write(channel as u8, ATAReg::LBA4, lba_io[4]);
-			IDE::write(channel as u8, ATAReg::LBA5, lba_io[5]);
+			IDEController::write(channel, ATAReg::SECCOUNT1, 0);
+			IDEController::write(channel, ATAReg::LBA3, lba_io[3]);
+			IDEController::write(channel, ATAReg::LBA4, lba_io[4]);
+			IDEController::write(channel, ATAReg::LBA5, lba_io[5]);
 		}
-		IDE::write(channel as u8, ATAReg::SECCOUNT0, numsects);
-		IDE::write(channel as u8, ATAReg::LBA0, lba_io[0]);
-		IDE::write(channel as u8, ATAReg::LBA1, lba_io[1]);
-		IDE::write(channel as u8, ATAReg::LBA2, lba_io[2]);
+		IDEController::write(channel, ATAReg::SECCOUNT0, numsects);
+		IDEController::write(channel, ATAReg::LBA0, lba_io[0]);
+		IDEController::write(channel, ATAReg::LBA1, lba_io[1]);
+		IDEController::write(channel, ATAReg::LBA2, lba_io[2]);
 
 		// (VI) Select the command and send it
 		// Routine that is followed:
@@ -222,7 +224,7 @@ impl ATA {
 			_ => todo!()
 		};
 		// Send the command
-		IDE::write(channel as u8, ATAReg::COMMAND, cmd as u8);
+		IDEController::write(channel, ATAReg::COMMAND, cmd as u8);
 
 		if dma != 0 {
 			if direction == 0 {
@@ -235,39 +237,20 @@ impl ATA {
 				// PIO Read
 				for _ in 0..numsects {
 					// Polling, set error and exit if there is
-					let err: u8 = IDE::polling(channel as u8, 1);
-					if err != 0 {
-						return err;
-					}
-					asm!(
-						"push edi",
-						"mov edi, {edi}",
-						"rep insw", // Receive data
-						"pop edi",
-						in("ecx") words,
-						in("edx") bus,
-						edi = in(reg) edi,
-					);
+					IDEController::polling(channel, 1)?;
+					io::insw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
 			} else {
 				// PIO Write
 				for _ in 0..numsects {
 					// Polling
-					IDE::polling(channel as u8, 0);
-					asm!(
-						"push esi",
-						"mov esi, {reg}",
-						"rep outsw", // Send data
-						"pop esi",
-						in("ecx") words,
-						in("edx") bus,
-						reg = in(reg) edi
-					);
+					IDEController::polling(channel, 0)?;
+					io::outsw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
-				IDE::write(
-					channel as u8,
+				IDEController::write(
+					channel,
 					ATAReg::COMMAND,
 					[
 						ATACommand::CacheFlush,
@@ -276,9 +259,9 @@ impl ATA {
 					][lba_mode as usize] as u8
 				);
 				// Polling
-				IDE::polling(channel as u8, 0);
+				IDEController::polling(channel, 0)?;
 			}
 		}
-		0
+		Ok(())
 	}
 }

@@ -93,7 +93,7 @@ impl Ext2 {
 
         let block_no = block_no + self.sblock.superblock_block;
 		for i in 0..sector_no { unsafe {
-				IDE::read_sectors(
+				IDE.lock().read_sectors(
 					DISKNO,
 					1,
 					(block_no * sector_per_block as u32) + i as u32,
@@ -112,7 +112,7 @@ impl Ext2 {
 
         let block_no = block_no + self.sblock.superblock_block;
         unsafe {
-			IDE::write_sectors(
+			IDE.lock().write_sectors(
 				DISKNO,
 				sector_no as u8,
 				block_no * sector_per_block as u32,
@@ -375,7 +375,7 @@ pub fn read_superblock() -> block::BaseSuperblock {
 	let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
 
 	unsafe {
-		IDE::read_sectors(DISKNO, 1, 2, buffer.as_ptr() as u32);
+		IDE.lock().read_sectors(DISKNO, 1, 2, buffer.as_ptr() as u32);
 	}
 	let mut sblock = block::BaseSuperblock::from(&buffer[0..84]);
 	if sblock.version().0 >= 1 {

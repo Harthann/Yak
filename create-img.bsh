@@ -4,6 +4,8 @@ set -eu
 root_dir=dumbfs
 img_file=$1
 
+mkdir -p "$root_dir"
+
 # Create a 32M ext2 without sudo.
 # If 32M is not enough for the contents of the directory,
 # it will fail.
