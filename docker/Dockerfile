@@ -5,7 +5,7 @@ RUN apk update
 RUN apk add bash curl
 
 # Install compiler packages
-RUN apk add gcc gdb
+RUN apk add gcc gdb build-base
 
 # Create needed i386 ld and ar
 RUN echo -e '#!/bin/sh\nld -m elf_i386 $@' > /usr/bin/i386-elf-ld
@@ -22,7 +22,7 @@ RUN chmod +x rustup-init.sh
 RUN RUSTUP_HOME=/opt/rustup CARGO_HOME=/opt/cargo ./rustup-init.sh -y --default-toolchain none
 
 # Install qemu
-RUN apk add qemu-system-i386 qemu-ui-curses
+RUN apk add qemu-system-i386 qemu-ui-curses qemu-img
 
 # Initial setup
 WORKDIR /root
