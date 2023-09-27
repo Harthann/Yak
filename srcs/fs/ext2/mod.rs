@@ -237,15 +237,17 @@ impl Ext2 {
 		// Retrieve inode at index inodeno
 		let inode = self.get_inode_entry(inodeno);
 		// Read block pointed by inode
-		let block = self.read_block(inode.dbp[0]);
-		let mut entry_start = 0;
-		while entry_start != 4096 {
-			let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
-			entry_start = entry_start + dentry.dentry_size as usize;
-			if dentry.name == filename {
-				return Some(dentry);
-			}
-		}
+        for block_no in inode.get_blocks_no() {
+            let block = self.read_block(block_no);
+            let mut entry_start = 0;
+            while entry_start != self.sblock.bsize() as usize {
+                let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
+                entry_start = entry_start + dentry.dentry_size as usize;
+                if dentry.name == filename {
+                    return Some(dentry);
+                }
+            }
+        }
 		None
 	}
 
@@ -333,37 +335,41 @@ impl Ext2 {
 
         // Write new dentry on the parent dir
 		let inode = self.get_inode_entry(inodeno);
-		let mut block = self.read_block(inode.dbp[0]);
+        for block_no in inode.get_blocks_no() {
+		    let mut block = self.read_block(block_no);
 
-		let mut entry_start = 0;
-		while entry_start < block.len() {
-			crate::kprintln!("Blocklen {} {}", block.len(), entry_start);
-			let mut tmp = inode::Dentry::from(&block[entry_start..block.len()]);
-			let calculated = roundup(tmp.name_length + 8, 4);
-			if (calculated as usize) < tmp.dentry_size as usize {
-				if entry_start
-					+ calculated as usize
-					+ (dentry.dentry_size as usize)
-					< block.len() as usize
-				{
-					tmp.dentry_size = calculated as u16;
-					block[entry_start..entry_start + calculated as usize - 1]
-						.copy_from_slice(Into::<Vec<u8>>::into(tmp).as_slice());
-					entry_start = entry_start + calculated as usize;
-                    let dentrysize = roundup(dentry.name_length + 8, 4) as usize;
+            let mut entry_start = 0;
+            while entry_start < block.len() {
+                crate::kprintln!("Blocklen {} {}", block.len(), entry_start);
+                let mut tmp = inode::Dentry::from(&block[entry_start..block.len()]);
+                let calculated = roundup(tmp.name_length + 8, 4);
+                if (calculated as usize) < tmp.dentry_size as usize {
+                    if entry_start
+                        + calculated as usize
+                        + (dentry.dentry_size as usize)
+                        < block.len() as usize
+                    {
+                        tmp.dentry_size = calculated as u16;
+                        block[entry_start..entry_start + calculated as usize - 1]
+                            .copy_from_slice(Into::<Vec<u8>>::into(tmp).as_slice());
+                        entry_start = entry_start + calculated as usize;
+                        let dentrysize = roundup(dentry.name_length + 8, 4) as usize;
 
-					dentry.dentry_size =
-						block.len() as u16 - entry_start as u16;
-					block[entry_start..entry_start + dentrysize]
-						.copy_from_slice(
-							Into::<Vec<u8>>::into(dentry).as_slice()
-						);
-					self.write_block(inode.dbp[0], block.as_slice());
-					return;
-				}
-			}
-			entry_start = entry_start + tmp.dentry_size as usize;
-		}
+                        dentry.dentry_size =
+                            block.len() as u16 - entry_start as u16;
+                        block[entry_start..entry_start + dentrysize]
+                            .copy_from_slice(
+                                Into::<Vec<u8>>::into(dentry).as_slice()
+                            );
+                        for block_no in inode.get_blocks_no() {
+                            self.write_block(block_no, block.as_slice());
+                        }
+                        return;
+                    }
+                }
+                entry_start = entry_start + tmp.dentry_size as usize;
+            }
+        }
 	}
 }
 
@@ -395,9 +401,12 @@ pub fn get_file_content(path: &str) -> Vec<char> {
 	match opt {
 		None => Vec::new(),
 		Some((_, inode)) => {
-			let block =
-				&ext2.read_block(inode.dbp[0])[0..inode.size() as usize];
-			let file: Vec<char> = block.iter().map(|x| *x as char).collect();
+            let mut file: Vec<char> = Vec::new();
+            for block_no in inode.get_blocks_no() {
+                let block =
+                    &ext2.read_block(block_no)[0..inode.size() as usize];
+                file = block.iter().map(|x| *x as char).collect();
+            }
 			file
 		}
 	}
@@ -411,16 +420,19 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 	return match inode {
 		None => crate::vec::Vec::new(),
 		Some((_, inode)) => {
-			let block = ext2.read_block(inode.dbp[0]);
-			let mut dentries: crate::vec::Vec<inode::Dentry> =
-				crate::vec::Vec::new();
-			let mut entry_start: usize = 0;
-			while entry_start != ext2.sblock.bsize() as usize {
-				let dentry =
-					inode::Dentry::from(&block[entry_start..block.len()]);
-				entry_start = entry_start + dentry.dentry_size as usize;
-				dentries.push(dentry);
-			}
+            let mut dentries: crate::vec::Vec<inode::Dentry> =
+                crate::vec::Vec::new();
+            for block_no in inode.get_blocks_no() {
+                let block = ext2.read_block(block_no);
+
+                let mut entry_start: usize = 0;
+                while entry_start != ext2.sblock.bsize() as usize {
+                    let dentry =
+                        inode::Dentry::from(&block[entry_start..block.len()]);
+                    entry_start = entry_start + dentry.dentry_size as usize;
+                    dentries.push(dentry);
+                }
+            }
 			dentries
 		}
 	};
