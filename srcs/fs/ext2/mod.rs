@@ -90,8 +90,6 @@ impl Ext2 {
 
 		let sector_no = bsize / SECTOR_SIZE as usize;
 		let mut block: crate::vec::Vec<u8> = crate::vec::Vec::new();
-
-        let block_no = block_no + self.sblock.superblock_block;
 		for i in 0..sector_no { unsafe {
 				IDE.lock().read_sectors(
 					DISKNO,
@@ -109,8 +107,6 @@ impl Ext2 {
 		let sector_per_block = bsize / SECTOR_SIZE as usize;
 
 		let sector_no = bsize / SECTOR_SIZE as usize;
-
-        let block_no = block_no + self.sblock.superblock_block;
         unsafe {
 			IDE.lock().write_sectors(
 				DISKNO,
@@ -418,11 +414,10 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 			let block = ext2.read_block(inode.dbp[0]);
 			let mut dentries: crate::vec::Vec<inode::Dentry> =
 				crate::vec::Vec::new();
-			let mut entry_start = 0;
-			while entry_start != 4096 {
+			let mut entry_start: usize = 0;
+			while entry_start != ext2.sblock.bsize() as usize {
 				let dentry =
 					inode::Dentry::from(&block[entry_start..block.len()]);
-
 				entry_start = entry_start + dentry.dentry_size as usize;
 				dentries.push(dentry);
 			}
