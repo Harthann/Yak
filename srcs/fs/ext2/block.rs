@@ -64,7 +64,7 @@ impl BaseSuperblock {
 		(self.major, self.minor)
 	}
 
-	pub fn bsize(&self) -> u32 {
+	pub fn bsize(&self) -> usize {
 		1024 << self.block_size
 	}
 	pub fn inode_size(&self) -> u16 {

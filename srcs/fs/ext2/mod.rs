@@ -57,7 +57,7 @@ impl Ext2 {
 			.get_gdt_entry(self.inode_to_bgroup(inode as u32) as usize)
 			.inode_table;
 		let offset = (inode - 1) * self.inode_size() as u32;
-		inode_table_block + offset / self.sblock.bsize()
+		inode_table_block + offset / self.sblock.bsize() as u32
 	}
 
 	/// Convert an inode number to it's offset inside block
@@ -72,8 +72,7 @@ impl Ext2 {
 	/// let offset = ext2.inode_to_offset(45);
 	/// ```
 	pub fn inode_to_offset(&self, inode: u32) -> u32 {
-		let inode_per_block =
-			self.sblock.bsize() as usize / self.inode_size() as usize;
+		let inode_per_block = self.sblock.bsize() / self.inode_size() as usize;
 		((inode - 1) % inode_per_block as u32) * self.inode_size() as u32
 	}
 
@@ -85,7 +84,7 @@ impl Ext2 {
 	/// Read an entire block from disk
 	pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
 		let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
-		let bsize = self.sblock.bsize() as usize;
+		let bsize = self.sblock.bsize();
 		let sector_per_block = bsize / SECTOR_SIZE as usize;
 
 		let sector_no = bsize / SECTOR_SIZE as usize;
@@ -105,7 +104,7 @@ impl Ext2 {
 	}
 
 	fn write_block(&mut self, block_no: u32, block: &[u8]) {
-		let bsize = self.sblock.bsize() as usize;
+		let bsize = self.sblock.bsize();
 		let sector_per_block = bsize / SECTOR_SIZE as usize;
 
 		let sector_no = bsize / SECTOR_SIZE as usize;
@@ -241,7 +240,7 @@ impl Ext2 {
 		for block_no in inode.get_blocks_no() {
 			let block = self.read_block(block_no);
 			let mut entry_start = 0;
-			while entry_start != self.sblock.bsize() as usize {
+			while entry_start != self.sblock.bsize() {
 				let dentry =
 					inode::Dentry::from(&block[entry_start..block.len()]);
 				entry_start = entry_start + dentry.dentry_size as usize;
@@ -410,16 +409,53 @@ pub fn get_file_content(path: &str) -> Vec<char> {
 		Some((_, inode)) => {
 			let mut file: Vec<char> = Vec::new();
 			let blocks_no = inode.get_blocks_no();
-			let n_loop = inode.size() / ext2.sblock.bsize() as u64;
-			for i in 0..n_loop + 1 as u64 {
+			let nb_blocks: usize =
+				(inode.size() / ext2.sblock.bsize() as u64 + 1) as usize;
+			let n_loop = if nb_blocks > 12 { 12 } else { nb_blocks };
+			for i in 0..n_loop {
 				let block = ext2.read_block(blocks_no[i as usize]);
 				let buffer;
-				if i != n_loop {
-					buffer = &block[0..ext2.sblock.bsize() as usize];
+				if i != nb_blocks - 1 {
+					buffer = &block[0..ext2.sblock.bsize()];
 				} else {
-					buffer = &block[0..(inode.size() % ext2.sblock.bsize() as u64) as usize];
+					buffer = &block[0..(inode.size()
+						% ext2.sblock.bsize() as u64) as usize];
 				}
 				file.append(&mut buffer.iter().map(|x| *x as char).collect());
+			}
+			let nb_block_singly =
+				ext2.sblock.bsize() / core::mem::size_of::<u32>();
+			if nb_blocks > 12 {
+				let n_loop;
+				if nb_blocks > 12 + nb_block_singly {
+					n_loop = nb_block_singly;
+				} else {
+					n_loop = nb_blocks - 12;
+				}
+				let singly_block = ext2.read_block(inode.sibp);
+				for i in 0..n_loop {
+					let block_no = u32::from_le_bytes(
+						singly_block[i..i + core::mem::size_of::<u32>()]
+							.try_into()
+							.unwrap()
+					);
+					let block = ext2.read_block(block_no);
+					let buffer;
+					if i + 12 != nb_blocks - 1 {
+						buffer = &block[0..ext2.sblock.bsize()];
+					} else {
+						buffer = &block[0..(inode.size()
+							% ext2.sblock.bsize() as u64)
+							as usize];
+					}
+					file.append(
+						&mut buffer.iter().map(|x| *x as char).collect()
+					);
+				}
+			}
+			// Doubly or Triply indirect
+			if nb_blocks > 12 + (nb_block_singly) {
+				todo!();
 			}
 			file
 		}
@@ -440,7 +476,7 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 				let block = ext2.read_block(block_no);
 
 				let mut entry_start: usize = 0;
-				while entry_start != ext2.sblock.bsize() as usize {
+				while entry_start != ext2.sblock.bsize() {
 					let dentry =
 						inode::Dentry::from(&block[entry_start..block.len()]);
 					entry_start = entry_start + dentry.dentry_size as usize;

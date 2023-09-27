@@ -37,7 +37,7 @@ pub struct Inode {
 	/// Direct Block Pointers
 	pub dbp:      [u32; 12],
 	/// Singly Indirect Block Pointer (Points to a block that is a list of block pointers to data)
-	sibp:         u32,
+	pub sibp:     u32,
 	/// Doubly Indirect Block Pointer (Points to a block that is a list of block pointers to Singly Indirect Blocks)
 	dibp:         u32,
 	/// Triply Indirect Block Pointer (Points to a block that is a list of block pointers to Doubly Indirect Blocks)
