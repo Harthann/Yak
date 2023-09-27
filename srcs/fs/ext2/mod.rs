@@ -409,10 +409,17 @@ pub fn get_file_content(path: &str) -> Vec<char> {
 		None => Vec::new(),
 		Some((_, inode)) => {
 			let mut file: Vec<char> = Vec::new();
-			for block_no in inode.get_blocks_no() {
-				let block =
-					&ext2.read_block(block_no)[0..inode.size() as usize];
-				file = block.iter().map(|x| *x as char).collect();
+			let blocks_no = inode.get_blocks_no();
+			let n_loop = inode.size() / ext2.sblock.bsize() as u64;
+			for i in 0..n_loop + 1 as u64 {
+				let block = ext2.read_block(blocks_no[i as usize]);
+				let buffer;
+				if i != n_loop {
+					buffer = &block[0..ext2.sblock.bsize() as usize];
+				} else {
+					buffer = &block[0..(inode.size() % ext2.sblock.bsize() as u64) as usize];
+				}
+				file.append(&mut buffer.iter().map(|x| *x as char).collect());
 			}
 			file
 		}
