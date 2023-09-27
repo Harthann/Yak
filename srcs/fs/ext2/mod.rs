@@ -434,8 +434,9 @@ pub fn get_file_content(path: &str) -> Vec<char> {
 				}
 				let singly_block = ext2.read_block(inode.sibp);
 				for i in 0..n_loop {
+					let off = i * core::mem::size_of::<u32>();
 					let block_no = u32::from_le_bytes(
-						singly_block[i..i + core::mem::size_of::<u32>()]
+						singly_block[off..off + core::mem::size_of::<u32>()]
 							.try_into()
 							.unwrap()
 					);
