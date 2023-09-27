@@ -26,11 +26,11 @@ fn cat(command: Vec<String>) {
 use crate::fs::ext2;
 fn test(command: Vec<String>) {
 	let mut ext2 = crate::fs::ext2::Ext2::new();
-	//let mut dentry = crate::fs::ext2::inode::Dentry::default();
+	// let mut dentry = crate::fs::ext2::inode::Dentry::default();
 
-    let node = ext2.alloc_node(0);
-    let block = ext2.alloc_block(0);
-    crate::dprintln!("Node {}", node);
+	let node = ext2.alloc_node(0);
+	let block = ext2.alloc_block(0);
+	crate::dprintln!("Node {}", node);
 }
 
 fn ls(command: Vec<String>) {

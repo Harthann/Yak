@@ -72,16 +72,16 @@ impl Inode {
 		self.tperm & ITYPE_DIR != 0
 	}
 
-    pub fn get_blocks_no(&self) -> crate::vec::Vec<u32> {
-        let mut blocks_no = crate::vec::Vec::new();
-        for i in 0..12 {
-            if self.dbp[i] == 0 {
-                continue ;
-            }
-            blocks_no.push(self.dbp[i]);
-        }
-        blocks_no
-    }
+	pub fn get_blocks_no(&self) -> crate::vec::Vec<u32> {
+		let mut blocks_no = crate::vec::Vec::new();
+		for i in 0..12 {
+			if self.dbp[i] == 0 {
+				continue;
+			}
+			blocks_no.push(self.dbp[i]);
+		}
+		blocks_no
+	}
 }
 
 use core::mem::transmute;

@@ -24,7 +24,7 @@ impl Bitmap {
 		for i in 0..self.map.len() {
 			for j in 0..8 {
 				if self.map[i] & self.mask(j) != self.mask(j) {
-                    self.set_node(i * 8 + j);
+					self.set_node(i * 8 + j);
 					return Some(i * 8 + j);
 				}
 			}
@@ -32,15 +32,15 @@ impl Bitmap {
 		None
 	}
 
-    pub fn mask(&self, index: usize) -> u8 {
-        0b00000001 << index
-    }
+	pub fn mask(&self, index: usize) -> u8 {
+		0b00000001 << index
+	}
 
 	pub fn set_node(&mut self, index: usize) {
 		let modulo = index % 8;
-        crate::dprintln!("Beofre set node {:#010b}", self.map[index / 8]);
+		crate::dprintln!("Beofre set node {:#010b}", self.map[index / 8]);
 		self.map[index / 8] |= self.mask(modulo);
-        crate::dprintln!("After set node {:#010b}", self.map[index / 8]);
+		crate::dprintln!("After set node {:#010b}", self.map[index / 8]);
 	}
 
 	pub fn unset_node(&mut self, index: usize) {
@@ -56,8 +56,6 @@ impl Bitmap {
 use crate::alloc::vec::Vec;
 impl From<&[u8]> for Bitmap {
 	fn from(buffer: &[u8]) -> Self {
-		Self {
-            map: Vec::<u8>::from(buffer).into_boxed_slice()
-        }
+		Self { map: Vec::<u8>::from(buffer).into_boxed_slice() }
 	}
 }

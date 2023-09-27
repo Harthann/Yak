@@ -4,11 +4,11 @@
 #[derive(Default, Debug, PartialEq, Eq)]
 pub struct BaseSuperblock {
 	/// Total number of inodes in file system
-	inode_count:      u32,
+	inode_count:          u32,
 	/// Total number of blocks in file system
-	blocks_count:     u32,
+	blocks_count:         u32,
 	/// Number of blocks reserved for superuser (see offset 80)
-	rblocks_num:      u32,
+	rblocks_num:          u32,
 	/// Total number of unallocated blocks
 	pub blocks_unalloc:   u32,
 	/// Total number of unallocated inodes
@@ -16,44 +16,44 @@ pub struct BaseSuperblock {
 	/// Block number of the block containing the superblock (also the starting block number, NOT always zero.)
 	pub superblock_block: u32,
 	/// log2 (block size) - 10. (In other words, the number to shift 1,024 to the left by to obtain the block size)
-	block_size:       u32,
+	block_size:           u32,
 	/// log2 (fragment size) - 10. (In other words, the number to shift 1,024 to the left by to obtain the fragment size)
-	frag_size:        u32,
+	frag_size:            u32,
 	/// Number of blocks in each block group
-	bgroup_bno:       u32,
+	bgroup_bno:           u32,
 	/// Number of fragments in each block group
-	bgroup_fno:       u32,
+	bgroup_fno:           u32,
 	/// Number of inodes in each block group
-	bgroup_ino:       u32,
+	bgroup_ino:           u32,
 	/// Last mount time (in POSIX time)
-	last_mt:          u32,
+	last_mt:              u32,
 	/// Last written time (in POSIX time)
-	last_wt:          u32,
+	last_wt:              u32,
 	/// Number of times the volume has been mounted since its last consistency check (fsck)
-	mount_no:         u16,
+	mount_no:             u16,
 	/// Number of mounts allowed before a consistency check (fsck) must be done
-	mount_no_max:     u16,
+	mount_no_max:         u16,
 	/// Ext2 signature (0xef53), used to help confirm the presence of Ext2 on a volume
-	ext2_sig:         u16,
+	ext2_sig:             u16,
 	/// File system state (see below)
-	fs_state:         u16,
+	fs_state:             u16,
 	/// What to do when an error is detected (see below)
-	err_handle:       u16,
+	err_handle:           u16,
 	/// Minor portion of version (combine with Major portion below to construct full version field)
-	minor:            u16,
+	minor:                u16,
 	/// POSIX time of last consistency check (fsck)
-	last_fsck:        u32,
+	last_fsck:            u32,
 	/// Interval (in POSIX time) between forced consistency checks (fsck)
-	fsck_interval:    u32,
+	fsck_interval:        u32,
 	/// Operating system ID from which the filesystem on this volume was created (see below)
-	osid:             u32,
+	osid:                 u32,
 	/// Major portion of version (combine with Minor portion above to construct full version field)
-	major:            u32,
+	major:                u32,
 	/// User ID that can use reserved blocks
-	pub uid:          u16,
+	pub uid:              u16,
 	/// Group ID that can use reserved blocks
-	pub gid:          u16,
-	extension:        Option<ExtendedSuperblock>
+	pub gid:              u16,
+	extension:            Option<ExtendedSuperblock>
 }
 
 impl BaseSuperblock {
@@ -188,8 +188,8 @@ impl From<&[u8]> for BaseSuperblock {
 
 impl BaseSuperblock {
 	pub fn into_boxed_slice(&self) -> crate::alloc::boxed::Box<[u8]> {
-        let mut vec = crate::alloc::vec::Vec::new();
-        
+		let mut vec = crate::alloc::vec::Vec::new();
+
 		vec.extend_from_slice(&self.inode_count.to_le_bytes());
 		vec.extend_from_slice(&self.blocks_count.to_le_bytes());
 		vec.extend_from_slice(&self.rblocks_num.to_le_bytes());
@@ -216,10 +216,9 @@ impl BaseSuperblock {
 		vec.extend_from_slice(&self.uid.to_le_bytes());
 		vec.extend_from_slice(&self.gid.to_le_bytes());
 
-        vec.into_boxed_slice()
+		vec.into_boxed_slice()
 	}
 }
-
 
 use core::fmt;
 impl fmt::Display for BaseSuperblock {
