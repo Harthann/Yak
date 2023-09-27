@@ -398,6 +398,12 @@ pub fn is_ext2() -> bool {
 }
 
 use crate::vec::Vec;
+
+fn get_block_content(block: Vec<u8>, size: usize) -> Vec<char> {
+	let buffer = &block[0..size];
+	buffer.iter().map(|x| *x as char).collect()
+}
+
 /// Helper function to get content of a file.
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
@@ -412,51 +418,37 @@ pub fn get_file_content(path: &str) -> Vec<char> {
 			let nb_blocks: usize =
 				(inode.size() / ext2.sblock.bsize() as u64 + 1) as usize;
 			let n_loop = if nb_blocks > 12 { 12 } else { nb_blocks };
-			for i in 0..n_loop {
-				let block = ext2.read_block(blocks_no[i as usize]);
-				let buffer;
-				if i != nb_blocks - 1 {
-					buffer = &block[0..ext2.sblock.bsize()];
-				} else {
-					buffer = &block[0..(inode.size()
-						% ext2.sblock.bsize() as u64) as usize];
-				}
-				file.append(&mut buffer.iter().map(|x| *x as char).collect());
-			}
-			let nb_block_singly =
+			let nb_singly_block =
 				ext2.sblock.bsize() / core::mem::size_of::<u32>();
-			if nb_blocks > 12 {
-				let n_loop;
-				if nb_blocks > 12 + nb_block_singly {
-					n_loop = nb_block_singly;
-				} else {
-					n_loop = nb_blocks - 12;
-				}
-				let singly_block = ext2.read_block(inode.sibp);
-				for i in 0..n_loop {
-					let off = i * core::mem::size_of::<u32>();
+			for i in 0..nb_blocks {
+				let block;
+				if i < 12 {
+					block = ext2.read_block(blocks_no[i as usize]);
+				} else if i >= 12 && i < 12 + nb_singly_block {
+					// Singly indirect block pointer
+					let singly_block = ext2.read_block(inode.sibp);
+					let off = (i - 12) * core::mem::size_of::<u32>();
 					let block_no = u32::from_le_bytes(
 						singly_block[off..off + core::mem::size_of::<u32>()]
 							.try_into()
 							.unwrap()
 					);
-					let block = ext2.read_block(block_no);
-					let buffer;
-					if i + 12 != nb_blocks - 1 {
-						buffer = &block[0..ext2.sblock.bsize()];
-					} else {
-						buffer = &block[0..(inode.size()
-							% ext2.sblock.bsize() as u64)
-							as usize];
-					}
-					file.append(
-						&mut buffer.iter().map(|x| *x as char).collect()
-					);
+					block = ext2.read_block(block_no);
+				} else {
+					// Doubly or Triply indirect block pointer
+					todo!();
 				}
-			}
-			// Doubly or Triply indirect
-			if nb_blocks > 12 + (nb_block_singly) {
-				todo!();
+				if i != nb_blocks - 1 {
+					file.append(&mut get_block_content(
+						block,
+						ext2.sblock.bsize()
+					));
+				} else {
+					file.append(&mut get_block_content(
+						block,
+						(inode.size() % ext2.sblock.bsize() as u64) as usize
+					));
+				}
 			}
 			file
 		}
