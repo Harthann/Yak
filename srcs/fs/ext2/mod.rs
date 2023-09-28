@@ -8,6 +8,7 @@ const DISKNO: u8 = 1;
 
 use crate::pci::ide::IDE;
 use crate::utils::math::roundup;
+use crate::string::{String, ToString};
 
 /// Current read/write use entire block to perform operations
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
@@ -407,9 +408,9 @@ fn get_block_content(block: Vec<u8>, size: usize) -> Vec<char> {
 /// Helper function to get content of a file.
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
-pub fn get_file_content(path: &str) -> Vec<char> {
+pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 	let ext2 = Ext2::new();
-	let opt = ext2.get_inode_of(path);
+	let opt = ext2.recurs_find(path, inode);
 	match opt {
 		None => Vec::new(),
 		Some((_, inode)) => {
@@ -479,4 +480,32 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 			dentries
 		}
 	};
+}
+
+/// Helper function to create a folder at a given path
+pub fn create_dir(path: &str, inode: usize) {
+	let ext2 = Ext2::new();
+	let root = path.starts_with('/');
+	let mut splited: Vec<&str> = path.split("/").collect();
+	splited.retain(|a| a.len() != 0);
+	let (to_create, mut path): (String, String) = match splited.pop() {
+		Some(x) => {
+			(x.to_string(), splited.join("/"))
+		},
+		None => {
+			(splited.join("/").to_string(), "".to_string())
+		}
+	};
+	if root {
+		path.insert_str(0, "/");
+	}
+	crate::kprintln!("to_create: {}", to_create);
+	crate::kprintln!("path: {}", path);
+	let inode = ext2.recurs_find(&path, inode);
+	match inode {
+		None => {crate::kprintln!("Path not found: {}", path);}
+		Some((_, inode)) => {
+			todo!();
+		}
+	}
 }

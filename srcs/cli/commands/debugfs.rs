@@ -11,13 +11,18 @@ pub fn debugfs(mut command: Vec<String>) {
 		"cat" => cat(command),
 		"imap" => imap(command),
 		"cd" => cd(command),
+		"mkdir" => mkdir(command),
 		"test" => test(command),
 		_ => crate::kprintln!("Unknown command: {}", command[0])
 	}
 }
 
+fn mkdir(command: Vec<String>) {
+	crate::fs::ext2::create_dir(command[1].as_str(), unsafe { CURRENTDIR_INODE });
+}
+
 fn cat(command: Vec<String>) {
-	let file_content = crate::fs::ext2::get_file_content(command[1].as_str());
+	let file_content = crate::fs::ext2::get_file_content(command[1].as_str(), unsafe { CURRENTDIR_INODE });
 	for i in file_content {
 		crate::kprint!("{}", i);
 	}
