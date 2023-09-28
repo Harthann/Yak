@@ -301,6 +301,9 @@ impl Ext2 {
 			// Caller has found the entry we search
 			return Some((inodeno, self.get_inode_entry(inodeno)));
 		}
+		if path.starts_with('/') {
+			return self.get_inode_of(path);
+		}
 		let opt = path.find('/');
 		let filename = match opt {
 			Some(index) => &path[..index],
