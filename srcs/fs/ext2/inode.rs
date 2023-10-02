@@ -162,6 +162,45 @@ impl From<&[u8]> for Inode {
 	}
 }
 
+impl Into<crate::alloc::vec::Vec<u8>> for Inode {
+	fn into(self) -> crate::alloc::vec::Vec<u8> {
+		let mut v = crate::alloc::vec::Vec::new();
+		v.extend_from_slice(&self.tperm.to_le_bytes());
+		v.extend_from_slice(&self.uid.to_le_bytes());
+		v.extend_from_slice(&self.size_lh.to_le_bytes());
+		v.extend_from_slice(&self.lat.to_le_bytes());
+		v.extend_from_slice(&self.creatt.to_le_bytes());
+		v.extend_from_slice(&self.lmt.to_le_bytes());
+		v.extend_from_slice(&self.delt.to_le_bytes());
+		v.extend_from_slice(&self.gid.to_le_bytes());
+		v.extend_from_slice(&self.cound_hl.to_le_bytes());
+		v.extend_from_slice(&self.count_ds.to_le_bytes());
+		v.extend_from_slice(&self.flags.to_le_bytes());
+		v.extend_from_slice(&self.os_specific1.to_le_bytes());
+		v.extend_from_slice(&self.dbp[0].to_le_bytes());
+		v.extend_from_slice(&self.dbp[1].to_le_bytes());
+		v.extend_from_slice(&self.dbp[2].to_le_bytes());
+		v.extend_from_slice(&self.dbp[3].to_le_bytes());
+		v.extend_from_slice(&self.dbp[4].to_le_bytes());
+		v.extend_from_slice(&self.dbp[5].to_le_bytes());
+		v.extend_from_slice(&self.dbp[6].to_le_bytes());
+		v.extend_from_slice(&self.dbp[7].to_le_bytes());
+		v.extend_from_slice(&self.dbp[8].to_le_bytes());
+		v.extend_from_slice(&self.dbp[9].to_le_bytes());
+		v.extend_from_slice(&self.dbp[10].to_le_bytes());
+		v.extend_from_slice(&self.dbp[11].to_le_bytes());
+		v.extend_from_slice(&self.sibp.to_le_bytes());
+		v.extend_from_slice(&self.dibp.to_le_bytes());
+		v.extend_from_slice(&self.tibp.to_le_bytes());
+		v.extend_from_slice(&self.gen_no.to_le_bytes());
+		v.extend_from_slice(&self.facl.to_le_bytes());
+		v.extend_from_slice(&self.size_uh.to_le_bytes());
+		v.extend_from_slice(&self.block_addr.to_le_bytes());
+		v.extend_from_slice(&self.os_specific2);
+		v
+	}
+}
+
 use core::fmt;
 impl fmt::Display for Inode {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

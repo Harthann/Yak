@@ -128,7 +128,23 @@ impl Ext2 {
 	}
 
 	fn write_inode(&mut self, inodeno: usize, inode: inode::Inode) {
-		todo!()
+		if inodeno < 1 {
+			panic!("Ext2fs inodes start indexing at 1");
+		}
+		let block_no = self.inode_to_block(inodeno as u32);
+		let mut block = self.read_block(block_no);
+		let index = self.inode_to_offset(inodeno as u32) as usize;
+		crate::dprintln!(
+			"Trying to get inode: {} found at index: {}",
+			inodeno,
+			index
+		);
+		let mut vec = Into::<Vec<u8>>::into(inode);
+		while vec.len() != self.inode_size() as usize {
+			vec.push(0);
+		}
+		block[index..index + self.inode_size() as usize].copy_from_slice(vec.as_slice());
+		self.write_block(block_no, block.as_slice());
 	}
 
 	/// Read disk to recover Group Descriptor Table entry given an index
@@ -335,9 +351,6 @@ impl Ext2 {
 		let mut imap = self.read_inode_map(group);
 		crate::kprintln!("Space {} {}", bmap.get_space().0, bmap.get_space().1);
 		crate::kprintln!("Space {} {}", imap.get_space().0, imap.get_space().1);
-		let dentry_block = bmap.get_free_node().unwrap();
-		let dentry_inode = imap.get_free_node().unwrap();
-		dentry.inode = dentry_inode as u32;
 
 		self.write_block_map(group, bmap);
 		self.write_inode_map(group, imap);
@@ -383,9 +396,7 @@ impl Ext2 {
 							.copy_from_slice(
 								vec.as_slice()
 							);
-						for block_no in inode.get_blocks_no() {
-							self.write_block(block_no, block.as_slice());
-						}
+						self.write_block(block_no, block.as_slice());
 						return;
 					}
 				}
@@ -523,6 +534,8 @@ pub fn create_dir(path: &str, inode_no: usize) {
 		None => {crate::kprintln!("Path not found: {}", path);}
 		Some((inode_no, inode)) => {
 			let new_inode = ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
+			crate::kprintln!("new_inode: {}", new_inode);
+			ext2.write_inode(new_inode, inode); // copy previous inode
 			let dentry: inode::Dentry = inode::Dentry {
 				inode: new_inode as u32,
 				dentry_size: roundup(8 + to_create.len(), 4) as u16,
