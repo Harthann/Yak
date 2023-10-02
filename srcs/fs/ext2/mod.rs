@@ -120,6 +120,9 @@ impl Ext2 {
 	}
 	fn write_slice(&mut self, block_no: u32, offset: usize, slice: &[u8]) {
 		let mut block = self.read_block(block_no);
+		crate::kprintln!("offset: {}", offset);
+		crate::kprintln!("slice.len(): {}", slice.len());
+		crate::kprintln!("block.len(): {}", block.len());
 		block[offset..offset + slice.len()].copy_from_slice(slice);
 		self.write_block(block_no, &block);
 	}
@@ -165,15 +168,16 @@ impl Ext2 {
 		let mut map = self.read_inode_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.inode_unalloc -= 1;
-		self.write_slice(0, 1024, &*self.sblock.into_boxed_slice());
+		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_inode_map(group, map);
 		nodeno
 	}
+
 	pub fn alloc_block(&mut self, group: usize) -> usize {
 		let mut map = self.read_block_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.blocks_unalloc -= 1;
-		self.write_slice(0, 1024, &*self.sblock.into_boxed_slice());
+		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_block_map(group, map);
 		nodeno
 	}
@@ -486,8 +490,8 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 }
 
 /// Helper function to create a folder at a given path
-pub fn create_dir(path: &str, inode: usize) {
-	let ext2 = Ext2::new();
+pub fn create_dir(path: &str, inode_no: usize) {
+	let mut ext2 = Ext2::new();
 	let root = path.starts_with('/');
 	let mut splited: Vec<&str> = path.split("/").collect();
 	splited.retain(|a| a.len() != 0);
@@ -504,11 +508,19 @@ pub fn create_dir(path: &str, inode: usize) {
 	}
 	crate::kprintln!("to_create: {}", to_create);
 	crate::kprintln!("path: {}", path);
-	let inode = ext2.recurs_find(&path, inode);
+	let inode = ext2.recurs_find(&path, inode_no);
 	match inode {
 		None => {crate::kprintln!("Path not found: {}", path);}
-		Some((_, inode)) => {
-			todo!();
+		Some((inode_no, inode)) => {
+			let new_inode = ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
+			let dentry: inode::Dentry = inode::Dentry {
+				inode: new_inode as u32,
+				dentry_size: ext2.sblock.bsize() as u16,
+				name_length: to_create.len() as u8,
+				r#type: inode::Dtype::Directory as u8,
+				name: to_create
+			};
+			ext2.add_dentry(inode_no, dentry);
 		}
 	}
 }
