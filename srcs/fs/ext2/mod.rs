@@ -358,21 +358,30 @@ impl Ext2 {
 						+ calculated as usize + (dentry.dentry_size as usize)
 						< block.len() as usize
 					{
+						// rewrite tmp but with actual size
 						tmp.dentry_size = calculated as u16;
+						let mut vec = Into::<Vec<u8>>::into(tmp);
+						while vec.len() != calculated as usize {
+							vec.push(0);
+						}
 						block[entry_start
-							..entry_start + calculated as usize - 1]
+							..entry_start + calculated as usize]
 							.copy_from_slice(
-								Into::<Vec<u8>>::into(tmp).as_slice()
+								vec.as_slice()
 							);
 						entry_start = entry_start + calculated as usize;
 						let dentrysize =
 							roundup(dentry.name_length + 8, 4) as usize;
-
-						dentry.dentry_size =
-							block.len() as u16 - entry_start as u16;
+						// write our entry but with the block rest
+						let calculated = block.len() as u16 - entry_start as u16;
+						dentry.dentry_size = calculated;
+						let mut vec = Into::<Vec<u8>>::into(dentry);
+						while vec.len() != dentrysize as usize {
+							vec.push(0);
+						}
 						block[entry_start..entry_start + dentrysize]
 							.copy_from_slice(
-								Into::<Vec<u8>>::into(dentry).as_slice()
+								vec.as_slice()
 							);
 						for block_no in inode.get_blocks_no() {
 							self.write_block(block_no, block.as_slice());
@@ -383,6 +392,7 @@ impl Ext2 {
 				entry_start = entry_start + tmp.dentry_size as usize;
 			}
 		}
+		crate::kprintln!("no write");
 	}
 }
 
@@ -515,7 +525,7 @@ pub fn create_dir(path: &str, inode_no: usize) {
 			let new_inode = ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
 			let dentry: inode::Dentry = inode::Dentry {
 				inode: new_inode as u32,
-				dentry_size: ext2.sblock.bsize() as u16,
+				dentry_size: roundup(8 + to_create.len(), 4) as u16,
 				name_length: to_create.len() as u8,
 				r#type: inode::Dtype::Directory as u8,
 				name: to_create
