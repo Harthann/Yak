@@ -555,6 +555,11 @@ pub fn create_dir(path: &str, inode_no: usize) {
 	match inode {
 		None => {crate::kprintln!("Path not found: {}", path);}
 		Some((inode_no, mut inode)) => {
+			let check_exist = ext2.recurs_find(&to_create, inode_no);
+			if check_exist.is_some() {
+				crate::kprintln!("'{}' already exists.", to_create);
+				return ;
+			}
 			let mut new_inode = inode::Inode::new();
 			// perm: directory and 0755
 			new_inode.tperm = inode::ITYPE_DIR | inode::IPERM_UREAD | inode::IPERM_UWRIT | inode::IPERM_UEXEC | inode::IPERM_GREAD | inode::IPERM_GEXEC | inode::IPERM_OREAD | inode::IPERM_OEXEC;
