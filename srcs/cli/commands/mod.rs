@@ -11,7 +11,7 @@ use crate::vga_buffer::screenclear;
 use crate::{io, kprint, kprintln};
 
 // Commands modules
-mod debugfs;
+pub mod debugfs;
 mod hexdump;
 mod process;
 mod time;

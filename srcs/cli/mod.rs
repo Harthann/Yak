@@ -104,6 +104,11 @@ fn unlock_cmd(_no: i32) {
 }
 
 pub fn cli() {
+	unsafe {
+		commands::debugfs::PWD[0] = b'/';
+		commands::debugfs::PWD[1] = b'\0';
+		commands::debugfs::CURRENTDIR_INODE = commands::debugfs::ROOT_INODE;
+	}
 	let mut emulator: Box<TermEmu> = Box::default();
 	*INPUT_BUFFER.lock() = Some(Queue::new());
 
