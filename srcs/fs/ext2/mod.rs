@@ -466,6 +466,10 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 	match opt {
 		None => Vec::new(),
 		Some((_, inode)) => {
+			if inode.tperm & inode::ITYPE_REGU == 0 {
+				crate::kprintln!("'{}': Not a regular file.", path);
+				return Vec::new();
+			}
 			let mut file: Vec<char> = Vec::new();
 			let blocks_no = inode.get_blocks_no();
 			let nb_blocks: usize =
