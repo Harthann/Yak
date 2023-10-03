@@ -1,3 +1,5 @@
+use crate::time;
+
 /// Like blocks, each inode has a numerical address.
 /// It is extremely important to note that unlike block addresses, inode addresses start at 1.
 /// With Ext2 versions prior to Major version 1, inodes 1 to 10 are reserved and
@@ -8,14 +10,14 @@
 /// All inodes reside in inode tables that belong to block groups.
 /// Therefore, looking up an inode is simply a matter of determining which
 /// block group it belongs to and indexing that block group's inode table.
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Copy, Clone)]
 pub struct Inode {
 	/// Type and Permissions (see below)
-	tperm:        u16,
+	pub tperm:        u16,
 	/// User ID
 	uid:          u16,
 	/// Lower 32 bits of size in bytes
-	size_lh:      u32,
+	pub size_lh:      u32,
 	/// Last Access Time (in POSIX time)
 	lat:          u32,
 	/// Creation Time (in POSIX time)
@@ -27,9 +29,9 @@ pub struct Inode {
 	/// Group ID
 	gid:          u16,
 	/// Count of hard links (directory entries) to this inode. When this reaches 0, the data blocks are marked as unallocated.
-	cound_hl:     u16,
+	pub count_hl:     u16,
 	/// Count of disk sectors (not Ext2 blocks) in use by this inode, not counting the actual inode structure nor directory entries linking to the inode.
-	count_ds:     u32,
+	pub count_ds:     u32,
 	/// Flags (see below)
 	flags:        u32,
 	/// Operating System Specific value #1
@@ -55,12 +57,40 @@ pub struct Inode {
 }
 
 impl Inode {
+	pub fn new() -> Self {
+		// TODO: not working: only get jiffies not unix timestamp
+		let time = time::get_timestamp();
+		Self {
+			tperm: 0,
+			uid: 0,
+			size_lh: 0,
+			lat: time.second as u32,
+			creatt: time.second as u32,
+			lmt: time.second as u32,
+			delt: time.second as u32,
+			gid: 0,
+			count_hl: 1,
+			count_ds: 1,
+			flags: 0,
+			os_specific1: 0,
+			dbp: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			sibp: 0,
+			dibp: 0,
+			tibp: 0,
+			gen_no: 0,
+			facl: 0,
+			size_uh: 0,
+			block_addr: 0,
+			os_specific2: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+		}
+	}
+
 	pub fn size(&self) -> u64 {
 		self.size_lh as u64 | ((self.size_uh as u64) << 32)
 	}
 
 	pub fn get_hardlinks(&self) -> u16 {
-		self.cound_hl
+		self.count_hl
 	}
 
 	pub fn get_perms(&self) -> u16 {
@@ -108,7 +138,7 @@ impl From<&[u8]> for Inode {
 			gid:          u16::from_le_bytes(
 				buffer[24..26].try_into().unwrap()
 			),
-			cound_hl:     u16::from_le_bytes(
+			count_hl:     u16::from_le_bytes(
 				buffer[26..28].try_into().unwrap()
 			),
 			count_ds:     u32::from_le_bytes(
@@ -173,7 +203,7 @@ impl Into<crate::alloc::vec::Vec<u8>> for Inode {
 		v.extend_from_slice(&self.lmt.to_le_bytes());
 		v.extend_from_slice(&self.delt.to_le_bytes());
 		v.extend_from_slice(&self.gid.to_le_bytes());
-		v.extend_from_slice(&self.cound_hl.to_le_bytes());
+		v.extend_from_slice(&self.count_hl.to_le_bytes());
 		v.extend_from_slice(&self.count_ds.to_le_bytes());
 		v.extend_from_slice(&self.flags.to_le_bytes());
 		v.extend_from_slice(&self.os_specific1.to_le_bytes());
@@ -259,7 +289,7 @@ impl fmt::Display for Inode {
 		write!(
 			f,
 			"{perms} {hardlinks} {uid} {gid} {size:>4} {date}",
-			hardlinks = self.cound_hl,
+			hardlinks = self.count_hl,
 			uid = self.uid,
 			gid = self.gid
 		)
@@ -332,10 +362,12 @@ impl From<&[u8]> for Dentry {
 			r#type:      u8::from_le_bytes(buffer[7..8].try_into().unwrap()),
 			name:        crate::string::String::new()
 		};
-		dentry.name =
-			core::str::from_utf8(&buffer[8..8 + dentry.name_length as usize])
-				.expect("Error")
-				.to_string();
+		if dentry.name_length != 0 {
+			dentry.name =
+				core::str::from_utf8(&buffer[8..8 + dentry.name_length as usize])
+					.expect("Error")
+					.to_string();
+		}
 		dentry
 	}
 }

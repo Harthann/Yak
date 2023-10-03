@@ -120,14 +120,21 @@ impl Ext2 {
 	}
 	fn write_slice(&mut self, block_no: u32, offset: usize, slice: &[u8]) {
 		let mut block = self.read_block(block_no);
-		crate::kprintln!("offset: {}", offset);
-		crate::kprintln!("slice.len(): {}", slice.len());
-		crate::kprintln!("block.len(): {}", block.len());
+		crate::dprintln!("offset: {}", offset);
+		crate::dprintln!("slice.len(): {}", slice.len());
+		crate::dprintln!("block.len(): {}", block.len());
 		block[offset..offset + slice.len()].copy_from_slice(slice);
 		self.write_block(block_no, &block);
 	}
 
-	fn write_inode(&mut self, inodeno: usize, inode: inode::Inode) {
+	fn get_inode(&self, inodeno: usize) -> inode::Inode {
+		let block_no = self.inode_to_block(inodeno as u32);
+		let mut block = self.read_block(block_no);
+		let index = self.inode_to_offset(inodeno as u32) as usize;
+		inode::Inode::from(&block[index..index + self.inode_size() as usize])
+	}
+
+	fn write_inode(&mut self, inodeno: usize, inode: &inode::Inode) {
 		if inodeno < 1 {
 			panic!("Ext2fs inodes start indexing at 1");
 		}
@@ -139,7 +146,7 @@ impl Ext2 {
 			inodeno,
 			index
 		);
-		let mut vec = Into::<Vec<u8>>::into(inode);
+		let mut vec = Into::<Vec<u8>>::into(*inode);
 		while vec.len() != self.inode_size() as usize {
 			vec.push(0);
 		}
@@ -184,7 +191,7 @@ impl Ext2 {
 		let mut map = self.read_inode_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.inode_unalloc -= 1;
-		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
+//		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_inode_map(group, map);
 		nodeno
 	}
@@ -193,8 +200,9 @@ impl Ext2 {
 		let mut map = self.read_block_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.blocks_unalloc -= 1;
-		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
+//		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_block_map(group, map);
+		self.write_block(nodeno as u32, crate::vec![0; self.sblock.bsize()].as_slice());
 		nodeno
 	}
 
@@ -349,8 +357,8 @@ impl Ext2 {
 		let group = self.inode_to_bgroup(inodeno as u32) as usize;
 		let mut bmap = self.read_block_map(group);
 		let mut imap = self.read_inode_map(group);
-		crate::kprintln!("Space {} {}", bmap.get_space().0, bmap.get_space().1);
-		crate::kprintln!("Space {} {}", imap.get_space().0, imap.get_space().1);
+		crate::dprintln!("Space {} {}", bmap.get_space().0, bmap.get_space().1);
+		crate::dprintln!("Space {} {}", imap.get_space().0, imap.get_space().1);
 
 		self.write_block_map(group, bmap);
 		self.write_inode_map(group, imap);
@@ -362,48 +370,64 @@ impl Ext2 {
 
 			let mut entry_start = 0;
 			while entry_start < block.len() {
-				crate::kprintln!("Blocklen {} {}", block.len(), entry_start);
+				crate::dprintln!("Blocklen {} {}", block.len(), entry_start);
 				let mut tmp =
 					inode::Dentry::from(&block[entry_start..block.len()]);
-				let calculated = roundup(tmp.name_length + 8, 4);
-				if (calculated as usize) < tmp.dentry_size as usize {
-					if entry_start
-						+ calculated as usize + (dentry.dentry_size as usize)
-						< block.len() as usize
-					{
-						// rewrite tmp but with actual size
-						tmp.dentry_size = calculated as u16;
-						let mut vec = Into::<Vec<u8>>::into(tmp);
-						while vec.len() != calculated as usize {
-							vec.push(0);
+				if tmp.dentry_size != 0 {
+					let calculated = roundup(tmp.name_length + 8, 4);
+					if (calculated as usize) < tmp.dentry_size as usize {
+						if entry_start
+							+ calculated as usize + (dentry.dentry_size as usize)
+							< block.len() as usize
+						{
+							// rewrite tmp but with actual size
+							tmp.dentry_size = calculated as u16;
+							let mut vec = Into::<Vec<u8>>::into(tmp);
+							while vec.len() != calculated as usize {
+								vec.push(0);
+							}
+							block[entry_start
+								..entry_start + calculated as usize]
+								.copy_from_slice(
+									vec.as_slice()
+								);
+							entry_start = entry_start + calculated as usize;
+							let dentrysize =
+								roundup(dentry.name_length + 8, 4) as usize;
+							// write our entry but with the block rest
+							let calculated = block.len() as u16 - entry_start as u16;
+							dentry.dentry_size = calculated;
+							let mut vec = Into::<Vec<u8>>::into(dentry);
+							while vec.len() != dentrysize as usize {
+								vec.push(0);
+							}
+							block[entry_start..entry_start + dentrysize]
+								.copy_from_slice(
+									vec.as_slice()
+								);
+							self.write_block(block_no, block.as_slice());
+							return;
 						}
-						block[entry_start
-							..entry_start + calculated as usize]
-							.copy_from_slice(
-								vec.as_slice()
-							);
-						entry_start = entry_start + calculated as usize;
-						let dentrysize =
-							roundup(dentry.name_length + 8, 4) as usize;
-						// write our entry but with the block rest
-						let calculated = block.len() as u16 - entry_start as u16;
-						dentry.dentry_size = calculated;
-						let mut vec = Into::<Vec<u8>>::into(dentry);
-						while vec.len() != dentrysize as usize {
-							vec.push(0);
-						}
-						block[entry_start..entry_start + dentrysize]
-							.copy_from_slice(
-								vec.as_slice()
-							);
-						self.write_block(block_no, block.as_slice());
-						return;
 					}
+				} else { // First dentry in the block
+					let dentrysize = roundup(dentry.name_length + 8, 4) as usize;
+					let calculated = block.len();
+					dentry.dentry_size = calculated as u16;
+					let mut vec = Into::<Vec<u8>>::into(dentry);
+					while vec.len() != dentrysize as usize {
+						vec.push(0);
+					}
+					block[0..dentrysize]
+						.copy_from_slice(
+							vec.as_slice()
+						);
+					self.write_block(block_no, block.as_slice());
+					return ;
 				}
 				entry_start = entry_start + tmp.dentry_size as usize;
 			}
 		}
-		crate::kprintln!("no write");
+		todo!("not enough space to write ?");
 	}
 }
 
@@ -527,23 +551,52 @@ pub fn create_dir(path: &str, inode_no: usize) {
 	if root {
 		path.insert_str(0, "/");
 	}
-	crate::kprintln!("to_create: {}", to_create);
-	crate::kprintln!("path: {}", path);
 	let inode = ext2.recurs_find(&path, inode_no);
 	match inode {
 		None => {crate::kprintln!("Path not found: {}", path);}
-		Some((inode_no, inode)) => {
-			let new_inode = ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
-			crate::kprintln!("new_inode: {}", new_inode);
-			ext2.write_inode(new_inode, inode); // copy previous inode
+		Some((inode_no, mut inode)) => {
+			let mut new_inode = inode::Inode::new();
+			// perm: directory and 0755
+			new_inode.tperm = inode::ITYPE_DIR | inode::IPERM_UREAD | inode::IPERM_UWRIT | inode::IPERM_UEXEC | inode::IPERM_GREAD | inode::IPERM_GEXEC | inode::IPERM_OREAD | inode::IPERM_OEXEC;
+			// hardlinks: directory and '.'
+			new_inode.count_hl = 2;
+			new_inode.count_ds = 2;
+			new_inode.size_lh = ext2.sblock.bsize() as u32;
+			new_inode.dbp[0] = ext2.alloc_block(ext2.inode_to_bgroup(inode_no as u32) as usize) as u32;
+			/* Allocate inode */
+			let new_inode_no = ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
+			ext2.write_inode(new_inode_no, &new_inode); // copy inode to fs
 			let dentry: inode::Dentry = inode::Dentry {
-				inode: new_inode as u32,
+				inode: new_inode_no as u32,
 				dentry_size: roundup(8 + to_create.len(), 4) as u16,
 				name_length: to_create.len() as u8,
 				r#type: inode::Dtype::Directory as u8,
 				name: to_create
 			};
 			ext2.add_dentry(inode_no, dentry);
+			/* Create . and .. */
+			let dot_inode_no = ext2.alloc_node(ext2.inode_to_bgroup(new_inode_no as u32) as usize);
+			ext2.write_inode(dot_inode_no, &new_inode); // copy actual inode
+			let dentry: inode::Dentry = inode::Dentry {
+				inode: dot_inode_no as u32,
+				dentry_size: roundup(8 + ".".len(), 4) as u16,
+				name_length: ".".len() as u8,
+				r#type: inode::Dtype::Directory as u8,
+				name: ".".to_string()
+			};
+			ext2.add_dentry(new_inode_no, dentry);
+			let dotdot_inode_no = ext2.alloc_node(ext2.inode_to_bgroup(new_inode_no as u32) as usize);
+			ext2.write_inode(dotdot_inode_no, &inode); // copy previous inode
+			let dentry: inode::Dentry = inode::Dentry {
+				inode: dotdot_inode_no as u32,
+				dentry_size: roundup(8 + "..".len(), 4) as u16,
+				name_length: "..".len() as u8,
+				r#type: inode::Dtype::Directory as u8,
+				name: "..".to_string()
+			};
+			ext2.add_dentry(new_inode_no, dentry);
+			inode.count_hl += 1; // add 1 hard-link (..) to parent
+			ext2.write_inode(inode_no, &inode); // copy inode
 		}
 	}
 }
