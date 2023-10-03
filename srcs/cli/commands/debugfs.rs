@@ -36,14 +36,18 @@ pub fn debugfs(mut command: Vec<String>) {
 }
 
 fn pwd() {
-	crate::kprintln!("[pwd]   INODE: {:>6}  PATH: {}", unsafe { CURRENTDIR_INODE }, unsafe { CStr::from_bytes_until_nul(&PWD).unwrap().to_str().unwrap() });
+	crate::kprintln!(
+		"[pwd]   INODE: {:>6}  PATH: {}",
+		unsafe { CURRENTDIR_INODE },
+		unsafe { CStr::from_bytes_until_nul(&PWD).unwrap().to_str().unwrap() }
+	);
 	crate::kprintln!("[root]  INODE: {:>6}  PATH: /", ROOT_INODE);
 }
 
 fn mkdir(command: Vec<String>) {
 	if command.len() < 2 {
 		crate::kprintln!("usage: debugfs mkdir DIR");
-		return ;
+		return;
 	}
 	ext2::create_dir(command[1].as_str(), unsafe { CURRENTDIR_INODE });
 }
@@ -51,9 +55,11 @@ fn mkdir(command: Vec<String>) {
 fn cat(command: Vec<String>) {
 	if command.len() < 2 {
 		crate::kprintln!("usage: debugfs cat FILE");
-		return ;
+		return;
 	}
-	let file_content = ext2::get_file_content(command[1].as_str(), unsafe { CURRENTDIR_INODE });
+	let file_content = ext2::get_file_content(command[1].as_str(), unsafe {
+		CURRENTDIR_INODE
+	});
 	for i in file_content {
 		crate::kprint!("{}", i);
 	}
@@ -88,7 +94,8 @@ fn cd(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	let root = path.starts_with('/');
-	let mut splited: Vec<&str> = path.split("/").filter(|s| !s.is_empty()).collect();
+	let mut splited: Vec<&str> =
+		path.split("/").filter(|s| !s.is_empty()).collect();
 	let mut path = splited.join("/");
 	if root {
 		path.insert_str(0, "/");
@@ -101,14 +108,21 @@ fn cd(command: Vec<String>) {
 			if inode.is_dir() {
 				unsafe {
 					CURRENTDIR_INODE = inodeno;
-					let mut pwd = CStr::from_bytes_until_nul(&PWD).unwrap().to_str().unwrap().to_string();
+					let mut pwd = CStr::from_bytes_until_nul(&PWD)
+						.unwrap()
+						.to_str()
+						.unwrap()
+						.to_string();
 					if root {
 						pwd = path.clone();
 					} else {
 						pwd.push_str("/");
 						pwd.push_str(&path);
 					}
-					let mut splited: Vec<&str> = pwd.split("/").filter(|s| !s.is_empty() && s != &".").collect();
+					let mut splited: Vec<&str> = pwd
+						.split("/")
+						.filter(|s| !s.is_empty() && s != &".")
+						.collect();
 					let splited_cpy = splited.clone();
 					let len = splited.len();
 					let mut index = 0;

@@ -13,11 +13,11 @@ use crate::time;
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Inode {
 	/// Type and Permissions (see below)
-	pub tperm:        u16,
+	pub tperm:    u16,
 	/// User ID
 	uid:          u16,
 	/// Lower 32 bits of size in bytes
-	pub size_lh:      u32,
+	pub size_lh:  u32,
 	/// Last Access Time (in POSIX time)
 	lat:          u32,
 	/// Creation Time (in POSIX time)
@@ -29,9 +29,9 @@ pub struct Inode {
 	/// Group ID
 	gid:          u16,
 	/// Count of hard links (directory entries) to this inode. When this reaches 0, the data blocks are marked as unallocated.
-	pub count_hl:     u16,
+	pub count_hl: u16,
 	/// Count of disk sectors (not Ext2 blocks) in use by this inode, not counting the actual inode structure nor directory entries linking to the inode.
-	pub count_ds:     u32,
+	pub count_ds: u32,
 	/// Flags (see below)
 	flags:        u32,
 	/// Operating System Specific value #1
@@ -61,26 +61,26 @@ impl Inode {
 		// TODO: not working: only get jiffies not unix timestamp
 		let time = time::get_timestamp();
 		Self {
-			tperm: 0,
-			uid: 0,
-			size_lh: 0,
-			lat: time.second as u32,
-			creatt: time.second as u32,
-			lmt: time.second as u32,
-			delt: time.second as u32,
-			gid: 0,
-			count_hl: 1,
-			count_ds: 1,
-			flags: 0,
+			tperm:        0,
+			uid:          0,
+			size_lh:      0,
+			lat:          time.second as u32,
+			creatt:       time.second as u32,
+			lmt:          time.second as u32,
+			delt:         time.second as u32,
+			gid:          0,
+			count_hl:     1,
+			count_ds:     1,
+			flags:        0,
 			os_specific1: 0,
-			dbp: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-			sibp: 0,
-			dibp: 0,
-			tibp: 0,
-			gen_no: 0,
-			facl: 0,
-			size_uh: 0,
-			block_addr: 0,
+			dbp:          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+			sibp:         0,
+			dibp:         0,
+			tibp:         0,
+			gen_no:       0,
+			facl:         0,
+			size_uh:      0,
+			block_addr:   0,
 			os_specific2: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 		}
 	}
@@ -363,10 +363,11 @@ impl From<&[u8]> for Dentry {
 			name:        crate::string::String::new()
 		};
 		if dentry.name_length != 0 {
-			dentry.name =
-				core::str::from_utf8(&buffer[8..8 + dentry.name_length as usize])
-					.expect("Error")
-					.to_string();
+			dentry.name = core::str::from_utf8(
+				&buffer[8..8 + dentry.name_length as usize]
+			)
+			.expect("Error")
+			.to_string();
 		}
 		dentry
 	}

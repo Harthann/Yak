@@ -7,8 +7,8 @@ const SECTOR_SIZE: u32 = 512;
 const DISKNO: u8 = 1;
 
 use crate::pci::ide::IDE;
-use crate::utils::math::roundup;
 use crate::string::{String, ToString};
+use crate::utils::math::roundup;
 
 /// Current read/write use entire block to perform operations
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
@@ -150,7 +150,8 @@ impl Ext2 {
 		while vec.len() != self.inode_size() as usize {
 			vec.push(0);
 		}
-		block[index..index + self.inode_size() as usize].copy_from_slice(vec.as_slice());
+		block[index..index + self.inode_size() as usize]
+			.copy_from_slice(vec.as_slice());
 		self.write_block(block_no, block.as_slice());
 	}
 
@@ -191,7 +192,7 @@ impl Ext2 {
 		let mut map = self.read_inode_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.inode_unalloc -= 1;
-//		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
+		// 		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_inode_map(group, map);
 		nodeno
 	}
@@ -200,9 +201,12 @@ impl Ext2 {
 		let mut map = self.read_block_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.blocks_unalloc -= 1;
-//		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
+		// 		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_block_map(group, map);
-		self.write_block(nodeno as u32, crate::vec![0; self.sblock.bsize()].as_slice());
+		self.write_block(
+			nodeno as u32,
+			crate::vec![0; self.sblock.bsize()].as_slice()
+		);
 		nodeno
 	}
 
@@ -388,41 +392,37 @@ impl Ext2 {
 							}
 							block[entry_start
 								..entry_start + calculated as usize]
-								.copy_from_slice(
-									vec.as_slice()
-								);
+								.copy_from_slice(vec.as_slice());
 							entry_start = entry_start + calculated as usize;
 							let dentrysize =
 								roundup(dentry.name_length + 8, 4) as usize;
 							// write our entry but with the block rest
-							let calculated = block.len() as u16 - entry_start as u16;
+							let calculated =
+								block.len() as u16 - entry_start as u16;
 							dentry.dentry_size = calculated;
 							let mut vec = Into::<Vec<u8>>::into(dentry);
 							while vec.len() != dentrysize as usize {
 								vec.push(0);
 							}
 							block[entry_start..entry_start + dentrysize]
-								.copy_from_slice(
-									vec.as_slice()
-								);
+								.copy_from_slice(vec.as_slice());
 							self.write_block(block_no, block.as_slice());
 							return;
 						}
 					}
-				} else { // First dentry in the block
-					let dentrysize = roundup(dentry.name_length + 8, 4) as usize;
+				} else {
+					// First dentry in the block
+					let dentrysize =
+						roundup(dentry.name_length + 8, 4) as usize;
 					let calculated = block.len();
 					dentry.dentry_size = calculated as u16;
 					let mut vec = Into::<Vec<u8>>::into(dentry);
 					while vec.len() != dentrysize as usize {
 						vec.push(0);
 					}
-					block[0..dentrysize]
-						.copy_from_slice(
-							vec.as_slice()
-						);
+					block[0..dentrysize].copy_from_slice(vec.as_slice());
 					self.write_block(block_no, block.as_slice());
-					return ;
+					return;
 				}
 				entry_start = entry_start + tmp.dentry_size as usize;
 			}
@@ -545,63 +545,71 @@ pub fn create_dir(path: &str, inode_no: usize) {
 	let mut splited: Vec<&str> = path.split("/").collect();
 	splited.retain(|a| a.len() != 0);
 	let (to_create, mut path): (String, String) = match splited.pop() {
-		Some(x) => {
-			(x.to_string(), splited.join("/"))
-		},
-		None => {
-			(splited.join("/").to_string(), "".to_string())
-		}
+		Some(x) => (x.to_string(), splited.join("/")),
+		None => (splited.join("/").to_string(), "".to_string())
 	};
 	if root {
 		path.insert_str(0, "/");
 	}
 	let inode = ext2.recurs_find(&path, inode_no);
 	match inode {
-		None => {crate::kprintln!("Path not found: {}", path);}
+		None => {
+			crate::kprintln!("Path not found: {}", path);
+		},
 		Some((inode_no, mut inode)) => {
 			let check_exist = ext2.recurs_find(&to_create, inode_no);
 			if check_exist.is_some() {
 				crate::kprintln!("'{}' already exists.", to_create);
-				return ;
+				return;
 			}
 			let mut new_inode = inode::Inode::new();
 			// perm: directory and 0755
-			new_inode.tperm = inode::ITYPE_DIR | inode::IPERM_UREAD | inode::IPERM_UWRIT | inode::IPERM_UEXEC | inode::IPERM_GREAD | inode::IPERM_GEXEC | inode::IPERM_OREAD | inode::IPERM_OEXEC;
+			new_inode.tperm =
+				inode::ITYPE_DIR
+					| inode::IPERM_UREAD | inode::IPERM_UWRIT
+					| inode::IPERM_UEXEC | inode::IPERM_GREAD
+					| inode::IPERM_GEXEC | inode::IPERM_OREAD
+					| inode::IPERM_OEXEC;
 			// hardlinks: directory and '.'
 			new_inode.count_hl = 2;
 			new_inode.count_ds = 2;
 			new_inode.size_lh = ext2.sblock.bsize() as u32;
-			new_inode.dbp[0] = ext2.alloc_block(ext2.inode_to_bgroup(inode_no as u32) as usize) as u32;
-			/* Allocate inode */
-			let new_inode_no = ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
+			new_inode.dbp[0] = ext2
+				.alloc_block(ext2.inode_to_bgroup(inode_no as u32) as usize)
+				as u32;
+			// Allocate inode
+			let new_inode_no =
+				ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
 			ext2.write_inode(new_inode_no, &new_inode); // copy inode to fs
 			let dentry: inode::Dentry = inode::Dentry {
-				inode: new_inode_no as u32,
+				inode:       new_inode_no as u32,
 				dentry_size: roundup(8 + to_create.len(), 4) as u16,
 				name_length: to_create.len() as u8,
-				r#type: inode::Dtype::Directory as u8,
-				name: to_create
+				r#type:      inode::Dtype::Directory as u8,
+				name:        to_create
 			};
 			ext2.add_dentry(inode_no, dentry);
-			/* Create . and .. */
-			let dot_inode_no = ext2.alloc_node(ext2.inode_to_bgroup(new_inode_no as u32) as usize);
+			// Create . and ..
+			let dot_inode_no = ext2
+				.alloc_node(ext2.inode_to_bgroup(new_inode_no as u32) as usize);
 			ext2.write_inode(dot_inode_no, &new_inode); // copy actual inode
 			let dentry: inode::Dentry = inode::Dentry {
-				inode: dot_inode_no as u32,
+				inode:       dot_inode_no as u32,
 				dentry_size: roundup(8 + ".".len(), 4) as u16,
 				name_length: ".".len() as u8,
-				r#type: inode::Dtype::Directory as u8,
-				name: ".".to_string()
+				r#type:      inode::Dtype::Directory as u8,
+				name:        ".".to_string()
 			};
 			ext2.add_dentry(new_inode_no, dentry);
-			let dotdot_inode_no = ext2.alloc_node(ext2.inode_to_bgroup(new_inode_no as u32) as usize);
+			let dotdot_inode_no = ext2
+				.alloc_node(ext2.inode_to_bgroup(new_inode_no as u32) as usize);
 			ext2.write_inode(dotdot_inode_no, &inode); // copy previous inode
 			let dentry: inode::Dentry = inode::Dentry {
-				inode: dotdot_inode_no as u32,
+				inode:       dotdot_inode_no as u32,
 				dentry_size: roundup(8 + "..".len(), 4) as u16,
 				name_length: "..".len() as u8,
-				r#type: inode::Dtype::Directory as u8,
-				name: "..".to_string()
+				r#type:      inode::Dtype::Directory as u8,
+				name:        "..".to_string()
 			};
 			ext2.add_dentry(new_inode_no, dentry);
 			inode.count_hl += 1; // add 1 hard-link (..) to parent
