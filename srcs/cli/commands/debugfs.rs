@@ -15,7 +15,7 @@ fn help() {
 }
 
 pub fn debugfs(mut command: Vec<String>) {
-	if command.len() > 0 {
+	if command.len() > 1 {
 		command.remove(0); // Delete command name before sending to subcommand
 		match command[0].as_str() {
 			"ls" => ls(command),
@@ -41,10 +41,18 @@ fn pwd() {
 }
 
 fn mkdir(command: Vec<String>) {
+	if command.len() < 2 {
+		crate::kprintln!("usage: debugfs mkdir DIR");
+		return ;
+	}
 	ext2::create_dir(command[1].as_str(), unsafe { CURRENTDIR_INODE });
 }
 
 fn cat(command: Vec<String>) {
+	if command.len() < 2 {
+		crate::kprintln!("usage: debugfs cat FILE");
+		return ;
+	}
 	let file_content = ext2::get_file_content(command[1].as_str(), unsafe { CURRENTDIR_INODE });
 	for i in file_content {
 		crate::kprint!("{}", i);
