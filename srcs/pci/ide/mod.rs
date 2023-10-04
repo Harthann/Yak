@@ -7,8 +7,8 @@ use crate::spin::{KMutex, Mutex};
 use crate::time::sleep;
 use crate::utils::arcm::Arcm;
 
-mod ata;
-mod atapi;
+pub mod ata;
+pub mod atapi;
 
 use ata::{
 	ATAChannel,
@@ -22,11 +22,11 @@ use ata::{
 };
 use atapi::ATAPI;
 
-static IDE_IRQ_INVOKED: Mutex<u8> = Mutex::<u8>::new(0);
-pub static IDE: KMutex<IDEController> =
-	KMutex::<IDEController>::new(IDEController::new());
+static IDE_IRQ_INVOKED: KMutex<u8> = KMutex::<u8>::new(0);
+pub static IDE: Mutex<IDEController> =
+	Mutex::<IDEController>::new(IDEController::new());
 
-enum IDEType {
+pub enum IDEType {
 	ATA   = 0x00,
 	ATAPI = 0x01
 }
@@ -47,10 +47,10 @@ impl IDEChannelRegisters {
 }
 
 pub struct IDEDevice {
-	reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
+	reserved:     u8,       // 0 (Empty) or 1 (This Drive really exists)
 	channel:      Option<Arcm<IDEChannelRegisters>>,
 	drive:        u8,       // 0 (Master Drive) or 1 (Slave Drive)
-	r#type:       u16,      // 0: ATA, 1:ATAPI
+	pub r#type:   u16,      // 0: ATA, 1:ATAPI
 	signature:    u16,      // Drive Signature
 	capabilities: u16,      // Features
 	command_sets: u32,      // Command Sets Supported
@@ -88,6 +88,13 @@ impl IDEController {
 				IDEDevice::new()
 			]
 		}
+	}
+
+	pub fn get_device(&self, num: u8) -> Option<&IDEDevice> {
+		if num > 3 || self.devices[num as usize].reserved == 0{
+			return None;
+		}
+		Some(&self.devices[num as usize])
 	}
 
 	pub fn initialize(
@@ -304,7 +311,7 @@ impl IDEController {
 		*IDE_IRQ_INVOKED.lock() = 0;
 	}
 
-	fn irq() {
+	pub fn irq() {
 		*IDE_IRQ_INVOKED.lock() = 1;
 	}
 
@@ -540,7 +547,7 @@ impl IDEController {
 						device,
 						lba + i as u32,
 						1,
-						edi + i as u32 * 2048
+						edi + i as u32 * atapi::SECTOR_SIZE
 					) {
 						Ok(_) => {},
 						Err(err) => return Err(self.print_error(drive, err))

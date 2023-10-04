@@ -32,12 +32,21 @@ mod poc {
 	}
 }
 
+use crate::fs::ext2;
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	if crate::fs::ext2::is_ext2() == false {
-		panic!("Wrong file system detected on disk 1.");
+	unsafe { ext2::DISKNO = -1 };
+	for i in 0..4 {
+		if ext2::is_ext2(i) {
+			unsafe { ext2::DISKNO = i as i8 };
+			crate::kprintln!("Found ext2 filesystem on disk {}.", i);
+		}
 	}
-	poc::insertion_poc();
+	if unsafe { ext2::DISKNO == -1 } {
+		todo!("No ext2 disk found.");
+	}
+//	poc::insertion_poc();
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(

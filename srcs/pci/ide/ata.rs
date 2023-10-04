@@ -2,6 +2,8 @@ use super::{IDEChannelRegisters, IDEController, IDEDevice, IDE_IRQ_INVOKED};
 
 use crate::io;
 
+pub const SECTOR_SIZE: u32 = 512;
+
 #[allow(non_snake_case)]
 pub mod ATAStatus {
 	pub const BSY: u8 = 0x80; // Busy
@@ -116,7 +118,7 @@ impl ATA {
 		// Bus Base, like 0x1f0 which is also data port
 		let bus: u32 = channel.base as u32;
 		// Almost every ATA drive has sector-size of 512-byte
-		let words: u32 = 512 / 2;
+		let words: u32 = SECTOR_SIZE / 2;
 		let head: u8;
 
 		// Disable IRQ

@@ -9,6 +9,8 @@ use super::{
 
 use crate::io;
 
+pub const SECTOR_SIZE: u32 = 2048;
+
 enum ATAPICommand {
 	Capacity = 0x25,
 	Read     = 0xa8,
@@ -92,8 +94,8 @@ impl ATAPI {
 			}
 		}
 
-		// (((Last LBA + 1) * Block size) / 1024) * 2
-		Ok((((buffer[0].to_be() + 1) * buffer[1].to_be()) / 1024) * 2)
+		// (((Last LBA + 1) * Block size) / (SECTOR_SIZE / 2)) * 2
+		Ok((((buffer[0].to_be() + 1) * buffer[1].to_be()) / (SECTOR_SIZE / 2)) * 2)
 	}
 
 	pub fn read(
@@ -108,7 +110,7 @@ impl ATAPI {
 		let bus: u32 = channel.base as u32;
 		// Sector Size
 		// ATAPI drives have a sector size of 2048 bytes
-		let words: u32 = 1024;
+		let words: u32 = SECTOR_SIZE / 2;
 
 		// Enable IRQs
 		*IDE_IRQ_INVOKED.lock() = 0;

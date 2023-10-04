@@ -3,9 +3,9 @@ pub mod block;
 mod gdt;
 pub mod inode;
 
-const SECTOR_SIZE: u32 = 512;
-const DISKNO: u8 = 1;
+pub static mut DISKNO: i8 = 0;
 
+use crate::alloc::vec;
 use crate::pci::ide::IDE;
 use crate::string::{String, ToString};
 use crate::utils::math::roundup;
@@ -14,13 +14,36 @@ use crate::utils::math::roundup;
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
 /// This is pretty ineffective and will probably need optimisation in later version
 pub struct Ext2 {
-	pub sblock: block::BaseSuperblock
+	diskno:      u8,
+	sector_size: usize,
+	pub sblock:  block::BaseSuperblock
 }
 
 impl Ext2 {
-	// Temporary hardcoded values (disk number, sector size etc)
-	pub fn new() -> Self {
-		Self { sblock: read_superblock() }
+	pub fn new(diskno: u8) -> Result<Self, u8> {
+		let sector_size = {
+			let binding = IDE.lock();
+			let device = binding.get_device(diskno);
+			if device.is_none() {
+				return Err(1);
+			}
+			match device.unwrap().r#type {
+				x if x == ide::IDEType::ATA as u16 => {
+					ide::ata::SECTOR_SIZE
+				},
+				x if x == ide::IDEType::ATAPI as u16 => {
+					ide::atapi::SECTOR_SIZE
+				}
+				_ => {panic!("Unrecognized disk.")}
+			}
+		};
+		Ok(
+			Self {
+				diskno:      diskno,
+				sector_size: sector_size as usize,
+				sblock:      read_superblock(diskno, sector_size as usize)?
+			}
+		)
 	}
 
 	pub fn is_valid(&self) -> bool {
@@ -35,7 +58,7 @@ impl Ext2 {
 	///
 	/// # Example
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// let groupno = ext2.inode_to_bgroup(45);
 	/// ```
 	pub fn inode_to_bgroup(&self, inode: u32) -> u32 {
@@ -50,7 +73,7 @@ impl Ext2 {
 	///
 	/// # Example
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// let blockno = ext2.inode_to_block(45);
 	/// ```
 	pub fn inode_to_block(&self, inode: u32) -> u32 {
@@ -69,7 +92,7 @@ impl Ext2 {
 	///
 	/// # Example
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// let offset = ext2.inode_to_offset(45);
 	/// ```
 	pub fn inode_to_offset(&self, inode: u32) -> u32 {
@@ -84,16 +107,16 @@ impl Ext2 {
 
 	/// Read an entire block from disk
 	pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
-		let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
+		let buffer: Vec<u8> = vec![0; self.sector_size];
 		let bsize = self.sblock.bsize();
-		let sector_per_block = bsize / SECTOR_SIZE as usize;
+		let sector_per_block = bsize / self.sector_size as usize;
 
-		let sector_no = bsize / SECTOR_SIZE as usize;
+		let sector_no = bsize / self.sector_size as usize;
 		let mut block: crate::vec::Vec<u8> = crate::vec::Vec::new();
 		for i in 0..sector_no {
 			unsafe {
 				IDE.lock().read_sectors(
-					DISKNO,
+					self.diskno,
 					1,
 					(block_no * sector_per_block as u32) + i as u32,
 					buffer.as_ptr() as u32
@@ -106,18 +129,19 @@ impl Ext2 {
 
 	fn write_block(&mut self, block_no: u32, block: &[u8]) {
 		let bsize = self.sblock.bsize();
-		let sector_per_block = bsize / SECTOR_SIZE as usize;
+		let sector_per_block = bsize / self.sector_size as usize;
 
-		let sector_no = bsize / SECTOR_SIZE as usize;
+		let sector_no = bsize / self.sector_size as usize;
 		unsafe {
 			IDE.lock().write_sectors(
-				DISKNO,
+				self.diskno,
 				sector_no as u8,
 				block_no * sector_per_block as u32,
 				block.as_ptr() as u32
 			);
 		};
 	}
+
 	fn write_slice(&mut self, block_no: u32, offset: usize, slice: &[u8]) {
 		let mut block = self.read_block(block_no);
 		crate::dprintln!("offset: {}", offset);
@@ -158,11 +182,11 @@ impl Ext2 {
 	/// Read disk to recover Group Descriptor Table entry given an index
 	fn get_gdt_entry(&self, entry: usize) -> gdt::GdtEntry {
 		let entry_per_sector =
-			SECTOR_SIZE as usize / core::mem::size_of::<gdt::GdtEntry>();
+			self.sector_size as usize / core::mem::size_of::<gdt::GdtEntry>();
 		let sector_no = entry / entry_per_sector;
 
 		let block = self.read_block(1 + (self.sblock.bsize() == 1024) as u32);
-		let entry_start = (sector_no * SECTOR_SIZE as usize)
+		let entry_start = (sector_no * self.sector_size as usize)
 			+ (entry % entry_per_sector)
 				* core::mem::size_of::<gdt::GdtEntry>();
 		let entry = gdt::GdtEntry::from(&block[entry_start..entry_start + 32]);
@@ -219,7 +243,7 @@ impl Ext2 {
 	/// # Example
 	///
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	///
 	/// // Inode 2 is always inode to root dir
 	/// let inode = ext2.get_inode_entry(2);
@@ -254,7 +278,7 @@ impl Ext2 {
 	/// # Example
 	///
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// // Look for "dev" inside inode 2 (inode 2 is the inode for root directory)
 	/// let dentry = ext2.dentry_find(2, "dev");
 	/// match dentry {
@@ -294,7 +318,7 @@ impl Ext2 {
 	/// # Example
 	///
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// let opt = ext2.get_inode_of("/dev/vga");
 	/// match opt {
 	///     Some((inodeno, inode)) => crate::kprintln!("Found at inode {}:\n{:#?}", inodeno, inode);
@@ -316,7 +340,7 @@ impl Ext2 {
 	/// # Example
 	///
 	/// ```
-	/// let ext2 = Ext2::new();
+	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// // Look for vga named entry inside directory represented by inode 13
 	/// let opt = ext2.recurs_find("vga", 13)
 	/// match opt {
@@ -431,23 +455,21 @@ impl Ext2 {
 	}
 }
 
-pub fn read_superblock() -> block::BaseSuperblock {
-	let buffer: [u8; SECTOR_SIZE as usize] = [0; SECTOR_SIZE as usize];
+use crate::pci::ide;
 
-	unsafe {
-		IDE.lock()
-			.read_sectors(DISKNO, 1, 2, buffer.as_ptr() as u32);
-	}
+pub fn read_superblock(diskno: u8, sector_size: usize) -> Result<block::BaseSuperblock, u8> {
+	let buffer: Vec<u8> = vec![0; sector_size];
+
+	IDE.lock().read_sectors(diskno, 1, 2, buffer.as_ptr() as u32)?;
 	let mut sblock = block::BaseSuperblock::from(&buffer[0..84]);
 	if sblock.version().0 >= 1 {
 		sblock.set_extension(block::ExtendedSuperblock::from(&buffer[84..236]));
 	}
-	sblock
+	Ok(sblock)
 }
 
-pub fn is_ext2() -> bool {
-	let fs = Ext2::new();
-	fs.is_valid()
+pub fn is_ext2(diskno: u8) -> bool {
+	Ext2::new(diskno as u8).is_ok_and(|fs| fs.is_valid())
 }
 
 use crate::vec::Vec;
@@ -461,7 +483,7 @@ fn get_block_content(block: Vec<u8>, size: usize) -> Vec<char> {
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
 pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
-	let ext2 = Ext2::new();
+	let ext2 = Ext2::new(unsafe { DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
 	let opt = ext2.recurs_find(path, inode);
 	match opt {
 		None => Vec::new(),
@@ -515,7 +537,7 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 /// Helper function to list all entries in a directory
 /// Does not yet check if found entry is a directory or not
 pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
-	let ext2 = Ext2::new();
+	let ext2 = Ext2::new(unsafe { DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
 	let inode = ext2.recurs_find(path, inode);
 	return match inode {
 		None => crate::vec::Vec::new(),
@@ -540,7 +562,7 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 
 /// Helper function to create a folder at a given path
 pub fn create_dir(path: &str, inode_no: usize) {
-	let mut ext2 = Ext2::new();
+	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
 	let root = path.starts_with('/');
 	let mut splited: Vec<&str> = path.split("/").collect();
 	splited.retain(|a| a.len() != 0);

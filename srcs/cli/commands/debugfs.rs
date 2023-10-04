@@ -66,7 +66,7 @@ fn cat(command: Vec<String>) {
 }
 
 fn test(command: Vec<String>) {
-	let mut ext2 = ext2::Ext2::new();
+	let mut ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
 	// let mut dentry = crate::fs::ext2::inode::Dentry::default();
 
 	let node = ext2.alloc_node(0);
@@ -100,7 +100,7 @@ fn cd(command: Vec<String>) {
 	if root {
 		path.insert_str(0, "/");
 	}
-	let ext2 = ext2::Ext2::new();
+	let ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
 	let lookup = ext2.recurs_find(&path, unsafe { CURRENTDIR_INODE });
 	match lookup {
 		None => crate::kprintln!("Dir not found"),
@@ -156,7 +156,7 @@ fn imap(command: Vec<String>) {
 		1 => "/",
 		_ => command[1].as_str()
 	};
-	let ext2 = ext2::Ext2::new();
+	let ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
 	let lookup = ext2.get_inode_of(path);
 	match lookup {
 		None => crate::kprintln!("File not found"),

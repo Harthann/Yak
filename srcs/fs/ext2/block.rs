@@ -60,6 +60,7 @@ impl BaseSuperblock {
 	pub fn sig(&self) -> u16 {
 		self.ext2_sig
 	}
+
 	pub fn version(&self) -> (u32, u16) {
 		(self.major, self.minor)
 	}
@@ -76,18 +77,23 @@ impl BaseSuperblock {
 			_ => panic!("Superblock extension not set with major >= 1")
 		}
 	}
+
 	pub fn block_per_grp(&self) -> u32 {
 		self.bgroup_bno
 	}
+
 	pub fn inode_per_grp(&self) -> u32 {
 		self.bgroup_ino
 	}
+
 	pub fn inode_count(&self) -> u32 {
 		self.inode_count
 	}
+
 	pub fn block_count(&self) -> u32 {
 		self.blocks_count
 	}
+
 	pub fn block_grp_count(&self) -> u32 {
 		(self.blocks_count / self.bgroup_bno)
 			+ (self.blocks_count % self.bgroup_bno != 0) as u32

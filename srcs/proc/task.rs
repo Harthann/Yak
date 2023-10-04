@@ -267,9 +267,12 @@ pub unsafe extern "C" fn schedule_task() -> ! {
 	);
 }
 
+use crate::pci::ide::IDEController;
+
 #[no_mangle]
 unsafe extern "C" fn find_task() -> ! {
 	_cli();
+	IDEController::irq();
 	loop {
 		let new_task: &mut Task = Task::get_running_task();
 		// TODO: IF SIGNAL JUMP ?
