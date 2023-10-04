@@ -123,8 +123,7 @@ impl Ext2 {
 			);
 			let mut start = 0;
 			if sector_per_block < 1.0 {
-				start = (block_no as usize
-					% (1.0 / sector_per_block) as usize)
+				start = (block_no as usize % (1.0 / sector_per_block) as usize)
 					* bsize;
 			}
 			block.extend_from_slice(&buffer[start..start + bsize]);
