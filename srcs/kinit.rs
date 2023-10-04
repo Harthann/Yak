@@ -1,6 +1,7 @@
 #![feature(const_mut_refs)]
 #![feature(naked_functions)]
 #![feature(const_size_of_val)]
+#![feature(lang_items)]
 #![feature(c_variadic)]
 #![feature(asm_const)]
 #![feature(alloc_error_handler)]
@@ -17,6 +18,7 @@
 
 //! 32bits - i386 Rust Kernel from Scratch 🦀
 
+#[lang = "eh_personality"]
 #[no_mangle]
 pub extern "C" fn eh_personality() {}
 
