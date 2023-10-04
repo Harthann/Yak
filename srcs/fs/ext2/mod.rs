@@ -124,7 +124,9 @@ impl Ext2 {
 				);
 				let mut start = 0;
 				if sector_per_block < 1.0 {
-					start = (block_no as usize % (1.0 / sector_per_block) as usize) * bsize;
+					start = (block_no as usize
+						% (1.0 / sector_per_block) as usize)
+						* bsize;
 				}
 				block.extend_from_slice(&buffer[start..start + bsize]);
 			}
@@ -474,10 +476,17 @@ pub fn read_superblock(
 	}
 	let buffer: Vec<u8> = vec![0; nb_sector * sector_size];
 
-	IDE.lock().read_sectors(diskno, nb_sector as u8, 0, buffer.as_ptr() as u32)?;
+	IDE.lock().read_sectors(
+		diskno,
+		nb_sector as u8,
+		0,
+		buffer.as_ptr() as u32
+	)?;
 	let mut sblock = block::BaseSuperblock::from(&buffer[1024..1024 + 84]);
 	if sblock.version().0 >= 1 {
-		sblock.set_extension(block::ExtendedSuperblock::from(&buffer[1024 + 84..1024 + 236]));
+		sblock.set_extension(block::ExtendedSuperblock::from(
+			&buffer[1024 + 84..1024 + 236]
+		));
 	}
 	Ok(sblock)
 }
