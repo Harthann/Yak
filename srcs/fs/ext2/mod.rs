@@ -103,21 +103,30 @@ impl Ext2 {
 
 	/// Read an entire block from disk
 	pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
-		let buffer: Vec<u8> = vec![0; self.sector_size];
 		let bsize = self.sblock.bsize();
-		let sector_per_block = bsize / self.sector_size as usize;
+		let mut nb_sector = bsize / self.sector_size;
+		// sector_size > bsize
+		if nb_sector == 0 {
+			nb_sector = 1;
+		}
+		let buffer: Vec<u8> = vec![0; nb_sector * self.sector_size];
+		let sector_per_block = bsize as f64 / self.sector_size as f64;
 
-		let sector_no = bsize / self.sector_size as usize;
+		let first_sector = (bsize * block_no as usize) / self.sector_size;
 		let mut block: crate::vec::Vec<u8> = crate::vec::Vec::new();
-		for i in 0..sector_no {
+		for i in first_sector..first_sector + nb_sector {
 			unsafe {
 				IDE.lock().read_sectors(
 					self.diskno,
 					1,
-					(block_no * sector_per_block as u32) + i as u32,
+					i as u32,
 					buffer.as_ptr() as u32
 				);
-				block.extend_from_slice(&buffer);
+				let mut start = 0;
+				if sector_per_block < 1.0 {
+					start = (block_no as usize % (1.0 / sector_per_block) as usize) * bsize;
+				}
+				block.extend_from_slice(&buffer[start..start + bsize]);
 			}
 		}
 		block
@@ -457,13 +466,18 @@ pub fn read_superblock(
 	diskno: u8,
 	sector_size: usize
 ) -> Result<block::BaseSuperblock, u8> {
-	let buffer: Vec<u8> = vec![0; sector_size];
+	// superblock is at index 1024 and 1024 bytes long
+	let mut nb_sector = roundup(2048 / sector_size, 1) as usize;
+	// sector_size > 2048
+	if nb_sector == 0 {
+		nb_sector = 1;
+	}
+	let buffer: Vec<u8> = vec![0; nb_sector * sector_size];
 
-	IDE.lock()
-		.read_sectors(diskno, 1, 2, buffer.as_ptr() as u32)?;
-	let mut sblock = block::BaseSuperblock::from(&buffer[0..84]);
+	IDE.lock().read_sectors(diskno, nb_sector as u8, 0, buffer.as_ptr() as u32)?;
+	let mut sblock = block::BaseSuperblock::from(&buffer[1024..1024 + 84]);
 	if sblock.version().0 >= 1 {
-		sblock.set_extension(block::ExtendedSuperblock::from(&buffer[84..236]));
+		sblock.set_extension(block::ExtendedSuperblock::from(&buffer[1024 + 84..1024 + 236]));
 	}
 	Ok(sblock)
 }
