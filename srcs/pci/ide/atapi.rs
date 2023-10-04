@@ -95,7 +95,8 @@ impl ATAPI {
 		}
 
 		// (((Last LBA + 1) * Block size) / (SECTOR_SIZE / 2)) * 2
-		Ok((((buffer[0].to_be() + 1) * buffer[1].to_be()) / (SECTOR_SIZE / 2)) * 2)
+		Ok((((buffer[0].to_be() + 1) * buffer[1].to_be()) / (SECTOR_SIZE / 2))
+			* 2)
 	}
 
 	pub fn read(

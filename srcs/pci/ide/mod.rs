@@ -47,7 +47,7 @@ impl IDEChannelRegisters {
 }
 
 pub struct IDEDevice {
-	reserved:     u8,       // 0 (Empty) or 1 (This Drive really exists)
+	reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
 	channel:      Option<Arcm<IDEChannelRegisters>>,
 	drive:        u8,       // 0 (Master Drive) or 1 (Slave Drive)
 	pub r#type:   u16,      // 0: ATA, 1:ATAPI
@@ -91,7 +91,7 @@ impl IDEController {
 	}
 
 	pub fn get_device(&self, num: u8) -> Option<&IDEDevice> {
-		if num > 3 || self.devices[num as usize].reserved == 0{
+		if num > 3 || self.devices[num as usize].reserved == 0 {
 			return None;
 		}
 		Some(&self.devices[num as usize])

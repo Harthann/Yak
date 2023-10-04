@@ -28,22 +28,18 @@ impl Ext2 {
 				return Err(1);
 			}
 			match device.unwrap().r#type {
-				x if x == ide::IDEType::ATA as u16 => {
-					ide::ata::SECTOR_SIZE
-				},
-				x if x == ide::IDEType::ATAPI as u16 => {
-					ide::atapi::SECTOR_SIZE
+				x if x == ide::IDEType::ATA as u16 => ide::ata::SECTOR_SIZE,
+				x if x == ide::IDEType::ATAPI as u16 => ide::atapi::SECTOR_SIZE,
+				_ => {
+					panic!("Unrecognized disk.")
 				}
-				_ => {panic!("Unrecognized disk.")}
 			}
 		};
-		Ok(
-			Self {
-				diskno:      diskno,
-				sector_size: sector_size as usize,
-				sblock:      read_superblock(diskno, sector_size as usize)?
-			}
-		)
+		Ok(Self {
+			diskno:      diskno,
+			sector_size: sector_size as usize,
+			sblock:      read_superblock(diskno, sector_size as usize)?
+		})
 	}
 
 	pub fn is_valid(&self) -> bool {
@@ -457,10 +453,14 @@ impl Ext2 {
 
 use crate::pci::ide;
 
-pub fn read_superblock(diskno: u8, sector_size: usize) -> Result<block::BaseSuperblock, u8> {
+pub fn read_superblock(
+	diskno: u8,
+	sector_size: usize
+) -> Result<block::BaseSuperblock, u8> {
 	let buffer: Vec<u8> = vec![0; sector_size];
 
-	IDE.lock().read_sectors(diskno, 1, 2, buffer.as_ptr() as u32)?;
+	IDE.lock()
+		.read_sectors(diskno, 1, 2, buffer.as_ptr() as u32)?;
 	let mut sblock = block::BaseSuperblock::from(&buffer[0..84]);
 	if sblock.version().0 >= 1 {
 		sblock.set_extension(block::ExtendedSuperblock::from(&buffer[84..236]));
@@ -483,7 +483,8 @@ fn get_block_content(block: Vec<u8>, size: usize) -> Vec<char> {
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
 pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
-	let ext2 = Ext2::new(unsafe { DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
+	let ext2 = Ext2::new(unsafe { DISKNO as u8 })
+		.expect("Disk is not a ext2 filesystem.");
 	let opt = ext2.recurs_find(path, inode);
 	match opt {
 		None => Vec::new(),
@@ -537,7 +538,8 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 /// Helper function to list all entries in a directory
 /// Does not yet check if found entry is a directory or not
 pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
-	let ext2 = Ext2::new(unsafe { DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
+	let ext2 = Ext2::new(unsafe { DISKNO as u8 })
+		.expect("Disk is not a ext2 filesystem.");
 	let inode = ext2.recurs_find(path, inode);
 	return match inode {
 		None => crate::vec::Vec::new(),
@@ -562,7 +564,8 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 
 /// Helper function to create a folder at a given path
 pub fn create_dir(path: &str, inode_no: usize) {
-	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 }).expect("Disk is not a ext2 filesystem.");
+	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
+		.expect("Disk is not a ext2 filesystem.");
 	let root = path.starts_with('/');
 	let mut splited: Vec<&str> = path.split("/").collect();
 	splited.retain(|a| a.len() != 0);

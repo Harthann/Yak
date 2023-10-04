@@ -46,7 +46,7 @@ pub extern "C" fn kmain() -> ! {
 	if unsafe { ext2::DISKNO == -1 } {
 		todo!("No ext2 disk found.");
 	}
-//	poc::insertion_poc();
+	// 	poc::insertion_poc();
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(
