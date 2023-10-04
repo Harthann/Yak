@@ -104,7 +104,6 @@ impl BaseSuperblock {
 	}
 }
 
-use core::mem::transmute;
 impl From<&[u8]> for BaseSuperblock {
 	fn from(buffer: &[u8]) -> Self {
 		if buffer.len() != 84 {

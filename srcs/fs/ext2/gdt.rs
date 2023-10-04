@@ -1,5 +1,4 @@
 // Group Descriptor Table
-use core::mem::transmute;
 
 #[derive(Debug)]
 pub struct GdtEntry {

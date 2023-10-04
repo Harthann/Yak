@@ -114,7 +114,6 @@ impl Inode {
 	}
 }
 
-use core::mem::transmute;
 impl From<&[u8]> for Inode {
 	fn from(buffer: &[u8]) -> Self {
 		if buffer.len() < 128 {

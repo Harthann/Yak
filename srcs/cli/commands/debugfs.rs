@@ -3,7 +3,6 @@ use core::ffi::CStr;
 use crate::alloc::string::{String, ToString};
 use crate::alloc::vec::Vec;
 
-use crate::cli::commands::hexdump;
 use crate::fs::ext2;
 
 pub static ROOT_INODE: usize = 2;
@@ -24,7 +23,7 @@ pub fn debugfs(mut command: Vec<String>) {
 			"cd" => cd(command),
 			"mkdir" => mkdir(command),
 			"pwd" => pwd(),
-			"test" => test(command),
+			"test" => test(),
 			_ => {
 				crate::kprintln!("Unknown command: {}", command[0]);
 				help();
@@ -65,14 +64,14 @@ fn cat(command: Vec<String>) {
 	}
 }
 
-fn test(command: Vec<String>) {
+fn test() {
 	let mut ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 })
 		.expect("Disk is not a ext2 filesystem.");
 	// let mut dentry = crate::fs::ext2::inode::Dentry::default();
 
-	let node = ext2.alloc_node(0);
-	let block = ext2.alloc_block(0);
-	crate::dprintln!("Node {}", node);
+	let _node = ext2.alloc_node(0);
+	let _block = ext2.alloc_block(0);
+	crate::dprintln!("Node {}", _node);
 }
 
 fn ls(command: Vec<String>) {
@@ -95,7 +94,7 @@ fn cd(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	let root = path.starts_with('/');
-	let mut splited: Vec<&str> =
+	let splited: Vec<&str> =
 		path.split("/").filter(|s| !s.is_empty()).collect();
 	let mut path = splited.join("/");
 	if root {
@@ -126,7 +125,6 @@ fn cd(command: Vec<String>) {
 						.filter(|s| !s.is_empty() && s != &".")
 						.collect();
 					let splited_cpy = splited.clone();
-					let len = splited.len();
 					let mut index = 0;
 					for elem in &mut splited_cpy.iter() {
 						if elem == &".." {

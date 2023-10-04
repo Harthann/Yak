@@ -115,21 +115,19 @@ impl Ext2 {
 		let first_sector = (bsize * block_no as usize) / self.sector_size;
 		let mut block: crate::vec::Vec<u8> = crate::vec::Vec::new();
 		for i in first_sector..first_sector + nb_sector {
-			unsafe {
-				IDE.lock().read_sectors(
-					self.diskno,
-					1,
-					i as u32,
-					buffer.as_ptr() as u32
-				);
-				let mut start = 0;
-				if sector_per_block < 1.0 {
-					start = (block_no as usize
-						% (1.0 / sector_per_block) as usize)
-						* bsize;
-				}
-				block.extend_from_slice(&buffer[start..start + bsize]);
+			IDE.lock().read_sectors(
+				self.diskno,
+				1,
+				i as u32,
+				buffer.as_ptr() as u32
+			);
+			let mut start = 0;
+			if sector_per_block < 1.0 {
+				start = (block_no as usize
+					% (1.0 / sector_per_block) as usize)
+					* bsize;
 			}
+			block.extend_from_slice(&buffer[start..start + bsize]);
 		}
 		block
 	}
@@ -139,14 +137,12 @@ impl Ext2 {
 		let sector_per_block = bsize / self.sector_size as usize;
 
 		let sector_no = bsize / self.sector_size as usize;
-		unsafe {
-			IDE.lock().write_sectors(
-				self.diskno,
-				sector_no as u8,
-				block_no * sector_per_block as u32,
-				block.as_ptr() as u32
-			);
-		};
+		IDE.lock().write_sectors(
+			self.diskno,
+			sector_no as u8,
+			block_no * sector_per_block as u32,
+			block.as_ptr() as u32
+		);
 	}
 
 	fn write_slice(&mut self, block_no: u32, offset: usize, slice: &[u8]) {
@@ -160,7 +156,7 @@ impl Ext2 {
 
 	fn get_inode(&self, inodeno: usize) -> inode::Inode {
 		let block_no = self.inode_to_block(inodeno as u32);
-		let mut block = self.read_block(block_no);
+		let block = self.read_block(block_no);
 		let index = self.inode_to_offset(inodeno as u32) as usize;
 		inode::Inode::from(&block[index..index + self.inode_size() as usize])
 	}
@@ -390,8 +386,8 @@ impl Ext2 {
 	pub fn add_dentry(&mut self, inodeno: usize, mut dentry: inode::Dentry) {
 		// Get block and inode
 		let group = self.inode_to_bgroup(inodeno as u32) as usize;
-		let mut bmap = self.read_block_map(group);
-		let mut imap = self.read_inode_map(group);
+		let bmap = self.read_block_map(group);
+		let imap = self.read_inode_map(group);
 		crate::dprintln!("Space {} {}", bmap.get_space().0, bmap.get_space().1);
 		crate::dprintln!("Space {} {}", imap.get_space().0, imap.get_space().1);
 
@@ -520,7 +516,6 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 			let blocks_no = inode.get_blocks_no();
 			let nb_blocks: usize =
 				(inode.size() / ext2.sblock.bsize() as u64 + 1) as usize;
-			let n_loop = if nb_blocks > 12 { 12 } else { nb_blocks };
 			let nb_singly_block =
 				ext2.sblock.bsize() / core::mem::size_of::<u32>();
 			for i in 0..nb_blocks {
