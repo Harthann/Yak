@@ -1,14 +1,13 @@
-use core::ffi::CStr;
-
-use crate::alloc::string::{String, ToString};
+use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 
 use crate::fs::ext2;
 use crate::utils::path::Path;
+use crate::spin::Mutex;
 
 pub static ROOT_INODE: usize = 2;
 pub static mut CURRENTDIR_INODE: usize = ROOT_INODE;
-pub static mut PWD: [u8; 256] = [0; 256];
+pub static PWD: Mutex<Option<Path>> = Mutex::new(None);
 
 fn help() {
 	crate::kprintln!("Command available: ls,cat,imap,cd,touch,mkdir,pwd,test");
@@ -40,7 +39,7 @@ fn pwd() {
 	crate::kprintln!(
 		"[pwd]   INODE: {:>6}  PATH: {}",
 		unsafe { CURRENTDIR_INODE },
-		unsafe { CStr::from_bytes_until_nul(&PWD).unwrap().to_str().unwrap() }
+		PWD.lock().as_ref().unwrap_or(&Path::new("/"))
 	);
 	crate::kprintln!("[root]  INODE: {:>6}  PATH: /", ROOT_INODE);
 }
@@ -111,25 +110,22 @@ fn cd(command: Vec<String>) {
 		None => crate::kprintln!("Dir not found"),
 		Some((inodeno, inode)) => {
 			if inode.is_dir() {
-				unsafe {
-					CURRENTDIR_INODE = inodeno;
-					let mut pwd = CStr::from_bytes_until_nul(&PWD)
-						.unwrap()
-						.to_str()
-						.unwrap()
-						.to_string();
-					if path.has_root() {
-						pwd = path.to_string();
-					} else {
-						pwd.push_str("/");
-						pwd.push_str(path.as_str());
-					}
-					let mut pwd = Path::new(&pwd);
-					pwd.cleanup();
-					PWD[0..pwd.len()]
-						.clone_from_slice(pwd.as_bytes());
-					PWD[pwd.len()] = b'\0';
-				};
+				unsafe { CURRENTDIR_INODE = inodeno };
+				let mut pwd;
+				if path.has_root() {
+					pwd = Path::new(path.as_str());
+				} else {
+					pwd = match (*PWD.lock()).clone() {
+						Some(x) => {
+							x.join(path.as_str())
+						},
+						None => {
+							Path::new(&["/", path.as_str()].join(""))
+						}
+					};
+				}
+				pwd.cleanup();
+				*PWD.lock() = Some(pwd);
 			} else {
 				crate::kprintln!("Error: {} is not a directory", path.as_str());
 			}

@@ -3,6 +3,7 @@ use core::fmt;
 use crate::alloc::string::{String, ToString};
 use crate::alloc::vec::Vec;
 
+#[derive(Clone)]
 pub struct Path {
 	inner: String
 }
@@ -63,6 +64,10 @@ impl Path {
 			path.insert_str(0, "/");
 		}
 		Some(Path::new(&path))
+	}
+
+	pub fn join(&self, path: &str) -> Path {
+		Path::new(&[self.inner.as_str(), "/", path].join(""))
 	}
 
 	pub fn extension(&self) -> Option<&str> {
