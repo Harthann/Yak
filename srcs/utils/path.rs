@@ -1,6 +1,5 @@
+use crate::alloc::string::{String, ToString};
 use crate::alloc::vec::Vec;
-use crate::alloc::string::String;
-use crate::alloc::string::ToString;
 
 pub struct Path {
 	inner: String
@@ -9,20 +8,19 @@ pub struct Path {
 impl Path {
 	pub fn new(string: &str) -> Self {
 		// Cleanup multiple slashes
-		let splited: Vec<&str> = string
-			.split("/").filter(|s| !s.is_empty()).collect();
+		let splited: Vec<&str> =
+			string.split("/").filter(|s| !s.is_empty()).collect();
 		let mut path = splited.join("/");
 		if string.starts_with("/") {
 			path.insert_str(0, "/");
 		}
-		Self {
-			inner: path
-		}
+		Self { inner: path }
 	}
 
 	// Remove '.' and '..'
 	pub fn cleanup(&mut self) {
-		let mut splited: Vec<&str> = self.inner
+		let mut splited: Vec<&str> = self
+			.inner
 			.split("/")
 			.filter(|s| !s.is_empty() && s != &".")
 			.collect();

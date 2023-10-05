@@ -126,7 +126,8 @@ fn cd(command: Vec<String>) {
 					}
 					let mut pwd = Path::new(&pwd);
 					pwd.cleanup();
-					PWD[0..pwd.as_str().len()].clone_from_slice(pwd.as_str().as_bytes());
+					PWD[0..pwd.as_str().len()]
+						.clone_from_slice(pwd.as_str().as_bytes());
 					PWD[pwd.as_str().len()] = b'\0';
 				};
 			} else {
