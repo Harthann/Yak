@@ -599,7 +599,7 @@ pub fn create_file(path: &str, inode_no: usize) {
 		None => {
 			crate::kprintln!("Path not found: {}", path);
 		},
-		Some((inode_no, mut inode)) => {
+		Some((inode_no, _)) => {
 			let check_exist = ext2.recurs_find(&to_create, inode_no);
 			if check_exist.is_some() {
 				crate::kprintln!("'{}' already exists.", to_create);
@@ -614,7 +614,7 @@ pub fn create_file(path: &str, inode_no: usize) {
 			// hardlinks: 1
 			new_inode.count_hl = 1;
 			new_inode.count_ds = 1;
-			new_inode.size_lh = ext2.sblock.bsize() as u32;
+			new_inode.size_lh = 0;
 			new_inode.dbp[0] = ext2
 				.alloc_block(ext2.inode_to_bgroup(inode_no as u32) as usize)
 				as u32;
