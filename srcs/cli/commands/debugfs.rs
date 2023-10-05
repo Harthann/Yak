@@ -4,6 +4,7 @@ use crate::alloc::string::{String, ToString};
 use crate::alloc::vec::Vec;
 
 use crate::fs::ext2;
+use crate::utils::path::Path;
 
 pub static ROOT_INODE: usize = 2;
 pub static mut CURRENTDIR_INODE: usize = ROOT_INODE;
@@ -102,16 +103,10 @@ fn cd(command: Vec<String>) {
 		1 => "",
 		_ => command[1].as_str()
 	};
-	let root = path.starts_with('/');
-	let splited: Vec<&str> =
-		path.split("/").filter(|s| !s.is_empty()).collect();
-	let mut path = splited.join("/");
-	if root {
-		path.insert_str(0, "/");
-	}
+	let path = Path::new(path);
 	let ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 })
 		.expect("Disk is not a ext2 filesystem.");
-	let lookup = ext2.recurs_find(&path, unsafe { CURRENTDIR_INODE });
+	let lookup = ext2.recurs_find(path.as_str(), unsafe { CURRENTDIR_INODE });
 	match lookup {
 		None => crate::kprintln!("Dir not found"),
 		Some((inodeno, inode)) => {
@@ -123,38 +118,19 @@ fn cd(command: Vec<String>) {
 						.to_str()
 						.unwrap()
 						.to_string();
-					if root {
-						pwd = path.clone();
+					if path.has_root() {
+						pwd = path.as_str().to_string();
 					} else {
 						pwd.push_str("/");
-						pwd.push_str(&path);
+						pwd.push_str(path.as_str());
 					}
-					let mut splited: Vec<&str> = pwd
-						.split("/")
-						.filter(|s| !s.is_empty() && s != &".")
-						.collect();
-					let splited_cpy = splited.clone();
-					let mut index = 0;
-					for elem in &mut splited_cpy.iter() {
-						if elem == &".." {
-							if index != 0 {
-								splited.remove(index);
-								splited.remove(index - 1);
-								index -= 1;
-							} else {
-								splited.remove(index);
-							}
-						} else {
-							index += 1;
-						}
-					}
-					let mut pwd = splited.join("/");
-					pwd.insert_str(0, "/");
-					PWD[0..pwd.len()].clone_from_slice(pwd.as_bytes());
-					PWD[pwd.len()] = b'\0';
+					let mut pwd = Path::new(&pwd);
+					pwd.cleanup();
+					PWD[0..pwd.as_str().len()].clone_from_slice(pwd.as_str().as_bytes());
+					PWD[pwd.as_str().len()] = b'\0';
 				};
 			} else {
-				crate::kprintln!("Error: {} is not a directory", path);
+				crate::kprintln!("Error: {} is not a directory", path.as_str());
 			}
 		},
 	};

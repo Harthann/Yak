@@ -9,6 +9,7 @@ use crate::alloc::vec;
 use crate::pci::ide::IDE;
 use crate::string::{String, ToString};
 use crate::utils::math::roundup;
+use crate::utils::path::Path;
 
 /// Current read/write use entire block to perform operations
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
@@ -584,25 +585,19 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 pub fn create_file(path: &str, inode_no: usize) {
 	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
 		.expect("Disk is not a ext2 filesystem.");
-	let root = path.starts_with('/');
-	let mut splited: Vec<&str> = path.split("/").collect();
-	splited.retain(|a| a.len() != 0);
-	let (to_create, mut path): (String, String) = match splited.pop() {
-		Some(x) => (x.to_string(), splited.join("/")),
-		None => (splited.join("/").to_string(), "".to_string())
-	};
-	if root {
-		path.insert_str(0, "/");
-	}
-	let inode = ext2.recurs_find(&path, inode_no);
+	let path = Path::new(path);
+	let filename = path.file_name().unwrap();
+	let binding = path.parent().unwrap();
+	let parent = binding.as_str();
+	let inode = ext2.recurs_find(&parent, inode_no);
 	match inode {
 		None => {
-			crate::kprintln!("Path not found: {}", path);
+			crate::kprintln!("Path not found: {}", parent);
 		},
 		Some((inode_no, _)) => {
-			let check_exist = ext2.recurs_find(&to_create, inode_no);
+			let check_exist = ext2.recurs_find(&filename, inode_no);
 			if check_exist.is_some() {
-				crate::kprintln!("'{}' already exists.", to_create);
+				crate::kprintln!("'{}' already exists.", filename);
 				return;
 			}
 			let mut new_inode = inode::Inode::new();
@@ -623,10 +618,10 @@ pub fn create_file(path: &str, inode_no: usize) {
 			ext2.write_inode(new_inode_no, &new_inode); // copy inode to fs
 			let dentry: inode::Dentry = inode::Dentry {
 				inode:       new_inode_no as u32,
-				dentry_size: roundup(8 + to_create.len(), 4) as u16,
-				name_length: to_create.len() as u8,
+				dentry_size: roundup(8 + filename.len(), 4) as u16,
+				name_length: filename.len() as u8,
 				r#type:      inode::Dtype::Regular as u8,
-				name:        to_create
+				name:        filename.to_string()
 			};
 			ext2.add_dentry(inode_no, dentry);
 		}
@@ -637,25 +632,19 @@ pub fn create_file(path: &str, inode_no: usize) {
 pub fn create_dir(path: &str, inode_no: usize) {
 	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
 		.expect("Disk is not a ext2 filesystem.");
-	let root = path.starts_with('/');
-	let mut splited: Vec<&str> = path.split("/").collect();
-	splited.retain(|a| a.len() != 0);
-	let (to_create, mut path): (String, String) = match splited.pop() {
-		Some(x) => (x.to_string(), splited.join("/")),
-		None => (splited.join("/").to_string(), "".to_string())
-	};
-	if root {
-		path.insert_str(0, "/");
-	}
-	let inode = ext2.recurs_find(&path, inode_no);
+	let path = Path::new(path);
+	let new_dir = path.file_name().unwrap();
+	let binding = path.parent().unwrap();
+	let parent = binding.as_str();
+	let inode = ext2.recurs_find(&parent, inode_no);
 	match inode {
 		None => {
-			crate::kprintln!("Path not found: {}", path);
+			crate::kprintln!("Path not found: {}", parent);
 		},
 		Some((inode_no, mut inode)) => {
-			let check_exist = ext2.recurs_find(&to_create, inode_no);
+			let check_exist = ext2.recurs_find(&new_dir, inode_no);
 			if check_exist.is_some() {
-				crate::kprintln!("'{}' already exists.", to_create);
+				crate::kprintln!("'{}' already exists.", new_dir);
 				return;
 			}
 			let mut new_inode = inode::Inode::new();
@@ -679,10 +668,10 @@ pub fn create_dir(path: &str, inode_no: usize) {
 			ext2.write_inode(new_inode_no, &new_inode); // copy inode to fs
 			let dentry: inode::Dentry = inode::Dentry {
 				inode:       new_inode_no as u32,
-				dentry_size: roundup(8 + to_create.len(), 4) as u16,
-				name_length: to_create.len() as u8,
+				dentry_size: roundup(8 + new_dir.len(), 4) as u16,
+				name_length: new_dir.len() as u8,
 				r#type:      inode::Dtype::Directory as u8,
-				name:        to_create
+				name:        new_dir.to_string()
 			};
 			ext2.add_dentry(inode_no, dentry);
 			// Create . and ..
