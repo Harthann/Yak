@@ -7,7 +7,7 @@ pub static mut DISKNO: i8 = 0;
 
 use crate::alloc::vec;
 use crate::pci::ide::IDE;
-use crate::string::{String, ToString};
+use crate::string::ToString;
 use crate::utils::math::roundup;
 use crate::utils::path::Path;
 
