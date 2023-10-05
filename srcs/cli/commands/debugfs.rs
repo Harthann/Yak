@@ -10,7 +10,7 @@ pub static mut CURRENTDIR_INODE: usize = ROOT_INODE;
 pub static mut PWD: [u8; 256] = [0; 256];
 
 fn help() {
-	crate::kprintln!("Command available: ls,cat,imap,cd,mkdir,pwd,test");
+	crate::kprintln!("Command available: ls,cat,imap,cd,touch,mkdir,pwd,test");
 }
 
 pub fn debugfs(mut command: Vec<String>) {
@@ -21,6 +21,7 @@ pub fn debugfs(mut command: Vec<String>) {
 			"cat" => cat(command),
 			"imap" => imap(command),
 			"cd" => cd(command),
+			"touch" => touch(command),
 			"mkdir" => mkdir(command),
 			"pwd" => pwd(),
 			"test" => test(),
@@ -49,6 +50,14 @@ fn mkdir(command: Vec<String>) {
 		return;
 	}
 	ext2::create_dir(command[1].as_str(), unsafe { CURRENTDIR_INODE });
+}
+
+fn touch(command: Vec<String>) {
+	if command.len() < 2 {
+		crate::kprintln!("usage: debugfs touch FILE");
+		return;
+	}
+	ext2::create_file(command[1].as_str(), unsafe { CURRENTDIR_INODE });
 }
 
 fn cat(command: Vec<String>) {

@@ -103,13 +103,13 @@ impl Ext2 {
 
 	/// Read an entire block from disk
 	pub fn read_block(&self, block_no: u32) -> crate::vec::Vec<u8> {
-		let bsize = self.sblock.bsize();
+		let mut bsize = self.sblock.bsize();
 		let mut nb_sector = bsize / self.sector_size;
 		// sector_size > bsize
 		if nb_sector == 0 {
 			nb_sector = 1;
 		}
-		let buffer: Vec<u8> = vec![0; nb_sector * self.sector_size];
+		let buffer: Vec<u8> = vec![0; self.sector_size];
 		let sector_per_block = bsize as f64 / self.sector_size as f64;
 
 		let first_sector = (bsize * block_no as usize) / self.sector_size;
@@ -125,6 +125,8 @@ impl Ext2 {
 			if sector_per_block < 1.0 {
 				start = (block_no as usize % (1.0 / sector_per_block) as usize)
 					* bsize;
+			} else if sector_per_block > 1.0 {
+				bsize = self.sector_size;
 			}
 			block.extend_from_slice(&buffer[start..start + bsize]);
 		}
@@ -577,6 +579,58 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 			dentries
 		}
 	};
+}
+
+pub fn create_file(path: &str, inode_no: usize) {
+	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
+		.expect("Disk is not a ext2 filesystem.");
+	let root = path.starts_with('/');
+	let mut splited: Vec<&str> = path.split("/").collect();
+	splited.retain(|a| a.len() != 0);
+	let (to_create, mut path): (String, String) = match splited.pop() {
+		Some(x) => (x.to_string(), splited.join("/")),
+		None => (splited.join("/").to_string(), "".to_string())
+	};
+	if root {
+		path.insert_str(0, "/");
+	}
+	let inode = ext2.recurs_find(&path, inode_no);
+	match inode {
+		None => {
+			crate::kprintln!("Path not found: {}", path);
+		},
+		Some((inode_no, mut inode)) => {
+			let check_exist = ext2.recurs_find(&to_create, inode_no);
+			if check_exist.is_some() {
+				crate::kprintln!("'{}' already exists.", to_create);
+				return;
+			}
+			let mut new_inode = inode::Inode::new();
+			// perm: Regular file and 0644
+			new_inode.tperm =
+				inode::ITYPE_REGU
+					| inode::IPERM_UREAD | inode::IPERM_UWRIT
+					| inode::IPERM_GREAD | inode::IPERM_OREAD;
+			// hardlinks: 1
+			new_inode.count_hl = 1;
+			new_inode.count_ds = 1;
+			new_inode.size_lh = ext2.sblock.bsize() as u32;
+			new_inode.dbp[0] = ext2
+				.alloc_block(ext2.inode_to_bgroup(inode_no as u32) as usize)
+				as u32;
+			let new_inode_no =
+				ext2.alloc_node(ext2.inode_to_bgroup(inode_no as u32) as usize);
+			ext2.write_inode(new_inode_no, &new_inode); // copy inode to fs
+			let dentry: inode::Dentry = inode::Dentry {
+				inode:       new_inode_no as u32,
+				dentry_size: roundup(8 + to_create.len(), 4) as u16,
+				name_length: to_create.len() as u8,
+				r#type:      inode::Dtype::Regular as u8,
+				name:        to_create
+			};
+			ext2.add_dentry(inode_no, dentry);
+		}
+	}
 }
 
 /// Helper function to create a folder at a given path
