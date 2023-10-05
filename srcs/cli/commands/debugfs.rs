@@ -2,11 +2,11 @@ use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 
 use crate::fs::ext2;
-use crate::utils::path::Path;
 use crate::spin::Mutex;
+use crate::utils::path::Path;
 
 pub static ROOT_INODE: usize = 2;
-pub static mut CURRENTDIR_INODE: usize = ROOT_INODE;
+pub static CURRENTDIR_INODE: Mutex<usize> = Mutex::new(ROOT_INODE);
 pub static PWD: Mutex<Option<Path>> = Mutex::new(None);
 
 fn help() {
@@ -38,7 +38,7 @@ pub fn debugfs(mut command: Vec<String>) {
 fn pwd() {
 	crate::kprintln!(
 		"[pwd]   INODE: {:>6}  PATH: {}",
-		unsafe { CURRENTDIR_INODE },
+		*CURRENTDIR_INODE.lock(),
 		PWD.lock().as_ref().unwrap_or(&Path::new("/"))
 	);
 	crate::kprintln!("[root]  INODE: {:>6}  PATH: /", ROOT_INODE);
@@ -49,7 +49,7 @@ fn mkdir(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs mkdir DIR");
 		return;
 	}
-	ext2::create_dir(command[1].as_str(), unsafe { CURRENTDIR_INODE });
+	ext2::create_dir(command[1].as_str(), *CURRENTDIR_INODE.lock());
 }
 
 fn touch(command: Vec<String>) {
@@ -57,7 +57,7 @@ fn touch(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs touch FILE");
 		return;
 	}
-	ext2::create_file(command[1].as_str(), unsafe { CURRENTDIR_INODE });
+	ext2::create_file(command[1].as_str(), *CURRENTDIR_INODE.lock());
 }
 
 fn cat(command: Vec<String>) {
@@ -65,9 +65,8 @@ fn cat(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs cat FILE");
 		return;
 	}
-	let file_content = ext2::get_file_content(command[1].as_str(), unsafe {
-		CURRENTDIR_INODE
-	});
+	let file_content =
+		ext2::get_file_content(command[1].as_str(), *CURRENTDIR_INODE.lock());
 	for i in file_content {
 		crate::kprint!("{}", i);
 	}
@@ -89,7 +88,7 @@ fn ls(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	crate::dprintln!("Ls: {}", path);
-	let dentries = ext2::list_dir(path, unsafe { CURRENTDIR_INODE });
+	let dentries = ext2::list_dir(path, *CURRENTDIR_INODE.lock());
 
 	for i in dentries {
 		crate::kprint!("{} ", i.name);
@@ -105,23 +104,19 @@ fn cd(command: Vec<String>) {
 	let path = Path::new(path);
 	let ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 })
 		.expect("Disk is not a ext2 filesystem.");
-	let lookup = ext2.recurs_find(path.as_str(), unsafe { CURRENTDIR_INODE });
+	let lookup = ext2.recurs_find(path.as_str(), *CURRENTDIR_INODE.lock());
 	match lookup {
 		None => crate::kprintln!("Dir not found"),
 		Some((inodeno, inode)) => {
 			if inode.is_dir() {
-				unsafe { CURRENTDIR_INODE = inodeno };
+				*CURRENTDIR_INODE.lock() = inodeno;
 				let mut pwd;
 				if path.has_root() {
 					pwd = Path::new(path.as_str());
 				} else {
 					pwd = match (*PWD.lock()).clone() {
-						Some(x) => {
-							x.join(path.as_str())
-						},
-						None => {
-							Path::new(&["/", path.as_str()].join(""))
-						}
+						Some(x) => x.join(path.as_str()),
+						None => Path::new(&["/", path.as_str()].join(""))
 					};
 				}
 				pwd.cleanup();
