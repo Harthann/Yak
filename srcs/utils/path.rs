@@ -1,3 +1,5 @@
+use core::fmt;
+
 use crate::alloc::string::{String, ToString};
 use crate::alloc::vec::Vec;
 
@@ -89,5 +91,19 @@ impl Path {
 
 	pub fn as_str(&self) -> &str {
 		self.inner.as_str()
+	}
+
+	pub fn as_bytes(&self) -> &[u8] {
+		self.inner.as_bytes()
+	}
+
+	pub fn len(&self) -> usize {
+		self.inner.len()
+	}
+}
+
+impl fmt::Display for Path {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+		write!(f, "{}", self.inner)
 	}
 }

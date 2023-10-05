@@ -119,16 +119,16 @@ fn cd(command: Vec<String>) {
 						.unwrap()
 						.to_string();
 					if path.has_root() {
-						pwd = path.as_str().to_string();
+						pwd = path.to_string();
 					} else {
 						pwd.push_str("/");
 						pwd.push_str(path.as_str());
 					}
 					let mut pwd = Path::new(&pwd);
 					pwd.cleanup();
-					PWD[0..pwd.as_str().len()]
-						.clone_from_slice(pwd.as_str().as_bytes());
-					PWD[pwd.as_str().len()] = b'\0';
+					PWD[0..pwd.len()]
+						.clone_from_slice(pwd.as_bytes());
+					PWD[pwd.len()] = b'\0';
 				};
 			} else {
 				crate::kprintln!("Error: {} is not a directory", path.as_str());
