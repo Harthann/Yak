@@ -13,47 +13,47 @@ use crate::time;
 #[derive(Debug, Default, Copy, Clone)]
 pub struct Inode {
 	/// Type and Permissions (see below)
-	pub tperm:    u16,
+	pub tperm:      u16,
 	/// User ID
-	uid:          u16,
+	pub uid:        u16,
 	/// Lower 32 bits of size in bytes
-	pub size_lh:  u32,
+	pub size_lh:    u32,
 	/// Last Access Time (in POSIX time)
-	lat:          u32,
+	pub lat:        u32,
 	/// Creation Time (in POSIX time)
-	creatt:       u32,
+	pub creatt:     u32,
 	/// Last Modification time (in POSIX time)
-	lmt:          u32,
+	pub lmt:        u32,
 	/// Deletion time (in POSIX time)
-	delt:         u32,
+	pub delt:       u32,
 	/// Group ID
-	gid:          u16,
+	pub gid:        u16,
 	/// Count of hard links (directory entries) to this inode. When this reaches 0, the data blocks are marked as unallocated.
-	pub count_hl: u16,
+	pub count_hl:   u16,
 	/// Count of disk sectors (not Ext2 blocks) in use by this inode, not counting the actual inode structure nor directory entries linking to the inode.
-	pub count_ds: u32,
+	pub count_ds:   u32,
 	/// Flags (see below)
-	flags:        u32,
+	pub flags:      u32,
 	/// Operating System Specific value #1
-	os_specific1: u32,
+	os_specific1:   u32,
 	/// Direct Block Pointers
-	pub dbp:      [u32; 12],
+	pub dbp:        [u32; 12],
 	/// Singly Indirect Block Pointer (Points to a block that is a list of block pointers to data)
-	pub sibp:     u32,
+	pub sibp:       u32,
 	/// Doubly Indirect Block Pointer (Points to a block that is a list of block pointers to Singly Indirect Blocks)
-	dibp:         u32,
+	dibp:           u32,
 	/// Triply Indirect Block Pointer (Points to a block that is a list of block pointers to Doubly Indirect Blocks)
-	tibp:         u32,
+	tibp:           u32,
 	/// Generation number (Primarily used for NFS)
-	gen_no:       u32,
+	pub gen_no:     u32,
 	/// In Ext2 version 0, this field is reserved. In version >= 1, Extended attribute block (File ACL).
-	facl:         u32,
+	pub facl:       u32,
 	/// In Ext2 version 0, this field is reserved. In version >= 1, Upper 32 bits of file size (if feature bit set) if it's a file, Directory ACL if it's a directory
-	size_uh:      u32,
+	pub size_uh:    u32,
 	/// Block address of fragment
-	block_addr:   u32,
+	pub block_addr: u32,
 	/// Operating System Specific Value #2
-	os_specific2: [u8; 12]
+	os_specific2:   [u8; 12]
 }
 
 impl Inode {

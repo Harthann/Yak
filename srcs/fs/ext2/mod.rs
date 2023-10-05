@@ -702,3 +702,79 @@ pub fn create_dir(path: &str, inode_no: usize) {
 		}
 	}
 }
+
+pub fn show_inode_info(path: &str, inode_no: usize) {
+	let ext2 = Ext2::new(unsafe { DISKNO as u8 })
+		.expect("Disk is not a ext2 filesystem.");
+	let inode = ext2.recurs_find(&path, inode_no);
+	match inode {
+		None => {
+			crate::kprintln!("Path not found: {}", path);
+		},
+		Some((inode_no, inode)) => {
+			crate::kprint!("Inode: {:<4} ", inode_no);
+			crate::kprint!(
+				"Type: {:<12}",
+				match inode.tperm {
+					x if x & inode::ITYPE_FIFO != 0 => "fifo",
+					x if x & inode::ITYPE_CHARDEV != 0 => "chardev",
+					x if x & inode::ITYPE_DIR != 0 => "directory",
+					x if x & inode::ITYPE_BLOCK != 0 => "block",
+					x if x & inode::ITYPE_REGU != 0 => "regular",
+					x if x & inode::ITYPE_SYMF != 0 => "symbolic",
+					x if x & inode::ITYPE_SOCK != 0 => "sock",
+					_ => "unknown"
+				}
+			);
+			// TODO: setuid bit
+			crate::kprint!("Mode:  0{:3o}   ", inode.tperm & 0o777);
+			crate::kprintln!("Flags: {:#x}", inode.flags);
+
+			crate::kprint!("Generation: {:<4} ", inode.gen_no);
+			// TODO: Version
+			crate::kprintln!("Version: {:#010x}:{:08x}", 0x0, 0x0);
+			crate::kprint!("User:  {:<6} ", inode.uid);
+			crate::kprint!("Group:  {:<6} ", inode.gid);
+			// TODO: idk
+			crate::kprint!("Project:     0   ");
+			crate::kprintln!("Size: {}", inode.size());
+			crate::kprintln!("File ACL: {}", inode.facl);
+			crate::kprint!("Links: {:<3} ", inode.count_hl);
+			crate::kprintln!("Blockcount: {}", inode.count_ds);
+			crate::kprint!("Fragment:  Address: {:<4} ", inode.block_addr);
+			// TODO: idk
+			crate::kprint!("Number: {:<4} ", 0);
+			crate::kprintln!("Size: {}", inode.size_uh);
+			crate::kprintln!(
+				" ctime: {:#010x}:{:08x} -- {}",
+				inode.creatt,
+				0,
+				crate::time::ctime(inode.creatt)
+			);
+			crate::kprintln!(
+				" atime: {:#010x}:{:08x} -- {}",
+				inode.lat,
+				0,
+				crate::time::ctime(inode.lat)
+			);
+			crate::kprintln!(
+				" mtime: {:#010x}:{:08x} -- {}",
+				inode.lmt,
+				0,
+				crate::time::ctime(inode.lmt)
+			);
+			// TODO: idk
+			crate::kprintln!(
+				"crtime: {:#010x}:{:08x} -- {}",
+				0x0,
+				0,
+				crate::time::ctime(0x0)
+			);
+			// TODO: idk
+			crate::kprintln!("Size of extra inode fields: {}", 0);
+			crate::kprintln!("BLOCKS:");
+			crate::kprintln!("(0):TODO");
+			crate::kprintln!("TOTAL: 1");
+		}
+	};
+}
