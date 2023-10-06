@@ -11,7 +11,7 @@ pub static PWD: Mutex<Option<Path>> = Mutex::new(None);
 
 fn help() {
 	crate::kprintln!(
-		"Command available: ls,stat,cat,imap,cd,touch,mkdir,pwd,test"
+		"Command available: ls,stat,cat,imap,cd,touch,mkdir,rm,pwd,test"
 	);
 }
 
@@ -26,6 +26,7 @@ pub fn debugfs(mut command: Vec<String>) {
 			"cd" => cd(command),
 			"touch" => touch(command),
 			"mkdir" => mkdir(command),
+			"rm" => rm(command),
 			"pwd" => pwd(),
 			"test" => test(),
 			_ => {
@@ -45,6 +46,14 @@ fn pwd() {
 		PWD.lock().as_ref().unwrap_or(&Path::new("/"))
 	);
 	crate::kprintln!("[root]  INODE: {:>6}  PATH: /", ROOT_INODE);
+}
+
+fn rm(command: Vec<String>) {
+	if command.len() < 2 {
+		crate::kprintln!("usage: debugfs rm FILE");
+		return;
+	}
+	ext2::remove_file(command[1].as_str(), *CURRENTDIR_INODE.lock());
 }
 
 fn stat(command: Vec<String>) {

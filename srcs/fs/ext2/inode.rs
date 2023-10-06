@@ -395,7 +395,7 @@ pub const IFLAG_HASHINDEX: u32 = 0x00010000;
 pub const IFLAG_ASDIR: u32 = 0x00020000;
 pub const IFLAG_JOURN: u32 = 0x00040000;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Dentry {
 	pub inode:       u32,
 	pub dentry_size: u16,

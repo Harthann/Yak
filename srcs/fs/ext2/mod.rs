@@ -221,15 +221,26 @@ impl Ext2 {
 		let mut map = self.read_inode_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.inode_unalloc -= 1;
+		// TODO: write superblock
 		// 		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_inode_map(group, map);
 		nodeno
+	}
+
+	pub fn free_node(&mut self, group: usize, inodeno: usize) {
+		let mut map = self.read_inode_map(group);
+		map.unset_node(inodeno);
+		self.sblock.inode_unalloc += 1;
+		// TODO: write superblock
+		// self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
+		self.write_inode_map(group, map);
 	}
 
 	pub fn alloc_block(&mut self, group: usize) -> usize {
 		let mut map = self.read_block_map(group);
 		let nodeno = map.get_free_node().unwrap();
 		self.sblock.blocks_unalloc -= 1;
+		// TODO: write superblock
 		// 		self.write_slice(nodeno as u32, 0, &*self.sblock.into_boxed_slice());
 		self.write_block_map(group, map);
 		self.write_block(
@@ -392,7 +403,7 @@ impl Ext2 {
 			}
 			let mut vec = Into::<Vec<u8>>::into(dentries[i].clone());
 			let len = vec.len();
-			for i in len..dentries[i].dentry_size as usize {
+			for _ in len..dentries[i].dentry_size as usize {
 				vec.push(0);
 			}
 			block[entry_start..entry_start + dentries[i].dentry_size as usize]
@@ -419,6 +430,33 @@ impl Ext2 {
 		dentries
 	}
 
+	// TODO: do remove_dentry recursive
+	pub fn remove_dentry(
+		&mut self,
+		parent_inodeno: usize,
+		dentry: inode::Dentry
+	) {
+		let inode = self.get_inode_entry(parent_inodeno);
+		for block_no in inode.get_blocks_no() {
+			let mut dentries = self.get_dentries(block_no);
+			match dentries.iter().position(|x| x.inode == dentry.inode) {
+				Some(index) => {
+					// TODO: free blocks
+					self.free_node(
+						self.inode_to_bgroup(dentry.inode as u32) as usize,
+						dentry.inode as usize
+					);
+					dentries.remove(index);
+					match self.write_dentries(block_no, dentries) {
+						Ok(()) => return,
+						Err(()) => todo!()
+					}
+				},
+				None => {}
+			}
+		}
+	}
+
 	// get new inode
 	// get new blocks
 	// fill inode informations
@@ -429,7 +467,7 @@ impl Ext2 {
 	// write inode on disk
 	// write new imap
 	// write new bmap
-	pub fn add_dentry(&mut self, inodeno: usize, mut dentry: inode::Dentry) {
+	pub fn add_dentry(&mut self, inodeno: usize, dentry: inode::Dentry) {
 		// Get block and inode
 		let group = self.inode_to_bgroup(inodeno as u32) as usize;
 		let bmap = self.read_block_map(group);
@@ -443,10 +481,10 @@ impl Ext2 {
 		// Write new dentry on the parent dir
 		let inode = self.get_inode_entry(inodeno);
 		for block_no in inode.get_blocks_no() {
-			let mut block = self.read_block(block_no);
+			let block = self.read_block(block_no);
 			let mut dentries = self.get_dentries(block_no);
 			match dentries.last_mut() {
-				Some(mut last) => {
+				Some(last) => {
 					let len = roundup(8 + last.name.len(), 4) as u16;
 					if dentry.dentry_size <= last.dentry_size - len {
 						let mut new_dentry = dentry.clone();
@@ -684,6 +722,30 @@ pub fn create_file(path: &str, inode_no: usize) {
 				name:        filename.to_string()
 			};
 			ext2.add_dentry(inode_no, dentry);
+		}
+	}
+}
+
+pub fn remove_file(path: &str, inode_no: usize) {
+	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
+		.expect("Disk is not a ext2 filesystem.");
+	let path = Path::new(path);
+	let filename = path.file_name().unwrap();
+	let binding = path.parent().unwrap();
+	let parent = binding.as_str();
+	let inode = ext2.recurs_find(&parent, inode_no);
+	match inode {
+		None => {
+			crate::kprintln!("Path not found: {}", parent);
+		},
+		Some((inode_no, _)) => {
+			// TODO: Check for only file and not recursive delete ?
+			let dentry = ext2.dentry_find(inode_no, &filename);
+			if dentry.is_none() {
+				crate::kprintln!("'{}' does not exist.", filename);
+				return;
+			}
+			ext2.remove_dentry(inode_no, dentry.unwrap());
 		}
 	}
 }
