@@ -1,5 +1,3 @@
-use core::mem::size_of;
-
 use crate::alloc::vec;
 use crate::pci::ide::IDE;
 use crate::string::ToString;
@@ -516,40 +514,82 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 				crate::kprintln!("'{}': Not a regular file.", path);
 				return Vec::new();
 			}
+			let mut size = inode.size();
 			let mut file: Vec<char> = Vec::new();
-			let blocks_no = inode.get_blocks_no();
-			let nb_blocks: usize =
-				(inode.size() / ext2.sblock.bsize() as u64 + 1) as usize;
-			let nb_singly_block =
-				ext2.sblock.bsize() / core::mem::size_of::<u32>();
-			for i in 0..nb_blocks {
-				let block;
-				if i < 12 {
-					block = ext2.read_block(blocks_no[i as usize]);
-				} else if i >= 12 && i < 12 + nb_singly_block {
-					// Singly indirect block pointer
-					let singly_block = ext2.read_block(inode.sibp);
-					let off = (i - 12) * core::mem::size_of::<u32>();
-					let block_no = u32::from_le_bytes(
-						singly_block[off..off + core::mem::size_of::<u32>()]
-							.try_into()
-							.unwrap()
-					);
-					block = ext2.read_block(block_no);
-				} else {
-					// Doubly or Triply indirect block pointer
-					todo!();
+			for block_no in inode.get_blocks_no() {
+				if inode::Inode::is_valid_block(block_no) {
+					let block = ext2.read_block(block_no);
+					if size > ext2.sblock.bsize() as u64 {
+						file.append(&mut get_block_content(
+							block,
+							ext2.sblock.bsize()
+						));
+						size -= ext2.sblock.bsize() as u64;
+					} else {
+						file.append(&mut get_block_content(
+							block,
+							(inode.size() % ext2.sblock.bsize() as u64) as usize
+						));
+						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						break ;
+					}
 				}
-				if i != nb_blocks - 1 {
-					file.append(&mut get_block_content(
-						block,
-						ext2.sblock.bsize()
-					));
-				} else {
-					file.append(&mut get_block_content(
-						block,
-						(inode.size() % ext2.sblock.bsize() as u64) as usize
-					));
+			}
+			for block_no in inode.get_sibp_blocks_no(&ext2) {
+				if inode::Inode::is_valid_block(block_no) {
+					let block = ext2.read_block(block_no);
+					if size > ext2.sblock.bsize() as u64 {
+						file.append(&mut get_block_content(
+							block,
+							ext2.sblock.bsize()
+						));
+						size -= ext2.sblock.bsize() as u64;
+					} else {
+						file.append(&mut get_block_content(
+							block,
+							(inode.size() % ext2.sblock.bsize() as u64) as usize
+						));
+						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						break ;
+					}
+				}
+			}
+			for block_no in inode.get_dibp_blocks_no(&ext2) {
+				if inode::Inode::is_valid_block(block_no) {
+					let block = ext2.read_block(block_no);
+					if size > ext2.sblock.bsize() as u64 {
+						file.append(&mut get_block_content(
+							block,
+							ext2.sblock.bsize()
+						));
+						size -= ext2.sblock.bsize() as u64;
+					} else {
+						file.append(&mut get_block_content(
+							block,
+							(inode.size() % ext2.sblock.bsize() as u64) as usize
+						));
+						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						break ;
+					}
+				}
+			}
+			for block_no in inode.get_tibp_blocks_no(&ext2) {
+				if inode::Inode::is_valid_block(block_no) {
+					let block = ext2.read_block(block_no);
+					if size > ext2.sblock.bsize() as u64 {
+						file.append(&mut get_block_content(
+							block,
+							ext2.sblock.bsize()
+						));
+						size -= ext2.sblock.bsize() as u64;
+					} else {
+						file.append(&mut get_block_content(
+							block,
+							(inode.size() % ext2.sblock.bsize() as u64) as usize
+						));
+						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						break ;
+					}
 				}
 			}
 			file

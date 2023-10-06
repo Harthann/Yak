@@ -104,7 +104,7 @@ impl Inode {
 		self.tperm & ITYPE_DIR != 0
 	}
 
-	fn is_valid_block(block_no: u32) -> bool {
+	pub fn is_valid_block(block_no: u32) -> bool {
 		block_no != 0
 	}
 
