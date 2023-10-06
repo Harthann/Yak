@@ -1,15 +1,17 @@
-mod bitmap;
-pub mod block;
-mod gdt;
-pub mod inode;
-
-pub static mut DISKNO: i8 = 0;
+use core::mem::size_of;
 
 use crate::alloc::vec;
 use crate::pci::ide::IDE;
 use crate::string::ToString;
 use crate::utils::math::roundup;
 use crate::utils::path::Path;
+
+mod bitmap;
+pub mod block;
+mod gdt;
+pub mod inode;
+
+pub static mut DISKNO: i8 = 0;
 
 /// Current read/write use entire block to perform operations
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
@@ -773,8 +775,84 @@ pub fn show_inode_info(path: &str, inode_no: usize) {
 			// TODO: idk
 			crate::kprintln!("Size of extra inode fields: {}", 0);
 			crate::kprintln!("BLOCKS:");
-			crate::kprintln!("(0):TODO");
-			crate::kprintln!("TOTAL: 1");
+			let mut index = 0;
+			let mut total = 0;
+			let print = |mut index: usize, blocks_no: Vec<u32>| -> usize {
+				let len = blocks_no.len();
+				let mut i = 0;
+				while i < len {
+					let mut stop = i;
+					while stop + 1 < len
+						&& blocks_no[stop] + 1 == blocks_no[stop + 1]
+					{
+						stop += 1;
+					}
+					if index != 0 {
+						crate::kprint!(", ");
+					}
+					if stop != i {
+						crate::kprint!(
+							"({}-{}):{}-{}",
+							index,
+							index + stop - i,
+							blocks_no[i],
+							blocks_no[stop]
+						);
+					} else {
+						crate::kprint!("({}):{}", index, blocks_no[i]);
+					}
+					index += stop - i + 1;
+					i = stop + 1;
+				}
+				i
+			};
+			let blocks_no = inode.get_blocks_no();
+			let ret = print(index, blocks_no);
+			total += ret;
+			total += index;
+			if inode.sibp != 0 {
+				crate::kprint!(", (IND): {}", inode.sibp);
+				total += 1;
+				let ret = print(index, inode.get_sibp_blocks_no(&ext2));
+				total += ret;
+				index += ret;
+			}
+			if inode.dibp != 0 {
+				crate::kprint!(", (DIND): {}", inode.dibp);
+				total += 1;
+				// Get (IND)
+				for sibp in inode::Inode::_get_sibp_blocks_no(inode.dibp, &ext2)
+				{
+					crate::kprint!(", (IND): {}", sibp);
+					total += 1;
+					let ret = print(
+						index,
+						inode::Inode::_get_sibp_blocks_no(sibp, &ext2)
+					);
+					total += ret;
+					index += ret;
+				}
+			}
+			if inode.tibp != 0 {
+				crate::kprint!(", (TIND): {} ", inode.tibp);
+				total += 1;
+				for dibp in inode::Inode::_get_sibp_blocks_no(inode.tibp, &ext2)
+				{
+					crate::kprint!(", (DIND): {}", dibp);
+					total += 1;
+					for sibp in inode::Inode::_get_sibp_blocks_no(dibp, &ext2) {
+						crate::kprint!(", (IND): {}", sibp);
+						total += 1;
+						let ret = print(
+							index,
+							inode::Inode::_get_sibp_blocks_no(sibp, &ext2)
+						);
+						total += ret;
+						index += ret;
+					}
+				}
+			}
+			crate::kprintln!("\nTOTAL: {}", total);
 		}
 	};
 }

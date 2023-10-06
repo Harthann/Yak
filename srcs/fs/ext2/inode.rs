@@ -1,4 +1,6 @@
 use crate::time;
+use crate::vec::Vec;
+use core::mem::size_of;
 
 /// Like blocks, each inode has a numerical address.
 /// It is extremely important to note that unlike block addresses, inode addresses start at 1.
@@ -41,9 +43,9 @@ pub struct Inode {
 	/// Singly Indirect Block Pointer (Points to a block that is a list of block pointers to data)
 	pub sibp:       u32,
 	/// Doubly Indirect Block Pointer (Points to a block that is a list of block pointers to Singly Indirect Blocks)
-	dibp:           u32,
+	pub dibp:       u32,
 	/// Triply Indirect Block Pointer (Points to a block that is a list of block pointers to Doubly Indirect Blocks)
-	tibp:           u32,
+	pub tibp:       u32,
 	/// Generation number (Primarily used for NFS)
 	pub gen_no:     u32,
 	/// In Ext2 version 0, this field is reserved. In version >= 1, Extended attribute block (File ACL).
@@ -102,15 +104,78 @@ impl Inode {
 		self.tperm & ITYPE_DIR != 0
 	}
 
-	pub fn get_blocks_no(&self) -> crate::vec::Vec<u32> {
-		let mut blocks_no = crate::vec::Vec::new();
-		for i in 0..12 {
-			if self.dbp[i] == 0 {
-				continue;
+	fn is_valid_block(block_no: u32) -> bool {
+		block_no != 0
+	}
+
+	fn get_blocks_no_from_u32_slice(slice: &[u32]) -> Vec<u32> {
+		let mut blocks_no = Vec::new();
+		for i in 0..slice.len() {
+			if Inode::is_valid_block(slice[i]) {
+				blocks_no.push(slice[i]);
 			}
-			blocks_no.push(self.dbp[i]);
 		}
 		blocks_no
+	}
+
+	fn get_blocks_no_from_u8_slice(slice: &[u8]) -> Vec<u32> {
+		let mut blocks_no: Vec<u32> = Vec::new();
+		for i in (0..slice.len()).step_by(size_of::<u32>()) {
+			let block_no = u32::from_le_bytes(
+				slice[i..i + size_of::<u32>()].try_into().unwrap()
+			);
+			if Inode::is_valid_block(block_no) {
+				blocks_no.push(block_no);
+			}
+		}
+		blocks_no
+	}
+
+	pub fn get_blocks_no(&self) -> Vec<u32> {
+		Inode::get_blocks_no_from_u32_slice(&self.dbp)
+	}
+
+	pub fn _get_sibp_blocks_no(sibp: u32, ext2: &super::Ext2) -> Vec<u32> {
+		let singly_block = ext2.read_block(sibp);
+		Inode::get_blocks_no_from_u8_slice(&singly_block)
+	}
+
+	pub fn get_sibp_blocks_no(&self, ext2: &super::Ext2) -> Vec<u32> {
+		Inode::_get_sibp_blocks_no(self.sibp, ext2)
+	}
+
+	pub fn _get_dibp_blocks_no(dibp: u32, ext2: &super::Ext2) -> Vec<u32> {
+		let doubly_block = ext2.read_block(dibp);
+		let mut blocks_no: Vec<u32> = Vec::new();
+		let singly_blocks = Inode::get_blocks_no_from_u8_slice(&doubly_block);
+		for singly_block in singly_blocks {
+			blocks_no.extend_from_slice(&Inode::_get_sibp_blocks_no(
+				singly_block,
+				ext2
+			));
+		}
+		blocks_no
+	}
+
+	pub fn get_dibp_blocks_no(&self, ext2: &super::Ext2) -> Vec<u32> {
+		Inode::_get_dibp_blocks_no(self.dibp, ext2)
+	}
+
+	pub fn _get_tibp_blocks_no(tibp: u32, ext2: &super::Ext2) -> Vec<u32> {
+		let triply_block = ext2.read_block(tibp);
+		let mut blocks_no: Vec<u32> = Vec::new();
+		let doubly_blocks = Inode::get_blocks_no_from_u8_slice(&triply_block);
+		for doubly_block in doubly_blocks {
+			blocks_no.extend_from_slice(&Inode::_get_dibp_blocks_no(
+				doubly_block,
+				ext2
+			));
+		}
+		blocks_no
+	}
+
+	pub fn get_tibp_blocks_no(&self, ext2: &super::Ext2) -> Vec<u32> {
+		Inode::_get_tibp_blocks_no(self.tibp, ext2)
 	}
 }
 
