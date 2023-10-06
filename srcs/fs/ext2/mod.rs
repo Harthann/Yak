@@ -375,6 +375,50 @@ impl Ext2 {
 		self.recurs_find(newpath, dentry.inode as usize)
 	}
 
+	pub fn write_dentries(
+		&mut self,
+		block_no: u32,
+		mut dentries: Vec<inode::Dentry>
+	) -> Result<(), ()> {
+		let mut block = self.read_block(block_no);
+		let mut entry_start: usize = 0;
+		let len = dentries.len();
+		for i in 0..len {
+			if dentries[i].dentry_size as usize > block.len() - entry_start {
+				return Err(());
+			}
+			if i == len - 1 {
+				dentries[i].dentry_size = (block.len() - entry_start) as u16;
+			}
+			let mut vec = Into::<Vec<u8>>::into(dentries[i].clone());
+			let len = vec.len();
+			for i in len..dentries[i].dentry_size as usize {
+				vec.push(0);
+			}
+			block[entry_start..entry_start + dentries[i].dentry_size as usize]
+				.copy_from_slice(&vec);
+			entry_start += dentries[i].dentry_size as usize;
+		}
+		self.write_block(block_no, &block);
+		Ok(())
+	}
+
+	pub fn get_dentries(&self, block_no: u32) -> Vec<inode::Dentry> {
+		let block = self.read_block(block_no);
+		let mut dentries: Vec<inode::Dentry> = Vec::new();
+		let mut entry_start = 0;
+		while entry_start < block.len() {
+			let dentry = inode::Dentry::from(&block[entry_start..block.len()]);
+			// Block is empty
+			if dentry.dentry_size == 0 {
+				return dentries;
+			}
+			dentries.push(dentry.clone());
+			entry_start = entry_start + dentry.dentry_size as usize;
+		}
+		dentries
+	}
+
 	// get new inode
 	// get new blocks
 	// fill inode informations
@@ -400,60 +444,30 @@ impl Ext2 {
 		let inode = self.get_inode_entry(inodeno);
 		for block_no in inode.get_blocks_no() {
 			let mut block = self.read_block(block_no);
-
-			let mut entry_start = 0;
-			while entry_start < block.len() {
-				crate::dprintln!("Blocklen {} {}", block.len(), entry_start);
-				let mut tmp =
-					inode::Dentry::from(&block[entry_start..block.len()]);
-				if tmp.dentry_size != 0 {
-					let calculated = roundup(tmp.name_length + 8, 4);
-					if (calculated as usize) < tmp.dentry_size as usize {
-						if entry_start
-							+ calculated as usize + (dentry.dentry_size as usize)
-							< block.len() as usize
-						{
-							// rewrite tmp but with actual size
-							tmp.dentry_size = calculated as u16;
-							let mut vec = Into::<Vec<u8>>::into(tmp);
-							while vec.len() != calculated as usize {
-								vec.push(0);
-							}
-							block[entry_start
-								..entry_start + calculated as usize]
-								.copy_from_slice(vec.as_slice());
-							entry_start = entry_start + calculated as usize;
-							let dentrysize =
-								roundup(dentry.name_length + 8, 4) as usize;
-							// write our entry but with the block rest
-							let calculated =
-								block.len() as u16 - entry_start as u16;
-							dentry.dentry_size = calculated;
-							let mut vec = Into::<Vec<u8>>::into(dentry);
-							while vec.len() != dentrysize as usize {
-								vec.push(0);
-							}
-							block[entry_start..entry_start + dentrysize]
-								.copy_from_slice(vec.as_slice());
-							self.write_block(block_no, block.as_slice());
-							return;
+			let mut dentries = self.get_dentries(block_no);
+			match dentries.last_mut() {
+				Some(mut last) => {
+					let len = roundup(8 + last.name.len(), 4) as u16;
+					if dentry.dentry_size <= last.dentry_size - len {
+						let mut new_dentry = dentry.clone();
+						new_dentry.dentry_size = last.dentry_size - len;
+						last.dentry_size = len;
+						dentries.push(new_dentry);
+						if self.write_dentries(block_no, dentries).is_err() {
+							continue;
 						}
+						return;
 					}
-				} else {
-					// First dentry in the block
-					let dentrysize =
-						roundup(dentry.name_length + 8, 4) as usize;
-					let calculated = block.len();
-					dentry.dentry_size = calculated as u16;
-					let mut vec = Into::<Vec<u8>>::into(dentry);
-					while vec.len() != dentrysize as usize {
-						vec.push(0);
+				},
+				None => {
+					let mut new_dentry = dentry.clone();
+					new_dentry.dentry_size = block.len() as u16;
+					dentries.push(new_dentry);
+					if self.write_dentries(block_no, dentries).is_err() {
+						continue;
 					}
-					block[0..dentrysize].copy_from_slice(vec.as_slice());
-					self.write_block(block_no, block.as_slice());
 					return;
 				}
-				entry_start = entry_start + tmp.dentry_size as usize;
 			}
 		}
 		todo!("not enough space to write ?");
@@ -531,7 +545,7 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 							(inode.size() % ext2.sblock.bsize() as u64)
 								as usize
 						));
-						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						size -= inode.size() % ext2.sblock.bsize() as u64;
 						break;
 					}
 				}
@@ -551,7 +565,7 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 							(inode.size() % ext2.sblock.bsize() as u64)
 								as usize
 						));
-						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						size -= inode.size() % ext2.sblock.bsize() as u64;
 						break;
 					}
 				}
@@ -571,7 +585,7 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 							(inode.size() % ext2.sblock.bsize() as u64)
 								as usize
 						));
-						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						size -= inode.size() % ext2.sblock.bsize() as u64;
 						break;
 					}
 				}
@@ -591,7 +605,7 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 							(inode.size() % ext2.sblock.bsize() as u64)
 								as usize
 						));
-						size -= (inode.size() % ext2.sblock.bsize() as u64);
+						size -= inode.size() % ext2.sblock.bsize() as u64;
 						break;
 					}
 				}
