@@ -528,10 +528,11 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 					} else {
 						file.append(&mut get_block_content(
 							block,
-							(inode.size() % ext2.sblock.bsize() as u64) as usize
+							(inode.size() % ext2.sblock.bsize() as u64)
+								as usize
 						));
 						size -= (inode.size() % ext2.sblock.bsize() as u64);
-						break ;
+						break;
 					}
 				}
 			}
@@ -547,10 +548,11 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 					} else {
 						file.append(&mut get_block_content(
 							block,
-							(inode.size() % ext2.sblock.bsize() as u64) as usize
+							(inode.size() % ext2.sblock.bsize() as u64)
+								as usize
 						));
 						size -= (inode.size() % ext2.sblock.bsize() as u64);
-						break ;
+						break;
 					}
 				}
 			}
@@ -566,10 +568,11 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 					} else {
 						file.append(&mut get_block_content(
 							block,
-							(inode.size() % ext2.sblock.bsize() as u64) as usize
+							(inode.size() % ext2.sblock.bsize() as u64)
+								as usize
 						));
 						size -= (inode.size() % ext2.sblock.bsize() as u64);
-						break ;
+						break;
 					}
 				}
 			}
@@ -585,10 +588,11 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 					} else {
 						file.append(&mut get_block_content(
 							block,
-							(inode.size() % ext2.sblock.bsize() as u64) as usize
+							(inode.size() % ext2.sblock.bsize() as u64)
+								as usize
 						));
 						size -= (inode.size() % ext2.sblock.bsize() as u64);
-						break ;
+						break;
 					}
 				}
 			}
