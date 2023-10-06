@@ -808,8 +808,8 @@ pub fn show_inode_info(path: &str, inode_no: usize) {
 			};
 			let blocks_no = inode.get_blocks_no();
 			let ret = print(index, blocks_no);
+			index += ret;
 			total += ret;
-			total += index;
 			if inode.sibp != 0 {
 				crate::kprint!(", (IND): {}", inode.sibp);
 				total += 1;
