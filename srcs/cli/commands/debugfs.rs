@@ -8,6 +8,7 @@ use crate::utils::path::Path;
 pub static ROOT_INODE: usize = 2;
 pub static CURRENTDIR_INODE: Mutex<usize> = Mutex::new(ROOT_INODE);
 pub static PWD: Mutex<Option<Path>> = Mutex::new(None);
+pub static DISKNO: Mutex<i8> = Mutex::new(-1);
 
 fn help() {
 	crate::kprintln!(
@@ -54,7 +55,7 @@ fn rm(command: Vec<String>) {
 		return;
 	}
 	ext2::remove_file(
-		*ext2::DISKNO.lock() as u8,
+		*DISKNO.lock() as u8,
 		command[1].as_str(),
 		*CURRENTDIR_INODE.lock()
 	);
@@ -66,7 +67,7 @@ fn stat(command: Vec<String>) {
 		return;
 	}
 	ext2::show_inode_info(
-		*ext2::DISKNO.lock() as u8,
+		*DISKNO.lock() as u8,
 		command[1].as_str(),
 		*CURRENTDIR_INODE.lock()
 	);
@@ -78,7 +79,7 @@ fn mkdir(command: Vec<String>) {
 		return;
 	}
 	ext2::create_dir(
-		*ext2::DISKNO.lock() as u8,
+		*DISKNO.lock() as u8,
 		command[1].as_str(),
 		*CURRENTDIR_INODE.lock()
 	);
@@ -90,7 +91,7 @@ fn touch(command: Vec<String>) {
 		return;
 	}
 	ext2::create_file(
-		*ext2::DISKNO.lock() as u8,
+		*DISKNO.lock() as u8,
 		command[1].as_str(),
 		*CURRENTDIR_INODE.lock()
 	);
@@ -102,7 +103,7 @@ fn cat(command: Vec<String>) {
 		return;
 	}
 	let file_content = ext2::get_file_content(
-		*ext2::DISKNO.lock() as u8,
+		*DISKNO.lock() as u8,
 		command[1].as_str(),
 		*CURRENTDIR_INODE.lock()
 	);
@@ -112,7 +113,7 @@ fn cat(command: Vec<String>) {
 }
 
 fn test() {
-	let mut ext2 = ext2::Ext2::new(*ext2::DISKNO.lock() as u8)
+	let mut ext2 = ext2::Ext2::new(*DISKNO.lock() as u8)
 		.expect("Disk is not a ext2 filesystem.");
 	// let mut dentry = crate::fs::ext2::inode::Dentry::default();
 
@@ -128,7 +129,7 @@ fn ls(command: Vec<String>) {
 	};
 	crate::dprintln!("Ls: {}", path);
 	let dentries = ext2::list_dir(
-		*ext2::DISKNO.lock() as u8,
+		*DISKNO.lock() as u8,
 		path,
 		*CURRENTDIR_INODE.lock()
 	);
@@ -145,7 +146,7 @@ fn cd(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	let path = Path::new(path);
-	let ext2 = ext2::Ext2::new(*ext2::DISKNO.lock() as u8)
+	let ext2 = ext2::Ext2::new(*DISKNO.lock() as u8)
 		.expect("Disk is not a ext2 filesystem.");
 	let lookup = ext2.recurs_find(path.as_str(), *CURRENTDIR_INODE.lock());
 	match lookup {
@@ -176,7 +177,7 @@ fn imap(command: Vec<String>) {
 		1 => "/",
 		_ => command[1].as_str()
 	};
-	let ext2 = ext2::Ext2::new(*ext2::DISKNO.lock() as u8)
+	let ext2 = ext2::Ext2::new(*DISKNO.lock() as u8)
 		.expect("Disk is not a ext2 filesystem.");
 	let lookup = ext2.get_inode_of(path);
 	match lookup {

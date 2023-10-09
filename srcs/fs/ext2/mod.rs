@@ -1,6 +1,5 @@
 use crate::alloc::vec;
 use crate::pci::ide::IDE;
-use crate::spin::Mutex;
 use crate::string::ToString;
 use crate::utils::math::roundup;
 use crate::utils::path::Path;
@@ -9,8 +8,6 @@ mod bitmap;
 pub mod block;
 mod gdt;
 pub mod inode;
-
-pub static DISKNO: Mutex<i8> = Mutex::new(-1);
 
 /// Current read/write use entire block to perform operations
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
