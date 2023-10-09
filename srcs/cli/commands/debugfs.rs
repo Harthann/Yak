@@ -128,11 +128,8 @@ fn ls(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	crate::dprintln!("Ls: {}", path);
-	let dentries = ext2::list_dir(
-		*DISKNO.lock() as u8,
-		path,
-		*CURRENTDIR_INODE.lock()
-	);
+	let dentries =
+		ext2::list_dir(*DISKNO.lock() as u8, path, *CURRENTDIR_INODE.lock());
 
 	for i in dentries {
 		crate::kprint!("{} ", i.name);

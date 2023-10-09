@@ -32,8 +32,8 @@ mod poc {
 	}
 }
 
-use crate::fs::ext2;
 use crate::cli::DISKNO;
+use crate::fs::ext2;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
