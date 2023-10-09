@@ -738,14 +738,18 @@ pub fn remove_file(path: &str, inode_no: usize) {
 		None => {
 			crate::kprintln!("Path not found: {}", parent);
 		},
-		Some((inode_no, _)) => {
-			// TODO: Check for only file and not recursive delete ?
-			let dentry = ext2.dentry_find(inode_no, &filename);
-			if dentry.is_none() {
+		Some((inode_no, _)) => match ext2.dentry_find(inode_no, &filename) {
+			Some(dentry) => {
+				let inode = ext2.get_inode(dentry.inode as usize);
+				if inode.tperm & inode::ITYPE_DIR != 0 {
+					crate::kprintln!("'{}': Is a directory.", path);
+					return;
+				}
+				ext2.remove_dentry(inode_no, dentry);
+			},
+			None => {
 				crate::kprintln!("'{}' does not exist.", filename);
-				return;
 			}
-			ext2.remove_dentry(inode_no, dentry.unwrap());
 		}
 	}
 }
