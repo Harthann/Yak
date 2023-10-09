@@ -36,14 +36,14 @@ use crate::fs::ext2;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	unsafe { ext2::DISKNO = -1 };
 	for i in 0..4 {
 		if ext2::is_ext2(i) {
-			unsafe { ext2::DISKNO = i as i8 };
+			*ext2::DISKNO.lock() = i as i8;
 			crate::kprintln!("Found ext2 filesystem on disk {}.", i);
+			break;
 		}
 	}
-	if unsafe { ext2::DISKNO == -1 } {
+	if *ext2::DISKNO.lock() == -1 {
 		todo!("No ext2 disk found.");
 	}
 	// 	poc::insertion_poc();

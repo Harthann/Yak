@@ -53,7 +53,11 @@ fn rm(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs rm FILE");
 		return;
 	}
-	ext2::remove_file(command[1].as_str(), *CURRENTDIR_INODE.lock());
+	ext2::remove_file(
+		*ext2::DISKNO.lock() as u8,
+		command[1].as_str(),
+		*CURRENTDIR_INODE.lock()
+	);
 }
 
 fn stat(command: Vec<String>) {
@@ -61,7 +65,11 @@ fn stat(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs stat FILE");
 		return;
 	}
-	ext2::show_inode_info(command[1].as_str(), *CURRENTDIR_INODE.lock());
+	ext2::show_inode_info(
+		*ext2::DISKNO.lock() as u8,
+		command[1].as_str(),
+		*CURRENTDIR_INODE.lock()
+	);
 }
 
 fn mkdir(command: Vec<String>) {
@@ -69,7 +77,11 @@ fn mkdir(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs mkdir DIR");
 		return;
 	}
-	ext2::create_dir(command[1].as_str(), *CURRENTDIR_INODE.lock());
+	ext2::create_dir(
+		*ext2::DISKNO.lock() as u8,
+		command[1].as_str(),
+		*CURRENTDIR_INODE.lock()
+	);
 }
 
 fn touch(command: Vec<String>) {
@@ -77,7 +89,11 @@ fn touch(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs touch FILE");
 		return;
 	}
-	ext2::create_file(command[1].as_str(), *CURRENTDIR_INODE.lock());
+	ext2::create_file(
+		*ext2::DISKNO.lock() as u8,
+		command[1].as_str(),
+		*CURRENTDIR_INODE.lock()
+	);
 }
 
 fn cat(command: Vec<String>) {
@@ -85,15 +101,18 @@ fn cat(command: Vec<String>) {
 		crate::kprintln!("usage: debugfs cat FILE");
 		return;
 	}
-	let file_content =
-		ext2::get_file_content(command[1].as_str(), *CURRENTDIR_INODE.lock());
+	let file_content = ext2::get_file_content(
+		*ext2::DISKNO.lock() as u8,
+		command[1].as_str(),
+		*CURRENTDIR_INODE.lock()
+	);
 	for i in file_content {
 		crate::kprint!("{}", i);
 	}
 }
 
 fn test() {
-	let mut ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 })
+	let mut ext2 = ext2::Ext2::new(*ext2::DISKNO.lock() as u8)
 		.expect("Disk is not a ext2 filesystem.");
 	// let mut dentry = crate::fs::ext2::inode::Dentry::default();
 
@@ -108,7 +127,11 @@ fn ls(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	crate::dprintln!("Ls: {}", path);
-	let dentries = ext2::list_dir(path, *CURRENTDIR_INODE.lock());
+	let dentries = ext2::list_dir(
+		*ext2::DISKNO.lock() as u8,
+		path,
+		*CURRENTDIR_INODE.lock()
+	);
 
 	for i in dentries {
 		crate::kprint!("{} ", i.name);
@@ -122,7 +145,7 @@ fn cd(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	let path = Path::new(path);
-	let ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 })
+	let ext2 = ext2::Ext2::new(*ext2::DISKNO.lock() as u8)
 		.expect("Disk is not a ext2 filesystem.");
 	let lookup = ext2.recurs_find(path.as_str(), *CURRENTDIR_INODE.lock());
 	match lookup {
@@ -153,7 +176,7 @@ fn imap(command: Vec<String>) {
 		1 => "/",
 		_ => command[1].as_str()
 	};
-	let ext2 = ext2::Ext2::new(unsafe { ext2::DISKNO as u8 })
+	let ext2 = ext2::Ext2::new(*ext2::DISKNO.lock() as u8)
 		.expect("Disk is not a ext2 filesystem.");
 	let lookup = ext2.get_inode_of(path);
 	match lookup {

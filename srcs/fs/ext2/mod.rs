@@ -1,5 +1,6 @@
 use crate::alloc::vec;
 use crate::pci::ide::IDE;
+use crate::spin::Mutex;
 use crate::string::ToString;
 use crate::utils::math::roundup;
 use crate::utils::path::Path;
@@ -9,7 +10,7 @@ pub mod block;
 mod gdt;
 pub mod inode;
 
-pub static mut DISKNO: i8 = 0;
+pub static DISKNO: Mutex<i8> = Mutex::new(-1);
 
 /// Current read/write use entire block to perform operations
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
@@ -555,9 +556,8 @@ fn get_block_content(block: Vec<u8>, size: usize) -> Vec<char> {
 /// Helper function to get content of a file.
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
-pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
-	let ext2 = Ext2::new(unsafe { DISKNO as u8 })
-		.expect("Disk is not a ext2 filesystem.");
+pub fn get_file_content(diskno: u8, path: &str, inode: usize) -> Vec<char> {
+	let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let opt = ext2.recurs_find(path, inode);
 	match opt {
 		None => Vec::new(),
@@ -655,9 +655,12 @@ pub fn get_file_content(path: &str, inode: usize) -> Vec<char> {
 
 /// Helper function to list all entries in a directory
 /// Does not yet check if found entry is a directory or not
-pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
-	let ext2 = Ext2::new(unsafe { DISKNO as u8 })
-		.expect("Disk is not a ext2 filesystem.");
+pub fn list_dir(
+	diskno: u8,
+	path: &str,
+	inode: usize
+) -> crate::vec::Vec<inode::Dentry> {
+	let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let inode = ext2.recurs_find(path, inode);
 	return match inode {
 		None => crate::vec::Vec::new(),
@@ -680,9 +683,8 @@ pub fn list_dir(path: &str, inode: usize) -> crate::vec::Vec<inode::Dentry> {
 	};
 }
 
-pub fn create_file(path: &str, inode_no: usize) {
-	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
-		.expect("Disk is not a ext2 filesystem.");
+pub fn create_file(diskno: u8, path: &str, inode_no: usize) {
+	let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let path = Path::new(path);
 	let filename = path.file_name().unwrap();
 	let binding = path.parent().unwrap();
@@ -726,9 +728,8 @@ pub fn create_file(path: &str, inode_no: usize) {
 	}
 }
 
-pub fn remove_file(path: &str, inode_no: usize) {
-	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
-		.expect("Disk is not a ext2 filesystem.");
+pub fn remove_file(diskno: u8, path: &str, inode_no: usize) {
+	let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let path = Path::new(path);
 	let filename = path.file_name().unwrap();
 	let binding = path.parent().unwrap();
@@ -755,9 +756,8 @@ pub fn remove_file(path: &str, inode_no: usize) {
 }
 
 /// Helper function to create a folder at a given path
-pub fn create_dir(path: &str, inode_no: usize) {
-	let mut ext2 = Ext2::new(unsafe { DISKNO as u8 })
-		.expect("Disk is not a ext2 filesystem.");
+pub fn create_dir(diskno: u8, path: &str, inode_no: usize) {
+	let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let path = Path::new(path);
 	let new_dir = path.file_name().unwrap();
 	let binding = path.parent().unwrap();
@@ -829,9 +829,8 @@ pub fn create_dir(path: &str, inode_no: usize) {
 	}
 }
 
-pub fn show_inode_info(path: &str, inode_no: usize) {
-	let ext2 = Ext2::new(unsafe { DISKNO as u8 })
-		.expect("Disk is not a ext2 filesystem.");
+pub fn show_inode_info(diskno: u8, path: &str, inode_no: usize) {
+	let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let inode = ext2.recurs_find(&path, inode_no);
 	match inode {
 		None => {
