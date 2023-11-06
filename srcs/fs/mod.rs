@@ -13,6 +13,7 @@ use crate::vec::Vec;
 #[cfg(test)]
 mod test;
 
+pub mod ext2;
 mod file;
 pub use file::*;
 

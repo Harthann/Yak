@@ -9,6 +9,7 @@ mod input;
 pub use input::{Input, Termcaps};
 
 mod commands;
+pub use commands::debugfs::DISKNO;
 pub use commands::Command;
 
 use crate::keyboard::SpecialKeyFlag;

@@ -1,19 +1,29 @@
-//! Command line interface (term)
-
 use core::arch::asm;
 
 use crate::cli::LOCK_CMD;
-use crate::proc::process::{Pid, Process};
 use crate::proc::signal::SignalType;
 use crate::string::{String, ToString};
 use crate::syscalls::exit::sys_waitpid;
 use crate::syscalls::signal::sys_kill;
 use crate::syscalls::timer::sys_getppid;
 use crate::vec::Vec;
-use crate::vga_buffer::{hexdump, screenclear};
+use crate::vga_buffer::screenclear;
 use crate::{io, kprint, kprintln};
 
-const NB_CMDS: usize = 16;
+// Commands modules
+pub mod debugfs;
+mod hexdump;
+mod process;
+mod time;
+mod valgrind;
+
+use debugfs::debugfs;
+use hexdump::hexdump_parser;
+use process::{kill, pmap, ps};
+use time::{date, jiffies, uptime};
+use valgrind::valgrind;
+
+const NB_CMDS: usize = 17;
 const MAX_CMD_LENGTH: usize = 250;
 
 pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
@@ -32,126 +42,19 @@ pub static COMMANDS: [fn(Vec<String>); NB_CMDS] = [
 	play,
 	valgrind,
 	pmap,
-	kill
+	kill,
+	debugfs
 ];
 
 const KNOWN_CMD: [&str; NB_CMDS] = [
 	"reboot", "halt", "hexdump", "keymap", "int", "clear", "help", "shutdown",
-	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill"
+	"jiffies", "ps", "uptime", "date", "play", "valgrind", "pmap", "kill",
+	"debugfs"
 ];
-
-pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
-	unsafe {
-		let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
-		// notify parent that vector has been copied
-		sys_kill(sys_getppid(), SignalType::SIGHUP as i32);
-		COMMANDS[cmd_id](args);
-	}
-}
-
-fn valgrind(command: Vec<String>) {
-	if command.len() < 2 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: valgrind [command] [command args]");
-		return;
-	}
-
-	// Save current heap state
-	let heap_state = unsafe { crate::KTRACKER };
-
-	let sub_command = &command[1..command.len()];
-	let cmd_id = KNOWN_CMD.iter().position(|&x| x == sub_command[0]);
-	match cmd_id {
-		Some(index) => COMMANDS[index](sub_command.to_vec()),
-		None => kprintln!("Command: [{}] not found", sub_command[0])
-	}
-
-	let mut current_state = unsafe { crate::KTRACKER };
-	current_state.allocation -= heap_state.allocation;
-	current_state.allocated_bytes -= heap_state.allocated_bytes;
-	current_state.freed -= heap_state.freed;
-	current_state.freed_bytes -= heap_state.freed_bytes;
-	crate::kprintln!("{}", current_state);
-	if current_state.allocated_bytes < current_state.freed_bytes {
-		crate::kprintln!(
-			"Too much bytes freed: {}",
-			current_state.freed_bytes - current_state.allocated_bytes
-		);
-	} else {
-		crate::kprintln!(
-			"Leaks: {} bytes",
-			current_state.allocated_bytes - current_state.freed_bytes
-		);
-	}
-}
-
-fn pmap(command: Vec<String>) {
-	let pid: Pid;
-
-	if command.len() != 2 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: pmap [pid]");
-		return;
-	}
-	if let Some(res) = atou(command[1].as_str()) {
-		pid = res as Pid;
-	} else {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: pmap [pid]");
-		return;
-	}
-
-	// Send to a specific process
-	let binding = match Process::search_from_pid(pid) {
-		Ok(x) => x,
-		Err(_) => return
-	};
-	let process = binding.lock();
-	let mut used_size: usize = 0;
-	crate::kprintln!("{}:", pid);
-	crate::kprintln!("{}", process.heap);
-	used_size += process.heap.size;
-	crate::kprintln!("{}", process.stack);
-	used_size += process.stack.size;
-	crate::kprintln!("{}", process.kernel_stack);
-	used_size += process.kernel_stack.size;
-	for i in &process.mem_map {
-		let guard = i.lock();
-		crate::kprintln!("{}", *guard);
-		used_size += guard.size;
-	}
-	crate::kprintln!(" total: {:#x}", used_size);
-}
-
-fn kill(command: Vec<String>) {
-	let pid: Pid;
-
-	if command.len() != 2 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: kill [pid]");
-		return;
-	}
-
-	if let Some(res) = atou(command[1].as_str()) {
-		pid = res as Pid;
-	} else {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: kill [pid]");
-		return;
-	}
-
-	let res: i32 = sys_kill(pid, 9); // SIGKILL
-
-	if res != 0 {
-		kprintln!("[Error]: {}", res);
-		return;
-	}
-}
 
 fn reboot(_: Vec<String>) {
 	io::outb(0x64, 0xfe);
 }
-
 fn play(command: Vec<String>) {
 	let mut sound: &str = "Unknown";
 
@@ -161,34 +64,9 @@ fn play(command: Vec<String>) {
 	crate::kprintln!("sound: {}", sound);
 	crate::sound::play(sound);
 }
-
-fn jiffies(_: Vec<String>) {
-	crate::kprintln!("Jiffies: {}", crate::time::jiffies());
-}
-
-fn uptime(_: Vec<String>) {
-	let time = crate::time::get_timestamp();
-	crate::kprintln!(
-		"Time elapsed since boot: {}s {}ms",
-		time.second,
-		time.millisecond
-	);
-}
-
-fn date(_: Vec<String>) {
-	crate::kprintln!("{}", crate::cmos::get_time());
-}
-
-fn halt(_: Vec<String>) {
-	unsafe {
-		asm!("hlt");
-	}
-}
-
 fn clear(_: Vec<String>) {
 	screenclear!();
 }
-
 fn help(_: Vec<String>) {
 	kprintln!("Available commands:");
 	for i in KNOWN_CMD {
@@ -203,60 +81,10 @@ fn shutdown(_: Vec<String>) {
 	io::outb(0xf4, 0x10);
 }
 
-fn ps(_: Vec<String>) {
-	unsafe { Process::print_all_process() };
-}
-
-fn hextou(string: &str) -> Option<usize> {
-	let slice = string.chars();
-	let mut addr: usize = 0;
-
-	if !string.starts_with("0x") {
-		return None;
+fn halt(_: Vec<String>) {
+	unsafe {
+		asm!("hlt");
 	}
-	for i in slice.skip(2) {
-		if !i.is_ascii_hexdigit() {
-			return None;
-		}
-		let byte = i.to_digit(16).unwrap();
-		addr = (addr << 4) | (byte & 0xf) as usize;
-	}
-	return Some(addr);
-}
-
-fn atou(string: &str) -> Option<usize> {
-	if string.starts_with("0x") {
-		return hextou(string);
-	}
-	string.parse::<usize>().ok()
-}
-
-fn hexdump_parser(command: Vec<String>) {
-	let mut args: [usize; 2] = [0, 0];
-
-	if command.len() != 3 {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
-		return;
-	}
-
-	if let Some(res) = atou(command[1].as_str()) {
-		args[0] = res;
-	} else {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
-		return;
-	}
-
-	if let Some(res) = atou(command[2].as_str()) {
-		args[1] = res;
-	} else {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
-		return;
-	}
-
-	hexdump(args[0] as *const u8, args[1]);
 }
 
 use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
@@ -289,7 +117,7 @@ fn interrupt(command: Vec<String>) {
 		return;
 	}
 
-	if let Some(res) = atou(command[1].as_str()) {
+	if let Some(res) = hexdump::atou(command[1].as_str()) {
 		arg = res;
 	} else {
 		kprintln!("Invalid number of arguments.");
@@ -303,6 +131,15 @@ fn interrupt(command: Vec<String>) {
 		return;
 	}
 	unsafe { int(arg as u8) };
+}
+
+pub fn command_entry(cmd_id: usize, ptr: *mut String, len: usize, cap: usize) {
+	unsafe {
+		let args: Vec<String> = Vec::from_raw_parts(ptr, len, cap);
+		// notify parent that vector has been copied
+		sys_kill(sys_getppid(), SignalType::SIGHUP as i32);
+		COMMANDS[cmd_id](args);
+	}
 }
 
 #[derive(Debug, Clone)]
