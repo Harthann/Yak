@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"fn":["cat","cd","debugfs","help","imap","ls","mkdir","pwd","rm","stat","test","touch"],"static":["CURRENTDIR_INODE","DISKNO","PWD","ROOT_INODE"]};

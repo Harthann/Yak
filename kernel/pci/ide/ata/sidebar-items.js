@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ATAChannel","ATACommand","ATADirection","ATAType"],"mod":["ATAError","ATAIdentify","ATAReg","ATAStatus"],"struct":["ATA"]};
+window.SIDEBAR_ITEMS = {"constant":["SECTOR_SIZE"],"enum":["ATAChannel","ATACommand","ATADirection","ATAType"],"mod":["ATAError","ATAIdentify","ATAReg","ATAStatus"],"struct":["ATA"]};

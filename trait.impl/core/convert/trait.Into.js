@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"kernel":[["impl Into&lt;Vec&lt;u8&gt;&gt; for <a class=\"struct\" href=\"kernel/fs/ext2/inode/struct.Inode.html\" title=\"struct kernel::fs::ext2::inode::Inode\">Inode</a>"],["impl Into&lt;Vec&lt;u8&gt;&gt; for <a class=\"struct\" href=\"kernel/fs/ext2/inode/struct.Dentry.html\" title=\"struct kernel::fs::ext2::inode::Dentry\">Dentry</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

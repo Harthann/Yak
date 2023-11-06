@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["ATAPICommand"],"struct":["ATAPI"]};
+window.SIDEBAR_ITEMS = {"constant":["SECTOR_SIZE"],"enum":["ATAPICommand"],"struct":["ATAPI"]};

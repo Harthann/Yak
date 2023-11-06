@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":["close","create","create_from_raw","delete","open","read","socket_pair","write"],"mod":["file"],"static":["SYSFILES"]};
+window.SIDEBAR_ITEMS = {"fn":["close","create","create_from_raw","delete","open","read","socket_pair","write"],"mod":["ext2","file"],"static":["SYSFILES"]};

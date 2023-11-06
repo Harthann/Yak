@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["KNOWN_CMD","MAX_CMD_LENGTH","NB_CMDS"],"fn":["atou","clear","command_entry","date","halt","help","hexdump_parser","hextou","interrupt","jiffies","keymap","kill","play","pmap","ps","reboot","shutdown","uptime","valgrind"],"static":["COMMANDS"],"struct":["Command"]};
+window.SIDEBAR_ITEMS = {"constant":["KNOWN_CMD","MAX_CMD_LENGTH","NB_CMDS"],"fn":["clear","command_entry","halt","help","interrupt","keymap","play","reboot","shutdown"],"mod":["debugfs","hexdump","process","time","valgrind"],"static":["COMMANDS"],"struct":["Command"]};
