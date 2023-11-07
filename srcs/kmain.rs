@@ -32,6 +32,17 @@ mod poc {
 	}
 }
 
+#[cfg_attr(doc, aquamarine::aquamarine)]
+/// ```mermaid
+/// graph LR
+///     s([Source]) --> a[[aquamarine]]
+///     r[[rustdoc]] --> f([Docs w/ Mermaid!])
+///     subgraph rustc[Rust Compiler]
+///     a -. inject mermaid.js .-> r
+///     end
+/// ```
+pub fn test_function(){}
+
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
 	if crate::fs::ext2::is_ext2() == false {
