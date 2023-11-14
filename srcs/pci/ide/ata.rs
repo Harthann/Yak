@@ -1,4 +1,4 @@
-use super::{IDEChannelRegisters, IDEController, IDEDevice, IDE_IRQ_INVOKED};
+use super::{IDEChannelRegisters, IDEDevice, IDE_IRQ_INVOKED};
 
 use crate::io;
 
@@ -124,7 +124,7 @@ impl ATA {
 		// Disable IRQ
 		*IDE_IRQ_INVOKED.lock() = 0x0;
 		channel.n_ien = 0x02;
-		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+		channel.write(ATAReg::CONTROL, channel.n_ien);
 
 		// (I) Select one from LBA28, LBA48 or CHS
 		// Sure Drive should support LBA in this case or you
@@ -168,38 +168,30 @@ impl ATA {
 		dma = 0; // We don't support DMA
 
 		// (III) Wait if the drive is busy
-		while (IDEController::read(channel, ATAReg::STATUS) & ATAStatus::BSY)
+		while (channel.read(ATAReg::STATUS) & ATAStatus::BSY)
 			!= 0
 		{}
 
 		// (IV) Select Drive from the controller
 		if lba_mode == 0 {
 			// Drive & CHS
-			IDEController::write(
-				channel,
-				ATAReg::HDDEVSEL,
-				0xa0 | ((slavebit as u8) << 4) | head
-			);
+			channel.write(ATAReg::HDDEVSEL, 0xa0 | ((slavebit as u8) << 4) | head);
 		} else {
 			// Drive & LBA
-			IDEController::write(
-				channel,
-				ATAReg::HDDEVSEL,
-				0xe0 | ((slavebit as u8) << 4) | head
-			);
+			channel.write(ATAReg::HDDEVSEL, 0xe0 | ((slavebit as u8) << 4) | head);
 		}
 
 		// (V) Write Parameters
 		if lba_mode == 2 {
-			IDEController::write(channel, ATAReg::SECCOUNT1, 0);
-			IDEController::write(channel, ATAReg::LBA3, lba_io[3]);
-			IDEController::write(channel, ATAReg::LBA4, lba_io[4]);
-			IDEController::write(channel, ATAReg::LBA5, lba_io[5]);
+			channel.write(ATAReg::SECCOUNT1, 0);
+			channel.write(ATAReg::LBA3, lba_io[3]);
+			channel.write(ATAReg::LBA4, lba_io[4]);
+			channel.write(ATAReg::LBA5, lba_io[5]);
 		}
-		IDEController::write(channel, ATAReg::SECCOUNT0, numsects);
-		IDEController::write(channel, ATAReg::LBA0, lba_io[0]);
-		IDEController::write(channel, ATAReg::LBA1, lba_io[1]);
-		IDEController::write(channel, ATAReg::LBA2, lba_io[2]);
+		channel.write(ATAReg::SECCOUNT0, numsects);
+		channel.write(ATAReg::LBA0, lba_io[0]);
+		channel.write(ATAReg::LBA1, lba_io[1]);
+		channel.write(ATAReg::LBA2, lba_io[2]);
 
 		// (VI) Select the command and send it
 		// Routine that is followed:
@@ -226,7 +218,7 @@ impl ATA {
 			_ => todo!()
 		};
 		// Send the command
-		IDEController::write(channel, ATAReg::COMMAND, cmd as u8);
+		channel.write(ATAReg::COMMAND, cmd as u8);
 
 		if dma != 0 {
 			if direction == 0 {
@@ -239,7 +231,7 @@ impl ATA {
 				// PIO Read
 				for _ in 0..numsects {
 					// Polling, set error and exit if there is
-					IDEController::polling(channel, 1)?;
+					channel.polling(1)?;
 					io::insw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
@@ -247,12 +239,11 @@ impl ATA {
 				// PIO Write
 				for _ in 0..numsects {
 					// Polling
-					IDEController::polling(channel, 0)?;
+					channel.polling(0)?;
 					io::outsw(bus as u16, edi as *mut _, words);
 					edi += words * 2;
 				}
-				IDEController::write(
-					channel,
+				channel.write(
 					ATAReg::COMMAND,
 					[
 						ATACommand::CacheFlush,
@@ -261,7 +252,7 @@ impl ATA {
 					][lba_mode as usize] as u8
 				);
 				// Polling
-				IDEController::polling(channel, 0)?;
+				channel.polling(0)?;
 			}
 		}
 		Ok(())
