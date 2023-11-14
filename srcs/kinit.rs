@@ -77,6 +77,7 @@ mod multiboot;
 mod syscalls;
 mod io;
 mod pci;
+mod disk;
 mod pic;
 mod proc;
 mod time;
