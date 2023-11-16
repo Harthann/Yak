@@ -103,13 +103,18 @@ pub struct ATA {}
 impl ATA {
 	pub fn access(
 		direction: u8,
-		device: &mut IDEDevice,
+		device: &IDEDevice,
 		lba: u32,
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-		let binding = device.channel.as_mut().ok_or(1)?;
-		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+        let binding = match &device.channel {
+            Some(x) => x,
+            None => return Err(0x1)
+
+        };
+        let bind = binding.lock();
+        let mut channel = bind.borrow_mut();
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
@@ -124,7 +129,7 @@ impl ATA {
 		// Disable IRQ
 		*IDE_IRQ_INVOKED.lock() = 0x0;
 		channel.n_ien = 0x02;
-		channel.write(ATAReg::CONTROL, channel.n_ien);
+		channel.write(ATAReg::CONTROL, 0x02);
 
 		// (I) Select one from LBA28, LBA48 or CHS
 		// Sure Drive should support LBA in this case or you

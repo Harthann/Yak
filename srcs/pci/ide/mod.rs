@@ -1,6 +1,7 @@
 use core::ffi::CStr;
 use core::mem::size_of;
 
+use core::cell::RefCell;
 use crate::kprintln;
 use crate::spin::{KMutex, Mutex};
 use crate::time::sleep;
@@ -38,6 +39,7 @@ pub struct IDEController {
 }
 
 impl IDEController {
+    /// Create a controller with default devices
 	pub const fn new() -> Self {
 		Self {
 			devices: [
@@ -49,6 +51,11 @@ impl IDEController {
 		}
 	}
 
+    /// Obtain reference to an existing device.
+    ///
+    /// Actually return a reference to the device and should be clone afterward
+    /// However if the reference is never needed this function will probably
+    /// be change to return a clone of the device instead
 	pub fn get_device(&self, num: u8) -> Option<&IDEDevice> {
 		if num > 3 || self.devices[num as usize].reserved == 0 {
 			return None;
@@ -80,15 +87,15 @@ impl IDEController {
             ((bar4 & 0xfffffffc) + 8) as u16,
             0
         );
-		let channels: [Arcm<IDEChannelRegisters>; 2] = [
-			Arcm::new(primary),
-			Arcm::new(secondary)
+		let mut channels: [Arcm<RefCell<IDEChannelRegisters>>; 2] = [
+			Arcm::new(RefCell::new(primary)),
+			Arcm::new(RefCell::new(secondary))
 		];
 		// 2- Disable IRQs
-		channels[ATAChannel::Primary as usize].lock().write(
+		channels[ATAChannel::Primary as usize].lock().borrow_mut().write(
 			ATAReg::CONTROL,
 			2);
-		channels[ATAChannel::Secondary as usize].lock().write(
+		channels[ATAChannel::Secondary as usize].lock().borrow_mut().write(
 			ATAReg::CONTROL,
 			2
 		);
@@ -100,11 +107,11 @@ impl IDEController {
 				let mut err: u8 = 0;
 				let mut r#type: u8 = IDEType::ATA as u8;
 				// (I) Select Drive
-				channels[i].lock().write(ATAReg::HDDEVSEL, 0xa0 | (j << 4));
+				channels[i].lock().borrow_mut().write(ATAReg::HDDEVSEL, 0xa0 | (j << 4));
 				sleep(1);
 
 				// (II) Send ATA Identify Command
-				channels[i].lock().write(
+				channels[i].lock().borrow_mut().write(
                     ATAReg::COMMAND,
 					ATACommand::Identify as u8
 				);
@@ -112,12 +119,12 @@ impl IDEController {
 
 				// (III) Polling
 				// If Status = 0, No Device
-				if channels[i].lock().read(ATAReg::STATUS) == 0 {
+				if channels[i].lock().borrow_mut().read(ATAReg::STATUS) == 0 {
 					continue;
 				}
 
 				loop {
-					let status: u8 = channels[i].lock().read(ATAReg::STATUS);
+					let status: u8 = channels[i].lock().borrow_mut().read(ATAReg::STATUS);
 					if (status & ATAStatus::ERR) != 0 {
 						err = 1;
 						break;
@@ -131,8 +138,8 @@ impl IDEController {
 
 				// (IV) Probe for ATAPI Devices
 				if err != 0 {
-					let cl: u8 = channels[i].lock().read(ATAReg::LBA1);
-					let ch: u8 = channels[i].lock().read(ATAReg::LBA2);
+					let cl: u8 = channels[i].lock().borrow_mut().read(ATAReg::LBA1);
+					let ch: u8 = channels[i].lock().borrow_mut().read(ATAReg::LBA2);
 
 					if cl == 0x14 && ch == 0xeb {
 						r#type = IDEType::ATAPI as u8;
@@ -143,7 +150,7 @@ impl IDEController {
 						continue;
 					}
 
-					channels[i].lock().write(
+					channels[i].lock().borrow_mut().write(
 						ATAReg::COMMAND,
 						ATACommand::IdentifyPacket as u8
 					);
@@ -151,7 +158,7 @@ impl IDEController {
 				}
 
 				// (V) Read Identification Space of the Device
-				channels[i].lock().read_buffer(
+				channels[i].lock().borrow_mut().read_buffer(
 					ATAReg::DATA,
 					unsafe { ide_buf.align_to_mut::<u32>().1 },
 					128
@@ -387,12 +394,9 @@ mod test {
 		let to_write = vec!['B' as u8; 512];
 		let read_from = vec![0x0 as u8; 512];
 
-		let _ = IDE
-			.lock()
-			.write_sectors(1, 1, 0x0, to_write.as_ptr() as u32);
-		let _ = IDE
-			.lock()
-			.read_sectors(1, 1, 0x0, read_from.as_ptr() as u32);
+        let mut device = IDE.lock().get_device(1).unwrap().clone();
+		let _ = device.write_sectors(1, 0x0, to_write.as_ptr() as u32);
+		let _ = device.read_sectors(1, 0x0, read_from.as_ptr() as u32);
 
 		assert_eq!(to_write, read_from);
 	}
@@ -402,12 +406,9 @@ mod test {
 		let to_write = vec!['A' as u8; 1024];
 		let read_from = vec![0x0 as u8; 1024];
 
-		let _ = IDE
-			.lock()
-			.write_sectors(1, 2, 0x0, to_write.as_ptr() as u32);
-		let _ = IDE
-			.lock()
-			.read_sectors(1, 2, 0x0, read_from.as_ptr() as u32);
+        let mut device = IDE.lock().get_device(1).unwrap().clone();
+		let _ = device.write_sectors(2, 0x0, to_write.as_ptr() as u32);
+		let _ = device.read_sectors(2, 0x0, read_from.as_ptr() as u32);
 
 		assert_eq!(to_write, read_from);
 	}

@@ -10,11 +10,13 @@ use super::ata::{
 };
 use super::atapi::{self, ATAPI};
 use super::IDEType;
+use core::cell::RefCell;
 
 
+#[derive(Clone)]
 pub struct IDEDevice {
 	pub reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
-	pub channel:      Option<Arcm<IDEChannelRegisters>>,
+	pub channel:      Option<Arcm<RefCell<IDEChannelRegisters>>>,
 	pub drive:        u8,       // 0 (Master Drive) or 1 (Slave Drive)
 	pub r#type:       u16,      // 0: ATA, 1:ATAPI
 	pub signature:    u16,      // Drive Signature
@@ -39,7 +41,7 @@ impl IDEDevice {
 		}
 	}
 
-	pub fn print_error(&mut self, mut err: u8) -> u8 {
+	pub fn print_error(&self, mut err: u8) -> u8 {
 
 		if err == 0 {
 			return err;
@@ -52,7 +54,8 @@ impl IDEDevice {
 				return 23;
 			}
 		};
-		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+        let bind = binding.lock();
+		let channel: &mut IDEChannelRegisters = &mut bind.borrow_mut();
 		match err {
 			1 => {
 				kprintln!("- Device Fault");
@@ -117,7 +120,7 @@ impl IDEDevice {
 	/// + lba: LBA address --> index of the sector, which allows us to acces disks up to 2TB
 	/// + edi: adress of the buffer we want to fill
 	pub fn read_sectors(
-		&mut self,
+		&self,
 		numsects: u8,
 		lba: u32,
 		edi: u32
