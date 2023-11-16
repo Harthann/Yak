@@ -1,5 +1,5 @@
 use super::DiskIO;
-use crate::pci::ide::{self, IDEDevice};
+use crate::pci::ide::IDEDevice;
 
 pub struct IDEDisk {
 	diskno: u8,
@@ -29,16 +29,6 @@ impl DiskIO for IDEDisk {
 	}
 
 	fn sector_size(&self) -> usize {
-		match self.device.r#type {
-			x if x == ide::IDEType::ATA as u16 => {
-				ide::ata::SECTOR_SIZE as usize
-			},
-			x if x == ide::IDEType::ATAPI as u16 => {
-				ide::atapi::SECTOR_SIZE as usize
-			},
-			_ => {
-				panic!("Unrecognized disk.")
-			}
-		}
+        self.device.sector_size() as usize
 	}
 }
