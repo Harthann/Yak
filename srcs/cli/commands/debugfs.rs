@@ -113,15 +113,13 @@ fn cat(command: Vec<String>) {
 }
 
 fn test() {
-    /*
-    let binding = DISKNO.lock();
-	let ext2 = binding.as_ref().unwrap();
+	// let binding = DISKNO.lock();
+	// let ext2 = binding.as_ref().unwrap();
 	// let mut dentry = crate::fs::ext2::inode::Dentry::default();
-
-	let _node = ext2.alloc_node(0);
-	let _block = ext2.alloc_block(0);
-	crate::dprintln!("Node {}", _node);
-    */
+	//
+	// let _node = ext2.alloc_node(0);
+	// let _block = ext2.alloc_block(0);
+	// crate::dprintln!("Node {}", _node);
 }
 
 fn ls(command: Vec<String>) {
@@ -130,8 +128,11 @@ fn ls(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	crate::dprintln!("Ls: {}", path);
-	let dentries =
-		ext2::list_dir(DISKNO.lock().as_ref().unwrap(), path, *CURRENTDIR_INODE.lock());
+	let dentries = ext2::list_dir(
+		DISKNO.lock().as_ref().unwrap(),
+		path,
+		*CURRENTDIR_INODE.lock()
+	);
 
 	for i in dentries {
 		crate::kprint!("{} ", i.name);
@@ -145,7 +146,7 @@ fn cd(command: Vec<String>) {
 		_ => command[1].as_str()
 	};
 	let path = Path::new(path);
-    let binding = DISKNO.lock();
+	let binding = DISKNO.lock();
 	let ext2 = binding.as_ref().unwrap();
 	let lookup = ext2.recurs_find(path.as_str(), *CURRENTDIR_INODE.lock());
 	match lookup {
@@ -176,7 +177,7 @@ fn imap(command: Vec<String>) {
 		1 => "/",
 		_ => command[1].as_str()
 	};
-    let binding = DISKNO.lock();
+	let binding = DISKNO.lock();
 	let ext2 = binding.as_ref().unwrap();
 	let lookup = ext2.get_inode_of(path);
 	match lookup {

@@ -21,13 +21,12 @@ pub struct ATAPI {}
 
 impl ATAPI {
 	pub fn capacity(device: &mut IDEDevice, lba: u32) -> Result<u32, u8> {
-        let binding = match &device.channel {
-            Some(x) => x,
-            None => return Err(0x1)
-
-        };
-        let bind = binding.lock();
-        let mut channel = bind.borrow_mut();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 		let mut buffer: [u32; 2] = [0; 2];
@@ -35,7 +34,7 @@ impl ATAPI {
 		// Enable IRQs
 		*IDE_IRQ_INVOKED.lock() = 0;
 		channel.n_ien = 0;
-        let n_ien = channel.n_ien;
+		let n_ien = channel.n_ien;
 		channel.write(ATAReg::CONTROL, n_ien);
 
 		// (I) Setup SCSI Packet
@@ -107,13 +106,12 @@ impl ATAPI {
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-        let binding = match &device.channel {
-            Some(x) => x,
-            None => return Err(0x1)
-
-        };
-        let bind = binding.lock();
-        let mut channel = bind.borrow_mut();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 		// Sector Size
@@ -193,13 +191,12 @@ impl ATAPI {
 	}
 
 	pub fn eject(device: &mut IDEDevice) -> Result<(), u8> {
-        let binding = match &device.channel {
-            Some(x) => x,
-            None => return Err(0x1)
-
-        };
-        let bind = binding.lock();
-        let mut channel = bind.borrow_mut();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 

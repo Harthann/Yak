@@ -1,28 +1,22 @@
-use crate::utils::arcm::Arcm;
-pub use super::channel::IDEChannelRegisters;
-use crate::kprintln;
-use core::ffi::CStr;
-use super::ata::{
-    ATAError,
-	ATADirection,
-	ATAReg,
-	ATA
-};
+use super::ata::{ATADirection, ATAError, ATAReg, ATA};
 use super::atapi::{self, ATAPI};
+pub use super::channel::IDEChannelRegisters;
 use super::IDEType;
+use crate::kprintln;
+use crate::utils::arcm::Arcm;
 use core::cell::RefCell;
-
+use core::ffi::CStr;
 
 #[derive(Clone)]
 pub struct IDEDevice {
 	pub reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
 	pub channel:      Option<Arcm<RefCell<IDEChannelRegisters>>>,
-	pub drive:        u8,       // 0 (Master Drive) or 1 (Slave Drive)
-	pub r#type:       u16,      // 0: ATA, 1:ATAPI
-	pub signature:    u16,      // Drive Signature
-	pub capabilities: u16,      // Features
-	pub command_sets: u32,      // Command Sets Supported
-	pub size:         u32,      // Size in Sectors
+	pub drive:        u8,  // 0 (Master Drive) or 1 (Slave Drive)
+	pub r#type:       u16, // 0: ATA, 1:ATAPI
+	pub signature:    u16, // Drive Signature
+	pub capabilities: u16, // Features
+	pub command_sets: u32, // Command Sets Supported
+	pub size:         u32, // Size in Sectors
 	pub model:        [u8; 41]  // Model in string
 }
 
@@ -42,7 +36,6 @@ impl IDEDevice {
 	}
 
 	pub fn print_error(&self, mut err: u8) -> u8 {
-
 		if err == 0 {
 			return err;
 		}
@@ -54,7 +47,7 @@ impl IDEDevice {
 				return 23;
 			}
 		};
-        let bind = binding.lock();
+		let bind = binding.lock();
 		let channel: &mut IDEChannelRegisters = &mut bind.borrow_mut();
 		match err {
 			1 => {
@@ -125,7 +118,6 @@ impl IDEDevice {
 		lba: u32,
 		edi: u32
 	) -> Result<(), u8> {
-
 		// 1- Check if the drive presents
 		if self.reserved == 0 {
 			// Drive not found
@@ -178,7 +170,6 @@ impl IDEDevice {
 		lba: u32,
 		edi: u32
 	) -> Result<(), u8> {
-
 		// 1- Check if the drive presents
 		if self.reserved == 0 {
 			// Drive not found
@@ -208,9 +199,4 @@ impl IDEDevice {
 		}
 		Ok(())
 	}
-
-
-
 }
-
-

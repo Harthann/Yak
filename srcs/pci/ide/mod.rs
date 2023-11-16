@@ -1,16 +1,16 @@
 use core::ffi::CStr;
 use core::mem::size_of;
 
-use core::cell::RefCell;
 use crate::kprintln;
 use crate::spin::{KMutex, Mutex};
 use crate::time::sleep;
 use crate::utils::arcm::Arcm;
+use core::cell::RefCell;
 
 pub mod ata;
 pub mod atapi;
-pub mod device;
 pub mod channel;
+pub mod device;
 
 use ata::{
 	ATAChannel,
@@ -22,8 +22,8 @@ use ata::{
 	ATA
 };
 use atapi::ATAPI;
-pub use device::IDEDevice;
 use channel::IDEChannelRegisters;
+pub use device::IDEDevice;
 
 static IDE_IRQ_INVOKED: KMutex<u8> = KMutex::<u8>::new(0);
 pub static IDE: Mutex<IDEController> =
@@ -39,7 +39,7 @@ pub struct IDEController {
 }
 
 impl IDEController {
-    /// Create a controller with default devices
+	/// Create a controller with default devices
 	pub const fn new() -> Self {
 		Self {
 			devices: [
@@ -51,11 +51,11 @@ impl IDEController {
 		}
 	}
 
-    /// Obtain reference to an existing device.
-    ///
-    /// Actually return a reference to the device and should be clone afterward
-    /// However if the reference is never needed this function will probably
-    /// be change to return a clone of the device instead
+	/// Obtain reference to an existing device.
+	///
+	/// Actually return a reference to the device and should be clone afterward
+	/// However if the reference is never needed this function will probably
+	/// be change to return a clone of the device instead
 	pub fn get_device(&self, num: u8) -> Option<&IDEDevice> {
 		if num > 3 || self.devices[num as usize].reserved == 0 {
 			return None;
@@ -73,32 +73,33 @@ impl IDEController {
 	) -> Result<(), u8> {
 		let mut ide_buf: [u8; 2048] = [0; 2048];
 
-        let primary = IDEChannelRegisters::new(
-            ATAChannel::Primary,
-            (bar0 & 0xfffffffc) as u16,
-            (bar1 & 0xfffffffc) as u16,
-            ((bar4 & 0xfffffffc) + 0) as u16,
-            0
-        );
-        let secondary = IDEChannelRegisters::new(
-            ATAChannel::Secondary,
-            (bar2 & 0xfffffffc) as u16,
-            (bar3 & 0xfffffffc) as u16,
-            ((bar4 & 0xfffffffc) + 8) as u16,
-            0
-        );
+		let primary = IDEChannelRegisters::new(
+			ATAChannel::Primary,
+			(bar0 & 0xfffffffc) as u16,
+			(bar1 & 0xfffffffc) as u16,
+			((bar4 & 0xfffffffc) + 0) as u16,
+			0
+		);
+		let secondary = IDEChannelRegisters::new(
+			ATAChannel::Secondary,
+			(bar2 & 0xfffffffc) as u16,
+			(bar3 & 0xfffffffc) as u16,
+			((bar4 & 0xfffffffc) + 8) as u16,
+			0
+		);
 		let mut channels: [Arcm<RefCell<IDEChannelRegisters>>; 2] = [
 			Arcm::new(RefCell::new(primary)),
 			Arcm::new(RefCell::new(secondary))
 		];
 		// 2- Disable IRQs
-		channels[ATAChannel::Primary as usize].lock().borrow_mut().write(
-			ATAReg::CONTROL,
-			2);
-		channels[ATAChannel::Secondary as usize].lock().borrow_mut().write(
-			ATAReg::CONTROL,
-			2
-		);
+		channels[ATAChannel::Primary as usize]
+			.lock()
+			.borrow_mut()
+			.write(ATAReg::CONTROL, 2);
+		channels[ATAChannel::Secondary as usize]
+			.lock()
+			.borrow_mut()
+			.write(ATAReg::CONTROL, 2);
 
 		let mut count: usize = 0;
 		// 3- Detect ATA-ATAPI Devices
@@ -107,14 +108,17 @@ impl IDEController {
 				let mut err: u8 = 0;
 				let mut r#type: u8 = IDEType::ATA as u8;
 				// (I) Select Drive
-				channels[i].lock().borrow_mut().write(ATAReg::HDDEVSEL, 0xa0 | (j << 4));
+				channels[i]
+					.lock()
+					.borrow_mut()
+					.write(ATAReg::HDDEVSEL, 0xa0 | (j << 4));
 				sleep(1);
 
 				// (II) Send ATA Identify Command
-				channels[i].lock().borrow_mut().write(
-                    ATAReg::COMMAND,
-					ATACommand::Identify as u8
-				);
+				channels[i]
+					.lock()
+					.borrow_mut()
+					.write(ATAReg::COMMAND, ATACommand::Identify as u8);
 				sleep(1);
 
 				// (III) Polling
@@ -124,7 +128,8 @@ impl IDEController {
 				}
 
 				loop {
-					let status: u8 = channels[i].lock().borrow_mut().read(ATAReg::STATUS);
+					let status: u8 =
+						channels[i].lock().borrow_mut().read(ATAReg::STATUS);
 					if (status & ATAStatus::ERR) != 0 {
 						err = 1;
 						break;
@@ -138,8 +143,10 @@ impl IDEController {
 
 				// (IV) Probe for ATAPI Devices
 				if err != 0 {
-					let cl: u8 = channels[i].lock().borrow_mut().read(ATAReg::LBA1);
-					let ch: u8 = channels[i].lock().borrow_mut().read(ATAReg::LBA2);
+					let cl: u8 =
+						channels[i].lock().borrow_mut().read(ATAReg::LBA1);
+					let ch: u8 =
+						channels[i].lock().borrow_mut().read(ATAReg::LBA2);
 
 					if cl == 0x14 && ch == 0xeb {
 						r#type = IDEType::ATAPI as u8;
@@ -257,12 +264,12 @@ impl IDEController {
 	}
 
 	fn read(channel: &mut IDEChannelRegisters, reg: u8) -> u8 {
-        channel.read(reg)
-   	}
+		channel.read(reg)
+	}
 
 	fn write(channel: &mut IDEChannelRegisters, reg: u8, data: u8) {
-        channel.write(reg, data);
-   	}
+		channel.write(reg, data);
+	}
 
 	fn read_buffer(
 		channel: &mut IDEChannelRegisters,
@@ -270,14 +277,14 @@ impl IDEController {
 		buffer: &mut [u32],
 		quads: u32
 	) {
-        channel.read_buffer(reg, buffer, quads);
+		channel.read_buffer(reg, buffer, quads);
 	}
 
 	fn polling(
 		channel: &mut IDEChannelRegisters,
 		advanced_check: u32
 	) -> Result<(), u8> {
-        channel.polling(advanced_check)
+		channel.polling(advanced_check)
 	}
 
 	/// Read sector from a drive
@@ -394,7 +401,7 @@ mod test {
 		let to_write = vec!['B' as u8; 512];
 		let read_from = vec![0x0 as u8; 512];
 
-        let mut device = IDE.lock().get_device(1).unwrap().clone();
+		let mut device = IDE.lock().get_device(1).unwrap().clone();
 		let _ = device.write_sectors(1, 0x0, to_write.as_ptr() as u32);
 		let _ = device.read_sectors(1, 0x0, read_from.as_ptr() as u32);
 
@@ -406,7 +413,7 @@ mod test {
 		let to_write = vec!['A' as u8; 1024];
 		let read_from = vec![0x0 as u8; 1024];
 
-        let mut device = IDE.lock().get_device(1).unwrap().clone();
+		let mut device = IDE.lock().get_device(1).unwrap().clone();
 		let _ = device.write_sectors(2, 0x0, to_write.as_ptr() as u32);
 		let _ = device.read_sectors(2, 0x0, read_from.as_ptr() as u32);
 

@@ -1,23 +1,28 @@
-use crate::io::{inb, insl, outb};
 use super::ata::ATAChannel;
-use super::ATAStatus;
-use super::ATAReg;
+use super::{ATAReg, ATAStatus};
+use crate::io::{inb, insl, outb};
 
 #[derive(Clone, Copy)]
 pub struct IDEChannelRegisters {
 	pub r#type: ATAChannel, // 0 - Primary Channel, 1 - Secondary Channel
 	pub base:   u16,        // I/O Base
-	ctrl:   u16,        // ControlBase
-	bmide:  u16,        // Bus Master IDE
+	ctrl:       u16,        // ControlBase
+	bmide:      u16,        // Bus Master IDE
 	pub n_ien:  u8          // nIEN (No Interrupt)
 }
 
 impl IDEChannelRegisters {
-	pub const fn new(channel: ATAChannel, base: u16, ctrl: u16, bmide: u16, n_ien: u8) -> Self {
-		Self { r#type: channel, base, ctrl, bmide, n_ien}
+	pub const fn new(
+		channel: ATAChannel,
+		base: u16,
+		ctrl: u16,
+		bmide: u16,
+		n_ien: u8
+	) -> Self {
+		Self { r#type: channel, base, ctrl, bmide, n_ien }
 	}
 
-    pub fn read(&mut self, reg: u8) -> u8 {
+	pub fn read(&mut self, reg: u8) -> u8 {
 		let mut result: u8 = 0;
 		if reg > 0x07 && reg < 0x0c {
 			self.write(ATAReg::CONTROL, 0x80 | self.n_ien);
@@ -37,17 +42,9 @@ impl IDEChannelRegisters {
 		return result;
 	}
 
-    pub fn read_buffer(
-        &mut self,
-		reg: u8,
-		buffer: &mut [u32],
-		quads: u32
-	) {
+	pub fn read_buffer(&mut self, reg: u8, buffer: &mut [u32], quads: u32) {
 		if reg > 0x07 && reg < 0x0c {
-			self.write(
-				ATAReg::CONTROL,
-				0x80 | self.n_ien
-			);
+			self.write(ATAReg::CONTROL, 0x80 | self.n_ien);
 		}
 		if reg < 0x08 {
 			insl(self.base + reg as u16 - 0x00, buffer.as_mut_ptr(), quads);
@@ -63,9 +60,8 @@ impl IDEChannelRegisters {
 		}
 	}
 
-
-    pub fn write(&mut self, reg: u8, data: u8) {
-        if reg > 0x07 && reg < 0x0c {
+	pub fn write(&mut self, reg: u8, data: u8) {
+		if reg > 0x07 && reg < 0x0c {
 			self.write(ATAReg::CONTROL, 0x80 | self.n_ien);
 		}
 		if reg < 0x08 {
@@ -80,17 +76,16 @@ impl IDEChannelRegisters {
 		if reg > 0x07 && reg < 0x0c {
 			self.write(ATAReg::CONTROL, self.n_ien);
 		}
-    }
+	}
 
-
-    pub fn polling(&mut self, advanced_check: u32) -> Result<(), u8> {
+	pub fn polling(&mut self, advanced_check: u32) -> Result<(), u8> {
 		for _ in 0..4 {
 			self.read(ATAReg::ALTSTATUS);
 		}
 
 		// (II) Wait for BSY to be cleared
-		while (self.read(ATAReg::STATUS) & ATAStatus::BSY as u8) != 0
-		{ /* Wait for BSY to be zero */ }
+		while (self.read(ATAReg::STATUS) & ATAStatus::BSY as u8) != 0 { // Wait for BSY to be zero
+		}
 
 		if advanced_check != 0 {
 			// Read Status Register
@@ -114,6 +109,5 @@ impl IDEChannelRegisters {
 		}
 		// No Error
 		Ok(())
-    }
-
+	}
 }

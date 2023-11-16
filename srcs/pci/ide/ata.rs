@@ -108,13 +108,12 @@ impl ATA {
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-        let binding = match &device.channel {
-            Some(x) => x,
-            None => return Err(0x1)
-
-        };
-        let bind = binding.lock();
-        let mut channel = bind.borrow_mut();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let lba_mode: u8; // 0: CHS, 1: LBA28, 2: LBA48
 		let dma: u8; // 0: No DMA, 1: DMA
 		let mut lba_io: [u8; 6] = [0; 6];
@@ -173,17 +172,17 @@ impl ATA {
 		dma = 0; // We don't support DMA
 
 		// (III) Wait if the drive is busy
-		while (channel.read(ATAReg::STATUS) & ATAStatus::BSY)
-			!= 0
-		{}
+		while (channel.read(ATAReg::STATUS) & ATAStatus::BSY) != 0 {}
 
 		// (IV) Select Drive from the controller
 		if lba_mode == 0 {
 			// Drive & CHS
-			channel.write(ATAReg::HDDEVSEL, 0xa0 | ((slavebit as u8) << 4) | head);
+			channel
+				.write(ATAReg::HDDEVSEL, 0xa0 | ((slavebit as u8) << 4) | head);
 		} else {
 			// Drive & LBA
-			channel.write(ATAReg::HDDEVSEL, 0xe0 | ((slavebit as u8) << 4) | head);
+			channel
+				.write(ATAReg::HDDEVSEL, 0xe0 | ((slavebit as u8) << 4) | head);
 		}
 
 		// (V) Write Parameters

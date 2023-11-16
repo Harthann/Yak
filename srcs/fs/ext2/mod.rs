@@ -1,9 +1,9 @@
 use crate::alloc::vec;
+use crate::disk::DiskIO;
 use crate::pci::ide::IDE;
 use crate::string::ToString;
 use crate::utils::math::roundup;
 use crate::utils::path::Path;
-use crate::disk::DiskIO;
 use alloc::boxed::Box;
 
 mod bitmap;
@@ -16,24 +16,20 @@ pub mod inode;
 /// This is pretty ineffective and will probably need optimisation in later version
 pub struct Ext2 {
 	sector_size: usize,
-    diskio:      Box<dyn DiskIO + Send>,
+	diskio:      Box<dyn DiskIO + Send>,
 	pub sblock:  block::BaseSuperblock
 }
 
 impl Ext2 {
 	pub fn new(mut diskio: Box<dyn DiskIO + Send>) -> Result<Self, u8> {
-        let sector_size = diskio.sector_size() as usize;
-        let sblock = read_superblock(&mut diskio)?;
-        let fs = Self {
-			sector_size,
-            diskio,
-			sblock
-		};
-        if fs.is_valid() {
-            Ok(fs)
-        } else {
-            Err(0x01)
-        }
+		let sector_size = diskio.sector_size() as usize;
+		let sblock = read_superblock(&mut diskio)?;
+		let fs = Self { sector_size, diskio, sblock };
+		if fs.is_valid() {
+			Ok(fs)
+		} else {
+			Err(0x01)
+		}
 	}
 
 	pub fn is_valid(&self) -> bool {
@@ -109,11 +105,9 @@ impl Ext2 {
 		let first_sector = (bsize * block_no as usize) / self.sector_size;
 		let mut block: crate::vec::Vec<u8> = crate::vec::Vec::new();
 		for i in first_sector..first_sector + nb_sector {
-			self.diskio.read_sectors(
-				1,
-				i as u32,
-				buffer.as_ptr() as u32
-			).expect("Something went wrong in read_block");
+			self.diskio
+				.read_sectors(1, i as u32, buffer.as_ptr() as u32)
+				.expect("Something went wrong in read_block");
 			let mut start = 0;
 			if sector_per_block < 1.0 {
 				start = (block_no as usize % (1.0 / sector_per_block) as usize)
@@ -131,11 +125,13 @@ impl Ext2 {
 		let sector_per_block = bsize / self.sector_size as usize;
 
 		let sector_no = bsize / self.sector_size as usize;
-		self.diskio.write_sectors(
-			sector_no as u8,
-			block_no * sector_per_block as u32,
-			block.as_ptr() as u32
-		).expect("Something went wrong in write block");
+		self.diskio
+			.write_sectors(
+				sector_no as u8,
+				block_no * sector_per_block as u32,
+				block.as_ptr() as u32
+			)
+			.expect("Something went wrong in write block");
 	}
 
 	fn write_slice(&mut self, block_no: u32, offset: usize, slice: &[u8]) {
@@ -505,8 +501,10 @@ impl Ext2 {
 
 use crate::pci::ide;
 
-pub fn read_superblock(diskio: &mut Box<dyn DiskIO + Send>) -> Result<block::BaseSuperblock, u8> {
-    let sector_size = diskio.sector_size();
+pub fn read_superblock(
+	diskio: &mut Box<dyn DiskIO + Send>
+) -> Result<block::BaseSuperblock, u8> {
+	let sector_size = diskio.sector_size();
 	// superblock is at index 1024 and 1024 bytes long
 	let mut nb_sector = roundup(2048 / sector_size, 1) as usize;
 	// sector_size > 2048
@@ -515,11 +513,7 @@ pub fn read_superblock(diskio: &mut Box<dyn DiskIO + Send>) -> Result<block::Bas
 	}
 	let buffer: Vec<u8> = vec![0; nb_sector * sector_size];
 
-	diskio.read_sectors(
-		nb_sector as u8,
-		0,
-		buffer.as_ptr() as u32
-	)?;
+	diskio.read_sectors(nb_sector as u8, 0, buffer.as_ptr() as u32)?;
 	let mut sblock = block::BaseSuperblock::from(&buffer[1024..1024 + 84]);
 	if sblock.version().0 >= 1 {
 		sblock.set_extension(block::ExtendedSuperblock::from(
@@ -529,11 +523,9 @@ pub fn read_superblock(diskio: &mut Box<dyn DiskIO + Send>) -> Result<block::Bas
 	Ok(sblock)
 }
 
-/*
-pub fn is_ext2(diskno: u8) -> bool {
-	Ext2::new(diskno as u8).is_ok_and(|fs| fs.is_valid())
-}
-*/
+// pub fn is_ext2(diskno: u8) -> bool {
+// Ext2::new(diskno as u8).is_ok_and(|fs| fs.is_valid())
+// }
 
 use crate::vec::Vec;
 
@@ -546,7 +538,7 @@ fn get_block_content(block: Vec<u8>, size: usize) -> Vec<char> {
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
 pub fn get_file_content(ext2: &Ext2, path: &str, inode: usize) -> Vec<char> {
-	//let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	// let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let opt = ext2.recurs_find(path, inode);
 	match opt {
 		None => Vec::new(),
@@ -649,7 +641,7 @@ pub fn list_dir(
 	path: &str,
 	inode: usize
 ) -> crate::vec::Vec<inode::Dentry> {
-	//let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	// let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let inode = ext2.recurs_find(path, inode);
 	return match inode {
 		None => crate::vec::Vec::new(),
@@ -673,7 +665,7 @@ pub fn list_dir(
 }
 
 pub fn create_file(ext2: &mut Ext2, path: &str, inode_no: usize) {
-	//let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	// let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let path = Path::new(path);
 	let filename = path.file_name().unwrap();
 	let binding = path.parent().unwrap();
@@ -718,7 +710,7 @@ pub fn create_file(ext2: &mut Ext2, path: &str, inode_no: usize) {
 }
 
 pub fn remove_file(ext2: &mut Ext2, path: &str, inode_no: usize) {
-	//let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	// let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let path = Path::new(path);
 	let filename = path.file_name().unwrap();
 	let binding = path.parent().unwrap();
@@ -746,7 +738,7 @@ pub fn remove_file(ext2: &mut Ext2, path: &str, inode_no: usize) {
 
 /// Helper function to create a folder at a given path
 pub fn create_dir(ext2: &mut Ext2, path: &str, inode_no: usize) {
-	//let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	// let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let path = Path::new(path);
 	let new_dir = path.file_name().unwrap();
 	let binding = path.parent().unwrap();
@@ -819,7 +811,7 @@ pub fn create_dir(ext2: &mut Ext2, path: &str, inode_no: usize) {
 }
 
 pub fn show_inode_info(ext2: &Ext2, path: &str, inode_no: usize) {
-	//let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	// let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
 	let inode = ext2.recurs_find(&path, inode_no);
 	match inode {
 		None => {
