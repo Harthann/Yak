@@ -1,4 +1,7 @@
-use crate::pci::ide::IDEDevice;
+use crate::pci::ide::{
+    self,
+    IDEDevice
+};
 use super::DiskIO;
 
 pub struct IDEDisk {
@@ -6,10 +9,18 @@ pub struct IDEDisk {
     device: IDEDevice
 }
 
+unsafe impl Send for IDEDisk {}
+
+impl IDEDisk {
+    pub const fn new(diskno: u8, device: IDEDevice) -> Self {
+        Self {diskno, device}
+    }
+}
+
 impl DiskIO for IDEDisk {
 
 	 fn read_sectors(
-		&mut self,
+		&self,
 		numsects: u8,
 		lba: u32,
 		edi: u32
@@ -27,6 +38,13 @@ impl DiskIO for IDEDisk {
     }
 
     fn sector_size(&self) -> usize {
-        self.device.size as usize
+		match self.device.r#type {
+			x if x == ide::IDEType::ATA as u16 => ide::ata::SECTOR_SIZE as usize,
+			x if x == ide::IDEType::ATAPI as u16 => ide::atapi::SECTOR_SIZE as usize,
+			_ => {
+				panic!("Unrecognized disk.")
+			}
+        }
     }
 }
+
