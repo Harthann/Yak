@@ -29,6 +29,6 @@ impl DiskIO for IDEDisk {
 	}
 
 	fn sector_size(&self) -> usize {
-        self.device.sector_size() as usize
+		self.device.sector_size() as usize
 	}
 }

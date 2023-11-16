@@ -202,18 +202,11 @@ impl IDEDevice {
 
 	pub fn sector_size(&self) -> u32 {
 		match self.r#type {
-			x if x == IDEType::ATA as u16 => {
-				ata::SECTOR_SIZE
-			},
-			x if x == IDEType::ATAPI as u16 => {
-				atapi::SECTOR_SIZE
-			},
+			x if x == IDEType::ATA as u16 => ata::SECTOR_SIZE,
+			x if x == IDEType::ATAPI as u16 => atapi::SECTOR_SIZE,
 			_ => {
 				panic!("Unrecognized disk.")
 			}
 		}
 	}
-
-
-
 }
