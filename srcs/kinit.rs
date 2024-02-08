@@ -10,6 +10,7 @@
 #![feature(vec_into_raw_parts)]
 #![no_std]
 #![allow(dead_code)]
+#![allow(invalid_reference_casting)]
 #![no_main]
 // Custom test framework
 #![feature(custom_test_frameworks)]
