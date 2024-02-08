@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/multiboot/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (fee5518cd 2023-11-05)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/multiboot/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-804b98a1284a310a.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (3d0e6bed6 2023-12-21)" data-channel="nightly" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -436,7 +437,7 @@
 				<span class="kw">while </span>i &lt; entry_number {
 					<span class="kw">if </span>(<span class="kw-2">*</span>mmap_entry).mtype == <span class="number">2 </span>{
 						<span class="macro">crate::dprintln!</span>(
-							<span class="string">&quot;{} {}&quot;</span>,
+							<span class="string">"{} {}"</span>,
 							(<span class="kw-2">*</span>mmap_entry).baseaddr <span class="kw">as </span>PhysAddr / <span class="number">4096</span>,
 							(<span class="kw-2">*</span>mmap_entry).length <span class="kw">as </span>usize / <span class="number">4096
 						</span>);
@@ -469,47 +470,47 @@
 					<span class="kw">break</span>;
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::CmdLine <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprint!</span>(<span class="string">&quot;Command line = &quot;</span>);
+					<span class="macro">kprint!</span>(<span class="string">"Command line = "</span>);
 					<span class="kw">let </span>cstr: <span class="kw-2">&amp;</span>[u8] = core::slice::from_raw_parts(
 						(tag_ptr <span class="kw">as </span><span class="kw-2">*const </span>u8).offset(<span class="number">8</span>),
-						(<span class="kw-2">*</span>tag_ptr).size <span class="kw">as </span>usize - <span class="number">8 </span>- <span class="number">1 </span><span class="comment">/* remove size and &#39;\0&#39; */
+						(<span class="kw-2">*</span>tag_ptr).size <span class="kw">as </span>usize - <span class="number">8 </span>- <span class="number">1 </span><span class="comment">/* remove size and '\0' */
 					</span>);
 					<span class="kw">match </span>core::str::from_utf8(cstr) {
-						<span class="prelude-val">Ok</span>(string) =&gt; <span class="macro">kprintln!</span>(<span class="string">&quot;{}&quot;</span>, string),
-						<span class="prelude-val">Err</span>(error) =&gt; <span class="macro">kprintln!</span>(<span class="string">&quot;[Error]: {}&quot;</span>, error)
+						<span class="prelude-val">Ok</span>(string) =&gt; <span class="macro">kprintln!</span>(<span class="string">"{}"</span>, string),
+						<span class="prelude-val">Err</span>(error) =&gt; <span class="macro">kprintln!</span>(<span class="string">"[Error]: {}"</span>, error)
 					}
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::BootLoaderName <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprint!</span>(<span class="string">&quot;Boot loader name = &quot;</span>);
+					<span class="macro">kprint!</span>(<span class="string">"Boot loader name = "</span>);
 					<span class="kw">let </span>cstr: <span class="kw-2">&amp;</span>[u8] = core::slice::from_raw_parts(
 						(tag_ptr <span class="kw">as </span><span class="kw-2">*const </span>u8).offset(<span class="number">8</span>),
-						(<span class="kw-2">*</span>tag_ptr).size <span class="kw">as </span>usize - <span class="number">8 </span>- <span class="number">1 </span><span class="comment">/* remove size and &#39;\0&#39; */
+						(<span class="kw-2">*</span>tag_ptr).size <span class="kw">as </span>usize - <span class="number">8 </span>- <span class="number">1 </span><span class="comment">/* remove size and '\0' */
 					</span>);
 					<span class="kw">match </span>core::str::from_utf8(cstr) {
-						<span class="prelude-val">Ok</span>(string) =&gt; <span class="macro">kprintln!</span>(<span class="string">&quot;{}&quot;</span>, string),
-						<span class="prelude-val">Err</span>(error) =&gt; <span class="macro">kprintln!</span>(<span class="string">&quot;[Error]: {}&quot;</span>, error)
+						<span class="prelude-val">Ok</span>(string) =&gt; <span class="macro">kprintln!</span>(<span class="string">"{}"</span>, string),
+						<span class="prelude-val">Err</span>(error) =&gt; <span class="macro">kprintln!</span>(<span class="string">"[Error]: {}"</span>, error)
 					}
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::BasicMemInfo <span class="kw">as </span>u32 =&gt; {
 					<span class="kw">let </span>elem: <span class="kw-2">&amp;</span>MemInfo = <span class="kw-2">&amp;*</span>(tag_ptr <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>);
 					<span class="macro">kprintln!</span>(
-						<span class="string">&quot;mem_lower = {}KB, mem_upper: {}KB&quot;</span>,
+						<span class="string">"mem_lower = {}KB, mem_upper: {}KB"</span>,
 						elem.mem_lower,
 						elem.mem_upper
 					);
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::BootDev <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprint!</span>(<span class="string">&quot;Boot device &quot;</span>);
+					<span class="macro">kprint!</span>(<span class="string">"Boot device "</span>);
 					<span class="kw">let </span>elem: <span class="kw-2">&amp;</span>BootDev = <span class="kw-2">&amp;*</span>(tag_ptr <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>);
 					<span class="macro">kprintln!</span>(
-						<span class="string">&quot;{:#x}, {}, {}&quot;</span>,
+						<span class="string">"{:#x}, {}, {}"</span>,
 						elem.biosdev,
 						elem.partition,
 						elem.sub_partition
 					);
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::Mmap <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprintln!</span>(<span class="string">&quot;Memory map&quot;</span>);
+					<span class="macro">kprintln!</span>(<span class="string">"Memory map"</span>);
 					<span class="kw">let </span>mmap: <span class="kw-2">*const </span>MemMap = tag_ptr <span class="kw">as </span><span class="kw-2">*const </span>MemMap;
 					<span class="kw">let </span>entry_number: u32 =
 						((<span class="kw-2">*</span>mmap).size - <span class="number">16</span>) / (<span class="kw-2">*</span>mmap).entry_size <span class="kw">as </span>u32;
@@ -518,16 +519,16 @@
 					<span class="kw">let </span><span class="kw-2">mut </span>i: u32 = <span class="number">0</span>;
 
 					<span class="macro">kprintln!</span>(
-						<span class="string">&quot;Number of entries: {} at {:#x}&quot;</span>,
+						<span class="string">"Number of entries: {} at {:#x}"</span>,
 						entry_number,
 						mmap_entry <span class="kw">as </span>u32
 					);
 					<span class="macro">kprintln!</span>(
-						<span class="string">&quot;id |   Base addr   |   Length  | type | reserved&quot;
+						<span class="string">"id |   Base addr   |   Length  | type | reserved"
 					</span>);
 					<span class="kw">while </span>i &lt; entry_number {
 						<span class="macro">kprintln!</span>(
-							<span class="string">&quot;{:2} | {:#13x} | {:#9x} | {:4} | {:x}&quot;</span>,
+							<span class="string">"{:2} | {:#13x} | {:#9x} | {:4} | {:x}"</span>,
 							i,
 							(<span class="kw-2">*</span>mmap_entry).baseaddr,
 							(<span class="kw-2">*</span>mmap_entry).length,
@@ -539,59 +540,59 @@
 					}
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::FrameBuffer <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprintln!</span>(<span class="string">&quot;Framebuffer info&quot;</span>);
+					<span class="macro">kprintln!</span>(<span class="string">"Framebuffer info"</span>);
 					<span class="kw">let </span>elem: <span class="kw-2">&amp;</span>FrameBufferInfo = <span class="kw-2">&amp;*</span>(tag_ptr <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  addr: {:#x}&quot;</span>, elem.framebuffer_addr);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  pitch: {}&quot;</span>, elem.framebuffer_pitch);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  width: {}&quot;</span>, elem.framebuffer_width);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  height: {}&quot;</span>, elem.framebuffer_height);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  bpp: {}&quot;</span>, elem.framebuffer_bpp);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  type: {}&quot;</span>, elem.framebuffer_type);
-					<span class="macro">kprintln!</span>(<span class="string">&quot;  reserved: {}&quot;</span>, elem.reserved);
+					<span class="macro">kprintln!</span>(<span class="string">"  addr: {:#x}"</span>, elem.framebuffer_addr);
+					<span class="macro">kprintln!</span>(<span class="string">"  pitch: {}"</span>, elem.framebuffer_pitch);
+					<span class="macro">kprintln!</span>(<span class="string">"  width: {}"</span>, elem.framebuffer_width);
+					<span class="macro">kprintln!</span>(<span class="string">"  height: {}"</span>, elem.framebuffer_height);
+					<span class="macro">kprintln!</span>(<span class="string">"  bpp: {}"</span>, elem.framebuffer_bpp);
+					<span class="macro">kprintln!</span>(<span class="string">"  type: {}"</span>, elem.framebuffer_type);
+					<span class="macro">kprintln!</span>(<span class="string">"  reserved: {}"</span>, elem.reserved);
 					<span class="comment">// TODO: Add color_info ?
 				</span>},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::ElfSections <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprintln!</span>(<span class="string">&quot;-- skipped -- ELF Symbols&quot;</span>);
+					<span class="macro">kprintln!</span>(<span class="string">"-- skipped -- ELF Symbols"</span>);
 					<span class="comment">/*
-					kprintln!(&quot;=&gt; ELF Symbols&quot;);
+					kprintln!("=&gt; ELF Symbols");
 					let elem: &amp;ElfSymbols = &amp;*(tag_ptr as *const _);
-					kprintln!(&quot;    size: {}&quot;, elem.size);
-					kprintln!(&quot;    num: {}&quot;, elem.num);
-					kprintln!(&quot;    entsize: {}&quot;, elem.entsize);
-					kprintln!(&quot;    shndx: {}&quot;, elem.shndx);
-					kprintln!(&quot;    reserved: {}&quot;, elem.reserved);
+					kprintln!("    size: {}", elem.size);
+					kprintln!("    num: {}", elem.num);
+					kprintln!("    entsize: {}", elem.entsize);
+					kprintln!("    shndx: {}", elem.shndx);
+					kprintln!("    reserved: {}", elem.reserved);
 					*/
 				</span>},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::Apm <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprintln!</span>(<span class="string">&quot;-- skipped -- APM table&quot;</span>);
+					<span class="macro">kprintln!</span>(<span class="string">"-- skipped -- APM table"</span>);
 					<span class="comment">/*
-					kprintln!(&quot;=&gt; APM table&quot;);
+					kprintln!("=&gt; APM table");
 					let elem: &amp;ApmTable = &amp;*(tag_ptr as *const _);
-					kprintln!(&quot;    version: {}&quot;, elem.version);
-					kprintln!(&quot;    cseg: {}&quot;, elem.cseg);
-					kprintln!(&quot;    offset: {:#x}&quot;, elem.offset);
-					kprintln!(&quot;    cseg_16: {}&quot;, elem.cseg_16);
-					kprintln!(&quot;    dseg: {}&quot;, elem.dseg);
-					kprintln!(&quot;    flags: {}&quot;, elem.flags);
-					kprintln!(&quot;    cseg_len: {}&quot;, elem.cseg_len);
-					kprintln!(&quot;    cseg_16_len: {}&quot;, elem.cseg_16_len);
-					kprintln!(&quot;    dseg_len: {}&quot;, elem.dseg_len);
+					kprintln!("    version: {}", elem.version);
+					kprintln!("    cseg: {}", elem.cseg);
+					kprintln!("    offset: {:#x}", elem.offset);
+					kprintln!("    cseg_16: {}", elem.cseg_16);
+					kprintln!("    dseg: {}", elem.dseg);
+					kprintln!("    flags: {}", elem.flags);
+					kprintln!("    cseg_len: {}", elem.cseg_len);
+					kprintln!("    cseg_16_len: {}", elem.cseg_16_len);
+					kprintln!("    dseg_len: {}", elem.dseg_len);
 					*/
 				</span>},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::AcpiOld <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprintln!</span>(<span class="string">&quot;-- skipped -- ACPI old RSDP&quot;</span>);
+					<span class="macro">kprintln!</span>(<span class="string">"-- skipped -- ACPI old RSDP"</span>);
 				},
 				x <span class="kw">if </span>x <span class="kw">as </span>u32 == TagType::LoadBaseAddr <span class="kw">as </span>u32 =&gt; {
-					<span class="macro">kprintln!</span>(<span class="string">&quot;-- skipped -- Image load physical address&quot;</span>);
+					<span class="macro">kprintln!</span>(<span class="string">"-- skipped -- Image load physical address"</span>);
 					<span class="comment">/*
-					kprintln!(&quot;=&gt; Image load base physical address&quot;);
+					kprintln!("=&gt; Image load base physical address");
 					let elem: &amp;LoadBasePhys = &amp;*(tag_ptr as *const _);
-					kprintln!(&quot;    load_base_addr: {:#x}&quot;, elem.load_base_addr);
+					kprintln!("    load_base_addr: {:#x}", elem.load_base_addr);
 					*/
 				</span>},
 				<span class="kw">_ </span>=&gt; {
 					<span class="macro">kprintln!</span>(
-						<span class="string">&quot;Found tag: {}, size: {}&quot;</span>,
+						<span class="string">"Found tag: {}, size: {}"</span>,
 						(<span class="kw-2">*</span>tag_ptr).htype,
 						(<span class="kw-2">*</span>tag_ptr).size
 					);

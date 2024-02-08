@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/cli/commands/debugfs.rs`."><title>debugfs.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (fee5518cd 2023-11-05)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/cli/commands/debugfs.rs`."><title>debugfs.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-804b98a1284a310a.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (3d0e6bed6 2023-12-21)" data-channel="nightly" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -207,7 +208,7 @@
 
 <span class="kw">fn </span>help() {
 	<span class="macro">crate::kprintln!</span>(
-		<span class="string">&quot;Command available: ls,stat,cat,imap,cd,touch,mkdir,rm,pwd,test&quot;
+		<span class="string">"Command available: ls,stat,cat,imap,cd,touch,mkdir,rm,pwd,test"
 	</span>);
 }
 
@@ -215,18 +216,18 @@
 	<span class="kw">if </span>command.len() &gt; <span class="number">1 </span>{
 		command.remove(<span class="number">0</span>); <span class="comment">// Delete command name before sending to subcommand
 		</span><span class="kw">match </span>command[<span class="number">0</span>].as_str() {
-			<span class="string">&quot;ls&quot; </span>=&gt; ls(command),
-			<span class="string">&quot;stat&quot; </span>=&gt; stat(command),
-			<span class="string">&quot;cat&quot; </span>=&gt; cat(command),
-			<span class="string">&quot;imap&quot; </span>=&gt; imap(command),
-			<span class="string">&quot;cd&quot; </span>=&gt; cd(command),
-			<span class="string">&quot;touch&quot; </span>=&gt; touch(command),
-			<span class="string">&quot;mkdir&quot; </span>=&gt; mkdir(command),
-			<span class="string">&quot;rm&quot; </span>=&gt; rm(command),
-			<span class="string">&quot;pwd&quot; </span>=&gt; pwd(),
-			<span class="string">&quot;test&quot; </span>=&gt; test(),
+			<span class="string">"ls" </span>=&gt; ls(command),
+			<span class="string">"stat" </span>=&gt; stat(command),
+			<span class="string">"cat" </span>=&gt; cat(command),
+			<span class="string">"imap" </span>=&gt; imap(command),
+			<span class="string">"cd" </span>=&gt; cd(command),
+			<span class="string">"touch" </span>=&gt; touch(command),
+			<span class="string">"mkdir" </span>=&gt; mkdir(command),
+			<span class="string">"rm" </span>=&gt; rm(command),
+			<span class="string">"pwd" </span>=&gt; pwd(),
+			<span class="string">"test" </span>=&gt; test(),
 			<span class="kw">_ </span>=&gt; {
-				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Unknown command: {}&quot;</span>, command[<span class="number">0</span>]);
+				<span class="macro">crate::kprintln!</span>(<span class="string">"Unknown command: {}"</span>, command[<span class="number">0</span>]);
 				help();
 			}
 		}
@@ -237,16 +238,16 @@
 
 <span class="kw">fn </span>pwd() {
 	<span class="macro">crate::kprintln!</span>(
-		<span class="string">&quot;[pwd]   INODE: {:&gt;6}  PATH: {}&quot;</span>,
+		<span class="string">"[pwd]   INODE: {:&gt;6}  PATH: {}"</span>,
 		<span class="kw-2">*</span>CURRENTDIR_INODE.lock(),
-		PWD.lock().as_ref().unwrap_or(<span class="kw-2">&amp;</span>Path::new(<span class="string">&quot;/&quot;</span>))
+		PWD.lock().as_ref().unwrap_or(<span class="kw-2">&amp;</span>Path::new(<span class="string">"/"</span>))
 	);
-	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;[root]  INODE: {:&gt;6}  PATH: /&quot;</span>, ROOT_INODE);
+	<span class="macro">crate::kprintln!</span>(<span class="string">"[root]  INODE: {:&gt;6}  PATH: /"</span>, ROOT_INODE);
 }
 
 <span class="kw">fn </span>rm(command: Vec&lt;String&gt;) {
 	<span class="kw">if </span>command.len() &lt; <span class="number">2 </span>{
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;usage: debugfs rm FILE&quot;</span>);
+		<span class="macro">crate::kprintln!</span>(<span class="string">"usage: debugfs rm FILE"</span>);
 		<span class="kw">return</span>;
 	}
 	ext2::remove_file(
@@ -258,7 +259,7 @@
 
 <span class="kw">fn </span>stat(command: Vec&lt;String&gt;) {
 	<span class="kw">if </span>command.len() &lt; <span class="number">2 </span>{
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;usage: debugfs stat FILE&quot;</span>);
+		<span class="macro">crate::kprintln!</span>(<span class="string">"usage: debugfs stat FILE"</span>);
 		<span class="kw">return</span>;
 	}
 	ext2::show_inode_info(
@@ -270,7 +271,7 @@
 
 <span class="kw">fn </span>mkdir(command: Vec&lt;String&gt;) {
 	<span class="kw">if </span>command.len() &lt; <span class="number">2 </span>{
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;usage: debugfs mkdir DIR&quot;</span>);
+		<span class="macro">crate::kprintln!</span>(<span class="string">"usage: debugfs mkdir DIR"</span>);
 		<span class="kw">return</span>;
 	}
 	ext2::create_dir(
@@ -282,7 +283,7 @@
 
 <span class="kw">fn </span>touch(command: Vec&lt;String&gt;) {
 	<span class="kw">if </span>command.len() &lt; <span class="number">2 </span>{
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;usage: debugfs touch FILE&quot;</span>);
+		<span class="macro">crate::kprintln!</span>(<span class="string">"usage: debugfs touch FILE"</span>);
 		<span class="kw">return</span>;
 	}
 	ext2::create_file(
@@ -294,7 +295,7 @@
 
 <span class="kw">fn </span>cat(command: Vec&lt;String&gt;) {
 	<span class="kw">if </span>command.len() &lt; <span class="number">2 </span>{
-		<span class="macro">crate::kprintln!</span>(<span class="string">&quot;usage: debugfs cat FILE&quot;</span>);
+		<span class="macro">crate::kprintln!</span>(<span class="string">"usage: debugfs cat FILE"</span>);
 		<span class="kw">return</span>;
 	}
 	<span class="kw">let </span>file_content = ext2::get_file_content(
@@ -303,46 +304,46 @@
 		<span class="kw-2">*</span>CURRENTDIR_INODE.lock()
 	);
 	<span class="kw">for </span>i <span class="kw">in </span>file_content {
-		<span class="macro">crate::kprint!</span>(<span class="string">&quot;{}&quot;</span>, i);
+		<span class="macro">crate::kprint!</span>(<span class="string">"{}"</span>, i);
 	}
 }
 
 <span class="kw">fn </span>test() {
 	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = ext2::Ext2::new(<span class="kw-2">*</span>DISKNO.lock() <span class="kw">as </span>u8)
-		.expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+		.expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="comment">// let mut dentry = crate::fs::ext2::inode::Dentry::default();
 
 	</span><span class="kw">let </span>_node = ext2.alloc_node(<span class="number">0</span>);
 	<span class="kw">let </span>_block = ext2.alloc_block(<span class="number">0</span>);
-	<span class="macro">crate::dprintln!</span>(<span class="string">&quot;Node {}&quot;</span>, _node);
+	<span class="macro">crate::dprintln!</span>(<span class="string">"Node {}"</span>, _node);
 }
 
 <span class="kw">fn </span>ls(command: Vec&lt;String&gt;) {
 	<span class="kw">let </span>path = <span class="kw">match </span>command.len() {
-		<span class="number">1 </span>=&gt; <span class="string">&quot;&quot;</span>,
+		<span class="number">1 </span>=&gt; <span class="string">""</span>,
 		<span class="kw">_ </span>=&gt; command[<span class="number">1</span>].as_str()
 	};
-	<span class="macro">crate::dprintln!</span>(<span class="string">&quot;Ls: {}&quot;</span>, path);
+	<span class="macro">crate::dprintln!</span>(<span class="string">"Ls: {}"</span>, path);
 	<span class="kw">let </span>dentries =
 		ext2::list_dir(<span class="kw-2">*</span>DISKNO.lock() <span class="kw">as </span>u8, path, <span class="kw-2">*</span>CURRENTDIR_INODE.lock());
 
 	<span class="kw">for </span>i <span class="kw">in </span>dentries {
-		<span class="macro">crate::kprint!</span>(<span class="string">&quot;{} &quot;</span>, i.name);
+		<span class="macro">crate::kprint!</span>(<span class="string">"{} "</span>, i.name);
 	}
-	<span class="macro">crate::kprintln!</span>(<span class="string">&quot;&quot;</span>);
+	<span class="macro">crate::kprintln!</span>(<span class="string">""</span>);
 }
 
 <span class="kw">fn </span>cd(command: Vec&lt;String&gt;) {
 	<span class="kw">let </span>path = <span class="kw">match </span>command.len() {
-		<span class="number">1 </span>=&gt; <span class="string">&quot;&quot;</span>,
+		<span class="number">1 </span>=&gt; <span class="string">""</span>,
 		<span class="kw">_ </span>=&gt; command[<span class="number">1</span>].as_str()
 	};
 	<span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>ext2 = ext2::Ext2::new(<span class="kw-2">*</span>DISKNO.lock() <span class="kw">as </span>u8)
-		.expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+		.expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>lookup = ext2.recurs_find(path.as_str(), <span class="kw-2">*</span>CURRENTDIR_INODE.lock());
 	<span class="kw">match </span>lookup {
-		<span class="prelude-val">None </span>=&gt; <span class="macro">crate::kprintln!</span>(<span class="string">&quot;Dir not found&quot;</span>),
+		<span class="prelude-val">None </span>=&gt; <span class="macro">crate::kprintln!</span>(<span class="string">"Dir not found"</span>),
 		<span class="prelude-val">Some</span>((inodeno, inode)) =&gt; {
 			<span class="kw">if </span>inode.is_dir() {
 				<span class="kw-2">*</span>CURRENTDIR_INODE.lock() = inodeno;
@@ -352,13 +353,13 @@
 				} <span class="kw">else </span>{
 					pwd = <span class="kw">match </span>(<span class="kw-2">*</span>PWD.lock()).clone() {
 						<span class="prelude-val">Some</span>(x) =&gt; x.join(path.as_str()),
-						<span class="prelude-val">None </span>=&gt; Path::new(<span class="kw-2">&amp;</span>[<span class="string">&quot;/&quot;</span>, path.as_str()].join(<span class="string">&quot;&quot;</span>))
+						<span class="prelude-val">None </span>=&gt; Path::new(<span class="kw-2">&amp;</span>[<span class="string">"/"</span>, path.as_str()].join(<span class="string">""</span>))
 					};
 				}
 				pwd.cleanup();
 				<span class="kw-2">*</span>PWD.lock() = <span class="prelude-val">Some</span>(pwd);
 			} <span class="kw">else </span>{
-				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Error: {} is not a directory&quot;</span>, path.as_str());
+				<span class="macro">crate::kprintln!</span>(<span class="string">"Error: {} is not a directory"</span>, path.as_str());
 			}
 		},
 	};
@@ -366,22 +367,22 @@
 
 <span class="kw">fn </span>imap(command: Vec&lt;String&gt;) {
 	<span class="kw">let </span>path = <span class="kw">match </span>command.len() {
-		<span class="number">1 </span>=&gt; <span class="string">&quot;/&quot;</span>,
+		<span class="number">1 </span>=&gt; <span class="string">"/"</span>,
 		<span class="kw">_ </span>=&gt; command[<span class="number">1</span>].as_str()
 	};
 	<span class="kw">let </span>ext2 = ext2::Ext2::new(<span class="kw-2">*</span>DISKNO.lock() <span class="kw">as </span>u8)
-		.expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+		.expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>lookup = ext2.get_inode_of(path);
 	<span class="kw">match </span>lookup {
-		<span class="prelude-val">None </span>=&gt; <span class="macro">crate::kprintln!</span>(<span class="string">&quot;File not found&quot;</span>),
+		<span class="prelude-val">None </span>=&gt; <span class="macro">crate::kprintln!</span>(<span class="string">"File not found"</span>),
 		<span class="prelude-val">Some</span>((inodeno, <span class="kw">_</span>)) =&gt; {
 			<span class="macro">crate::kprintln!</span>(
-				<span class="string">&quot;Inode {inodeno} is part of block group {}&quot;</span>,
+				<span class="string">"Inode {inodeno} is part of block group {}"</span>,
 				ext2.inode_to_bgroup(inodeno <span class="kw">as </span>u32)
 			);
 			<span class="macro">crate::kprintln!</span>(
-				<span class="string">&quot;{:8} located at block {}, offset {:#04x}&quot;</span>,
-				<span class="string">&quot;&quot;</span>,
+				<span class="string">"{:8} located at block {}, offset {:#04x}"</span>,
+				<span class="string">""</span>,
 				ext2.inode_to_block(inodeno <span class="kw">as </span>u32),
 				ext2.inode_to_offset(inodeno <span class="kw">as </span>u32)
 			);

@@ -1,4 +1,5 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/fs/ext2/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (fee5518cd 2023-11-05)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `srcs/fs/ext2/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-804b98a1284a310a.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="kernel" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (3d0e6bed6 2023-12-21)" data-channel="nightly" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1008,7 +1009,7 @@
 				x <span class="kw">if </span>x == ide::IDEType::ATA <span class="kw">as </span>u16 =&gt; ide::ata::SECTOR_SIZE,
 				x <span class="kw">if </span>x == ide::IDEType::ATAPI <span class="kw">as </span>u16 =&gt; ide::atapi::SECTOR_SIZE,
 				<span class="kw">_ </span>=&gt; {
-					<span class="macro">panic!</span>(<span class="string">&quot;Unrecognized disk.&quot;</span>)
+					<span class="macro">panic!</span>(<span class="string">"Unrecognized disk."</span>)
 				}
 			}
 		};
@@ -1023,7 +1024,7 @@
 		<span class="self">self</span>.sblock.sig() == <span class="number">0xef53
 	</span>}
 
-	<span class="doccomment">/// Convert an inode number to it&#39;s corresponding Group Number
+	<span class="doccomment">/// Convert an inode number to it's corresponding Group Number
 	///
 	/// # Arguments
 	///
@@ -1038,7 +1039,7 @@
 		(inode - <span class="number">1</span>) / <span class="self">self</span>.sblock.inode_per_grp()
 	}
 
-	<span class="doccomment">/// Convert an inode number to it&#39;s corresponding Block Number inside it&#39;s group
+	<span class="doccomment">/// Convert an inode number to it's corresponding Block Number inside it's group
 	///
 	/// # Arguments
 	///
@@ -1057,7 +1058,7 @@
 		inode_table_block + offset / <span class="self">self</span>.sblock.bsize() <span class="kw">as </span>u32
 	}
 
-	<span class="doccomment">/// Convert an inode number to it&#39;s offset inside block
+	<span class="doccomment">/// Convert an inode number to it's offset inside block
 	///
 	/// # Arguments
 	///
@@ -1125,9 +1126,9 @@
 
 	<span class="kw">fn </span>write_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>, block_no: u32, offset: usize, slice: <span class="kw-2">&amp;</span>[u8]) {
 		<span class="kw">let </span><span class="kw-2">mut </span>block = <span class="self">self</span>.read_block(block_no);
-		<span class="macro">crate::dprintln!</span>(<span class="string">&quot;offset: {}&quot;</span>, offset);
-		<span class="macro">crate::dprintln!</span>(<span class="string">&quot;slice.len(): {}&quot;</span>, slice.len());
-		<span class="macro">crate::dprintln!</span>(<span class="string">&quot;block.len(): {}&quot;</span>, block.len());
+		<span class="macro">crate::dprintln!</span>(<span class="string">"offset: {}"</span>, offset);
+		<span class="macro">crate::dprintln!</span>(<span class="string">"slice.len(): {}"</span>, slice.len());
+		<span class="macro">crate::dprintln!</span>(<span class="string">"block.len(): {}"</span>, block.len());
 		block[offset..offset + slice.len()].copy_from_slice(slice);
 		<span class="self">self</span>.write_block(block_no, <span class="kw-2">&amp;</span>block);
 	}
@@ -1141,13 +1142,13 @@
 
 	<span class="kw">fn </span>write_inode(<span class="kw-2">&amp;mut </span><span class="self">self</span>, inodeno: usize, inode: <span class="kw-2">&amp;</span>inode::Inode) {
 		<span class="kw">if </span>inodeno &lt; <span class="number">1 </span>{
-			<span class="macro">panic!</span>(<span class="string">&quot;Ext2fs inodes start indexing at 1&quot;</span>);
+			<span class="macro">panic!</span>(<span class="string">"Ext2fs inodes start indexing at 1"</span>);
 		}
 		<span class="kw">let </span>block_no = <span class="self">self</span>.inode_to_block(inodeno <span class="kw">as </span>u32);
 		<span class="kw">let </span><span class="kw-2">mut </span>block = <span class="self">self</span>.read_block(block_no);
 		<span class="kw">let </span>index = <span class="self">self</span>.inode_to_offset(inodeno <span class="kw">as </span>u32) <span class="kw">as </span>usize;
 		<span class="macro">crate::dprintln!</span>(
-			<span class="string">&quot;Trying to get inode: {} found at index: {}&quot;</span>,
+			<span class="string">"Trying to get inode: {} found at index: {}"</span>,
 			inodeno,
 			index
 		);
@@ -1239,16 +1240,16 @@
 	///
 	/// // Inode 2 is always inode to root dir
 	/// let inode = ext2.get_inode_entry(2);
-	/// crate::kprintln!(&quot;{:#?}&quot;, inode);
+	/// crate::kprintln!("{:#?}", inode);
 	/// ```
 	</span><span class="kw">pub fn </span>get_inode_entry(<span class="kw-2">&amp;</span><span class="self">self</span>, entry: usize) -&gt; inode::Inode {
 		<span class="kw">if </span>entry &lt; <span class="number">1 </span>{
-			<span class="macro">panic!</span>(<span class="string">&quot;Ext2fs inodes start indexing at 1&quot;</span>);
+			<span class="macro">panic!</span>(<span class="string">"Ext2fs inodes start indexing at 1"</span>);
 		}
 		<span class="kw">let </span>block = <span class="self">self</span>.read_block(<span class="self">self</span>.inode_to_block(entry <span class="kw">as </span>u32));
 		<span class="kw">let </span>index = <span class="self">self</span>.inode_to_offset(entry <span class="kw">as </span>u32) <span class="kw">as </span>usize;
 		<span class="macro">crate::dprintln!</span>(
-			<span class="string">&quot;Trying to get inode: {} found at index: {}&quot;</span>,
+			<span class="string">"Trying to get inode: {} found at index: {}"</span>,
 			entry,
 			index
 		);
@@ -1271,11 +1272,11 @@
 	///
 	/// ```
 	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
-	/// // Look for &quot;dev&quot; inside inode 2 (inode 2 is the inode for root directory)
-	/// let dentry = ext2.dentry_find(2, &quot;dev&quot;);
+	/// // Look for "dev" inside inode 2 (inode 2 is the inode for root directory)
+	/// let dentry = ext2.dentry_find(2, "dev");
 	/// match dentry {
-	///     None =&gt; crate::kprintln!(&quot;File not found&quot;),
-	///     Some(dir) =&gt; crate::kprintln!(&quot;Found: {:#?}&quot;, dir)
+	///     None =&gt; crate::kprintln!("File not found"),
+	///     Some(dir) =&gt; crate::kprintln!("Found: {:#?}", dir)
 	/// };
 	/// ```
 	</span><span class="kw">pub fn </span>dentry_find(
@@ -1301,7 +1302,7 @@
 		<span class="prelude-val">None
 	</span>}
 
-	<span class="doccomment">/// Find file given it&#39;s path, start search from root directory
+	<span class="doccomment">/// Find file given it's path, start search from root directory
 	///
 	/// # Arguments
 	///
@@ -1311,14 +1312,14 @@
 	///
 	/// ```
 	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
-	/// let opt = ext2.get_inode_of(&quot;/dev/vga&quot;);
+	/// let opt = ext2.get_inode_of("/dev/vga");
 	/// match opt {
-	///     Some((inodeno, inode)) =&gt; crate::kprintln!(&quot;Found at inode {}:\n{:#?}&quot;, inodeno, inode);
-	///     None =&gt; crate::kprintln!(&quot;Not found&quot;)
+	///     Some((inodeno, inode)) =&gt; crate::kprintln!("Found at inode {}:\n{:#?}", inodeno, inode);
+	///     None =&gt; crate::kprintln!("Not found")
 	/// };
 	/// ```
 	</span><span class="kw">pub fn </span>get_inode_of(<span class="kw-2">&amp;</span><span class="self">self</span>, path: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Option</span>&lt;(usize, inode::Inode)&gt; {
-		<span class="self">self</span>.recurs_find(path.trim_start_matches(<span class="string">&#39;/&#39;</span>), <span class="number">2</span>)
+		<span class="self">self</span>.recurs_find(path.trim_start_matches(<span class="string">'/'</span>), <span class="number">2</span>)
 	}
 
 	<span class="doccomment">/// Perform recursive call to find file pass as argument starting at inodeno
@@ -1334,10 +1335,10 @@
 	/// ```
 	/// let ext2 = Ext2::new(unsafe { DISKNO as u8 }).unwrap();
 	/// // Look for vga named entry inside directory represented by inode 13
-	/// let opt = ext2.recurs_find(&quot;vga&quot;, 13)
+	/// let opt = ext2.recurs_find("vga", 13)
 	/// match opt {
-	///     None =&gt; crate::kprintln!(&quot;Entry does not exist&quot;),
-	///     Some((inodeno, _)) =&gt; crate::kprintln!(&quot;Entry exist at inode {}&quot;, inodeno)
+	///     None =&gt; crate::kprintln!("Entry does not exist"),
+	///     Some((inodeno, _)) =&gt; crate::kprintln!("Entry exist at inode {}", inodeno)
 	/// };
 	/// ```
 	</span><span class="kw">pub fn </span>recurs_find(
@@ -1349,16 +1350,16 @@
 			<span class="comment">// Caller has found the entry we search
 			</span><span class="kw">return </span><span class="prelude-val">Some</span>((inodeno, <span class="self">self</span>.get_inode_entry(inodeno)));
 		}
-		<span class="kw">if </span>path.starts_with(<span class="string">&#39;/&#39;</span>) {
+		<span class="kw">if </span>path.starts_with(<span class="string">'/'</span>) {
 			<span class="kw">return </span><span class="self">self</span>.get_inode_of(path);
 		}
-		<span class="kw">let </span>opt = path.find(<span class="string">&#39;/&#39;</span>);
+		<span class="kw">let </span>opt = path.find(<span class="string">'/'</span>);
 		<span class="kw">let </span>filename = <span class="kw">match </span>opt {
 			<span class="prelude-val">Some</span>(index) =&gt; <span class="kw-2">&amp;</span>path[..index],
 			<span class="prelude-val">None </span>=&gt; path
 		};
 		<span class="kw">let </span>dentry = <span class="self">self</span>.dentry_find(inodeno, filename)<span class="question-mark">?</span>;
-		<span class="kw">let </span>newpath = path.trim_start_matches(filename).trim_start_matches(<span class="string">&#39;/&#39;</span>);
+		<span class="kw">let </span>newpath = path.trim_start_matches(filename).trim_start_matches(<span class="string">'/'</span>);
 		<span class="self">self</span>.recurs_find(newpath, dentry.inode <span class="kw">as </span>usize)
 	}
 
@@ -1448,8 +1449,8 @@
 		</span><span class="kw">let </span>group = <span class="self">self</span>.inode_to_bgroup(inodeno <span class="kw">as </span>u32) <span class="kw">as </span>usize;
 		<span class="kw">let </span>bmap = <span class="self">self</span>.read_block_map(group);
 		<span class="kw">let </span>imap = <span class="self">self</span>.read_inode_map(group);
-		<span class="macro">crate::dprintln!</span>(<span class="string">&quot;Space {} {}&quot;</span>, bmap.get_space().<span class="number">0</span>, bmap.get_space().<span class="number">1</span>);
-		<span class="macro">crate::dprintln!</span>(<span class="string">&quot;Space {} {}&quot;</span>, imap.get_space().<span class="number">0</span>, imap.get_space().<span class="number">1</span>);
+		<span class="macro">crate::dprintln!</span>(<span class="string">"Space {} {}"</span>, bmap.get_space().<span class="number">0</span>, bmap.get_space().<span class="number">1</span>);
+		<span class="macro">crate::dprintln!</span>(<span class="string">"Space {} {}"</span>, imap.get_space().<span class="number">0</span>, imap.get_space().<span class="number">1</span>);
 
 		<span class="self">self</span>.write_block_map(group, bmap);
 		<span class="self">self</span>.write_inode_map(group, imap);
@@ -1484,7 +1485,7 @@
 				}
 			}
 		}
-		<span class="macro">todo!</span>(<span class="string">&quot;not enough space to write ?&quot;</span>);
+		<span class="macro">todo!</span>(<span class="string">"not enough space to write ?"</span>);
 	}
 }
 
@@ -1532,13 +1533,13 @@
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
 </span><span class="kw">pub fn </span>get_file_content(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode: usize) -&gt; Vec&lt;char&gt; {
-	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>opt = ext2.recurs_find(path, inode);
 	<span class="kw">match </span>opt {
 		<span class="prelude-val">None </span>=&gt; Vec::new(),
 		<span class="prelude-val">Some</span>((<span class="kw">_</span>, inode)) =&gt; {
 			<span class="kw">if </span>inode.tperm &amp; inode::ITYPE_REGU == <span class="number">0 </span>{
-				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;&#39;{}&#39;: Not a regular file.&quot;</span>, path);
+				<span class="macro">crate::kprintln!</span>(<span class="string">"'{}': Not a regular file."</span>, path);
 				<span class="kw">return </span>Vec::new();
 			}
 			<span class="kw">let </span><span class="kw-2">mut </span>size = inode.size();
@@ -1635,7 +1636,7 @@
 	path: <span class="kw-2">&amp;</span>str,
 	inode: usize
 ) -&gt; <span class="kw">crate</span>::vec::Vec&lt;inode::Dentry&gt; {
-	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>inode = ext2.recurs_find(path, inode);
 	<span class="kw">return match </span>inode {
 		<span class="prelude-val">None </span>=&gt; <span class="kw">crate</span>::vec::Vec::new(),
@@ -1659,7 +1660,7 @@
 }
 
 <span class="kw">pub fn </span>create_file(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>filename = path.file_name().unwrap();
 	<span class="kw">let </span>binding = path.parent().unwrap();
@@ -1667,12 +1668,12 @@
 	<span class="kw">let </span>inode = ext2.recurs_find(<span class="kw-2">&amp;</span>parent, inode_no);
 	<span class="kw">match </span>inode {
 		<span class="prelude-val">None </span>=&gt; {
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Path not found: {}&quot;</span>, parent);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Path not found: {}"</span>, parent);
 		},
 		<span class="prelude-val">Some</span>((inode_no, <span class="kw">_</span>)) =&gt; {
 			<span class="kw">let </span>check_exist = ext2.recurs_find(<span class="kw-2">&amp;</span>filename, inode_no);
 			<span class="kw">if </span>check_exist.is_some() {
-				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;&#39;{}&#39; already exists.&quot;</span>, filename);
+				<span class="macro">crate::kprintln!</span>(<span class="string">"'{}' already exists."</span>, filename);
 				<span class="kw">return</span>;
 			}
 			<span class="kw">let </span><span class="kw-2">mut </span>new_inode = inode::Inode::new();
@@ -1704,7 +1705,7 @@
 }
 
 <span class="kw">pub fn </span>remove_file(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>filename = path.file_name().unwrap();
 	<span class="kw">let </span>binding = path.parent().unwrap();
@@ -1712,19 +1713,19 @@
 	<span class="kw">let </span>inode = ext2.recurs_find(<span class="kw-2">&amp;</span>parent, inode_no);
 	<span class="kw">match </span>inode {
 		<span class="prelude-val">None </span>=&gt; {
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Path not found: {}&quot;</span>, parent);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Path not found: {}"</span>, parent);
 		},
 		<span class="prelude-val">Some</span>((inode_no, <span class="kw">_</span>)) =&gt; <span class="kw">match </span>ext2.dentry_find(inode_no, <span class="kw-2">&amp;</span>filename) {
 			<span class="prelude-val">Some</span>(dentry) =&gt; {
 				<span class="kw">let </span>inode = ext2.get_inode(dentry.inode <span class="kw">as </span>usize);
 				<span class="kw">if </span>inode.tperm &amp; inode::ITYPE_DIR != <span class="number">0 </span>{
-					<span class="macro">crate::kprintln!</span>(<span class="string">&quot;&#39;{}&#39;: Is a directory.&quot;</span>, path);
+					<span class="macro">crate::kprintln!</span>(<span class="string">"'{}': Is a directory."</span>, path);
 					<span class="kw">return</span>;
 				}
 				ext2.remove_dentry(inode_no, dentry);
 			},
 			<span class="prelude-val">None </span>=&gt; {
-				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;&#39;{}&#39; does not exist.&quot;</span>, filename);
+				<span class="macro">crate::kprintln!</span>(<span class="string">"'{}' does not exist."</span>, filename);
 			}
 		}
 	}
@@ -1732,7 +1733,7 @@
 
 <span class="doccomment">/// Helper function to create a folder at a given path
 </span><span class="kw">pub fn </span>create_dir(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>new_dir = path.file_name().unwrap();
 	<span class="kw">let </span>binding = path.parent().unwrap();
@@ -1740,12 +1741,12 @@
 	<span class="kw">let </span>inode = ext2.recurs_find(<span class="kw-2">&amp;</span>parent, inode_no);
 	<span class="kw">match </span>inode {
 		<span class="prelude-val">None </span>=&gt; {
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Path not found: {}&quot;</span>, parent);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Path not found: {}"</span>, parent);
 		},
 		<span class="prelude-val">Some</span>((inode_no, <span class="kw-2">mut </span>inode)) =&gt; {
 			<span class="kw">let </span>check_exist = ext2.recurs_find(<span class="kw-2">&amp;</span>new_dir, inode_no);
 			<span class="kw">if </span>check_exist.is_some() {
-				<span class="macro">crate::kprintln!</span>(<span class="string">&quot;&#39;{}&#39; already exists.&quot;</span>, new_dir);
+				<span class="macro">crate::kprintln!</span>(<span class="string">"'{}' already exists."</span>, new_dir);
 				<span class="kw">return</span>;
 			}
 			<span class="kw">let </span><span class="kw-2">mut </span>new_inode = inode::Inode::new();
@@ -1756,7 +1757,7 @@
 					| inode::IPERM_UEXEC | inode::IPERM_GREAD
 					| inode::IPERM_GEXEC | inode::IPERM_OREAD
 					| inode::IPERM_OEXEC;
-			<span class="comment">// hardlinks: directory and &#39;.&#39;
+			<span class="comment">// hardlinks: directory and '.'
 			</span>new_inode.count_hl = <span class="number">2</span>;
 			new_inode.count_ds = <span class="number">2</span>;
 			new_inode.size_lh = ext2.sblock.bsize() <span class="kw">as </span>u32;
@@ -1781,10 +1782,10 @@
 			ext2.write_inode(dot_inode_no, <span class="kw-2">&amp;</span>new_inode); <span class="comment">// copy actual inode
 			</span><span class="kw">let </span>dentry: inode::Dentry = inode::Dentry {
 				inode:       dot_inode_no <span class="kw">as </span>u32,
-				dentry_size: roundup(<span class="number">8 </span>+ <span class="string">&quot;.&quot;</span>.len(), <span class="number">4</span>) <span class="kw">as </span>u16,
-				name_length: <span class="string">&quot;.&quot;</span>.len() <span class="kw">as </span>u8,
+				dentry_size: roundup(<span class="number">8 </span>+ <span class="string">"."</span>.len(), <span class="number">4</span>) <span class="kw">as </span>u16,
+				name_length: <span class="string">"."</span>.len() <span class="kw">as </span>u8,
 				r#type:      inode::Dtype::Directory <span class="kw">as </span>u8,
-				name:        <span class="string">&quot;.&quot;</span>.to_string()
+				name:        <span class="string">"."</span>.to_string()
 			};
 			ext2.add_dentry(new_inode_no, dentry);
 			<span class="kw">let </span>dotdot_inode_no = ext2
@@ -1792,10 +1793,10 @@
 			ext2.write_inode(dotdot_inode_no, <span class="kw-2">&amp;</span>inode); <span class="comment">// copy previous inode
 			</span><span class="kw">let </span>dentry: inode::Dentry = inode::Dentry {
 				inode:       dotdot_inode_no <span class="kw">as </span>u32,
-				dentry_size: roundup(<span class="number">8 </span>+ <span class="string">&quot;..&quot;</span>.len(), <span class="number">4</span>) <span class="kw">as </span>u16,
-				name_length: <span class="string">&quot;..&quot;</span>.len() <span class="kw">as </span>u8,
+				dentry_size: roundup(<span class="number">8 </span>+ <span class="string">".."</span>.len(), <span class="number">4</span>) <span class="kw">as </span>u16,
+				name_length: <span class="string">".."</span>.len() <span class="kw">as </span>u8,
 				r#type:      inode::Dtype::Directory <span class="kw">as </span>u8,
-				name:        <span class="string">&quot;..&quot;</span>.to_string()
+				name:        <span class="string">".."</span>.to_string()
 			};
 			ext2.add_dentry(new_inode_no, dentry);
 			inode.count_hl += <span class="number">1</span>; <span class="comment">// add 1 hard-link (..) to parent
@@ -1805,74 +1806,74 @@
 }
 
 <span class="kw">pub fn </span>show_inode_info(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">&quot;Disk is not a ext2 filesystem.&quot;</span>);
+	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
 	<span class="kw">let </span>inode = ext2.recurs_find(<span class="kw-2">&amp;</span>path, inode_no);
 	<span class="kw">match </span>inode {
 		<span class="prelude-val">None </span>=&gt; {
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Path not found: {}&quot;</span>, path);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Path not found: {}"</span>, path);
 		},
 		<span class="prelude-val">Some</span>((inode_no, inode)) =&gt; {
-			<span class="macro">crate::kprint!</span>(<span class="string">&quot;Inode: {:&lt;4} &quot;</span>, inode_no);
+			<span class="macro">crate::kprint!</span>(<span class="string">"Inode: {:&lt;4} "</span>, inode_no);
 			<span class="macro">crate::kprint!</span>(
-				<span class="string">&quot;Type: {:&lt;12}&quot;</span>,
+				<span class="string">"Type: {:&lt;12}"</span>,
 				<span class="kw">match </span>inode.tperm {
-					x <span class="kw">if </span>x &amp; inode::ITYPE_FIFO != <span class="number">0 </span>=&gt; <span class="string">&quot;fifo&quot;</span>,
-					x <span class="kw">if </span>x &amp; inode::ITYPE_CHARDEV != <span class="number">0 </span>=&gt; <span class="string">&quot;chardev&quot;</span>,
-					x <span class="kw">if </span>x &amp; inode::ITYPE_DIR != <span class="number">0 </span>=&gt; <span class="string">&quot;directory&quot;</span>,
-					x <span class="kw">if </span>x &amp; inode::ITYPE_BLOCK != <span class="number">0 </span>=&gt; <span class="string">&quot;block&quot;</span>,
-					x <span class="kw">if </span>x &amp; inode::ITYPE_REGU != <span class="number">0 </span>=&gt; <span class="string">&quot;regular&quot;</span>,
-					x <span class="kw">if </span>x &amp; inode::ITYPE_SYMF != <span class="number">0 </span>=&gt; <span class="string">&quot;symbolic&quot;</span>,
-					x <span class="kw">if </span>x &amp; inode::ITYPE_SOCK != <span class="number">0 </span>=&gt; <span class="string">&quot;sock&quot;</span>,
-					<span class="kw">_ </span>=&gt; <span class="string">&quot;unknown&quot;
+					x <span class="kw">if </span>x &amp; inode::ITYPE_FIFO != <span class="number">0 </span>=&gt; <span class="string">"fifo"</span>,
+					x <span class="kw">if </span>x &amp; inode::ITYPE_CHARDEV != <span class="number">0 </span>=&gt; <span class="string">"chardev"</span>,
+					x <span class="kw">if </span>x &amp; inode::ITYPE_DIR != <span class="number">0 </span>=&gt; <span class="string">"directory"</span>,
+					x <span class="kw">if </span>x &amp; inode::ITYPE_BLOCK != <span class="number">0 </span>=&gt; <span class="string">"block"</span>,
+					x <span class="kw">if </span>x &amp; inode::ITYPE_REGU != <span class="number">0 </span>=&gt; <span class="string">"regular"</span>,
+					x <span class="kw">if </span>x &amp; inode::ITYPE_SYMF != <span class="number">0 </span>=&gt; <span class="string">"symbolic"</span>,
+					x <span class="kw">if </span>x &amp; inode::ITYPE_SOCK != <span class="number">0 </span>=&gt; <span class="string">"sock"</span>,
+					<span class="kw">_ </span>=&gt; <span class="string">"unknown"
 				</span>}
 			);
 			<span class="comment">// TODO: setuid bit
-			</span><span class="macro">crate::kprint!</span>(<span class="string">&quot;Mode:  0{:3o}   &quot;</span>, inode.tperm &amp; <span class="number">0o777</span>);
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Flags: {:#x}&quot;</span>, inode.flags);
+			</span><span class="macro">crate::kprint!</span>(<span class="string">"Mode:  0{:3o}   "</span>, inode.tperm &amp; <span class="number">0o777</span>);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Flags: {:#x}"</span>, inode.flags);
 
-			<span class="macro">crate::kprint!</span>(<span class="string">&quot;Generation: {:&lt;4} &quot;</span>, inode.gen_no);
+			<span class="macro">crate::kprint!</span>(<span class="string">"Generation: {:&lt;4} "</span>, inode.gen_no);
 			<span class="comment">// TODO: Version
-			</span><span class="macro">crate::kprintln!</span>(<span class="string">&quot;Version: {:#010x}:{:08x}&quot;</span>, <span class="number">0x0</span>, <span class="number">0x0</span>);
-			<span class="macro">crate::kprint!</span>(<span class="string">&quot;User:  {:&lt;6} &quot;</span>, inode.uid);
-			<span class="macro">crate::kprint!</span>(<span class="string">&quot;Group:  {:&lt;6} &quot;</span>, inode.gid);
+			</span><span class="macro">crate::kprintln!</span>(<span class="string">"Version: {:#010x}:{:08x}"</span>, <span class="number">0x0</span>, <span class="number">0x0</span>);
+			<span class="macro">crate::kprint!</span>(<span class="string">"User:  {:&lt;6} "</span>, inode.uid);
+			<span class="macro">crate::kprint!</span>(<span class="string">"Group:  {:&lt;6} "</span>, inode.gid);
 			<span class="comment">// TODO: idk
-			</span><span class="macro">crate::kprint!</span>(<span class="string">&quot;Project:     0   &quot;</span>);
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Size: {}&quot;</span>, inode.size());
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;File ACL: {}&quot;</span>, inode.facl);
-			<span class="macro">crate::kprint!</span>(<span class="string">&quot;Links: {:&lt;3} &quot;</span>, inode.count_hl);
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Blockcount: {}&quot;</span>, inode.count_ds);
-			<span class="macro">crate::kprint!</span>(<span class="string">&quot;Fragment:  Address: {:&lt;4} &quot;</span>, inode.block_addr);
+			</span><span class="macro">crate::kprint!</span>(<span class="string">"Project:     0   "</span>);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Size: {}"</span>, inode.size());
+			<span class="macro">crate::kprintln!</span>(<span class="string">"File ACL: {}"</span>, inode.facl);
+			<span class="macro">crate::kprint!</span>(<span class="string">"Links: {:&lt;3} "</span>, inode.count_hl);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Blockcount: {}"</span>, inode.count_ds);
+			<span class="macro">crate::kprint!</span>(<span class="string">"Fragment:  Address: {:&lt;4} "</span>, inode.block_addr);
 			<span class="comment">// TODO: idk
-			</span><span class="macro">crate::kprint!</span>(<span class="string">&quot;Number: {:&lt;4} &quot;</span>, <span class="number">0</span>);
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;Size: {}&quot;</span>, inode.size_uh);
+			</span><span class="macro">crate::kprint!</span>(<span class="string">"Number: {:&lt;4} "</span>, <span class="number">0</span>);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"Size: {}"</span>, inode.size_uh);
 			<span class="macro">crate::kprintln!</span>(
-				<span class="string">&quot; ctime: {:#010x}:{:08x} -- {}&quot;</span>,
+				<span class="string">" ctime: {:#010x}:{:08x} -- {}"</span>,
 				inode.creatt,
 				<span class="number">0</span>,
 				<span class="kw">crate</span>::time::ctime(inode.creatt)
 			);
 			<span class="macro">crate::kprintln!</span>(
-				<span class="string">&quot; atime: {:#010x}:{:08x} -- {}&quot;</span>,
+				<span class="string">" atime: {:#010x}:{:08x} -- {}"</span>,
 				inode.lat,
 				<span class="number">0</span>,
 				<span class="kw">crate</span>::time::ctime(inode.lat)
 			);
 			<span class="macro">crate::kprintln!</span>(
-				<span class="string">&quot; mtime: {:#010x}:{:08x} -- {}&quot;</span>,
+				<span class="string">" mtime: {:#010x}:{:08x} -- {}"</span>,
 				inode.lmt,
 				<span class="number">0</span>,
 				<span class="kw">crate</span>::time::ctime(inode.lmt)
 			);
 			<span class="comment">// TODO: idk
 			</span><span class="macro">crate::kprintln!</span>(
-				<span class="string">&quot;crtime: {:#010x}:{:08x} -- {}&quot;</span>,
+				<span class="string">"crtime: {:#010x}:{:08x} -- {}"</span>,
 				<span class="number">0x0</span>,
 				<span class="number">0</span>,
 				<span class="kw">crate</span>::time::ctime(<span class="number">0x0</span>)
 			);
 			<span class="comment">// TODO: idk
-			</span><span class="macro">crate::kprintln!</span>(<span class="string">&quot;Size of extra inode fields: {}&quot;</span>, <span class="number">0</span>);
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;BLOCKS:&quot;</span>);
+			</span><span class="macro">crate::kprintln!</span>(<span class="string">"Size of extra inode fields: {}"</span>, <span class="number">0</span>);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"BLOCKS:"</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>index = <span class="number">0</span>;
 			<span class="kw">let </span><span class="kw-2">mut </span>total = <span class="number">0</span>;
 			<span class="kw">let </span>print = |<span class="kw-2">mut </span>index: usize, blocks_no: Vec&lt;u32&gt;| -&gt; usize {
@@ -1886,18 +1887,18 @@
 						stop += <span class="number">1</span>;
 					}
 					<span class="kw">if </span>index != <span class="number">0 </span>{
-						<span class="macro">crate::kprint!</span>(<span class="string">&quot;, &quot;</span>);
+						<span class="macro">crate::kprint!</span>(<span class="string">", "</span>);
 					}
 					<span class="kw">if </span>stop != i {
 						<span class="macro">crate::kprint!</span>(
-							<span class="string">&quot;({}-{}):{}-{}&quot;</span>,
+							<span class="string">"({}-{}):{}-{}"</span>,
 							index,
 							index + stop - i,
 							blocks_no[i],
 							blocks_no[stop]
 						);
 					} <span class="kw">else </span>{
-						<span class="macro">crate::kprint!</span>(<span class="string">&quot;({}):{}&quot;</span>, index, blocks_no[i]);
+						<span class="macro">crate::kprint!</span>(<span class="string">"({}):{}"</span>, index, blocks_no[i]);
 					}
 					index += stop - i + <span class="number">1</span>;
 					i = stop + <span class="number">1</span>;
@@ -1909,19 +1910,19 @@
 			index += ret;
 			total += ret;
 			<span class="kw">if </span>inode.sibp != <span class="number">0 </span>{
-				<span class="macro">crate::kprint!</span>(<span class="string">&quot;, (IND): {}&quot;</span>, inode.sibp);
+				<span class="macro">crate::kprint!</span>(<span class="string">", (IND): {}"</span>, inode.sibp);
 				total += <span class="number">1</span>;
 				<span class="kw">let </span>ret = print(index, inode.get_sibp_blocks_no(<span class="kw-2">&amp;</span>ext2));
 				total += ret;
 				index += ret;
 			}
 			<span class="kw">if </span>inode.dibp != <span class="number">0 </span>{
-				<span class="macro">crate::kprint!</span>(<span class="string">&quot;, (DIND): {}&quot;</span>, inode.dibp);
+				<span class="macro">crate::kprint!</span>(<span class="string">", (DIND): {}"</span>, inode.dibp);
 				total += <span class="number">1</span>;
 				<span class="comment">// Get (IND)
 				</span><span class="kw">for </span>sibp <span class="kw">in </span>inode::Inode::_get_sibp_blocks_no(inode.dibp, <span class="kw-2">&amp;</span>ext2)
 				{
-					<span class="macro">crate::kprint!</span>(<span class="string">&quot;, (IND): {}&quot;</span>, sibp);
+					<span class="macro">crate::kprint!</span>(<span class="string">", (IND): {}"</span>, sibp);
 					total += <span class="number">1</span>;
 					<span class="kw">let </span>ret = print(
 						index,
@@ -1932,14 +1933,14 @@
 				}
 			}
 			<span class="kw">if </span>inode.tibp != <span class="number">0 </span>{
-				<span class="macro">crate::kprint!</span>(<span class="string">&quot;, (TIND): {} &quot;</span>, inode.tibp);
+				<span class="macro">crate::kprint!</span>(<span class="string">", (TIND): {} "</span>, inode.tibp);
 				total += <span class="number">1</span>;
 				<span class="kw">for </span>dibp <span class="kw">in </span>inode::Inode::_get_sibp_blocks_no(inode.tibp, <span class="kw-2">&amp;</span>ext2)
 				{
-					<span class="macro">crate::kprint!</span>(<span class="string">&quot;, (DIND): {}&quot;</span>, dibp);
+					<span class="macro">crate::kprint!</span>(<span class="string">", (DIND): {}"</span>, dibp);
 					total += <span class="number">1</span>;
 					<span class="kw">for </span>sibp <span class="kw">in </span>inode::Inode::_get_sibp_blocks_no(dibp, <span class="kw-2">&amp;</span>ext2) {
-						<span class="macro">crate::kprint!</span>(<span class="string">&quot;, (IND): {}&quot;</span>, sibp);
+						<span class="macro">crate::kprint!</span>(<span class="string">", (IND): {}"</span>, sibp);
 						total += <span class="number">1</span>;
 						<span class="kw">let </span>ret = print(
 							index,
@@ -1950,7 +1951,7 @@
 					}
 				}
 			}
-			<span class="macro">crate::kprintln!</span>(<span class="string">&quot;\nTOTAL: {}&quot;</span>, total);
+			<span class="macro">crate::kprintln!</span>(<span class="string">"\nTOTAL: {}"</span>, total);
 		}
 	};
 }
