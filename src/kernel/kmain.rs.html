@@ -69,7 +69,6 @@
 <a href="#68" id="68">68</a>
 <a href="#69" id="69">69</a>
 <a href="#70" id="70">70</a>
-<a href="#71" id="71">71</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::syscalls::exit::sys_waitpid;
 <span class="kw">use </span><span class="kw">crate</span>::vga_buffer::change_color;
 <span class="kw">use </span><span class="kw">crate</span>::vga_buffer::color::Color;
@@ -105,22 +104,21 @@
 }
 
 <span class="kw">use </span><span class="kw">crate</span>::cli::DISKNO;
+<span class="kw">use </span><span class="kw">crate</span>::disk;
 <span class="kw">use </span><span class="kw">crate</span>::fs::ext2;
 
 <span class="attr">#[no_mangle]
 </span><span class="kw">pub extern </span><span class="string">"C" </span><span class="kw">fn </span>kmain() -&gt; ! {
-	<span class="kw">for </span>i <span class="kw">in </span><span class="number">0</span>..<span class="number">4 </span>{
-		<span class="kw">if </span>ext2::is_ext2(i) {
-			<span class="kw-2">*</span>DISKNO.lock() = i <span class="kw">as </span>i8;
-			<span class="macro">crate::kprintln!</span>(<span class="string">"Found ext2 filesystem on disk {}."</span>, i);
-			<span class="kw">break</span>;
+	<span class="comment">// Mounting first ext2 disk found to DISKNO
+	</span><span class="kw">let </span>disks = disk::discover();
+	<span class="kw">for </span>i <span class="kw">in </span>disks {
+		<span class="kw">if let </span><span class="prelude-val">Ok</span>(ext) = ext2::Ext2::new(i) {
+			<span class="macro">kprintln!</span>(<span class="string">"Found an ext2 fs"</span>);
+			<span class="kw-2">*</span>DISKNO.lock() = <span class="prelude-val">Some</span>(ext);
 		}
 	}
-	<span class="kw">if </span><span class="kw-2">*</span>DISKNO.lock() == -<span class="number">1 </span>{
-		<span class="macro">todo!</span>(<span class="string">"No ext2 disk found."</span>);
-	}
-	<span class="comment">// 	poc::insertion_poc();
-	</span><span class="macro">kprintln!</span>(<span class="string">"Hello World of {}!"</span>, <span class="number">42</span>);
+
+	<span class="macro">kprintln!</span>(<span class="string">"Hello World of {}!"</span>, <span class="number">42</span>);
 	<span class="macro">change_color!</span>(Color::Red, Color::White);
 	<span class="kw">let </span>workspace_msg = string::String::from(
 		<span class="string">"Press Ctrl-2 to navigate to the second workspace"

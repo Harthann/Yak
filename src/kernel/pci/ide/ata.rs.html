@@ -263,12 +263,7 @@
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
 <a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-</pre></div><pre class="rust"><code><span class="kw">use super</span>::{IDEChannelRegisters, IDEController, IDEDevice, IDE_IRQ_INVOKED};
+</pre></div><pre class="rust"><code><span class="kw">use super</span>::{IDEChannelRegisters, IDEDevice, IDE_IRQ_INVOKED};
 
 <span class="kw">use </span><span class="kw">crate</span>::io;
 
@@ -373,13 +368,17 @@
 <span class="kw">impl </span>ATA {
 	<span class="kw">pub fn </span>access(
 		direction: u8,
-		device: <span class="kw-2">&amp;mut </span>IDEDevice,
+		device: <span class="kw-2">&amp;</span>IDEDevice,
 		lba: u32,
 		numsects: u8,
 		<span class="kw-2">mut </span>edi: u32
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), u8&gt; {
-		<span class="kw">let </span>binding = device.channel.as_mut().ok_or(<span class="number">1</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>channel: <span class="kw-2">&amp;mut </span>IDEChannelRegisters = <span class="kw-2">&amp;mut </span>binding.lock();
+		<span class="kw">let </span>binding = <span class="kw">match </span><span class="kw-2">&amp;</span>device.channel {
+			<span class="prelude-val">Some</span>(x) =&gt; x,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="number">0x1</span>)
+		};
+		<span class="kw">let </span>bind = binding.lock();
+		<span class="kw">let </span><span class="kw-2">mut </span>channel = bind.borrow_mut();
 		<span class="kw">let </span>lba_mode: u8; <span class="comment">// 0: CHS, 1: LBA28, 2: LBA48
 		</span><span class="kw">let </span>dma: u8; <span class="comment">// 0: No DMA, 1: DMA
 		</span><span class="kw">let </span><span class="kw-2">mut </span>lba_io: [u8; <span class="number">6</span>] = [<span class="number">0</span>; <span class="number">6</span>];
@@ -394,7 +393,7 @@
 		<span class="comment">// Disable IRQ
 		</span><span class="kw-2">*</span>IDE_IRQ_INVOKED.lock() = <span class="number">0x0</span>;
 		channel.n_ien = <span class="number">0x02</span>;
-		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+		channel.write(ATAReg::CONTROL, <span class="number">0x02</span>);
 
 		<span class="comment">// (I) Select one from LBA28, LBA48 or CHS
 		// Sure Drive should support LBA in this case or you
@@ -438,38 +437,30 @@
 		</span>dma = <span class="number">0</span>; <span class="comment">// We don't support DMA
 
 		// (III) Wait if the drive is busy
-		</span><span class="kw">while </span>(IDEController::read(channel, ATAReg::STATUS) &amp; ATAStatus::BSY)
-			!= <span class="number">0
-		</span>{}
+		</span><span class="kw">while </span>(channel.read(ATAReg::STATUS) &amp; ATAStatus::BSY) != <span class="number">0 </span>{}
 
 		<span class="comment">// (IV) Select Drive from the controller
 		</span><span class="kw">if </span>lba_mode == <span class="number">0 </span>{
 			<span class="comment">// Drive &amp; CHS
-			</span>IDEController::write(
-				channel,
-				ATAReg::HDDEVSEL,
-				<span class="number">0xa0 </span>| ((slavebit <span class="kw">as </span>u8) &lt;&lt; <span class="number">4</span>) | head
-			);
+			</span>channel
+				.write(ATAReg::HDDEVSEL, <span class="number">0xa0 </span>| ((slavebit <span class="kw">as </span>u8) &lt;&lt; <span class="number">4</span>) | head);
 		} <span class="kw">else </span>{
 			<span class="comment">// Drive &amp; LBA
-			</span>IDEController::write(
-				channel,
-				ATAReg::HDDEVSEL,
-				<span class="number">0xe0 </span>| ((slavebit <span class="kw">as </span>u8) &lt;&lt; <span class="number">4</span>) | head
-			);
+			</span>channel
+				.write(ATAReg::HDDEVSEL, <span class="number">0xe0 </span>| ((slavebit <span class="kw">as </span>u8) &lt;&lt; <span class="number">4</span>) | head);
 		}
 
 		<span class="comment">// (V) Write Parameters
 		</span><span class="kw">if </span>lba_mode == <span class="number">2 </span>{
-			IDEController::write(channel, ATAReg::SECCOUNT1, <span class="number">0</span>);
-			IDEController::write(channel, ATAReg::LBA3, lba_io[<span class="number">3</span>]);
-			IDEController::write(channel, ATAReg::LBA4, lba_io[<span class="number">4</span>]);
-			IDEController::write(channel, ATAReg::LBA5, lba_io[<span class="number">5</span>]);
+			channel.write(ATAReg::SECCOUNT1, <span class="number">0</span>);
+			channel.write(ATAReg::LBA3, lba_io[<span class="number">3</span>]);
+			channel.write(ATAReg::LBA4, lba_io[<span class="number">4</span>]);
+			channel.write(ATAReg::LBA5, lba_io[<span class="number">5</span>]);
 		}
-		IDEController::write(channel, ATAReg::SECCOUNT0, numsects);
-		IDEController::write(channel, ATAReg::LBA0, lba_io[<span class="number">0</span>]);
-		IDEController::write(channel, ATAReg::LBA1, lba_io[<span class="number">1</span>]);
-		IDEController::write(channel, ATAReg::LBA2, lba_io[<span class="number">2</span>]);
+		channel.write(ATAReg::SECCOUNT0, numsects);
+		channel.write(ATAReg::LBA0, lba_io[<span class="number">0</span>]);
+		channel.write(ATAReg::LBA1, lba_io[<span class="number">1</span>]);
+		channel.write(ATAReg::LBA2, lba_io[<span class="number">2</span>]);
 
 		<span class="comment">// (VI) Select the command and send it
 		// Routine that is followed:
@@ -496,7 +487,7 @@
 			<span class="kw">_ </span>=&gt; <span class="macro">todo!</span>()
 		};
 		<span class="comment">// Send the command
-		</span>IDEController::write(channel, ATAReg::COMMAND, cmd <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::COMMAND, cmd <span class="kw">as </span>u8);
 
 		<span class="kw">if </span>dma != <span class="number">0 </span>{
 			<span class="kw">if </span>direction == <span class="number">0 </span>{
@@ -509,7 +500,7 @@
 				<span class="comment">// PIO Read
 				</span><span class="kw">for _ in </span><span class="number">0</span>..numsects {
 					<span class="comment">// Polling, set error and exit if there is
-					</span>IDEController::polling(channel, <span class="number">1</span>)<span class="question-mark">?</span>;
+					</span>channel.polling(<span class="number">1</span>)<span class="question-mark">?</span>;
 					io::insw(bus <span class="kw">as </span>u16, edi <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>, words);
 					edi += words * <span class="number">2</span>;
 				}
@@ -517,12 +508,11 @@
 				<span class="comment">// PIO Write
 				</span><span class="kw">for _ in </span><span class="number">0</span>..numsects {
 					<span class="comment">// Polling
-					</span>IDEController::polling(channel, <span class="number">0</span>)<span class="question-mark">?</span>;
+					</span>channel.polling(<span class="number">0</span>)<span class="question-mark">?</span>;
 					io::outsw(bus <span class="kw">as </span>u16, edi <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>, words);
 					edi += words * <span class="number">2</span>;
 				}
-				IDEController::write(
-					channel,
+				channel.write(
 					ATAReg::COMMAND,
 					[
 						ATACommand::CacheFlush,
@@ -531,7 +521,7 @@
 					][lba_mode <span class="kw">as </span>usize] <span class="kw">as </span>u8
 				);
 				<span class="comment">// Polling
-				</span>IDEController::polling(channel, <span class="number">0</span>)<span class="question-mark">?</span>;
+				</span>channel.polling(<span class="number">0</span>)<span class="question-mark">?</span>;
 			}
 		}
 		<span class="prelude-val">Ok</span>(())

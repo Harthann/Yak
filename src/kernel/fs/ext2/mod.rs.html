@@ -961,27 +961,13 @@
 <a href="#960" id="960">960</a>
 <a href="#961" id="961">961</a>
 <a href="#962" id="962">962</a>
-<a href="#963" id="963">963</a>
-<a href="#964" id="964">964</a>
-<a href="#965" id="965">965</a>
-<a href="#966" id="966">966</a>
-<a href="#967" id="967">967</a>
-<a href="#968" id="968">968</a>
-<a href="#969" id="969">969</a>
-<a href="#970" id="970">970</a>
-<a href="#971" id="971">971</a>
-<a href="#972" id="972">972</a>
-<a href="#973" id="973">973</a>
-<a href="#974" id="974">974</a>
-<a href="#975" id="975">975</a>
-<a href="#976" id="976">976</a>
-<a href="#977" id="977">977</a>
-<a href="#978" id="978">978</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::alloc::vec;
+<span class="kw">use </span><span class="kw">crate</span>::disk::DiskIO;
 <span class="kw">use </span><span class="kw">crate</span>::pci::ide::IDE;
 <span class="kw">use </span><span class="kw">crate</span>::string::ToString;
 <span class="kw">use </span><span class="kw">crate</span>::utils::math::roundup;
 <span class="kw">use </span><span class="kw">crate</span>::utils::path::Path;
+<span class="kw">use </span>alloc::boxed::Box;
 
 <span class="kw">mod </span>bitmap;
 <span class="kw">pub mod </span>block;
@@ -992,32 +978,21 @@
 /// In the filesystem created to test it this means we read/write 16 sectors for each operations
 /// This is pretty ineffective and will probably need optimisation in later version
 </span><span class="kw">pub struct </span>Ext2 {
-	diskno:      u8,
 	sector_size: usize,
+	diskio:      Box&lt;<span class="kw">dyn </span>DiskIO + Send&gt;,
 	<span class="kw">pub </span>sblock:  block::BaseSuperblock
 }
 
 <span class="kw">impl </span>Ext2 {
-	<span class="kw">pub fn </span>new(diskno: u8) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, u8&gt; {
-		<span class="kw">let </span>sector_size = {
-			<span class="kw">let </span>binding = IDE.lock();
-			<span class="kw">let </span>device = binding.get_device(diskno);
-			<span class="kw">if </span>device.is_none() {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="number">1</span>);
-			}
-			<span class="kw">match </span>device.unwrap().r#type {
-				x <span class="kw">if </span>x == ide::IDEType::ATA <span class="kw">as </span>u16 =&gt; ide::ata::SECTOR_SIZE,
-				x <span class="kw">if </span>x == ide::IDEType::ATAPI <span class="kw">as </span>u16 =&gt; ide::atapi::SECTOR_SIZE,
-				<span class="kw">_ </span>=&gt; {
-					<span class="macro">panic!</span>(<span class="string">"Unrecognized disk."</span>)
-				}
-			}
-		};
-		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
-			diskno:      diskno,
-			sector_size: sector_size <span class="kw">as </span>usize,
-			sblock:      read_superblock(diskno, sector_size <span class="kw">as </span>usize)<span class="question-mark">?
-		</span>})
+	<span class="kw">pub fn </span>new(<span class="kw-2">mut </span>diskio: Box&lt;<span class="kw">dyn </span>DiskIO + Send&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, u8&gt; {
+		<span class="kw">let </span>sector_size = diskio.sector_size() <span class="kw">as </span>usize;
+		<span class="kw">let </span>sblock = read_superblock(<span class="kw-2">&amp;mut </span>diskio)<span class="question-mark">?</span>;
+		<span class="kw">let </span>fs = <span class="self">Self </span>{ sector_size, diskio, sblock };
+		<span class="kw">if </span>fs.is_valid() {
+			<span class="prelude-val">Ok</span>(fs)
+		} <span class="kw">else </span>{
+			<span class="prelude-val">Err</span>(<span class="number">0x01</span>)
+		}
 	}
 
 	<span class="kw">pub fn </span>is_valid(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
@@ -1093,12 +1068,9 @@
 		<span class="kw">let </span>first_sector = (bsize * block_no <span class="kw">as </span>usize) / <span class="self">self</span>.sector_size;
 		<span class="kw">let </span><span class="kw-2">mut </span>block: <span class="kw">crate</span>::vec::Vec&lt;u8&gt; = <span class="kw">crate</span>::vec::Vec::new();
 		<span class="kw">for </span>i <span class="kw">in </span>first_sector..first_sector + nb_sector {
-			IDE.lock().read_sectors(
-				<span class="self">self</span>.diskno,
-				<span class="number">1</span>,
-				i <span class="kw">as </span>u32,
-				buffer.as_ptr() <span class="kw">as </span>u32
-			);
+			<span class="self">self</span>.diskio
+				.read_sectors(<span class="number">1</span>, i <span class="kw">as </span>u32, buffer.as_ptr() <span class="kw">as </span>u32)
+				.expect(<span class="string">"Something went wrong in read_block"</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>start = <span class="number">0</span>;
 			<span class="kw">if </span>sector_per_block &lt; <span class="number">1.0 </span>{
 				start = (block_no <span class="kw">as </span>usize % (<span class="number">1.0 </span>/ sector_per_block) <span class="kw">as </span>usize)
@@ -1116,12 +1088,13 @@
 		<span class="kw">let </span>sector_per_block = bsize / <span class="self">self</span>.sector_size <span class="kw">as </span>usize;
 
 		<span class="kw">let </span>sector_no = bsize / <span class="self">self</span>.sector_size <span class="kw">as </span>usize;
-		IDE.lock().write_sectors(
-			<span class="self">self</span>.diskno,
-			sector_no <span class="kw">as </span>u8,
-			block_no * sector_per_block <span class="kw">as </span>u32,
-			block.as_ptr() <span class="kw">as </span>u32
-		);
+		<span class="self">self</span>.diskio
+			.write_sectors(
+				sector_no <span class="kw">as </span>u8,
+				block_no * sector_per_block <span class="kw">as </span>u32,
+				block.as_ptr() <span class="kw">as </span>u32
+			)
+			.expect(<span class="string">"Something went wrong in write block"</span>);
 	}
 
 	<span class="kw">fn </span>write_slice(<span class="kw-2">&amp;mut </span><span class="self">self</span>, block_no: u32, offset: usize, slice: <span class="kw-2">&amp;</span>[u8]) {
@@ -1492,9 +1465,9 @@
 <span class="kw">use </span><span class="kw">crate</span>::pci::ide;
 
 <span class="kw">pub fn </span>read_superblock(
-	diskno: u8,
-	sector_size: usize
+	diskio: <span class="kw-2">&amp;mut </span>Box&lt;<span class="kw">dyn </span>DiskIO + Send&gt;
 ) -&gt; <span class="prelude-ty">Result</span>&lt;block::BaseSuperblock, u8&gt; {
+	<span class="kw">let </span>sector_size = diskio.sector_size();
 	<span class="comment">// superblock is at index 1024 and 1024 bytes long
 	</span><span class="kw">let </span><span class="kw-2">mut </span>nb_sector = roundup(<span class="number">2048 </span>/ sector_size, <span class="number">1</span>) <span class="kw">as </span>usize;
 	<span class="comment">// sector_size &gt; 2048
@@ -1503,12 +1476,7 @@
 	}
 	<span class="kw">let </span>buffer: Vec&lt;u8&gt; = <span class="macro">vec!</span>[<span class="number">0</span>; nb_sector * sector_size];
 
-	IDE.lock().read_sectors(
-		diskno,
-		nb_sector <span class="kw">as </span>u8,
-		<span class="number">0</span>,
-		buffer.as_ptr() <span class="kw">as </span>u32
-	)<span class="question-mark">?</span>;
+	diskio.read_sectors(nb_sector <span class="kw">as </span>u8, <span class="number">0</span>, buffer.as_ptr() <span class="kw">as </span>u32)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>sblock = block::BaseSuperblock::from(<span class="kw-2">&amp;</span>buffer[<span class="number">1024</span>..<span class="number">1024 </span>+ <span class="number">84</span>]);
 	<span class="kw">if </span>sblock.version().<span class="number">0 </span>&gt;= <span class="number">1 </span>{
 		sblock.set_extension(block::ExtendedSuperblock::from(
@@ -1518,11 +1486,11 @@
 	<span class="prelude-val">Ok</span>(sblock)
 }
 
-<span class="kw">pub fn </span>is_ext2(diskno: u8) -&gt; bool {
-	Ext2::new(diskno <span class="kw">as </span>u8).is_ok_and(|fs| fs.is_valid())
-}
+<span class="comment">// pub fn is_ext2(diskno: u8) -&gt; bool {
+// Ext2::new(diskno as u8).is_ok_and(|fs| fs.is_valid())
+// }
 
-<span class="kw">use </span><span class="kw">crate</span>::vec::Vec;
+</span><span class="kw">use </span><span class="kw">crate</span>::vec::Vec;
 
 <span class="kw">fn </span>get_block_content(block: Vec&lt;u8&gt;, size: usize) -&gt; Vec&lt;char&gt; {
 	<span class="kw">let </span>buffer = <span class="kw-2">&amp;</span>block[<span class="number">0</span>..size];
@@ -1532,9 +1500,9 @@
 <span class="doccomment">/// Helper function to get content of a file.
 /// Does not yet check if found entry is really a file.
 /// Does not yet take into account file bigger than 4096
-</span><span class="kw">pub fn </span>get_file_content(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode: usize) -&gt; Vec&lt;char&gt; {
-	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
-	<span class="kw">let </span>opt = ext2.recurs_find(path, inode);
+</span><span class="kw">pub fn </span>get_file_content(ext2: <span class="kw-2">&amp;</span>Ext2, path: <span class="kw-2">&amp;</span>str, inode: usize) -&gt; Vec&lt;char&gt; {
+	<span class="comment">// let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	</span><span class="kw">let </span>opt = ext2.recurs_find(path, inode);
 	<span class="kw">match </span>opt {
 		<span class="prelude-val">None </span>=&gt; Vec::new(),
 		<span class="prelude-val">Some</span>((<span class="kw">_</span>, inode)) =&gt; {
@@ -1632,12 +1600,12 @@
 <span class="doccomment">/// Helper function to list all entries in a directory
 /// Does not yet check if found entry is a directory or not
 </span><span class="kw">pub fn </span>list_dir(
-	diskno: u8,
+	ext2: <span class="kw-2">&amp;</span>Ext2,
 	path: <span class="kw-2">&amp;</span>str,
 	inode: usize
 ) -&gt; <span class="kw">crate</span>::vec::Vec&lt;inode::Dentry&gt; {
-	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
-	<span class="kw">let </span>inode = ext2.recurs_find(path, inode);
+	<span class="comment">// let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	</span><span class="kw">let </span>inode = ext2.recurs_find(path, inode);
 	<span class="kw">return match </span>inode {
 		<span class="prelude-val">None </span>=&gt; <span class="kw">crate</span>::vec::Vec::new(),
 		<span class="prelude-val">Some</span>((<span class="kw">_</span>, inode)) =&gt; {
@@ -1659,9 +1627,9 @@
 	};
 }
 
-<span class="kw">pub fn </span>create_file(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
-	<span class="kw">let </span>path = Path::new(path);
+<span class="kw">pub fn </span>create_file(ext2: <span class="kw-2">&amp;mut </span>Ext2, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
+	<span class="comment">// let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	</span><span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>filename = path.file_name().unwrap();
 	<span class="kw">let </span>binding = path.parent().unwrap();
 	<span class="kw">let </span>parent = binding.as_str();
@@ -1704,9 +1672,9 @@
 	}
 }
 
-<span class="kw">pub fn </span>remove_file(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
-	<span class="kw">let </span>path = Path::new(path);
+<span class="kw">pub fn </span>remove_file(ext2: <span class="kw-2">&amp;mut </span>Ext2, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
+	<span class="comment">// let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	</span><span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>filename = path.file_name().unwrap();
 	<span class="kw">let </span>binding = path.parent().unwrap();
 	<span class="kw">let </span>parent = binding.as_str();
@@ -1732,9 +1700,9 @@
 }
 
 <span class="doccomment">/// Helper function to create a folder at a given path
-</span><span class="kw">pub fn </span>create_dir(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span><span class="kw-2">mut </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
-	<span class="kw">let </span>path = Path::new(path);
+</span><span class="kw">pub fn </span>create_dir(ext2: <span class="kw-2">&amp;mut </span>Ext2, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
+	<span class="comment">// let mut ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	</span><span class="kw">let </span>path = Path::new(path);
 	<span class="kw">let </span>new_dir = path.file_name().unwrap();
 	<span class="kw">let </span>binding = path.parent().unwrap();
 	<span class="kw">let </span>parent = binding.as_str();
@@ -1805,9 +1773,9 @@
 	}
 }
 
-<span class="kw">pub fn </span>show_inode_info(diskno: u8, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
-	<span class="kw">let </span>ext2 = Ext2::new(diskno).expect(<span class="string">"Disk is not a ext2 filesystem."</span>);
-	<span class="kw">let </span>inode = ext2.recurs_find(<span class="kw-2">&amp;</span>path, inode_no);
+<span class="kw">pub fn </span>show_inode_info(ext2: <span class="kw-2">&amp;</span>Ext2, path: <span class="kw-2">&amp;</span>str, inode_no: usize) {
+	<span class="comment">// let ext2 = Ext2::new(diskno).expect("Disk is not a ext2 filesystem.");
+	</span><span class="kw">let </span>inode = ext2.recurs_find(<span class="kw-2">&amp;</span>path, inode_no);
 	<span class="kw">match </span>inode {
 		<span class="prelude-val">None </span>=&gt; {
 			<span class="macro">crate::kprintln!</span>(<span class="string">"Path not found: {}"</span>, path);

@@ -259,9 +259,6 @@
 <a href="#258" id="258">258</a>
 <a href="#259" id="259">259</a>
 <a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span><span class="kw">super</span>::ata::{ATACommand, ATAReg, ATAStatus};
 <span class="kw">use super</span>::{
 	IDEChannelRegisters,
@@ -285,8 +282,12 @@
 
 <span class="kw">impl </span>ATAPI {
 	<span class="kw">pub fn </span>capacity(device: <span class="kw-2">&amp;mut </span>IDEDevice, lba: u32) -&gt; <span class="prelude-ty">Result</span>&lt;u32, u8&gt; {
-		<span class="kw">let </span>binding = device.channel.as_mut().ok_or(<span class="number">1</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>channel: <span class="kw-2">&amp;mut </span>IDEChannelRegisters = <span class="kw-2">&amp;mut </span>binding.lock();
+		<span class="kw">let </span>binding = <span class="kw">match </span><span class="kw-2">&amp;</span>device.channel {
+			<span class="prelude-val">Some</span>(x) =&gt; x,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="number">0x1</span>)
+		};
+		<span class="kw">let </span>bind = binding.lock();
+		<span class="kw">let </span><span class="kw-2">mut </span>channel = bind.borrow_mut();
 		<span class="kw">let </span>slavebit: u32 = device.drive <span class="kw">as </span>u32;
 		<span class="kw">let </span>bus: u32 = channel.base <span class="kw">as </span>u32;
 		<span class="kw">let </span><span class="kw-2">mut </span>buffer: [u32; <span class="number">2</span>] = [<span class="number">0</span>; <span class="number">2</span>];
@@ -294,7 +295,8 @@
 		<span class="comment">// Enable IRQs
 		</span><span class="kw-2">*</span>IDE_IRQ_INVOKED.lock() = <span class="number">0</span>;
 		channel.n_ien = <span class="number">0</span>;
-		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+		<span class="kw">let </span>n_ien = channel.n_ien;
+		channel.write(ATAReg::CONTROL, n_ien);
 
 		<span class="comment">// (I) Setup SCSI Packet
 		</span><span class="kw">let </span>packet: [u8; <span class="number">12</span>] = [
@@ -313,44 +315,40 @@
 		</span>];
 
 		<span class="comment">// (II) Select the drive
-		</span>IDEController::write(channel, ATAReg::HDDEVSEL, (slavebit &lt;&lt; <span class="number">4</span>) <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::HDDEVSEL, (slavebit &lt;&lt; <span class="number">4</span>) <span class="kw">as </span>u8);
 
 		<span class="comment">// (III) Delay 400 nanoseconds for select to complete
 		</span><span class="kw">for _ in </span><span class="number">0</span>..<span class="number">4 </span>{
 			<span class="comment">// Reading the Alternate Status port wastes 100ns
-			</span>IDEController::read(channel, ATAReg::ALTSTATUS);
+			</span>channel.read(ATAReg::ALTSTATUS);
 		}
 
 		<span class="comment">// (IV) Inform the Controller that we use PIO mode
-		</span>IDEController::write(channel, ATAReg::FEATURES, <span class="number">0</span>);
+		</span>channel.write(ATAReg::FEATURES, <span class="number">0</span>);
 
 		<span class="comment">// (V) Tell the Controller the size of buffer (16 bytes will be returned)
 		</span><span class="kw">let </span>size: usize = <span class="number">0x0008</span>;
 		<span class="comment">// Lower Byte of Sector size
-		</span>IDEController::write(channel, ATAReg::LBA1, (size &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::LBA1, (size &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
 		<span class="comment">// Upper Byte of Sector size
-		</span>IDEController::write(channel, ATAReg::LBA2, (size &gt;&gt; <span class="number">8</span>) <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::LBA2, (size &gt;&gt; <span class="number">8</span>) <span class="kw">as </span>u8);
 
 		<span class="comment">// (VI) Send the Packet Command
-		</span>IDEController::write(
-			channel,
-			ATAReg::COMMAND,
-			ATACommand::Packet <span class="kw">as </span>u8
-		);
+		</span>channel.write(ATAReg::COMMAND, ATACommand::Packet <span class="kw">as </span>u8);
 
 		<span class="comment">// (VII) Waiting for the driver to finish or return an error code
-		</span>IDEController::polling(channel, <span class="number">1</span>)<span class="question-mark">?</span>;
+		</span>channel.polling(<span class="number">1</span>)<span class="question-mark">?</span>;
 
 		<span class="comment">// (VIII) Sending the packet data
 		</span>io::outsw(bus <span class="kw">as </span>u16, packet.as_ptr() <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>, <span class="number">6</span>);
 
 		<span class="comment">// (IX) Receiving Data
-		</span>IDEController::polling(channel, <span class="number">1</span>)<span class="question-mark">?</span>;
+		</span>channel.polling(<span class="number">1</span>)<span class="question-mark">?</span>;
 		io::insw(bus <span class="kw">as </span>u16, buffer.as_mut_ptr() <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>, <span class="number">4</span>);
 
 		<span class="comment">// (X) Waiting for BSY &amp; DRQ to clear
 		</span><span class="kw">loop </span>{
-			<span class="kw">if </span>(IDEController::read(channel, ATAReg::STATUS)
+			<span class="kw">if </span>(channel.read(ATAReg::STATUS)
 				&amp; (ATAStatus::BSY | ATAStatus::DRQ))
 				== <span class="number">0
 			</span>{
@@ -364,13 +362,17 @@
 	}
 
 	<span class="kw">pub fn </span>read(
-		device: <span class="kw-2">&amp;mut </span>IDEDevice,
+		device: <span class="kw-2">&amp;</span>IDEDevice,
 		lba: u32,
 		numsects: u8,
 		<span class="kw-2">mut </span>edi: u32
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), u8&gt; {
-		<span class="kw">let </span>binding = device.channel.as_mut().ok_or(<span class="number">1</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>channel: <span class="kw-2">&amp;mut </span>IDEChannelRegisters = <span class="kw-2">&amp;mut </span>binding.lock();
+		<span class="kw">let </span>binding = <span class="kw">match </span><span class="kw-2">&amp;</span>device.channel {
+			<span class="prelude-val">Some</span>(x) =&gt; x,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="number">0x1</span>)
+		};
+		<span class="kw">let </span>bind = binding.lock();
+		<span class="kw">let </span><span class="kw-2">mut </span>channel = bind.borrow_mut();
 		<span class="kw">let </span>slavebit: u32 = device.drive <span class="kw">as </span>u32;
 		<span class="kw">let </span>bus: u32 = channel.base <span class="kw">as </span>u32;
 		<span class="comment">// Sector Size
@@ -380,7 +382,7 @@
 		<span class="comment">// Enable IRQs
 		</span><span class="kw-2">*</span>IDE_IRQ_INVOKED.lock() = <span class="number">0</span>;
 		channel.n_ien = <span class="number">0</span>;
-		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+		channel.write(ATAReg::CONTROL, <span class="number">0</span>);
 
 		<span class="comment">// (I) Setup SCSI Packet
 		</span><span class="kw">let </span>packet: [u8; <span class="number">12</span>] = [
@@ -399,32 +401,28 @@
 		</span>];
 
 		<span class="comment">// (II) Select the drive
-		</span>IDEController::write(channel, ATAReg::HDDEVSEL, (slavebit &lt;&lt; <span class="number">4</span>) <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::HDDEVSEL, (slavebit &lt;&lt; <span class="number">4</span>) <span class="kw">as </span>u8);
 
 		<span class="comment">// (III) Delay 400 nanoseconds for select to complete
 		</span><span class="kw">for _ in </span><span class="number">0</span>..<span class="number">4 </span>{
 			<span class="comment">// Reading the Alternate Status port wastes 100ns
-			</span>IDEController::read(channel, ATAReg::ALTSTATUS);
+			</span>channel.read(ATAReg::ALTSTATUS);
 		}
 
 		<span class="comment">// (IV) Inform the Controller that we use PIO mode
-		</span>IDEController::write(channel, ATAReg::FEATURES, <span class="number">0</span>);
+		</span>channel.write(ATAReg::FEATURES, <span class="number">0</span>);
 
 		<span class="comment">// (V) Tell the Controller the size of buffer
 		// Lower Byte of Sector size
-		</span>IDEController::write(channel, ATAReg::LBA1, ((words * <span class="number">2</span>) &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::LBA1, ((words * <span class="number">2</span>) &amp; <span class="number">0xff</span>) <span class="kw">as </span>u8);
 		<span class="comment">// Upper Byte of Sector size
-		</span>IDEController::write(channel, ATAReg::LBA2, ((words * <span class="number">2</span>) &gt;&gt; <span class="number">8</span>) <span class="kw">as </span>u8);
+		</span>channel.write(ATAReg::LBA2, ((words * <span class="number">2</span>) &gt;&gt; <span class="number">8</span>) <span class="kw">as </span>u8);
 
 		<span class="comment">// (VI) Send the Packet Command
-		</span>IDEController::write(
-			channel,
-			ATAReg::COMMAND,
-			ATACommand::Packet <span class="kw">as </span>u8
-		);
+		</span>channel.write(ATAReg::COMMAND, ATACommand::Packet <span class="kw">as </span>u8);
 
 		<span class="comment">// (VII) Waiting for the driver to finish or return an error code
-		</span>IDEController::polling(channel, <span class="number">1</span>)<span class="question-mark">?</span>;
+		</span>channel.polling(<span class="number">1</span>)<span class="question-mark">?</span>;
 
 		<span class="comment">// (VIII) Sending the packet data
 		</span>io::outsw(bus <span class="kw">as </span>u16, packet.as_ptr() <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>, <span class="number">6</span>);
@@ -432,7 +430,7 @@
 		<span class="comment">// (IX) Receiving Data
 		</span><span class="kw">for _ in </span><span class="number">0</span>..numsects {
 			IDEController::wait_irq();
-			IDEController::polling(channel, <span class="number">1</span>)<span class="question-mark">?</span>;
+			channel.polling(<span class="number">1</span>)<span class="question-mark">?</span>;
 			io::insw(bus <span class="kw">as </span>u16, edi <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>, words);
 			edi += words * <span class="number">2</span>;
 		}
@@ -442,7 +440,7 @@
 
 		<span class="comment">// (XI) Waiting for BSY &amp; DRQ to clear
 		</span><span class="kw">loop </span>{
-			<span class="kw">if </span>(IDEController::read(channel, ATAReg::STATUS)
+			<span class="kw">if </span>(channel.read(ATAReg::STATUS)
 				&amp; (ATAStatus::BSY | ATAStatus::DRQ))
 				== <span class="number">0
 			</span>{
@@ -454,8 +452,12 @@
 	}
 
 	<span class="kw">pub fn </span>eject(device: <span class="kw-2">&amp;mut </span>IDEDevice) -&gt; <span class="prelude-ty">Result</span>&lt;(), u8&gt; {
-		<span class="kw">let </span>binding = device.channel.as_mut().ok_or(<span class="number">1</span>)<span class="question-mark">?</span>;
-		<span class="kw">let </span>channel: <span class="kw-2">&amp;mut </span>IDEChannelRegisters = <span class="kw-2">&amp;mut </span>binding.lock();
+		<span class="kw">let </span>binding = <span class="kw">match </span><span class="kw-2">&amp;</span>device.channel {
+			<span class="prelude-val">Some</span>(x) =&gt; x,
+			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="number">0x1</span>)
+		};
+		<span class="kw">let </span>bind = binding.lock();
+		<span class="kw">let </span><span class="kw-2">mut </span>channel = bind.borrow_mut();
 		<span class="kw">let </span>slavebit: u32 = device.drive <span class="kw">as </span>u32;
 		<span class="kw">let </span>bus: u32 = channel.base <span class="kw">as </span>u32;
 
@@ -470,7 +472,7 @@
 			<span class="comment">// Enable IRQs
 			</span><span class="kw-2">*</span>IDE_IRQ_INVOKED.lock() = <span class="number">0x0</span>;
 			channel.n_ien = <span class="number">0x0</span>;
-			IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+			channel.write(ATAReg::CONTROL, <span class="number">0x0</span>);
 
 			<span class="comment">// (I) Setup SCSI Packet
 			</span><span class="kw">let </span>packet: [u8; <span class="number">12</span>] = [
@@ -489,35 +491,27 @@
 			</span>];
 
 			<span class="comment">// (II) Select the Drive
-			</span>IDEController::write(
-				channel,
-				ATAReg::HDDEVSEL,
-				(slavebit &lt;&lt; <span class="number">4</span>) <span class="kw">as </span>u8
-			);
+			</span>channel.write(ATAReg::HDDEVSEL, (slavebit &lt;&lt; <span class="number">4</span>) <span class="kw">as </span>u8);
 
 			<span class="comment">// (III) Delay 400 nanosecond for select to complete
 			</span><span class="kw">for _ in </span><span class="number">0</span>..<span class="number">4 </span>{
 				<span class="comment">// Reading Alternate Status Port Wastes 100ns
-				</span>IDEController::read(channel, ATAReg::ALTSTATUS);
+				</span>channel.read(ATAReg::ALTSTATUS);
 			}
 
 			<span class="comment">// (IV) Send the Packet Command
-			</span>IDEController::write(
-				channel,
-				ATAReg::COMMAND,
-				ATACommand::Packet <span class="kw">as </span>u8
-			);
+			</span>channel.write(ATAReg::COMMAND, ATACommand::Packet <span class="kw">as </span>u8);
 
 			<span class="comment">// (V) Waiting for the driver to finish or invoke an error
 			// Polling and stop if error
-			</span>IDEController::polling(channel, <span class="number">1</span>)<span class="question-mark">?</span>;
+			</span>channel.polling(<span class="number">1</span>)<span class="question-mark">?</span>;
 
 			<span class="comment">// (VI) Sending the packet data
 			</span>io::outsw(bus <span class="kw">as </span>u16, packet.as_ptr() <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_</span>, <span class="number">6</span>);
 
 			IDEController::wait_irq();
 			<span class="comment">// Polling and get error code
-			</span><span class="kw">match </span>IDEController::polling(channel, <span class="number">1</span>) {
+			</span><span class="kw">match </span>channel.polling(<span class="number">1</span>) {
 				<span class="prelude-val">Err</span>(err) <span class="kw">if </span>err != <span class="number">3 </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(err),
 				<span class="kw">_ </span>=&gt; {}
 			}

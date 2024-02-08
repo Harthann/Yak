@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["IDEType"],"mod":["ata","atapi"],"static":["IDE","IDE_IRQ_INVOKED"],"struct":["IDEChannelRegisters","IDEController","IDEDevice"]};
+window.SIDEBAR_ITEMS = {"enum":["IDEType"],"mod":["ata","atapi","channel","device"],"static":["IDE","IDE_IRQ_INVOKED"],"struct":["IDEController"]};
