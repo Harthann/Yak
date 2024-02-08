@@ -21,8 +21,12 @@ pub struct ATAPI {}
 
 impl ATAPI {
 	pub fn capacity(device: &mut IDEDevice, lba: u32) -> Result<u32, u8> {
-		let binding = device.channel.as_mut().ok_or(1)?;
-		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 		let mut buffer: [u32; 2] = [0; 2];
@@ -30,7 +34,8 @@ impl ATAPI {
 		// Enable IRQs
 		*IDE_IRQ_INVOKED.lock() = 0;
 		channel.n_ien = 0;
-		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+		let n_ien = channel.n_ien;
+		channel.write(ATAReg::CONTROL, n_ien);
 
 		// (I) Setup SCSI Packet
 		let packet: [u8; 12] = [
@@ -49,44 +54,40 @@ impl ATAPI {
 		];
 
 		// (II) Select the drive
-		IDEController::write(channel, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
+		channel.write(ATAReg::HDDEVSEL, (slavebit << 4) as u8);
 
 		// (III) Delay 400 nanoseconds for select to complete
 		for _ in 0..4 {
 			// Reading the Alternate Status port wastes 100ns
-			IDEController::read(channel, ATAReg::ALTSTATUS);
+			channel.read(ATAReg::ALTSTATUS);
 		}
 
 		// (IV) Inform the Controller that we use PIO mode
-		IDEController::write(channel, ATAReg::FEATURES, 0);
+		channel.write(ATAReg::FEATURES, 0);
 
 		// (V) Tell the Controller the size of buffer (16 bytes will be returned)
 		let size: usize = 0x0008;
 		// Lower Byte of Sector size
-		IDEController::write(channel, ATAReg::LBA1, (size & 0xff) as u8);
+		channel.write(ATAReg::LBA1, (size & 0xff) as u8);
 		// Upper Byte of Sector size
-		IDEController::write(channel, ATAReg::LBA2, (size >> 8) as u8);
+		channel.write(ATAReg::LBA2, (size >> 8) as u8);
 
 		// (VI) Send the Packet Command
-		IDEController::write(
-			channel,
-			ATAReg::COMMAND,
-			ATACommand::Packet as u8
-		);
+		channel.write(ATAReg::COMMAND, ATACommand::Packet as u8);
 
 		// (VII) Waiting for the driver to finish or return an error code
-		IDEController::polling(channel, 1)?;
+		channel.polling(1)?;
 
 		// (VIII) Sending the packet data
 		io::outsw(bus as u16, packet.as_ptr() as *const _, 6);
 
 		// (IX) Receiving Data
-		IDEController::polling(channel, 1)?;
+		channel.polling(1)?;
 		io::insw(bus as u16, buffer.as_mut_ptr() as *mut _, 4);
 
 		// (X) Waiting for BSY & DRQ to clear
 		loop {
-			if (IDEController::read(channel, ATAReg::STATUS)
+			if (channel.read(ATAReg::STATUS)
 				& (ATAStatus::BSY | ATAStatus::DRQ))
 				== 0
 			{
@@ -100,13 +101,17 @@ impl ATAPI {
 	}
 
 	pub fn read(
-		device: &mut IDEDevice,
+		device: &IDEDevice,
 		lba: u32,
 		numsects: u8,
 		mut edi: u32
 	) -> Result<(), u8> {
-		let binding = device.channel.as_mut().ok_or(1)?;
-		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 		// Sector Size
@@ -116,7 +121,7 @@ impl ATAPI {
 		// Enable IRQs
 		*IDE_IRQ_INVOKED.lock() = 0;
 		channel.n_ien = 0;
-		IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+		channel.write(ATAReg::CONTROL, 0);
 
 		// (I) Setup SCSI Packet
 		let packet: [u8; 12] = [
@@ -135,32 +140,28 @@ impl ATAPI {
 		];
 
 		// (II) Select the drive
-		IDEController::write(channel, ATAReg::HDDEVSEL, (slavebit << 4) as u8);
+		channel.write(ATAReg::HDDEVSEL, (slavebit << 4) as u8);
 
 		// (III) Delay 400 nanoseconds for select to complete
 		for _ in 0..4 {
 			// Reading the Alternate Status port wastes 100ns
-			IDEController::read(channel, ATAReg::ALTSTATUS);
+			channel.read(ATAReg::ALTSTATUS);
 		}
 
 		// (IV) Inform the Controller that we use PIO mode
-		IDEController::write(channel, ATAReg::FEATURES, 0);
+		channel.write(ATAReg::FEATURES, 0);
 
 		// (V) Tell the Controller the size of buffer
 		// Lower Byte of Sector size
-		IDEController::write(channel, ATAReg::LBA1, ((words * 2) & 0xff) as u8);
+		channel.write(ATAReg::LBA1, ((words * 2) & 0xff) as u8);
 		// Upper Byte of Sector size
-		IDEController::write(channel, ATAReg::LBA2, ((words * 2) >> 8) as u8);
+		channel.write(ATAReg::LBA2, ((words * 2) >> 8) as u8);
 
 		// (VI) Send the Packet Command
-		IDEController::write(
-			channel,
-			ATAReg::COMMAND,
-			ATACommand::Packet as u8
-		);
+		channel.write(ATAReg::COMMAND, ATACommand::Packet as u8);
 
 		// (VII) Waiting for the driver to finish or return an error code
-		IDEController::polling(channel, 1)?;
+		channel.polling(1)?;
 
 		// (VIII) Sending the packet data
 		io::outsw(bus as u16, packet.as_ptr() as *const _, 6);
@@ -168,7 +169,7 @@ impl ATAPI {
 		// (IX) Receiving Data
 		for _ in 0..numsects {
 			IDEController::wait_irq();
-			IDEController::polling(channel, 1)?;
+			channel.polling(1)?;
 			io::insw(bus as u16, edi as *mut _, words);
 			edi += words * 2;
 		}
@@ -178,7 +179,7 @@ impl ATAPI {
 
 		// (XI) Waiting for BSY & DRQ to clear
 		loop {
-			if (IDEController::read(channel, ATAReg::STATUS)
+			if (channel.read(ATAReg::STATUS)
 				& (ATAStatus::BSY | ATAStatus::DRQ))
 				== 0
 			{
@@ -190,8 +191,12 @@ impl ATAPI {
 	}
 
 	pub fn eject(device: &mut IDEDevice) -> Result<(), u8> {
-		let binding = device.channel.as_mut().ok_or(1)?;
-		let channel: &mut IDEChannelRegisters = &mut binding.lock();
+		let binding = match &device.channel {
+			Some(x) => x,
+			None => return Err(0x1)
+		};
+		let bind = binding.lock();
+		let mut channel = bind.borrow_mut();
 		let slavebit: u32 = device.drive as u32;
 		let bus: u32 = channel.base as u32;
 
@@ -206,7 +211,7 @@ impl ATAPI {
 			// Enable IRQs
 			*IDE_IRQ_INVOKED.lock() = 0x0;
 			channel.n_ien = 0x0;
-			IDEController::write(channel, ATAReg::CONTROL, channel.n_ien);
+			channel.write(ATAReg::CONTROL, 0x0);
 
 			// (I) Setup SCSI Packet
 			let packet: [u8; 12] = [
@@ -225,35 +230,27 @@ impl ATAPI {
 			];
 
 			// (II) Select the Drive
-			IDEController::write(
-				channel,
-				ATAReg::HDDEVSEL,
-				(slavebit << 4) as u8
-			);
+			channel.write(ATAReg::HDDEVSEL, (slavebit << 4) as u8);
 
 			// (III) Delay 400 nanosecond for select to complete
 			for _ in 0..4 {
 				// Reading Alternate Status Port Wastes 100ns
-				IDEController::read(channel, ATAReg::ALTSTATUS);
+				channel.read(ATAReg::ALTSTATUS);
 			}
 
 			// (IV) Send the Packet Command
-			IDEController::write(
-				channel,
-				ATAReg::COMMAND,
-				ATACommand::Packet as u8
-			);
+			channel.write(ATAReg::COMMAND, ATACommand::Packet as u8);
 
 			// (V) Waiting for the driver to finish or invoke an error
 			// Polling and stop if error
-			IDEController::polling(channel, 1)?;
+			channel.polling(1)?;
 
 			// (VI) Sending the packet data
 			io::outsw(bus as u16, packet.as_ptr() as *const _, 6);
 
 			IDEController::wait_irq();
 			// Polling and get error code
-			match IDEController::polling(channel, 1) {
+			match channel.polling(1) {
 				Err(err) if err != 3 => return Err(err),
 				_ => {}
 			}

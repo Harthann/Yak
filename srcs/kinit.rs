@@ -76,6 +76,7 @@ mod interrupts;
 mod multiboot;
 #[macro_use]
 mod syscalls;
+mod disk;
 mod io;
 mod pci;
 mod pic;

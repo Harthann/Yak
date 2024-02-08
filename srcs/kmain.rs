@@ -33,21 +33,20 @@ mod poc {
 }
 
 use crate::cli::DISKNO;
+use crate::disk;
 use crate::fs::ext2;
 
 #[no_mangle]
 pub extern "C" fn kmain() -> ! {
-	for i in 0..4 {
-		if ext2::is_ext2(i) {
-			*DISKNO.lock() = i as i8;
-			crate::kprintln!("Found ext2 filesystem on disk {}.", i);
-			break;
+	// Mounting first ext2 disk found to DISKNO
+	let disks = disk::discover();
+	for i in disks {
+		if let Ok(ext) = ext2::Ext2::new(i) {
+			kprintln!("Found an ext2 fs");
+			*DISKNO.lock() = Some(ext);
 		}
 	}
-	if *DISKNO.lock() == -1 {
-		todo!("No ext2 disk found.");
-	}
-	// 	poc::insertion_poc();
+
 	kprintln!("Hello World of {}!", 42);
 	change_color!(Color::Red, Color::White);
 	let workspace_msg = string::String::from(
