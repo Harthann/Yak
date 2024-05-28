@@ -8,7 +8,7 @@ use crate::syscalls::signal::sys_kill;
 use crate::syscalls::timer::sys_getppid;
 use crate::vec::Vec;
 use crate::vga_buffer::screenclear;
-use crate::{io, kprint, kprintln};
+use crate::{io, kprint, print, println};
 
 // Commands modules
 pub mod debugfs;
@@ -61,16 +61,16 @@ fn play(command: Vec<String>) {
 	if command.len() == 2 {
 		sound = command[1].as_str();
 	}
-	crate::kprintln!("sound: {}", sound);
+	println!("sound: {}", sound);
 	crate::sound::play(sound);
 }
 fn clear(_: Vec<String>) {
 	screenclear!();
 }
 fn help(_: Vec<String>) {
-	kprintln!("Available commands:");
+	println!("Available commands:");
 	for i in KNOWN_CMD {
-		kprintln!("    {}", i);
+		println!("    {}", i);
 	}
 }
 
@@ -91,8 +91,8 @@ use crate::keyboard::{KEYMAP, KEYMAP_FR, KEYMAP_US};
 
 fn keymap(command: Vec<String>) {
 	if command.len() != 2 {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: keymap {{us, fr}}");
+		println!("Invalid number of arguments.");
+		println!("Usage: keymap {{us, fr}}");
 		return;
 	}
 
@@ -101,8 +101,8 @@ fn keymap(command: Vec<String>) {
 	} else if command[1] == "fr" {
 		unsafe { KEYMAP = &KEYMAP_FR };
 	} else {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: keymap {{us, fr}}");
+		println!("Invalid argument.");
+		println!("Usage: keymap {{us, fr}}");
 	}
 }
 
@@ -112,22 +112,22 @@ fn interrupt(command: Vec<String>) {
 	let arg: usize;
 
 	if command.len() != 2 {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: int [nb]");
+		println!("Invalid number of arguments.");
+		println!("Usage: int [nb]");
 		return;
 	}
 
 	if let Some(res) = hexdump::atou(command[1].as_str()) {
 		arg = res;
 	} else {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
+		println!("Invalid number of arguments.");
+		println!("Usage: hexdump [addr] [size]");
 		return;
 	}
 
 	if arg > 255 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: int [nb]");
+		println!("Invalid argument.");
+		println!("Usage: int [nb]");
 		return;
 	}
 	unsafe { int(arg as u8) };
@@ -191,7 +191,7 @@ impl Command {
 				let tmp: &str =
 					&self.command[self.index - 1..self.command.len()];
 				self.index -= 1;
-				crate::kprint!(
+				print!(
 					"{delbyte}{string} {delbyte}",
 					string = tmp,
 					delbyte = '\x08'
@@ -202,17 +202,17 @@ impl Command {
 			}
 		} else if charcode >= ' ' && charcode <= '~' {
 			if self.insert(charcode).is_err() {
-				kprintln!("Can't handle longer command, clearing buffer");
-				kprint!("$> ");
+				println!("Can't handle longer command, clearing buffer");
+				print!("$> ");
 				self.clear();
 			}
 			let tmp: &str = &self.command[self.index - 1..self.command.len()];
-			crate::kprint!("{}", tmp);
+			print!("{}", tmp);
 			crate::vga_buffer::WRITER
 				.lock()
 				.move_cursor(-(tmp.len() as i32) + 1);
 		} else if charcode == '\n' {
-			crate::kprint!("{}", charcode);
+			print!("{}", charcode);
 			match self.is_known() {
 				Some(x) => {
 					unsafe { LOCK_CMD = true };
@@ -250,12 +250,12 @@ impl Command {
 				},
 				_ => {
 					if self.command.len() != 0 {
-						kprintln!("Unknown command. Type `help` to list available commands");
+						println!("Unknown command. Type `help` to list available commands");
 					}
 				},
 			}
 			self.clear();
-			kprint!("$> ");
+			print!("$> ");
 		}
 	}
 }

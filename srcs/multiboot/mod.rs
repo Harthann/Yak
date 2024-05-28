@@ -167,25 +167,29 @@ pub fn read_tags() {
 					break;
 				},
 				x if x as u32 == TagType::CmdLine as u32 => {
-					kprint!("Command line = ");
 					let cstr: &[u8] = core::slice::from_raw_parts(
 						(tag_ptr as *const u8).offset(8),
 						(*tag_ptr).size as usize - 8 - 1 /* remove size and '\0' */
 					);
 					match core::str::from_utf8(cstr) {
-						Ok(string) => kprintln!("{}", string),
-						Err(error) => kprintln!("[Error]: {}", error)
+						Ok(string) => kprintln!("Command line = {}", string),
+						Err(error) => {
+							kprintln!("Command line = [Error]: {}", error)
+						}
 					}
 				},
 				x if x as u32 == TagType::BootLoaderName as u32 => {
-					kprint!("Boot loader name = ");
 					let cstr: &[u8] = core::slice::from_raw_parts(
 						(tag_ptr as *const u8).offset(8),
 						(*tag_ptr).size as usize - 8 - 1 /* remove size and '\0' */
 					);
 					match core::str::from_utf8(cstr) {
-						Ok(string) => kprintln!("{}", string),
-						Err(error) => kprintln!("[Error]: {}", error)
+						Ok(string) => {
+							kprintln!("Boot loader name = {}", string)
+						},
+						Err(error) => {
+							kprintln!("Boot loader name = [Error]: {}", error)
+						}
 					}
 				},
 				x if x as u32 == TagType::BasicMemInfo as u32 => {
@@ -197,10 +201,9 @@ pub fn read_tags() {
 					);
 				},
 				x if x as u32 == TagType::BootDev as u32 => {
-					kprint!("Boot device ");
 					let elem: &BootDev = &*(tag_ptr as *const _);
 					kprintln!(
-						"{:#x}, {}, {}",
+						"Boot device {:#x}, {}, {}",
 						elem.biosdev,
 						elem.partition,
 						elem.sub_partition

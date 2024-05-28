@@ -237,7 +237,22 @@ macro_rules! kprint {
 macro_rules! kprintln {
 	() => ($crate::kprint!("\n"));
 	($($arg:tt)*) => (
-		$crate::kprint!("{}\n", format_args!($($arg)*))
+		$crate::kprint!("[{:>12.6}] {}\n", $crate::time::get_timestamp().as_f64(), format_args!($($arg)*))
+	)
+}
+
+#[macro_export]
+macro_rules! print {
+	($($arg:tt)*) => (
+		$crate::kprint!("{}", format_args!($($arg)*))
+	)
+}
+
+#[macro_export]
+macro_rules! println {
+	() => ($crate::print!("\n"));
+	($($arg:tt)*) => (
+		$crate::print!("{}\n", format_args!($($arg)*))
 	)
 }
 

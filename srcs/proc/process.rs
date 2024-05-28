@@ -36,6 +36,8 @@ use crate::KSTACK_ADDR;
 use crate::fs::FileInfo;
 use alloc::sync::Arc;
 
+use crate::println;
+
 pub type Pid = Id;
 
 pub static mut NEXT_PID: Pid = 0;
@@ -105,7 +107,7 @@ impl Process {
 	pub fn print_tree() {
 		unsafe {
 			for process in PROCESS_TREE.values() {
-				crate::kprintln!("{}", *process.lock());
+				println!("{}", *process.lock());
 			}
 		}
 	}
@@ -368,13 +370,9 @@ impl Process {
 	}
 
 	pub unsafe fn print_all_process() {
-		crate::kprintln!(
+		println!(
 			"{:>10}   {:>10}   {:>20}   {:>10}   {}",
-			"PID",
-			"PPID",
-			"NAME",
-			"OWNER",
-			"STATUS"
+			"PID", "PPID", "NAME", "OWNER", "STATUS"
 		);
 		Self::print_tree();
 	}
