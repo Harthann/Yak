@@ -1,12 +1,12 @@
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
 
-use crate::kprintln;
+use crate::println;
 
 pub fn valgrind(command: Vec<String>) {
 	if command.len() < 2 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: valgrind [command] [command args]");
+		println!("Invalid argument.");
+		println!("Usage: valgrind [command] [command args]");
 		return;
 	}
 
@@ -17,7 +17,7 @@ pub fn valgrind(command: Vec<String>) {
 	let cmd_id = super::KNOWN_CMD.iter().position(|&x| x == sub_command[0]);
 	match cmd_id {
 		Some(index) => super::COMMANDS[index](sub_command.to_vec()),
-		None => kprintln!("Command: [{}] not found", sub_command[0])
+		None => println!("Command: [{}] not found", sub_command[0])
 	}
 
 	let mut current_state = unsafe { crate::KTRACKER };
@@ -25,14 +25,14 @@ pub fn valgrind(command: Vec<String>) {
 	current_state.allocated_bytes -= heap_state.allocated_bytes;
 	current_state.freed -= heap_state.freed;
 	current_state.freed_bytes -= heap_state.freed_bytes;
-	crate::kprintln!("{}", current_state);
+	crate::println!("{}", current_state);
 	if current_state.allocated_bytes < current_state.freed_bytes {
-		crate::kprintln!(
+		crate::println!(
 			"Too much bytes freed: {}",
 			current_state.freed_bytes - current_state.allocated_bytes
 		);
 	} else {
-		crate::kprintln!(
+		crate::println!(
 			"Leaks: {} bytes",
 			current_state.allocated_bytes - current_state.freed_bytes
 		);

@@ -10,10 +10,10 @@ pub static CURRENTDIR_INODE: Mutex<usize> = Mutex::new(ROOT_INODE);
 pub static PWD: Mutex<Option<Path>> = Mutex::new(None);
 pub static DISKNO: Mutex<Option<ext2::Ext2>> = Mutex::new(None);
 
+use crate::println;
+
 fn help() {
-	crate::kprintln!(
-		"Command available: ls,stat,cat,imap,cd,touch,mkdir,rm,pwd,test"
-	);
+	println!("Command available: ls,stat,cat,imap,cd,touch,mkdir,rm,pwd,test");
 }
 
 pub fn debugfs(mut command: Vec<String>) {
@@ -31,7 +31,7 @@ pub fn debugfs(mut command: Vec<String>) {
 			"pwd" => pwd(),
 			"test" => test(),
 			_ => {
-				crate::kprintln!("Unknown command: {}", command[0]);
+				println!("Unknown command: {}", command[0]);
 				help();
 			}
 		}
@@ -41,17 +41,17 @@ pub fn debugfs(mut command: Vec<String>) {
 }
 
 fn pwd() {
-	crate::kprintln!(
+	println!(
 		"[pwd]   INODE: {:>6}  PATH: {}",
 		*CURRENTDIR_INODE.lock(),
 		PWD.lock().as_ref().unwrap_or(&Path::new("/"))
 	);
-	crate::kprintln!("[root]  INODE: {:>6}  PATH: /", ROOT_INODE);
+	println!("[root]  INODE: {:>6}  PATH: /", ROOT_INODE);
 }
 
 fn rm(command: Vec<String>) {
 	if command.len() < 2 {
-		crate::kprintln!("usage: debugfs rm FILE");
+		println!("usage: debugfs rm FILE");
 		return;
 	}
 	ext2::remove_file(
@@ -63,7 +63,7 @@ fn rm(command: Vec<String>) {
 
 fn stat(command: Vec<String>) {
 	if command.len() < 2 {
-		crate::kprintln!("usage: debugfs stat FILE");
+		println!("usage: debugfs stat FILE");
 		return;
 	}
 	ext2::show_inode_info(
@@ -75,7 +75,7 @@ fn stat(command: Vec<String>) {
 
 fn mkdir(command: Vec<String>) {
 	if command.len() < 2 {
-		crate::kprintln!("usage: debugfs mkdir DIR");
+		println!("usage: debugfs mkdir DIR");
 		return;
 	}
 	ext2::create_dir(
@@ -87,7 +87,7 @@ fn mkdir(command: Vec<String>) {
 
 fn touch(command: Vec<String>) {
 	if command.len() < 2 {
-		crate::kprintln!("usage: debugfs touch FILE");
+		println!("usage: debugfs touch FILE");
 		return;
 	}
 	ext2::create_file(
@@ -99,7 +99,7 @@ fn touch(command: Vec<String>) {
 
 fn cat(command: Vec<String>) {
 	if command.len() < 2 {
-		crate::kprintln!("usage: debugfs cat FILE");
+		println!("usage: debugfs cat FILE");
 		return;
 	}
 	let file_content = ext2::get_file_content(
@@ -137,7 +137,7 @@ fn ls(command: Vec<String>) {
 	for i in dentries {
 		crate::kprint!("{} ", i.name);
 	}
-	crate::kprintln!("");
+	println!("");
 }
 
 fn cd(command: Vec<String>) {
@@ -150,7 +150,7 @@ fn cd(command: Vec<String>) {
 	let ext2 = binding.as_ref().unwrap();
 	let lookup = ext2.recurs_find(path.as_str(), *CURRENTDIR_INODE.lock());
 	match lookup {
-		None => crate::kprintln!("Dir not found"),
+		None => println!("Dir not found"),
 		Some((inodeno, inode)) => {
 			if inode.is_dir() {
 				*CURRENTDIR_INODE.lock() = inodeno;
@@ -166,7 +166,7 @@ fn cd(command: Vec<String>) {
 				pwd.cleanup();
 				*PWD.lock() = Some(pwd);
 			} else {
-				crate::kprintln!("Error: {} is not a directory", path.as_str());
+				println!("Error: {} is not a directory", path.as_str());
 			}
 		},
 	};

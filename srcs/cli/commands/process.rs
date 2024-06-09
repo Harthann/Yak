@@ -1,6 +1,6 @@
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
-use crate::kprintln;
+use crate::println;
 
 use crate::cli::commands::hexdump::atou;
 use crate::proc::process::{Pid, Process};
@@ -10,15 +10,15 @@ pub fn pmap(command: Vec<String>) {
 	let pid: Pid;
 
 	if command.len() != 2 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: pmap [pid]");
+		println!("Invalid argument.");
+		println!("Usage: pmap [pid]");
 		return;
 	}
 	if let Some(res) = atou(command[1].as_str()) {
 		pid = res as Pid;
 	} else {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: pmap [pid]");
+		println!("Invalid argument.");
+		println!("Usage: pmap [pid]");
 		return;
 	}
 
@@ -29,42 +29,42 @@ pub fn pmap(command: Vec<String>) {
 	};
 	let process = binding.lock();
 	let mut used_size: usize = 0;
-	crate::kprintln!("{}:", pid);
-	crate::kprintln!("{}", process.heap);
+	println!("{}:", pid);
+	println!("{}", process.heap);
 	used_size += process.heap.size;
-	crate::kprintln!("{}", process.stack);
+	println!("{}", process.stack);
 	used_size += process.stack.size;
-	crate::kprintln!("{}", process.kernel_stack);
+	println!("{}", process.kernel_stack);
 	used_size += process.kernel_stack.size;
 	for i in &process.mem_map {
 		let guard = i.lock();
-		crate::kprintln!("{}", *guard);
+		println!("{}", *guard);
 		used_size += guard.size;
 	}
-	crate::kprintln!(" total: {:#x}", used_size);
+	println!(" total: {:#x}", used_size);
 }
 
 pub fn kill(command: Vec<String>) {
 	let pid: Pid;
 
 	if command.len() != 2 {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: kill [pid]");
+		println!("Invalid argument.");
+		println!("Usage: kill [pid]");
 		return;
 	}
 
 	if let Some(res) = atou(command[1].as_str()) {
 		pid = res as Pid;
 	} else {
-		kprintln!("Invalid argument.");
-		kprintln!("Usage: kill [pid]");
+		println!("Invalid argument.");
+		println!("Usage: kill [pid]");
 		return;
 	}
 
 	let res: i32 = sys_kill(pid, 9); // SIGKILL
 
 	if res != 0 {
-		kprintln!("[Error]: {}", res);
+		println!("[Error]: {}", res);
 		return;
 	}
 }

@@ -1,6 +1,6 @@
 use crate::alloc::string::String;
 use crate::alloc::vec::Vec;
-use crate::kprintln;
+use crate::println;
 use crate::vga_buffer::hexdump;
 
 pub fn hextou(string: &str) -> Option<usize> {
@@ -31,24 +31,24 @@ pub fn hexdump_parser(command: Vec<String>) {
 	let mut args: [usize; 2] = [0, 0];
 
 	if command.len() != 3 {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
+		println!("Invalid number of arguments.");
+		println!("Usage: hexdump [addr] [size]");
 		return;
 	}
 
 	if let Some(res) = atou(command[1].as_str()) {
 		args[0] = res;
 	} else {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
+		println!("Invalid number of arguments.");
+		println!("Usage: hexdump [addr] [size]");
 		return;
 	}
 
 	if let Some(res) = atou(command[2].as_str()) {
 		args[1] = res;
 	} else {
-		kprintln!("Invalid number of arguments.");
-		kprintln!("Usage: hexdump [addr] [size]");
+		println!("Invalid number of arguments.");
+		println!("Usage: hexdump [addr] [size]");
 		return;
 	}
 
