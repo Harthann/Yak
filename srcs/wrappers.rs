@@ -8,9 +8,9 @@ pub fn _cli() {
 	unsafe {
 		core::arch::asm!(
 			"cmp dword ptr[cli_count], 0",
-			"jne 1f",
+			"jne 2f",
 			"cli",
-			"1:",
+			"2:",
 			"add dword ptr[cli_count], 1",
 		);
 	}
@@ -22,9 +22,9 @@ pub fn _sti() {
 		core::arch::asm!(
 			"sub dword ptr[cli_count], 1",
 			"cmp dword ptr[cli_count], 0",
-			"jne 2f",
+			"jne 3f",
 			"sti",
-			"2:",
+			"3:",
 		);
 	}
 }
