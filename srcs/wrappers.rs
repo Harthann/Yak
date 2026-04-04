@@ -54,4 +54,6 @@ macro_rules! hlt {
 	};
 }
 
-pub(crate) use {cli, hlt, sti};
+pub(crate) use cli;
+pub(crate) use hlt;
+pub(crate) use sti;

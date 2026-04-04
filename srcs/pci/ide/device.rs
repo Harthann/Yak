@@ -11,7 +11,7 @@ use core::ffi::CStr;
 pub struct IDEDevice {
 	pub reserved:     u8, // 0 (Empty) or 1 (This Drive really exists)
 	pub channel:      Option<Arcm<RefCell<IDEChannelRegisters>>>,
-	pub drive:        u8,  // 0 (Master Drive) or 1 (Slave Drive)
+	pub drive:        u8, // 0 (Master Drive) or 1 (Slave Drive)
 	pub r#type:       u16, // 0: ATA, 1:ATAPI
 	pub signature:    u16, // Drive Signature
 	pub capabilities: u16, // Features

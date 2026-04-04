@@ -73,7 +73,8 @@ static mut GDT: Gdt = [
 		base:        [0x0, 0x0, 0x0],
 		access:      PRESENT
 			| USER | DATA
-			| GROWS_DOWN | WRITABLE
+			| GROWS_DOWN
+			| WRITABLE
 			| NOT_FOR_CPU,
 		limit_flags: 0b11000000,
 		base_end:    0x0
@@ -104,7 +105,7 @@ pub struct GDTR {
 impl GDTR {
 	pub unsafe fn update() {
 		let gdtr: &mut GDTR = (&mut gdt_desc as *mut GDTR)
-            .cast::<u8>()
+			.cast::<u8>()
 			.wrapping_add(KERNEL_BASE)
 			.cast::<GDTR>()
 			.as_mut()
@@ -166,8 +167,8 @@ impl SegmentDescriptor {
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor {
 	unsafe {
 		let segments: *mut SegmentDescriptor = (&mut GDT as *mut Gdt)
-            .cast::<u8>()
-            .wrapping_add(KERNEL_BASE)
+			.cast::<u8>()
+			.wrapping_add(KERNEL_BASE)
 			.cast::<SegmentDescriptor>();
 		&mut *(segments.add(index))
 	}

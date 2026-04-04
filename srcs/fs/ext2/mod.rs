@@ -683,10 +683,11 @@ pub fn create_file(ext2: &mut Ext2, path: &str, inode_no: usize) {
 			}
 			let mut new_inode = inode::Inode::new();
 			// perm: Regular file and 0644
-			new_inode.tperm =
-				inode::ITYPE_REGU
-					| inode::IPERM_UREAD | inode::IPERM_UWRIT
-					| inode::IPERM_GREAD | inode::IPERM_OREAD;
+			new_inode.tperm = inode::ITYPE_REGU
+				| inode::IPERM_UREAD
+				| inode::IPERM_UWRIT
+				| inode::IPERM_GREAD
+				| inode::IPERM_OREAD;
 			// hardlinks: 1
 			new_inode.count_hl = 1;
 			new_inode.count_ds = 1;
@@ -756,12 +757,14 @@ pub fn create_dir(ext2: &mut Ext2, path: &str, inode_no: usize) {
 			}
 			let mut new_inode = inode::Inode::new();
 			// perm: directory and 0755
-			new_inode.tperm =
-				inode::ITYPE_DIR
-					| inode::IPERM_UREAD | inode::IPERM_UWRIT
-					| inode::IPERM_UEXEC | inode::IPERM_GREAD
-					| inode::IPERM_GEXEC | inode::IPERM_OREAD
-					| inode::IPERM_OEXEC;
+			new_inode.tperm = inode::ITYPE_DIR
+				| inode::IPERM_UREAD
+				| inode::IPERM_UWRIT
+				| inode::IPERM_UEXEC
+				| inode::IPERM_GREAD
+				| inode::IPERM_GEXEC
+				| inode::IPERM_OREAD
+				| inode::IPERM_OEXEC;
 			// hardlinks: directory and '.'
 			new_inode.count_hl = 2;
 			new_inode.count_ds = 2;

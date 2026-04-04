@@ -337,4 +337,5 @@ macro_rules! screenclear {
 	};
 }
 
-pub(crate) use {change_color, screenclear};
+pub(crate) use change_color;
+pub(crate) use screenclear;

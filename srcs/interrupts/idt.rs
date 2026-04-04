@@ -179,4 +179,5 @@ macro_rules! isr_no_err_stub {
 	};
 }
 
-use {isr_err_stub, isr_no_err_stub};
+use isr_err_stub;
+use isr_no_err_stub;

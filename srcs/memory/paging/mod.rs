@@ -151,4 +151,6 @@ macro_rules! disable_paging {
 	};
 }
 
-pub(crate) use {get_paddr, get_vaddr, refresh_tlb};
+pub(crate) use get_paddr;
+pub(crate) use get_vaddr;
+pub(crate) use refresh_tlb;

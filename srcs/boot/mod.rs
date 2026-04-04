@@ -182,4 +182,6 @@ macro_rules! enable_paging {
 	};
 }
 
-use {enable_paging, setup_page_directory, setup_page_table};
+use enable_paging;
+use setup_page_directory;
+use setup_page_table;

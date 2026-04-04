@@ -118,7 +118,7 @@ impl Task {
 		regs.esp -= core::mem::size_of::<Task>() as u32;
 		(regs.esp as *mut Registers).write(*regs);
 		regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
-				 // Setup args (int signal) and handler call
+				   // Setup args (int signal) and handler call
 		regs.esp -= 4;
 		core::arch::asm!("mov [{esp}], eax",
 			esp = in(reg) regs.esp,
@@ -355,4 +355,5 @@ macro_rules! get_segments {
 	}
 }
 
-use {get_segments, load_cr3};
+use get_segments;
+use load_cr3;
