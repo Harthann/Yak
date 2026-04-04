@@ -57,13 +57,13 @@ endif
 ################################################################################
 # Prepare Docker toolchain if there is no local toolchain
 ################################################################################
-ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which cargo), $(shell which i386-elf-ld)),)
-ifeq ($(shell docker images -q ${DOCKER_TAG} 2> /dev/null),)
-BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -t $(DOCKER_TAG) >&2)
-endif
-BUILD_PREFIX	= docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_TAG) '
-BUILD_SUFFIX	= '
-endif
+#ifeq ($(and $(shell which grub-mkrescue), $(shell which xorriso), $(shell which mformat), $(shell which cargo), $(shell which i386-elf-ld)),)
+#ifeq ($(shell docker images -q ${DOCKER_TAG} 2> /dev/null),)
+#BUILD_DOCKER	:= $(shell docker build $(DOCKER_DIR) -t $(DOCKER_TAG) >&2)
+#endif
+#BUILD_PREFIX	= docker run --rm -v $(MAKEFILE_PATH):/root:Z $(DOCKER_TAG) '
+#BUILD_SUFFIX	= '
+#endif
 
 ################################################################################
 # Prepare Docker env if there is no qemu
