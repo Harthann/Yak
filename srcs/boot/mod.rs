@@ -48,7 +48,7 @@ impl MultibootHeader {
 /// multiboot header to define entrypoint inside linker script
 static header: MultibootHeader = MultibootHeader::new();
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 #[link_section = ".boot"]
 /// Kernel entrypoint
@@ -57,14 +57,13 @@ static header: MultibootHeader = MultibootHeader::new();
 /// - multiboot pointer
 /// - basic stack
 unsafe extern "C" fn _start() {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"mov eax, offset multiboot_ptr - {0}", // Get multiboot struct from GRUB
 		"mov DWORD PTR[eax], ebx", // ebx
 		"mov esp, offset stack - {0} + {1}", // Stack pointer initialisation
 		"jmp init_paging",
 		const KERNEL_BASE,
-		const STACK_SIZE,
-		options(noreturn)
+		const STACK_SIZE
 	);
 }
 

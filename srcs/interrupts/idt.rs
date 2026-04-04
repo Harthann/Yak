@@ -1,10 +1,10 @@
 use crate::boot::KERNEL_BASE;
 use crate::pic::handlers::irq_0;
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 unsafe extern "C" fn isr_common_stub() {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"pusha",
 
 		"mov eax, cr3",
@@ -36,8 +36,7 @@ unsafe extern "C" fn isr_common_stub() {
 		"pop eax",
 
 		"call schedule_task",
-		const KERNEL_BASE,
-		options(noreturn)
+		const KERNEL_BASE
 	);
 }
 
@@ -151,15 +150,14 @@ isr_no_err_stub!(isr_stub_128, 128);
 
 macro_rules! isr_err_stub {
 	($func: ident, $nb: expr) => {
-		#[naked]
+		#[unsafe(naked)]
 		#[no_mangle]
 		unsafe extern "C" fn $func() {
-			core::arch::asm!(
+			core::arch::naked_asm!(
 				"cli",
 				"push {}",
 				"jmp isr_common_stub",
-				const $nb,
-				options(noreturn)
+				const $nb
 			);
 		}
 	};
@@ -167,16 +165,15 @@ macro_rules! isr_err_stub {
 
 macro_rules! isr_no_err_stub {
 	($func: ident, $nb: expr) => {
-		#[naked]
+		#[unsafe(naked)]
 		#[no_mangle]
 		unsafe extern "C" fn $func() {
-			core::arch::asm!(
+			core::arch::naked_asm!(
 				"cli",
 				"push 0",
 				"push {}",
 				"jmp isr_common_stub",
-				const $nb,
-				options(noreturn)
+				const $nb
 			);
 		}
 	};

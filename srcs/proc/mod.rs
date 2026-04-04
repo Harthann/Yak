@@ -39,18 +39,17 @@ pub unsafe extern "C" fn _exit(status: i32) -> ! {
 	// Never goes there
 }
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 pub unsafe extern "C" fn wrapper_fn(fn_addr: VirtAddr) {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"mov eax, [esp + 4]",
 		"add esp, 8",
 		"sti",
 		"call eax",
 		"sub esp, 8",
 		"push eax",
-		"call _exit",
-		options(noreturn)
+		"call _exit"
 	);
 	// Never goes there
 }
@@ -104,10 +103,10 @@ pub unsafe extern "C" fn exec_fn(
 				n -= 4;
 				nb += 4;
 			} else if arg / 2 > 0 {
-				core::arch::asm!("mov [{esp} + {nb}], ax",
+				core::arch::asm!("mov [{esp} + {nb}], eax",
 					esp = in(reg) new_task.regs.esp,
 					nb = in(reg) nb,
-					in("ax") args.arg::<u16>());
+					in("eax") args.arg::<u32>());
 				n -= 2;
 				nb += 2;
 			} else {

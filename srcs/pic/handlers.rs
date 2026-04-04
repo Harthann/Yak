@@ -15,11 +15,11 @@ pub fn handler(reg: &Registers, int_no: usize) {
 	crate::pic::end_of_interrupts(int_no - PIC1_IRQ_OFFSET as usize);
 }
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 pub unsafe extern "C" fn irq_0() {
 	#[cfg(not(feature = "multitasking"))]
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"
 		cli
 
@@ -35,19 +35,17 @@ pub unsafe extern "C" fn irq_0() {
         popa
 
         iretd
-    ",
-		options(noreturn)
+    "
 	);
 
 	#[cfg(feature = "multitasking")]
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"
 	cli
 	push 0
 	push -1
 
 	jmp swap_task
-	",
-		options(noreturn)
+	"
 	);
 }
