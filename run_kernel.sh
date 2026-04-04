@@ -1,4 +1,4 @@
-#!/bin/bash
+#! /bin/bash -x
 
 # Argument expect
 # 1: Kernel binary
