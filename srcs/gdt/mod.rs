@@ -103,15 +103,18 @@ pub struct GDTR {
 
 impl GDTR {
 	pub unsafe fn update() {
-		let gdtr: &mut GDTR = (&mut gdt_desc as *mut GDTR)
-			.cast::<u8>()
-			.add(KERNEL_BASE)
+        let gdtr = (((&mut gdt_desc as *mut GDTR).addr() + KERNEL_BASE) as *mut GDTR)
 			.cast::<GDTR>()
 			.as_mut()
 			.unwrap();
+		//let gdtr: &mut GDTR = (&mut gdt_desc as *mut GDTR)
+		//	.byte_add(KERNEL_BASE)
+		//	.cast::<GDTR>()
+		//	.as_mut()
+		//	.unwrap();
 		gdtr.offset = (&GDT as *const Gdt)
 			.cast::<u8>()
-			.add(KERNEL_BASE)
+			.wrapping_add(KERNEL_BASE)
 			.cast::<Gdt>();
 	}
 }
@@ -165,9 +168,7 @@ impl SegmentDescriptor {
 #[allow(dead_code)]
 pub fn get_segment(index: usize) -> &'static mut SegmentDescriptor {
 	unsafe {
-		let segments: *mut SegmentDescriptor = (&mut GDT as *mut Gdt)
-			.cast::<u8>()
-			.add(KERNEL_BASE)
+		let segments: *mut SegmentDescriptor = (((&mut GDT as *mut Gdt).addr() + KERNEL_BASE) as *mut Gdt)
 			.cast::<SegmentDescriptor>();
 		&mut *(segments.add(index))
 	}
