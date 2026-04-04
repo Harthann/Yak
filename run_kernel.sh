@@ -18,10 +18,11 @@ cp -f $1 iso/boot/$2
 [ "$(uname)" == "Darwin" ] && sed -i '' 's/timeout=.*/timeout='$timeout'/' iso/boot/grub/grub.cfg \
                            || sed -i    's/timeout=.*/timeout='$timeout'/' iso/boot/grub/grub.cfg
 
+GRUB=$(command -v grub2-mkrescue > /dev/null 2>&1 && echo "grub2-mkrescue" || echo "grub-mkrescue")
 #	Build iso file using test binary and grub
 #	Compress the binary if it is located in rust release target directory
-[ "$(basename $(dirname $1))" == "release" ] && grub-mkrescue --compress=xz -o $2 iso \
-                                             || grub-mkrescue -o $2 iso
+[ "$(basename $(dirname $1))" == "release" ] && $GRUB --compress=xz -o $2 iso \
+                                             || $GRUB -o $2 iso
 
 # Create log directory
 DIR_LOGS=logs
