@@ -63,6 +63,7 @@ if [ "$3" == "test" ]; then
 	if [ $ret -eq 33 ]; then
 		exit 0;
 	fi
+	cat logs/gemu.log
 	exit 1;
 # Run qemu for kernel run
 else
