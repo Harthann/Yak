@@ -25,9 +25,9 @@ extern "C" {
 pub const USER_HEAP_ADDR: VirtAddr = 0x0800000;
 pub const USER_STACK_ADDR: VirtAddr = 0xbfffffff;
 
-#[naked]
+#[unsafe(naked)]
 unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"mov ax, (5 * 8) | 3", // ring 3 data with bottom 2 bits set for ring 3
 		"mov ds, ax",
 		"mov es, ax",
@@ -43,8 +43,7 @@ unsafe extern "C" fn jump_usermode(func: VirtAddr, cr3: u32, esp: u32) -> ! {
 		"push 0x200",                   // eflags => recover from interrupts
 		"push (4 * 8) | 3", /* code selector (ring 3 code with bottom 2 bits set for ring 3) */
 		"push ebx",         // func
-		"iretd",
-		options(noreturn)
+		"iretd"
 	);
 }
 

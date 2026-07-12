@@ -20,7 +20,6 @@
 //! 32bits - i386 Rust Kernel from Scratch 🦀
 
 #[lang = "eh_personality"]
-#[no_mangle]
 pub extern "C" fn eh_personality() {}
 
 const GLOBAL_ALIGN: usize = 8;

@@ -118,7 +118,7 @@ impl Task {
 		regs.esp -= core::mem::size_of::<Task>() as u32;
 		(regs.esp as *mut Registers).write(*regs);
 		regs.int_no = 0; // Reset int_no to return to new func (TODO: DO THIS BETTER)
-				 // Setup args (int signal) and handler call
+				   // Setup args (int signal) and handler call
 		regs.esp -= 4;
 		core::arch::asm!("mov [{esp}], eax",
 			esp = in(reg) regs.esp,
@@ -173,16 +173,15 @@ impl Task {
 	}
 }
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 unsafe extern "C" fn wrapper_handler() {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"mov eax, [esp]",
 		"add esp, 4",
 		"call eax",
 		"cli",
-		"jmp _end_handler",
-		options(noreturn),
+		"jmp _end_handler"
 	);
 	// Never goes there
 }
@@ -200,10 +199,10 @@ unsafe fn _end_handler() {
 	schedule_task();
 }
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 unsafe extern "C" fn swap_task() -> ! {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"pusha",
 
 		"mov eax, cr3",
@@ -237,8 +236,7 @@ unsafe extern "C" fn swap_task() -> ! {
 		"pop eax",
 
 		"call schedule_task", // never returns
-		const crate::boot::KERNEL_BASE,
-		options(noreturn)
+		const crate::boot::KERNEL_BASE
 	)
 }
 
@@ -254,16 +252,15 @@ pub unsafe extern "C" fn save_task(regs: &Registers) {
 use crate::pic::end_of_interrupts;
 use crate::proc::change_kernel_stack;
 
-#[naked]
+#[unsafe(naked)]
 #[no_mangle]
 pub unsafe extern "C" fn schedule_task() -> ! {
-	core::arch::asm!(
+	core::arch::naked_asm!(
 		"mov esp, {}",
 		"add esp, {}",
 		"call find_task",
 		const TASK_STACK_OFFSET,
-		const STACK_SIZE,
-		options(noreturn)
+		const STACK_SIZE
 	);
 }
 
@@ -358,4 +355,5 @@ macro_rules! get_segments {
 	}
 }
 
-use {get_segments, load_cr3};
+use get_segments;
+use load_cr3;

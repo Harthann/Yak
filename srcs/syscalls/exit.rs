@@ -15,7 +15,7 @@ type Time = usize;
 #[repr(C, packed)]
 struct Timeval {
 	tv_sec:  Time,  // Number of whole seconds of elapsed time
-	tv_usec: usize  /* Number of microseconds of rest of elapsed time minus tv_sec */
+	tv_usec: usize /* Number of microseconds of rest of elapsed time minus tv_sec */
 }
 
 #[repr(C, packed)]
