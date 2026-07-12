@@ -1,3 +1,9 @@
-(function() {var implementors = {
-"kernel":[["impl GlobalAlloc for <a class=\"struct\" href=\"kernel/memory/allocator/bump/struct.BumpAllocator.html\" title=\"struct kernel::memory::allocator::bump::BumpAllocator\">BumpAllocator</a>"],["impl GlobalAlloc for <a class=\"struct\" href=\"kernel/memory/allocator/linked_list/struct.LinkedListAllocator.html\" title=\"struct kernel::memory::allocator::linked_list::LinkedListAllocator\">LinkedListAllocator</a>"]]
-};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
+(function() {
+    const implementors = Object.fromEntries([["kernel",[["impl GlobalAlloc for <a class=\"struct\" href=\"kernel/memory/allocator/bump/struct.BumpAllocator.html\" title=\"struct kernel::memory::allocator::bump::BumpAllocator\">BumpAllocator</a>",0],["impl GlobalAlloc for <a class=\"struct\" href=\"kernel/memory/allocator/linked_list/struct.LinkedListAllocator.html\" title=\"struct kernel::memory::allocator::linked_list::LinkedListAllocator\">LinkedListAllocator</a>",0]]]]);
+    if (window.register_implementors) {
+        window.register_implementors(implementors);
+    } else {
+        window.pending_implementors = implementors;
+    }
+})()
+//{"start":59,"fragment_lengths":[430]}
